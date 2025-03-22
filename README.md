@@ -1,2 +1,2 @@
 # portfolio
-Examples, samples of my works
+Examples, samples of my works.
