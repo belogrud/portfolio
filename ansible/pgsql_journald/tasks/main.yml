@@ -1,0 +1,186 @@
+---
+- name: Setting options in a file /etc/systemd/journald.conf.
+  block:
+    - name: Enable journald option 'Storage=persistence'.
+      ini_file:
+        path: "/etc/systemd/journald.conf"
+        section: Journal
+        option: Storage
+        value: "persistent"
+        no_extra_spaces: yes
+        backup: yes
+      register: option_storage
+    - name: Enable journald option 'SplitMode=uid'
+      ini_file:
+        path: "/etc/systemd/journald.conf"
+        section: Journal
+        option: SplitMode
+        value: "uid"
+        no_extra_spaces: yes
+        backup: yes
+      register: option_splitmode
+    - name: Enable journald option 'ForwardToKMsg=no'
+      ini_file:
+        path: "/etc/systemd/journald.conf"
+        section: Journal
+        option: ForwardToKMsg
+        value: "no"
+        no_extra_spaces: yes
+        backup: yes
+      register: option_forwardtokmsg
+    - name: Enable journald option 'RuntimeMaxUse=1M'
+      ini_file:
+        path: "/etc/systemd/journald.conf"
+        section: Journal
+        option: RuntimeMaxUse
+        value: "1M"
+        no_extra_spaces: yes
+        backup: yes
+      register: option_runtimemaxuse
+    - name: Remove journald option 'SystemMaxUse='
+      ini_file:
+        path: "/etc/systemd/journald.conf"
+        section: Journal
+        option: SystemMaxUse
+        state: absent
+        no_extra_spaces: yes
+        backup: yes
+      register: option_systemmaxuse
+
+- name: Getting info about memory consumption if changes in config were made.
+  block:
+    - name: Getting info about swap usage.
+      shell: free -m
+      args:
+        warn: false
+      register: free_output
+    - name: Print free_output to a file.
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Getting info about swap usage"
+        block: |
+          {{tab_line}}shell: 'free -m'
+          {{tab_line}}{{free_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+
+    - name: Getting info about systemd RAM usage.
+      shell: ps -p `pidof systemd`,`pidof systemd-journald` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+      args:
+        warn: false
+      register: ps_output
+    - name: Print ps_output to a file.
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Getting info about systemd RAM usage"
+        block: |
+          {{tab_line}}shell: 'ps -p `pidof systemd`,`pidof systemd-journald` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args'
+          {{tab_line}}{{ps_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+
+    - name: Getting info about journald disk memory usage.
+      shell: journalctl --disk-usage
+      args:
+        warn: false
+      register: journalctl_output
+    - name: Print journalctl_output to a file.
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Getting info about journald disk memory usage"
+        block: |
+          {{tab_line}}shell: 'journalctl --disk-usage'
+          {{tab_line}}{{journalctl_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+  when:
+    - not ansible_check_mode
+    - option_storage.changed or option_splitmode.changed or option_forwardtokmsg.changed or option_runtimemaxuse.changed or option_systemmaxuse.changed
+
+- name: Restart systemd-journald
+  systemd:
+    name: systemd-journald
+    state: restarted
+  when:
+    - option_storage.changed or
+      option_splitmode.changed or
+      option_forwardtokmsg.changed or
+      option_runtimemaxuse.changed or
+      option_systemmaxuse.changed
+  register: systemd_journald_output
+
+- name: Getting info only if systemd-journald was restarted.
+  block:
+    - name: Print systemd_journald_output to a file.
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Restart systemd-journald"
+        block: |
+          {{new_line}}{{tab_line}}Service systemd-journald was restarted.
+          {{new_line}}
+
+    - name: Getting info about swap usage (after restart systemd-journald).
+      shell: free -m
+      args:
+        warn: false
+      register: free_after_output
+    - name: Print free_after_output to a file (after restart systemd-journald).
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Getting info about swap usage (after restart systemd-journald)"
+        block: |
+          {{tab_line}}shell: 'free -m'
+          {{tab_line}}{{free_after_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+
+    - name: Getting info about systemd RAM usage (after restart systemd-journald).
+      shell: ps -p `pidof systemd`,`pidof systemd-journald` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+      args:
+        warn: false
+      register: ps_after_output
+    - name: Print ps_after_output to a file (after restart systemd-journald).
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Getting info about systemd RAM usage (after restart systemd-journald)"
+        block: |
+          {{tab_line}}shell: 'ps -p `pidof systemd`,`pidof systemd-journald` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args'
+          {{tab_line}}{{ps_after_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+
+    - name: Getting info about journald disk memory usage (after restart systemd-journald).
+      shell: journalctl --disk-usage
+      args:
+        warn: false
+      register: journalctl_after_output
+    - name: Print journalctl_after_output to a file (after restart systemd-journald).
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Getting info about journald disk memory usage (after restart systemd-journald)"
+        block: |
+          {{tab_line}}shell: 'journalctl --disk-usage'
+          {{tab_line}}{{journalctl_after_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+
+    - name: Get collected resuts and save it into file.
+      block:
+        - name: Create a local directory to save there downloaded files.
+          file:
+            path: collection
+            state: directory
+          delegate_to: localhost
+        - name: Attempt to receive created on remote server file.
+          local_action: command curl --insecure --user '{{ansible_user}}':'{{ansible_password}}' sftp://{{inventory_hostname}}/tmp/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt -o collection/{{filename_with_date}}.{{inventory_hostname}}.pgsql_journald.txt
+          args:
+            warn: false
+          register: scp_output
+          ignore_errors: true
+      become: false
+  when:
+    - systemd_journald_output.changed
+    - not ansible_check_mode
+
+...

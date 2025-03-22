@@ -1,0 +1,39 @@
+---
+- name: Create a directory there to move default sources.list file.
+  file:
+    path: "/tmp/{{filename_with_date}}-apt/backup"
+    state: directory
+    mode: 0644
+  check_mode: no
+
+- name: Copy for backup default sources.list file.
+  copy:
+    src: "/etc/apt/sources.list"
+    dest: "/tmp/{{filename_with_date}}-apt/backup"
+    remote_src: yes
+    mode: 0644
+  no_log: true
+
+- name: Delete default sources.list file.
+  file:
+    path: "/etc/apt/sources.list"
+    state: absent
+  no_log: true
+
+- name: Copy sources.list file from template (Debian 10.9 - buster).
+  template:
+    src: debian/10.9/etc/apt/sources.list.j2
+    dest: /etc/apt/sources.list
+    force: true
+    mode: 0644
+  when: ansible_distribution_release == "buster"
+
+- name: Clean apt cache.
+  apt:
+    autoclean: yes
+
+# - name: Update apt cache.
+#   shell: apt update
+#   args:
+#     warn: false
+...

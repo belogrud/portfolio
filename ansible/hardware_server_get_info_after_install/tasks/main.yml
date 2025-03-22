@@ -1,0 +1,518 @@
+---
+- name: Get info about hostname
+  shell: 'echo ; hostname'
+  ignore_errors: yes
+  register: hostname_output
+- name: Print hostname_output to a file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about hostname"
+    block: |
+      {{tab_line}}shell: 'echo ; hostname'
+      {{hostname_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about server's chassis
+  shell: 'echo ; dmidecode -t system'
+  ignore_errors: yes
+  register: dmidecode_output
+- name: Print dmidecode_output to a file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about server's chassis"
+    block: |
+      {{tab_line}}shell: 'echo ; dmidecode -t system'
+      {{dmidecode_output.stdout  | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about Operation System
+  shell: 'echo ; cat /etc/os-release'
+  ignore_errors: yes
+  register: os_output
+- name: Print os_output to a file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about Operation System"
+    block: |
+      {{tab_line}}shell: 'echo ; cat /etc/os-release'
+      {{os_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about network interfaces (brief) if netstat utility installed
+  block:
+    - name: Get info about network interfaces (brief)
+      shell: 'echo ; ip a | grep -w inet ; echo "###" ; ip a ; echo "###" ; ip route ; echo "###" ; netstat -nr'
+      ignore_errors: yes
+      register: ip_output
+    - name: Print ip_output to a local file
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about network interfaces (brief)"
+        block: |
+          {{tab_line}}shell: 'echo ; ip a | grep -w inet ; echo "###" ; ip a ; echo "###" ; ip route ; echo "###" ; netstat -nr'
+          {{ip_output.stdout | regex_replace('\n', '\n\t' )}}
+          {{new_line}}
+  when:
+    # - ( ansible_distribution != "Ubuntu" ) or ( ansible_distribution == "Ubuntu" and ansible_lsb.major_release|int != 20 )
+    - not ansible_check_mode
+
+- name: Get info about network interfaces link if ifconfig utility installed
+  block:
+    - name: Get info about network interfaces links
+      # This command make syntax error if put it into single quotes 'command string'. It's a bitch!
+      # shell: echo ; for var1 in $(ifconfig -a | grep flags= | awk '{ printf $1" " }') ; do printf "${var1}\t" ; ethtool ${var1} | grep -ie "Link detected" ; done
+      shell: echo ; for var1 in $(ip -f link link | egrep -e "^[0-9]*:\ " | awk '{print $2" "}' | sed -e "s/://" -e "s/@.*//") ; do printf "${var1}\t" ; ethtool ${var1} | grep -ie "Link detected" ; done
+      ignore_errors: yes
+      register: ethtool_output
+    - name: Print ethtool_output to a local file
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about network interfaces links"
+        block: |
+          {{tab_line}}shell: echo ; for var1 in $(ip -f link link | egrep -e "^[0-9]*:\ " | awk '{print $2" "}' | sed -e "s/://" -e "s/@.*//") ; do printf "${var1}\t" ; ethtool ${var1} | grep -ie "Link detected" ; done
+          {{ethtool_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+  when:
+    # - ( ansible_distribution != "Ubuntu" ) or ( ansible_distribution == "Ubuntu" and ansible_lsb.major_release|int != 20 )
+    - not ansible_check_mode
+
+- name: Get info about bonding
+  shell: 'echo ; grep -ie "Status" /proc/net/bonding/bond*'
+  ignore_errors: yes
+  register: bonding_output
+- name: Print bonding_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about bonding"
+    block: |
+      {{tab_line}}shell: 'echo ; grep -ie "Status" /proc/net/bonding/bond*'
+      {{bonding_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about network interfaces for RedHat systems
+  shell: 'for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done'
+  ignore_errors: yes
+  register: info_about_redhat_network_output
+  when: ansible_os_family == 'RedHat'
+- name: Print info_about_redhat_network_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about network interfaces for RedHat systems"
+    block: |
+      {{tab_line}}shell: 'for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done'
+      {{info_about_redhat_network_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_os_family == 'RedHat'
+    - not ansible_check_mode
+
+- name: Get info about network interfaces for Ubuntu 18.x or greater
+  # shell: 'echo ; cat /etc/netplan/01-netcfg.yaml'
+  shell: 'for var1 in $(find /etc/netplan/ -type f | sort) ; do echo ; echo $var1 ; cat $var1 ; done'
+  ignore_errors: yes
+  register: info_about_ubuntu_18_network_output
+  when: ansible_distribution == "Ubuntu" and ansible_lsb.major_release|int >= 18
+- name: Print info_about_ubuntu_18_network_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about network interfaces for Ubuntu 18.x or late systems or greater"
+    block: |
+      {{tab_line}}shell: 'for var1 in $(find /etc/netplan/ -type f | sort) ; do echo ; echo $var1 ; cat $var1 ; done'
+      {{info_about_ubuntu_18_network_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_distribution == "Ubuntu" and ansible_lsb.major_release|int >= 18
+    - not ansible_check_mode
+
+# - name: Get info about network interfaces for Ubuntu 22.x systems or greater
+#   shell: 'echo ; cat /etc/netplan/02-installer-config.yaml'
+#   ignore_errors: yes
+#   register: info_about_ubuntu_22_network_output
+#   when: ansible_distribution == "Ubuntu" and ansible_lsb.major_release|int >= 22
+# - name: Print info_about_ubuntu_22_network_output to a local file
+#   blockinfile:
+#     create: yes
+#     path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+#     marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about network interfaces for Ubuntu 22.x systems or greater"
+#     block: |
+#       {{tab_line}}shell: echo ; cat /etc/netplan/02-installer-config.yaml
+#       {{info_about_ubuntu_22_network_output.stdout | regex_replace('\n', '\n\t')}}
+#       {{new_line}}
+#   when:
+#     - ansible_distribution == "Ubuntu" and ansible_lsb.major_release|int >= 22
+#     - not ansible_check_mode
+
+- name: Get info about block devices
+  shell: 'echo ; lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE'
+  ignore_errors: yes
+  register: lsblk_output
+- name: Print lsblk_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about block devices"
+    block: |
+      {{tab_line}}shell: 'echo ; lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE'
+      {{lsblk_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about /etc/fstab
+  shell: 'echo ; cat /etc/fstab'
+  ignore_errors: yes
+  register: fstab_output
+- name: Print fstab_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about /etc/fstab"
+    block: |
+      {{tab_line}}shell: 'echo ; cat /etc/fstab'
+      {{fstab_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about findmnt
+  shell: 'echo ; findmnt'
+  ignore_errors: yes
+  register: findmnt_output
+- name: Print findmnt_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about findmnt"
+    block: |
+      {{tab_line}}shell: 'echo ; findmnt'
+      {{findmnt_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about /etc/hosts
+  shell: 'echo ; cat /etc/hosts'
+  ignore_errors: yes
+  register: hosts_output
+- name: Print hosts_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about /etc/hosts"
+    block: |
+      {{tab_line}}shell: 'echo ; cat /etc/hosts'
+      {{hosts_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about hostnamectl
+  shell: 'echo ; hostnamectl'
+  ignore_errors: yes
+  register: hostnamectl_output
+- name: Print hostnamectl_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about hostnamectl"
+    block: |
+      {{tab_line}}shell: 'echo ; hostnamectl'
+      {{hostnamectl_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about date
+  shell: 'echo ; date'
+  ignore_errors: yes
+  register: date_output
+- name: Print date_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about date"
+    block: |
+      {{tab_line}}shell: 'echo ; date'
+      {{date_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about FreeIPA
+  shell: 'echo ; tail -n 5 /var/log/ipaclient-install.log'
+  ignore_errors: yes
+  register: freeipa_output
+- name: Print freeipa_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about FreeIPA"
+    block: |
+      {{tab_line}}shell: 'echo ; tail -n 5 /var/log/ipaclient-install.log'
+      {{freeipa_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about swap
+  shell: 'echo ; swapon'
+  ignore_errors: yes
+  register: swapon_output
+- name: Print swapon_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about swap"
+    block: |
+      {{tab_line}}shell: 'echo ; swapon'
+      {{swapon_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about repository for Debian systems
+  shell: 'echo ; apt-get update'
+  ignore_errors: yes
+  register: apt_output
+  when: ansible_os_family == 'Debian'
+- name: Print apt_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about repository for Debian systems"
+    block: |
+      {{tab_line}}shell: 'echo ; apt-get update'
+      {{apt_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_os_family == 'Debian'
+    - not ansible_check_mode
+
+- name: Get info about repository for RedHat systems
+  shell: 'echo ; yum repolist'
+  ignore_errors: yes
+  register: yum_output
+  when: ansible_os_family == 'RedHat'
+- name: Print yum_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about repository for RedHat systems"
+    block: |
+      {{tab_line}}shell: 'echo ; yum repolist'
+      {{yum_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_os_family == 'RedHat'
+    - not ansible_check_mode
+
+- name: Get info about selinux
+  shell: 'echo ; egrep -e "^SELINUX=" /etc/selinux/config'
+  ignore_errors: yes
+  register: selinux_output
+  when: ansible_os_family == 'RedHat'
+- name: Print selinux_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about selinux"
+    block: |
+      {{tab_line}}shell: 'echo ; egrep -e "^SELINUX=" /etc/selinux/config'
+      {{selinux_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_os_family == 'RedHat'
+    - not ansible_check_mode
+
+- name: Get info about firewalld
+  shell: 'echo ; systemctl status firewalld'
+  ignore_errors: yes
+  register: firewalld_output
+  no_log: true
+  when: ansible_os_family == 'RedHat'
+- name: Print firewalld_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about firewalld"
+    block: |
+      {{tab_line}}shell: 'echo ; systemctl status firewalld'
+      {{firewalld_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_os_family == 'RedHat'
+    - not ansible_check_mode
+
+- name: Get info about ufw
+  shell: 'echo ; systemctl status ufw'
+  ignore_errors: yes
+  register: ufw_output
+  when: ansible_os_family == 'Debian'
+- name: Print ufw_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about ufw"
+    block: |
+      {{tab_line}}shell: 'echo ; systemctl status ufw'
+      {{ufw_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_os_family == 'Debian'
+    - not ansible_check_mode
+
+- name: Get info about apparmor
+  shell: 'echo ; systemctl status apparmor'
+  ignore_errors: yes
+  register: apparmor_output
+  when: ansible_os_family == 'Debian'
+- name: Print apparmor_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about apparmor"
+    block: |
+      {{tab_line}}shell: 'echo ; systemctl status apparmor'
+      {{apparmor_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when:
+    - ansible_os_family == 'Debian'
+    - not ansible_check_mode
+
+- name: Get info about lldpad
+  shell: 'echo ; systemctl status lldpad'
+  ignore_errors: yes
+  register: lldpad_output
+- name: Print lldpad_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about lldpad"
+    block: |
+      {{tab_line}}shell: 'echo ; systemctl status lldpad'
+      {{lldpad_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Get info about Simpana
+  shell: 'echo ; commvault status'
+  ignore_errors: yes
+  register: simpana_output
+- name: Print simpana_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about Simpana"
+    block: |
+      {{tab_line}}shell: 'echo ; commvault status'
+      {{simpana_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+# - name: Get info about puppet if OS is not Ubuntu
+#   # Because puppet install ntp and disable chrony.
+#   # But FreeIPA client works only if chrony is working.
+#   # This means, that puppet broke FreeIPA client.
+#   block:
+#     - name: Get info about puppet
+#       shell: 'echo ; puppet agent -t'
+#       ignore_errors: yes
+#       register: puppet_output
+#       no_log: true
+#     - name: Print puppet_output to a local file
+#       blockinfile:
+#         create: yes
+#         path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+#         marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about puppet"
+#         block: |
+#           {{tab_line}}shell: 'echo ; puppet agent -t'
+#           {{puppet_output.stdout | regex_replace('\n', '\n\t')}}
+#           {{new_line}}
+#       when: not ansible_check_mode
+#   # when: ansible_distribution != "Ubuntu"
+
+- name: Get info about chronyd
+  shell: 'echo ; systemctl status chronyd'
+  ignore_errors: yes
+  register: chronyd_output
+  no_log: true
+  # when: ansible_distribution == "Ubuntu"
+- name: Print chronyd_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about chronyd"
+    block: |
+      {{tab_line}}shell: 'echo ; systemctl status chronyd'
+      {{chronyd_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+  # when: ansible_distribution == "Ubuntu"
+
+- name: Get info about ntpd
+  shell: 'echo ; systemctl status ntpd'
+  ignore_errors: yes
+  register: ntpd_output
+  no_log: true
+  # when: ansible_os_family == 'RedHat'
+- name: Print ntpd_output to a local file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about ntpd"
+    block: |
+      {{tab_line}}shell: 'echo ; systemctl status ntpd'
+      {{ntpd_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+  # when: ansible_os_family == 'RedHat'
+
+- name: Check if temporary account named as user exists
+  shell: egrep -e "^user:" -q /etc/passwd
+  ignore_errors: true
+  register: grep_user_from_passwd
+  failed_when: grep_user_from_passwd.rc >= 2
+- name: Get info about temporary account named as user when it exists
+  block:
+    - name: Get info about temporary account named user
+      shell: 'echo ; id user'
+      ignore_errors: yes
+      register: id_user_output
+      when: grep_user_from_passwd.rc == 0
+    - name: Print id_user_output to a local file
+      blockinfile:
+        create: yes
+        path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK --- Get info about temporary account named user"
+        block: |
+          {{tab_line}}shell: 'echo ; id user'
+          {{id_user_output.stdout | regex_replace('\n', '\n\t')}}
+          {{new_line}}
+      when: grep_user_from_passwd.rc == 0
+  when: not ansible_check_mode
+
+- name: Set permissions to the collected log file to be able to download it without problems
+  file:
+    path: /tmp/{{filename_with_date}}.{{inventory_hostname}}.txt
+    mode: o+r
+  when: not ansible_check_mode
+
+- name: Get collected resuts and save it into file
+  block:
+    - name: Create a local directory to save there downloaded files
+      file:
+        path: collection
+        state: directory
+      delegate_to: localhost
+    - name: Attempt to receive created on remote server file
+      local_action: command curl --insecure --user '{{ansible_user}}':'{{ansible_password}}' sftp://{{inventory_hostname}}/tmp/{{filename_with_date}}.{{inventory_hostname}}.txt -o collection/{{filename_with_date}}.{{inventory_hostname}}.txt
+      args:
+        warn: false
+      register: scp_output
+      ignore_errors: true
+  become: false
+...
