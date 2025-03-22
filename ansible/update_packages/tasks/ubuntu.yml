@@ -1,0 +1,149 @@
+---
+- name: Test disk free space.
+  block:
+    - name: Check /boot free space. # To avoid problems if kernel update.
+      shell: df /boot --output\=avail | tail -1
+      args:
+        warn: false
+      register: df_output
+    - fail:
+        msg: /boot does not have the minimum space required to continue (50MB require).
+      when: df_output.stdout | float is lt 51200  # 50MB = 51200 bytes.
+  when: not ansible_check_mode
+
+- name: Copy file apt.conf.patch from template
+  template:
+    src: ubuntu/etc/apt/apt.conf.patch.j2
+    dest: /etc/apt/apt.conf.patch
+    force: true
+
+####
+# This section for everyone, who wants use common Ubuntu repository.
+#
+- name: Copy file sources.list.patch for update from the Internet (not from snapshot)
+  template:
+    src: ubuntu/etc/apt/sources.list.patch.j2
+    dest: /etc/apt/sources.list.patch
+    force: true
+#
+# The end of section for everyone, who wants use common Ubuntu repository.
+####
+
+####
+# These groups of sections for those, who wants use Ubuntu repository snapshot.
+#
+# - name: Copy file sources.list.patch from template (xenial 16.04)
+#   template:
+#     src: ubuntu/xenial/etc/apt/sources.list.patch.j2
+#     dest: /etc/apt/sources.list.patch
+#     force: true
+#   when: ansible_distribution_release == "xenial"
+#
+# - name: Copy file sources.list.patch from template (bionic 18.04)
+#   template:
+#     src: ubuntu/bionic/etc/apt/sources.list.patch.j2
+#     dest: /etc/apt/sources.list.patch
+#     force: true
+#   when: ansible_distribution_release == "bionic"
+#
+# - name: Copy file sources.list.patch from template (focal 20.04)
+#   template:
+#     src: ubuntu/focal/etc/apt/sources.list.patch.j2
+#     dest: /etc/apt/sources.list.patch
+#     force: true
+#   when: ansible_distribution_release == "focal"
+#
+# The end of sections for those, who wants use Ubuntu repository snapshot.
+####
+
+- name: Clean apt cache
+  apt:
+    autoclean: yes
+
+- name: Update apt cache, but use apt.conf.patch
+  shell: apt -c /etc/apt/apt.conf.patch update
+  args:
+    warn: false
+  register: apt_update_output
+- name: Print apt_update_output to a file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.update_packages.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Update apt cache, but use apt.conf.patch"
+    block: |
+      {{new_line}}{{tab_line}}shell: 'apt -c /etc/apt/apt.conf.patch update'
+      {{tab_line}}{{apt_update_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Print info about host and packages to update
+  debug:
+    msg:
+      - "{{ inventory_hostname }}: {{ vars[inventory_hostname] }}"
+- name: Print info about host and packages to update to a file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.update_packages.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Print info about host and packages to update"
+    block: |
+      {{new_line}}{{tab_line}}Host name = {{ inventory_hostname }}
+      {{tab_line}}Packages to update = {{ vars[inventory_hostname] }}
+      {{new_line}}
+
+- name: Update packages
+  shell: apt install --only-upgrade --assume-yes -c /etc/apt/apt.conf.patch {{ vars[inventory_hostname] }}
+  args:
+    warn: false
+  register: apt_install_output
+- name: Print apt_install_output to a file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.update_packages.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Update packages"
+    block: |
+      {{new_line}}{{tab_line}}shell: 'apt install --only-upgrade --assume-yes -c /etc/apt/apt.conf.patch {{ vars[inventory_hostname] }}'
+      {{apt_install_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+
+- name: Remove unneeded files apt.conf.patch, sources.list.patch
+  file:
+    path: /etc/apt/{{ item }}
+    state: absent
+  with_items:
+    - apt.conf.patch
+    - sources.list.patch
+
+####
+# This section is optional.
+# You can comment it free.
+#
+- name: Remove dependencies that are no longer required and make other cleans.
+  apt:
+    autoremove: yes   # Remove unused dependency packages.
+    purge: yes        # Force purging of configuration files for removed packages.
+    # autoclean: yes  # Cleans the local repository of retrieved package files that can no longer be downloaded.
+  register: apt_autoremove_output
+- name: Print apt_autoremove_output to a file
+  blockinfile:
+    create: yes
+    path: "/tmp/{{filename_with_date}}.{{inventory_hostname}}.update_packages.txt"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK --- Remove dependencies that are no longer required and make other cleans"
+    block: |
+      {{new_line}}{{tab_line}}Ansible module apt make same as shell: 'apt --purge autoremove'
+      {{apt_autoremove_output.stdout | regex_replace('\n', '\n\t')}}
+      {{new_line}}
+  when: not ansible_check_mode
+#
+# The end of the section.
+####
+...
+
+#- name: Print debugging information about variables to stdout
+#  vars:
+#    inventory_hostname_is: "{{ inventory_hostname }}"
+#    variable_value_for_inventory_hostname: "{{ vars[inventory_hostname] }}"
+#  debug:
+#    msg:
+#      - "Variable 'inventory_hostname_is' = {{ inventory_hostname_is }}"
+#      - "Variable 'variable_value_for_inventory_hostname' = {{ variable_value_for_inventory_hostname }}"

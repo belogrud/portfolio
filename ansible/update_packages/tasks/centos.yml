@@ -1,0 +1,45 @@
+---
+- name: Copy file patch-centos.repo from template (CentOS 6)
+  template:
+    src: centos/6/etc/yum.repos.d/patch-centos.repo.j2
+    dest: /etc/yum.repos.d/patch-centos.repo
+    force: true
+  when: ansible_distribution_major_version == "6"
+
+- name: Copy file patch-centos.repo from template (CentOS 7)
+  template:
+    src: centos/7/etc/yum.repos.d/patch-centos.repo.j2
+    dest: /etc/yum.repos.d/patch-centos.repo
+    force: true
+  when: ansible_distribution_major_version == "7"
+
+- name: Copy file patch-centos.repo from template (CentOS 8)
+  template:
+    src: centos/8/etc/yum.repos.d/patch-centos.repo.j2
+    dest: /etc/yum.repos.d/patch-centos.repo
+    force: true
+  when: ansible_distribution_major_version == "8"
+
+- name: Clean repository and get repository list again for CentOS systems
+  shell: yum clean all ; yum repolist --disablerepo="*" --enablerepo="patch-*"
+  args:
+    warn: false
+  register: yum_clean_and_repolist
+
+- name: Print info about host and packages to update
+  debug:
+    msg:
+      - "{{ inventory_hostname }}: {{ vars[inventory_hostname] }}"
+
+- name: Update packages
+  shell: yum -y update --disablerepo="*" --enablerepo="patch-*" {{ vars[inventory_hostname] }}
+  args:
+    warn: false
+
+- name: Remove unneeded file patch-centos.repo
+  file:
+    path: /etc/yum.repos.d/{{ item }}
+    state: absent
+  with_items:
+    - patch-centos.repo
+...
