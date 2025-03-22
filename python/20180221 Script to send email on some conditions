@@ -1,0 +1,233 @@
+#
+#	More details in “work/vim/nagios/20180221 Fixing email spam in console on server nag-tst”.
+
+#
+#	This script doesn’t work properly if it run with cron.
+#	It generates the following spam emails.
+#
+[root@vm-vol-nag4-tst 20180221-1220]# mailx
+...
+  224 Cron Daemon           Wed Feb 21 15:59  26/940   "Cron <root@vm-vol-nag4-tst> /root/oracle-mon/app.py"
+  225 Cron Daemon           Wed Feb 21 16:00  26/940   "Cron <root@vm-vol-nag4-tst> /root/oracle-mon/app.py"
+....
+& 220
+Message 220:
+From root@nag-tst.tinkoff.ru  Wed Feb 21 16:00:01 2018From root@nag-tst.tinkoff.ru  Wed Feb 21 15:36:02 2018                                                                                                                                                  [0/4547]
+Return-Path: <root@nag-tst.tinkoff.ru>
+X-Original-To: root
+Delivered-To: root@nag-tst.tinkoff.ru
+From: root@nag-tst.tinkoff.ru (Cron Daemon)
+To: root@nag-tst.tinkoff.ru
+Subject: Cron <root@vm-vol-nag4-tst> /root/oracle-mon/app.py
+Content-Type: text/plain; charset=UTF-8
+Auto-Submitted: auto-generated
+X-Cron-Env: <LANG=en_US.UTF-8>
+X-Cron-Env: <SHELL=/bin/sh>
+X-Cron-Env: <HOME=/root>
+X-Cron-Env: <PATH=/usr/bin:/bin>
+X-Cron-Env: <LOGNAME=root>
+X-Cron-Env: <USER=root>
+Date: Wed, 21 Feb 2018 15:36:02 +0300 (MSK)
+Status: RO
+
+Traceback (most recent call last):
+  File "/root/oracle-mon/app.py", line 13, in <module>
+    sql_query = open(os.path.join(os.getcwd(), 'db.sql'), 'r').read()
+FileNotFoundError: [Errno 2] No such file or directory: '/root/db.sql'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/root/oracle-mon/app.py", line 17, in <module>
+    send_email(mail_to_support, data)
+NameError: name 'send_email' is not defined
+
+& q
+Held 228 messages in /var/spool/mail/root
+[root@vm-vol-nag4-tst 20180221-1220]#
+
+
+
+
+[root@vm-vol-nag4-tst 20180221-1220]# cat /root/work/20180221-1220/app.with_my_email.py
+#!/usr/bin/env python3
+
+import os
+import sys
+import cx_Oracle
+import json
+import sys
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+alert_dict = {}
+alert_warn_list = []
+alert_crit_list = []
+data = ""
+
+COMMASPACE = ', '
+# mail_to=['a.v.aleksandrov@tinkoff.ru', 'a.derzhaev@tinkoff.ru', 's.varakuta@tinkoff.ru']
+mail_to=['s.belogrud@tinkoff.ru']
+mail_to_support=['s.belogrud@tinkoff.ru']
+
+def send_email(email_receivers, data):
+    me = 'noreply@nagios.tcsbank.ru'
+    you = COMMASPACE.join(email_receivers)
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = "DB sessions count alert"
+    msg['From'] = me
+    msg['To'] = you
+
+    html = """\
+    <html>
+      <head></head>
+      <body>
+        <p>Hi!<br>""" + data + """
+        </p>
+      </body>
+    </html>
+    """
+
+    text = MIMEText(html, 'html')
+    msg.attach(text)
+
+    s = smtplib.SMTP('smtp.tcsbank.ru', 25)
+    s.sendmail(me, you, msg.as_string())
+    s.quit()
+
+try:
+    sql_query = open(os.path.join(os.getcwd(), 'db.sql'), 'r').read()
+except Exception as any_error:
+    # print('Your fucking script does not work properly! Go and fix it, bitch!')
+    data = 'Your fucking script does not work properly! Go and fix it, bitch!' + '<br>' * 2 + str(any_error) + '<br>' * 2 + 'This is sparta!'
+    send_email(mail_to_support, data)
+    sys.exit(1)
+
+with open('db.json') as f:
+    config = json.load(f)
+
+for server in config['servers']:
+    user = server['user']
+    password = server['password']
+    host = server['host']
+    port = server['port']
+    database = server['db']
+    constr = "{0}:{1}/{2}".format(host, port, database)
+
+    try:
+        db = cx_Oracle.connect(user, password, constr)
+    except Exception as any_error:
+        # print('Your fucking script does not work properly! Go and fix it, bitch!')
+        data = 'Your fucking script does not work properly! Go and fix it, bitch!' + '<br>' * 2 + str(any_error) + '<br>' * 2 + 'This is sparta!'
+        send_email(mail_to_support, data)
+        sys.exit(1)
+
+    cursor = db.cursor()
+
+    for result in cursor.execute(sql_query):
+        HOST_NAME, DB_NAME, AVG_CON, CUR_CON = result[0].split(' ', 3)
+        HOST_NAME = HOST_NAME.split('.')[0]
+
+    if int(AVG_CON) > 5 and int(CUR_CON) // int(AVG_CON) >= 3:
+        STATE = 'WARNING'
+        alert_dict.update({"{0}-{1}".format(STATE, DB_NAME): "State:{4}; host:{0}; db:{1}; avg:{2}; cur:{3}".format(
+            HOST_NAME, DB_NAME, AVG_CON, CUR_CON, STATE)})
+
+    elif int(AVG_CON) > 5 and int(CUR_CON) // int(AVG_CON) >= 5:
+        STATE = 'CRITICAL'
+        alert_dict.update({"{0}-{1}".format(STATE, DB_NAME): "State:{4}; host:{0}; db:{1}; avg:{2}; cur:{3}".format(
+            HOST_NAME, DB_NAME, AVG_CON, CUR_CON, STATE)})
+
+    else:
+        pass
+
+    cursor.close()
+    db.close()
+
+for key, value in alert_dict.items():
+    if key.startswith('WARNING'):
+        alert_warn_list.append(value)
+
+    elif key.startswith('CRITICAL'):
+        alert_crit_list.append(value)
+
+if len(alert_warn_list) > 3 or len(alert_crit_list) > 3:
+    for alert in alert_warn_list:
+        data += alert + "<br>"
+
+    send_email(mail_to, data)
+
+[root@vm-vol-nag4-tst 20180221-1220]#
+
+#
+#	Here is how this script runs.
+#
+[root@vm-vol-nag4-tst 20180221-1220]# tail -n 1 /var/spool/cron/root
+* * * * * /root/oracle-mon/app.py
+[root@vm-vol-nag4-tst 20180221-1220]#
+
+
+
+#
+#	Below are two related files and what they contain.
+#
+
+[root@vm-vol-nag4-tst 20180221-1220]# cat db.sql
+with s1 as (select
+   round(sub1.sample_time, 'MI') dat,
+   to_char(round(sub1.sample_time, 'MI'), 'YYYY-MM-DD HH24:MI') tim,
+   round(avg(sub1.on_cpu),1) as cpu,
+   round(avg(sub1.waiting),1) as waiting,
+   round(avg(sub1.active_sessions),1) as active_sessions
+from
+   ( -- sub1: one row per sampled ASH observation second
+     select
+        sample_id,
+        sample_time,
+        sum(decode(session_state, 'ON CPU', 1, 0))  as on_cpu,
+        sum(decode(session_state, 'WAITING', 1, 0)) as waiting,
+        count(*) as active_sessions
+     from
+        v$active_session_history ash
+     where
+        sample_time between sysdate-1.25/24 and sysdate-0.25/24
+     or sample_time>sysdate-1/24/60
+     group by
+        sample_id,
+        sample_time
+   ) sub1
+group by
+   round(sub1.sample_time, 'MI'))
+select max(i.HOST_NAME) ||' '|| max(i.INSTANCE_NAME) ||' '|| Round(Avg(active_sessions), 0) ||' '|| Round(max(active_sessions) keep (dense_rank last order by dat), 0) from s1, v$instance i
+[root@vm-vol-nag4-tst 20180221-1220]#
+
+[root@vm-vol-nag4-tst 20180221-1220]# cat db.json
+{
+  "servers": [
+    {
+      "db": "SIEBEL14",
+      "host": "db-siebel14-prod.tcsbank.ru",
+      "port": 1522,
+      "user": "nagmon",
+      "password": "****"
+    },
+    {
+      "db": "EDA",
+      "host": "db-eda-prod.tcsbank.ru",
+      "port": 1522,
+      "user": "nagmon",
+      "password": "****"
+    },
+...
+    {
+      "db": "XXI_MFO",
+      "host": "db-xxi-mfo-prod.tcsbank.ru",
+      "port": 1522,
+      "user": "nagmon",
+      "password": "****"
+    }
+  ]
+}
+[root@vm-vol-nag4-tst 20180221-1220]#
