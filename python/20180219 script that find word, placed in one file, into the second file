@@ -1,0 +1,49 @@
+#	File of this script was named “comparser.py”.
+
+# coding=utf-8
+# This script read find service tags, listed in one file, in second file and print lines of the second file, that
+# contains the service tag.
+
+# The file 20180213-1823.list.of.service.tags.uniq.txt contain follow lines:
+# 1j7v762.mgmt.tcsbank.ru
+# 1txgsg2.mgmt.tcsbank.ru
+# 2n9v762.mgmt.tcsbank.ru
+# 439h8d2.mgmt.tcsbank.ru
+# ...
+#
+# These lines was exported from Dell OME, inserted into excel, appropriate column was saved and processed with sort and
+# uniq utilities.
+
+# The file 20180214-1214.export_20180214091322.csv was exported from racktables and contain follow lines:
+# Name,"Asset Tag","contact person",FQDN,"Owner (software)","SW type"
+# ,,,,,
+# ,,,,,
+# admcons,JGQCQ2J,,,win-admins,"Windows 2003"
+# aic_cluster_1,CZJ70302VX,,aic_cluster_1.tcsbank.ru,,
+# aic_cluster_2,CZJ7030516,,aic_cluster_2.tcsbank.ru,,
+# ...
+# ds-hadoop-cs02p,2N9V762,g.bezrukikh@tinkoff.ru,ds-hadoop-cs02p.tcsbank.ru,"dwh-adm <dwh-adm@tinkoff.ru>","RHEL V6.6"
+# ...
+
+# As a result we will get follow lines in terminal output or in file.
+# j7v762 : m1-hadoop-wk01t,1J7V762,g.bezrukikh@tinkoff.ru,m1-hadoop-wk01t.tcsbank.ru,"dwh-adm <dwh-adm@tinkoff.ru>","RHEL V6.6"
+# 1txgsg2 : ds-datagrid01p,1TXGSG2,a.ryabov@tinkoff.ru,ds-datagrid01p.tcsbank.ru,"dwh-adm <dwh-adm@tinkoff.ru>","RHEL V7"
+# 2n9v762 : ds-hadoop-cs02p,2N9V762,g.bezrukikh@tinkoff.ru,ds-hadoop-cs02p.tcsbank.ru,"dwh-adm <dwh-adm@tinkoff.ru>","RHEL V6.6"
+# ...
+
+import re
+
+filename1 = '20180213-1823.list.of.service.tags.uniq.txt'
+filename2 = '20180214-1214.export_20180214091322.csv'
+filename3 = 'results.txt'
+
+with open(filename1, 'r', encoding='utf-8') as file1:
+    with open(filename2, 'r', encoding='utf-8') as file2:
+        with open(filename3, 'w', encoding='utf-8') as file3:
+            for line_file1 in file1:
+                asset_tag = line_file1.split('.')[0]
+                for line_file2 in file2:
+                    if re.search(asset_tag, line_file2.strip(), re.IGNORECASE) is not None:
+                        # print(asset_tag + ' : ' + line_file2.strip())
+                        file3.write(asset_tag + ' : ' + line_file2.strip() + '\n')
+                file2.seek(0)
