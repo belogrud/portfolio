@@ -1,0 +1,110 @@
+[support@centos00 20170503-1129]$ cat README
+SD#369954
+These three scripts test files and folders for their size.
+If size more, than defined, it will report exit code CRITICAL for nagios.
+These scripts are used with nrpe nagios service.
+[support@centos00 20170503-1129]$
+
+[support@centos00 20170503-1129]$ cat check_size_files.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+big_size="1536"
+message_text=""
+
+let amount_of_files_with_big_size_inside_folder_1=$(find /home/online/ -maxdepth 4 -type f -size +${big_size}M | wc -l)
+if [ ${amount_of_files_with_big_size_inside_folder_1} -gt 0 ] ; then message_text_1="A folder /home/online/ contains file or files with size greater than ${big_size}MB." ; fi
+
+let amount_of_files_with_big_size_inside_folder_2=$(find /opt/online/traces/ -maxdepth 4 -type f -size +${big_size}M | wc -l)
+if [ ${amount_of_files_with_big_size_inside_folder_2} -gt 0 ] ; then message_text_2="A folder /opt/online/traces/ contains file or files with size greater than ${big_size}MB." ; fi
+
+if [ \( ${amount_of_files_with_big_size_inside_folder_1} -eq 0 \) -a \( ${amount_of_files_with_big_size_inside_folder_2} -eq 0 \) ] ; then
+        message_text="A folders /home/online/ and /opt/online/traces/ have size less than ${big_size}MB. | Count=0"
+        echo "${message_text}"
+        exit $STATE_OK
+    elif [ \( ${amount_of_files_with_big_size_inside_folder_1} -gt 0 \) -a \( ${amount_of_files_with_big_size_inside_folder_2} -gt 0 \) ] ; then
+        message_text="${message_text_1} ${message_text_2} | Count=$(expr ${amount_of_files_with_big_size_inside_folder_1} + ${amount_of_files_with_big_size_inside_folder_2})"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${amount_of_files_with_big_size_inside_folder_1} -gt 0 ] ; then
+        message_text="${message_text_1} | Count=${amount_of_files_with_big_size_inside_folder_1}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${amount_of_files_with_big_size_inside_folder_2} -gt 0 ] ; then
+        message_text="${message_text_2} | Count=${amount_of_files_with_big_size_inside_folder_2}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    else
+        message_text="UNKNOWN"
+        echo "${message_text}"
+        exit $STATE_UNKNOWN
+fi
+
+[support@centos00 20170503-1129]$
+
+[support@centos00 20170503-1129]$ cat check_size_files.version.1.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+big_size="1740"
+message_text=""
+
+let amount_of_files_with_big_size_inside_folder=$(find /home/online/traces/ -type f -size +${big_size}M | wc -l)
+if [ ${amount_of_files_with_big_size_inside_folder} -gt 0 ] ; then message_text_1="A folder /home/online/traces/ contains file or files with size greater than ${big_size}MB." ; fi
+let test_size_one_file=$(find /home/online/logs/log -type f -size +${big_size}M | wc -l)
+if [ ${test_size_one_file} -gt 0 ] ; then message_text_2="A file /home/online/logs/log has size greater than ${big_size}MB." ; fi
+
+if [ \( ${amount_of_files_with_big_size_inside_folder} -eq 0 \) -a \( ${test_size_one_file} -eq 0 \) ] ; then
+        message_text="A folder's files /home/online/traces/ and a file /home/online/logs/log have size less than ${big_size}MB. | Count=0"
+        echo "${message_text}"
+        exit $STATE_OK
+    elif [ \( ${amount_of_files_with_big_size_inside_folder} -gt 0 \) -a \( ${test_size_one_file} -gt 0 \) ] ; then
+        message_text="${message_text_1} ${message_text_2} | Count=$(expr ${amount_of_files_with_big_size_inside_folder} + ${test_size_one_file})"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${amount_of_files_with_big_size_inside_folder} -gt 0 ] ; then
+        message_text="${message_text_1} | Count=${amount_of_files_with_big_size_inside_folder}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${test_size_one_file} -gt 0 ] ; then
+        message_text="${message_text_2} | Count=${test_size_one_file}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    else
+        message_text="UNKNOWN"
+        echo "${message_text}"
+        exit $STATE_UNKNOWN
+fi
+[support@centos00 20170503-1129]$
+
+[support@centos00 20170503-1129]$ cat check_size_folder.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+
+RESULT=$(/usr/bin/du -s /home/online/traces/ | cut -f 1)
+
+
+if [ $RESULT -lt 1900000 ]; then
+  echo "A folder /home/online/traces/ has size OK - ${RESULT}KB. | Count=$RESULT"
+  exit $STATE_OK
+elif [ $RESULT -ge 1900000 ]; then
+  echo "Folder /home/online/traces/ has size CRITICAL - ${RESULT}KB. | Count=$RESULT"
+  exit $STATE_CRITICAL
+else
+  echo "UNKNOWN"
+  exit $STATE_UNKNOWN
+fi
+[support@centos00 20170503-1129]$
