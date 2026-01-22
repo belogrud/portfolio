@@ -1,0 +1,269 @@
+
+Параметры запроса
+[редактировать критичность]
+Номер   563055
+Название    №563055
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  14.09.2015 17:49
+Дата регистрации    14.09.2015 17:49
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день,
+
+Нужна виртуальная машина для разворачивания приложения <мобильная справка>
+
+Кроме того, нужно:
+
+- sudo-доступ на новую виртуалку для k.pestrikov, k.devyatkin
+
+- специальный пользователь agentref, под которым будет запущено приложение
+
+---------------------------------------
+
+1 название проекта: название, ключевые слова, связки - короткое описание, для ссылок и именований
+Agent Reference - приложение для синхронизации справочных и учебных материалов сотрудников банка с мобильным клиентом.
+
+2 краткое описание: достигаемая техническая цель, связь с бизнес-целью
+сервер для выгрузки пакетов справочных/учебных материалов на мобильные клиенты, сбора обратной связи и статистики использования.
+
+3 ответственный сотрудник: сотрудник, который курирует финальные сроки проекта, определяет факт сдачи проекта, либо задает цели и сроки отдельно взятой части проекта
+Петриков Константин
+
+4 схема потоков данных приложения: какие входные-выходные данные, из каких приложений, систем
+Входные данные для приложения загружаются из следующих источников: ..
+- БД Webtutor - m1-sql01
+- собственная БД приложения - пока не заведена, будет отдельным запросом
+- ldap://tcsbank.ru:389 - авторизация пользователей
+Исходящие данные идут:
+- в собственную БД
+- на внутренний почтовый сервер
+- на внутренный сервер Jira
+
+5 схема сетевого взаимодействия: кто, из каких сетей будет обращаться к серверу, направления, протоколы, порты
+пользователи из внутренней сети (172.16.10.*) обращаются к серверу по протколу TCP порт 8080.
+порты 8000, 8081, 6379, 9010 должны быть доступны из внутренней сети для отладки и мониторинга.
+управление доступом реализуется на уровне приложения:
+для административного доступа - приложение содержит БД пользователей и ролей, и авторизует пользователей с помощью Active Directory.
+для мобильных клиентов - пользователи авторизуются с помощью данных из БД Webtutor.
+Для работы с приложением представителей из регионов требуется доступ на продуктовый сервер из сети интернет по протоколу HTTPS.
+Шифрование должно быть настроено на балансировщике, на сервер приложения должны проксироваться запросы HTTP.
+Из сети интернет приложение должно быть доступно на домене 2го уровня agentref.tcsbank.ru, а так же agentreftest.tcsbank.ru.
+Запросы с https://agentref.tcsbank.ru должны проксироваться на http://vm-agentref01p:8080/agentref
+Запросы с https://agentreftest.tcsbank.ru должны проксироваться на http://vm-agentref01p:8080/agentreftest
+
+6 имя (hostname сервера): формируется по правилам именования, с учетом площадки, функционала
+vm-agentref01p
+
+7 количественные характеристики: цпу, память, диски - количество, параметры производительности. Желательно в виде требований к ПО и обоснованные. Иначе, разворачивание из шаблонов по умолчанию.
+2 CPU, RAM 4Gb, HDD 40Gb.
+
+8 ответственный пользователь сервера: сотрудник, который отвечает за функционал сервера, за получение оповещений от системы мониторинга, за согласование плановых работ и downtime сервера в случае необходимости
+Пестриков Констатин
+
+9 параметры доступности, мониторинга и оповещений: aka SLA - 8x5, 24x7 . То же и про оповещения. Список метрик мониторинга, кроме "по-умолчанию". Подробное описание.
+Доступность и мониторинг - 24х7.
+Список метрик предоставит Пестриков Констатин
+
+10 решение для DR: решение по "восстановлению после катастрофы", с указанием допустимой недоступности сервиса. Например - восстановление из бекапов, кластерное решение из более чем 1-го узла - actice-active, active-backup, балансировщики и т.п.
+VMWare HA technology
+
+11 решение для резервного копирования, восстановления: в случае необратимых логических ошибок в ПО, либо по требованию восстановления на указанную дату, с указанием глубины и времени восстановления.
+Образ виртуалки: ежедневный инкрементальный бекап ; еженедельный - полный. Срок хранения полных бекапов - 3 мес.
+
+12 согласование с сетевым отделом, выделение сетей: создание новых сетей, или размещение в существующих
+Размещение в существующих сетях
+
+13 согласование с руководителем: согласование с непосредственным руководителем
+Отправлено на согласование
+
+14 согласование с ИБ: pci dss, доступы по сетевом взаимодействию
+Требуется согласование
+
+
+С уважением,
+
+Константин Пестриков
+Главный разработчик
+
+................................................................................
+
+
+Дата
+Комментарий Автор
+16.09.2015 09:38    Вм готова:
+vm-agentref01p [10.216.48.13]
+@unix-admins
+puppet, ssh, мониторинг
+@net-admins
+сетевые доступы Хохлачев Сергей Г
+15.09.2015 14:06    Туда же, где и vm-agent-sched01p. vlan 1648 Сакалкин Владислав
+15.09.2015 13:08    Коллеги @net-admins
+в какой сеть размещать? Хохлачев Сергей Г
+
+
+................................................................................
+................................................................................
+
+
+
+[root@vm-vol-nag01t ~]# check_nrpe -H 10.216.48.13 -c check_load
+connect to address 10.216.48.13 port 5666: Connection refused
+connect to host 10.216.48.13 port 5666: Connection refused[root@vm-vol-nag01t ~]#
+[root@vm-vol-nag01t ~]#
+
+[root@vm-agentref01p ~]# yum install nagios-plugins nagios-plugins-disk nagios-plugins-load nagios-plugins-nrpe nagios-plugins-procs nagios-plugins-users nagios-plugins-load nagios-plugins-swap nrpe
+Loaded plugins: fastestmirror, security
+Setting up Install Process
+Loading mirror speeds from cached hostfile
+ * base: mirror.astpage.ru
+ * extras: centos-mirror.rbc.ru
+ * updates: mirror.astpage.ru
+Package nagios-plugins-2.0.3-1.el6.x86_64 already installed and latest version
+Package nagios-plugins-disk-2.0.3-1.el6.x86_64 already installed and latest version
+Package nagios-plugins-load-2.0.3-1.el6.x86_64 already installed and latest version
+Package nagios-plugins-nrpe-2.15-2.el6.x86_64 already installed and latest version
+Package nagios-plugins-procs-2.0.3-1.el6.x86_64 already installed and latest version
+Package nagios-plugins-users-2.0.3-1.el6.x86_64 already installed and latest version
+Package nagios-plugins-load-2.0.3-1.el6.x86_64 already installed and latest version
+Package nagios-plugins-swap-2.0.3-1.el6.x86_64 already installed and latest version
+Resolving Dependencies
+--> Running transaction check
+---> Package nrpe.x86_64 0:2.15-2.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+========================================================================================================================================================================================================
+ Package                                      Arch                                           Version                                             Repository                                        Size
+========================================================================================================================================================================================================
+Installing:
+ nrpe                                         x86_64                                         2.15-2.el6                                          tcs-epel                                         224 k
+
+Transaction Summary
+========================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 224 k
+Installed size: 286 k
+Is this ok [y/N]: y
+Downloading Packages:
+nrpe-2.15-2.el6.x86_64.rpm                                                                                                                                                       | 224 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : nrpe-2.15-2.el6.x86_64                                                                                                                                                               1/1
+warning: /etc/nagios/nrpe.cfg created as /etc/nagios/nrpe.cfg.rpmnew
+  Verifying  : nrpe-2.15-2.el6.x86_64                                                                                                                                                               1/1
+
+Installed:
+  nrpe.x86_64 0:2.15-2.el6
+
+Complete!
+[root@vm-agentref01p ~]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts in /var/lib/puppet/lib/facter/tzdata_check.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/facter_dot_d.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/puppet_vardir.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/sockets_count.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/ilo_firmware.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/cores_per_socket.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/pe_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/root_home.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/memory_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/storage_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/bash_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/yum_repos.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/hdd_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/sku_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/nic_info.rb
+Info: Caching catalog for vm-agentref01p.tcsbank.ru
+Warning: The package type's allow_virtual parameter will be changing its default value from false to true in a future release. If you do not want to allow virtual packages, please explicitly set allow_virtual to false.
+   (at /usr/lib/ruby/site_ruby/1.8/puppet/type.rb:816:in `set_default')
+Info: Applying configuration version '1442331857'
+Notice: /Stage[main]/Nrpe/Service[nrpe]/ensure: ensure changed 'stopped' to 'running'
+Info: /Stage[main]/Nrpe/Service[nrpe]: Unscheduling refresh on Service[nrpe]
+Notice: Finished catalog run in 1.69 seconds
+[root@vm-agentref01p ~]# service nrped status
+nrped: unrecognized service
+[root@vm-agentref01p ~]# service nrpe status
+nrpe (pid 3984) is running...
+[root@vm-agentref01p ~]#
+
+
+
+[root@vm-vol-nag01t ~]# check_nrpe -H 10.216.48.13 -c check_load
+OK - load average: 0.10, 0.06, 0.01|load1=0.100;15.000;30.000;0; load5=0.060;10.000;25.000;0; load15=0.010;5.000;20.000;0;
+[root@vm-vol-nag01t ~]#
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ cp ../vm-vol-nag01t_nagios_conf_templates/vm-lin-template.cfg objects/servers/vmware/vm-agentref01p.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+
+[root@vm-magentbe01p ~]# grep k.pestrikov /etc/passwd
+k.pestrikov:x:523:523:Pestrikov Konstantin Vladimirovich,BC Olimpiya Park,2148:/home/k.pestrikov:/bin/bash
+[root@vm-magentbe01p ~]# grep k.pestrikov /etc/shadow
+k.pestrikov:$6$SzB/BNvB$PObPkniTxo50ygoudquqT2tzNYUyzPaRBhxmWDMQEfTqQvpc3GJAwmW3lGJI8d4XsqqIPhIje35lcXqOifgVa/:16681:1:90:7:::
+[root@vm-magentbe01p ~]# id k.pestrikov
+uid=523(k.pestrikov) gid=523(k.pestrikov) groups=523(k.pestrikov),10(wheel)
+[root@vm-magentbe01p ~]#
+
+[root@vm-agentref01p ~]# groupadd -g 523 k.pestrikov && useradd -u 523 -g k.pestrikov -G wheel -c 'Pestrikov Konstantin Vladimirovich,BC Olimpiya Park,2148' -m -s /bin/bash -p '$6$SzB/BNvB$PObPkniTxo50ygoudquqT2tzNYUyzPaRBhxmWDMQEfTqQvpc3GJAwmW3lGJI8d4XsqqIPhIje35lcXqOifgVa/' k.pestrikov
+[root@vm-agentref01p ~]#
+
+
+................................................................................
+
+[root@vm-shortapps01t ~]# grep k.devyatkin /etc/passwd
+k.devyatkin:x:655:655:Devyatkin Konstantin Sergeevich:/home/k.devyatkin:/bin/bash
+[root@vm-shortapps01t ~]# grep k.devyatkin /etc/shadow
+k.devyatkin:$6$Fc50FEpX$2bloKV4L.LNW/XyXemhorNc/yf3v6ShG2CCXaHhXFg9Byx5LIlVNE7mxQp4S7.N5iDOLupFMVDDkf3UMSjGRu1:16498:1:90:7:::
+[root@vm-shortapps01t ~]# id k.devyatkin
+uid=655(k.devyatkin) gid=655(k.devyatkin) groups=655(k.devyatkin),10(wheel)
+[root@vm-shortapps01t ~]#
+
+[root@vm-agentref01p ~]# groupadd -g 655 k.devyatkin && useradd -u 655 -g k.devyatkin -G wheel -c 'Devyatkin Konstantin Sergeevich' -m -s /bin/bash -p '$6$Fc50FEpX$2bloKV4L.LNW/XyXemhorNc/yf3v6ShG2CCXaHhXFg9Byx5LIlVNE7mxQp4S7.N5iDOLupFMVDDkf3UMSjGRu1' k.devyatkin
+[root@vm-agentref01p ~]# id !$
+id k.devyatkin
+uid=655(k.devyatkin) gid=655(k.devyatkin) groups=655(k.devyatkin),10(wheel)
+[root@vm-agentref01p ~]#
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+16.09.2015 19:29    Прошу передать заявку автору для проверки доступа, уточнения параметров мониторинга в nagios и уточнения сетевого доступа куда-то (если это потребуется).   Белогруд Сергей В
+16.09.2015 19:27    Создана учётная запись с хэшем пароля. как на vm-shortapps01t.
+
+[root@vm-agentref01p ~]# id k.devyatkin
+uid=655(k.devyatkin) gid=655(k.devyatkin) groups=655(k.devyatkin),10(wheel)
+[root@vm-agentref01p ~]#    Белогруд Сергей В
+16.09.2015 19:22    Создана учётная запись с хэшем пароля. как на vm-magentbe01p.
+
+[root@vm-agentref01p ~]# id k.pestrikov
+uid=523(k.pestrikov) gid=523(k.pestrikov) groups=523(k.pestrikov),10(wheel)
+[root@vm-agentref01p ~]#    Белогруд Сергей В
+16.09.2015 19:11    Базовый мониторинг в nagios для хоста создан.   Белогруд Сергей В
+16.09.2015 18:35    В puppet добавил.   Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+
+
+
+
+
+
+
+
+
+
+
+

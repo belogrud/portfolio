@@ -1,0 +1,1291 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   548733
+Название    №548733
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  28.08.2015 11:31
+Дата регистрации    28.08.2015 11:31
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Прошу настроить глубину хранение файлов аудита баз данных сроком в 5 лет.
+
+Сейчас аудит настроен по PCI DSS в syslog в файлы /var/log/oracle.log + настроено переключение и сжатие этих файлов
+
+
+С уважением,
+
+Матвей Новиков
+Администратор баз данных
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+11.09.2015 11:44    Всовываение в puppet.   Белогруд Сергей В
+11.09.2015 11:43    Архивация файлов журналов настроена и работает.
+[root@vm-syslog01 ~]# df -h /mnt/oracle_logs_for_archive/
+Filesystem Size Used Avail Use% Mounted on
+v6250-ds:/vol/auditlogs
+95G 48G 48G 51% /mnt/oracle_logs_for_archive
+[root@vm-syslog01 ~]#   Белогруд Сергей В
+08.09.2015 12:45    Уточняем время хранения файлов, чтобы с размером nfs-ресурса сочеталось.    Белогруд Сергей В
+07.09.2015 14:44    Архивы журналов oracle создаются.
+Через день файлы сжимаются.
+Через примерно месяц старые файлы архивов удаляются.
+
+0 5 * * * /bin/nice -n10 /bin/find /mnt/oracle_logs_for_archive/ -type f -mtime +0 -not -name '*.bz2' -exec bzip2 -v {} \;
+0 10 * * * /bin/nice -n10 /bin/find /mnt/oracle_logs_for_archive/ -type f -mtime +28 -delete ; /bin/nice -n10 /bin/find /mnt/oracle_logs_for_archive/ -type d -mtime +28 -delete
+
+
+Осталось послать всё в puppet и сделать всё через это место.    Белогруд Сергей В
+04.09.2015 12:35    Создание файлов oracle.log с 18-ти указанных серверов db настроено.
+Тестируется задание в cron на сжатие и удаление устаревших.
+
+[root@vm-syslog01 init.d]# find /mnt/oracle_logs_for_archive/ -type f -exec du -h {} \; | sort -t ' ' -k 1 -h
+124K /mnt/oracle_logs_for_archive/m1-db01-prod/2015/09/04/oracle.log
+192K /mnt/oracle_logs_for_archive/ds-db07-stb/2015/09/04/oracle.log
+228K /mnt/oracle_logs_for_archive/ds-db05-prod/2015/09/04/oracle.log
+240K /mnt/oracle_logs_for_archive/ds-db07-prod/2015/09/04/oracle.log
+636K /mnt/oracle_logs_for_archive/ds-db02-stb/2015/09/02/oracle.log.bz2
+852K /mnt/oracle_logs_for_archive/m1-db05-prod/2015/09/04/oracle.log
+1.1M /mnt/oracle_logs_for_archive/m1-db08-stb/2015/09/04/oracle.log
+1.3M /mnt/oracle_logs_for_archive/m1-db05-stb/2015/09/04/oracle.log
+1.5M /mnt/oracle_logs_for_archive/m1-db08-prod/2015/09/04/oracle.log
+2.4M /mnt/oracle_logs_for_archive/m1-db06-stb/2015/09/04/oracle.log
+5.8M /mnt/oracle_logs_for_archive/ds-db08-prod/2015/09/04/oracle.log
+139M /mnt/oracle_logs_for_archive/ds-db02-stb/2015/09/04/oracle.log
+181M /mnt/oracle_logs_for_archive/m1-db02-prod/2015/09/04/oracle.log
+253M /mnt/oracle_logs_for_archive/ds-db02-stb/2015/09/03/oracle.log
+[root@vm-syslog01 init.d]#  Белогруд Сергей В
+03.09.2015 11:35    Сжатие файлов /mnt/oracle_logs_for_a rchive/*/*/*/*/oracle.log настроено по заданию cron.
+
+0 5 * * * /bin/nice -n10 /bin/find /mnt/oracle_logs_for_archive/ -type f -mtime +1 -not -name '*.bz2' -exec bzip2 -v {} \;
+
+Белогруд Сергей В
+02.09.2015 15:45    Дима Мялин предлагает для уменьшения объема сразу компрессировать/архивировать логи при записи на радел. Это реально реализовать?   Жук Дмитрий А
+02.09.2015 13:55    Сергей смонтируй, потом на меня верни с точкой монтирования Жук Дмитрий А
+02.09.2015 13:55    v6250-ds:/vol/auditlogs Жук Дмитрий А
+02.09.2015 12:51    эти доступы есть    Буковня Сергей
+02.09.2015 12:39    Прошу обеспечить для сервера vm-syslog01 доступы в обе стороны (после заявку верните мне)
+
+<----> 10.217.32.11 (cv-comsrv), TCP 22, 8400-8450;
+<----> 10.217.32.12 (m1-bcpmda01), TCP 8400-8450;
+<----> 10.217.32.13 (m1-bcpmda02), TCP 8400-8450;
+<----> 10.217.32.14 (ds-bcpmda01), TCP 8400-8450;
+<----> 10.217.32.15 (ds-bcpmda02), TCP 8400-8450
+Жук Дмитрий А
+02.09.2015 12:05    Получил одобрение от ИБ на следующую схему хранения:
+
+Такая схема нас полностью устраивает.
+
+
+Сергей Рычихин
+Служба безопасности
+
+From: Zhuk Dmitriy Anatolevich
+Sent: Wednesday, September 02, 2015 11:32 AM
+To: Rychikhin Sergey
+Cc: Novikov Matvey Sergeevich; Belogrud Sergey Vladimirovich
+Subject: SD548733 Хранение логов аудита
+
+Добрый день, Сергей!
+
+По SD 548733 хранение логов аудита Оракла.
+Предлагаю следующую схему хранения логов. Мы храним на массиве оперативные логи за 1
+месяц. Остальные храним на ленте 5 лет с условием восстановления 2-4 дня по запросу.
+Одобряешь такую схему хранения логов?
+
+
+С уважением,
+
+Дмитрий Жук
+Ведущий администратор систем хранения данных
+Жук Дмитрий А
+02.09.2015 11:49
+
+From: Rychikhin Sergey
+Sent: Wednesday, September 02, 2015 11:47 AM
+To: Zhuk Dmitriy Anatolevich
+Cc: Novikov Matvey Sergeevich; Belogrud Sergey Vladimirovich
+Subject: RE: SD548733 Хранение логов аудита
+
+Такая схема нас полностью устраивает.
+
+
+Сергей Рычихин
+Служба безопасности
+
+From: Zhuk Dmitriy Anatolevich
+Sent: Wednesday, September 02, 2015 11:32 AM
+To: Rychikhin Sergey
+Cc: Novikov Matvey Sergeevich; Belogrud Sergey Vladimirovich
+Subject: SD548733 Хранение логов аудита
+
+Добрый день, Сергей!
+
+По SD 548733 хранение логов аудита Оракла.
+Предлагаю следующую схему хранения логов. Мы храним на массиве оперативные логи за 1
+месяц. Остальные храним на ленте 5 лет с условием восстановления 2-4 дня по запросу.
+Одобряешь такую схему хранения логов?
+
+
+С уважением,
+
+Дмитрий Жук
+Ведущий администратор систем хранения данных
+
+
+
+1-й Волоколамский проезд, дом 10, стр. 1
+Москва, 123060, Россия
+Тел.: +7 (495) 648 1000 (вн. 2733)
+Моб.: +7 (916) 451 4047
+Факс: +7 (495) 645 5909
+E-mail: d.zhuk@tinkoff.ru
+www.tinkoff.ru
+
+Это электронное письмо строго конфиденциально (включая все вложения). Данная информация предназначена только для получателя(ей). Если Вы не являетесь получателем, Вы не вправе каким бы то ни было образом читать, копировать, использовать или хранить данное сообщение. Просьба немедленно его удалить. Если Вы получили его по ошибке, пожалуйста, свяжитесь с Тинькофф Банком по т. +7 495 648 1000.
+Белогруд Сергей В
+02.09.2015 01:14    За какй срок оперативная информация по логам должна храниться на ресурсе? Может сделать на ресурсе хранения не 1 года а например 2 недели, а все остальное в бекап на ленту ? Или 1 месяц? Зачем оперативно хранить 1год ?  Жук Дмитрий А
+01.09.2015 19:17    Поправка.
+Реальные суточные размеры сжатых файлов oracle.log на разных серверах баз данных варьируются от 1 до 81 МБ.
+Поэтому ранее взятое среднее значение 7МБ в пределах одного сервера не корректно.
+
+Следует ориентироваться на большие размеры.
+Например около 30 МБ.
+В этом случае оценочный размер ресурса будет около 1 ТБ.
+[root@vm-syslog01 ~]# expr $( expr 5 \* 365 \* 18 \* 30 ) / 1024
+962
+Белогруд Сергей В
+01.09.2015 18:37    Администраторам СХД.
+
+Для хранения файлов файлов аудита баз данных сроком 5 лет необходимо создать ресурс.
+Ресурс будет подключен по nfs к серверу vm-syslog01.
+Необходимый объём можно оценить следующим образом:
+средний суточный размер сжатого файла oracle.log = 7МБ;
+серверов баз данных 18 шт.
+
+5 лет * 365 дней в году * 18 серверов баз данных * 7 мегабайт = 224 ГБ
+
+[root@vm-syslog01 ds-db02-stb]# expr $( expr 5 \* 365 \* 18 \* 7 ) / 1024
+224
+Белогруд Сергей В
+01.09.2015 12:05    ds-db01-prod,ds-db01-stb,m1-db01-prod,ds-db02-prod,ds-db02-stb,m1-db02-prod,ds-db05-prod,m1-db05-stb,m1-db05-prod,ds-db06-prod,m1-db06-stb,m1-db06-prod,ds-db07-prod,ds-db07-stb,m1-db07-prod,ds-db08-prod,m1-db08-stb,m1-db08-prod Новиков Матвей
+31.08.2015 16:04    Сделать через puppet, для всех баз данных. Слать на vm-syslog01. Учесть объемы на syslog-сервере, возможно делать в отдельный раздел. Архивация через storage-admins, отдельной политикой.  Терентьев Алексей Н
+
+................................................................................
+................................................................................
+
+#   Here I will try to configure "rsyslog" lens of 'augeas' of 'puppet' to use it on database servers.
+
+[root@puppet ~]# ls -Alh /usr/share/augeas/lenses/
+total 4.0K
+drwxr-xr-x. 2 root root 4.0K Jun  4  2014 dist
+[root@puppet ~]# ls -Alh /usr/share/augeas/lenses/dist/
+total 812K
+-rw-r--r--. 1 root root 3.5K Nov  2  2012 access.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 aliases.aug
+-rw-r--r--. 1 root root 2.6K Nov  2  2012 anacron.aug
+-rw-r--r--. 1 root root 1.3K Nov  2  2012 approx.aug
+-rw-r--r--. 1 root root 3.9K Nov  2  2012 aptconf.aug
+-rw-r--r--. 1 root root 1.6K Nov  2  2012 aptpreferences.aug
+-rw-r--r--. 1 root root  851 Nov  2  2012 aptsources.aug
+-rw-r--r--. 1 root root 1.2K Nov  2  2012 apt_update_manager.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 authorized_keys.aug
+-rw-r--r--. 1 root root 3.3K Nov  2  2012 automaster.aug
+-rw-r--r--. 1 root root 4.1K Nov  2  2012 automounter.aug
+-rw-r--r--. 1 root root 1.5K Dec 18  2012 avahi.aug
+-rw-r--r--. 1 root root 1014 Nov  2  2012 backuppchosts.aug
+-rw-r--r--. 1 root root 3.3K Nov  2  2012 bbhosts.aug
+-rw-r--r--. 1 root root  13K Nov  2  2012 build.aug
+-rw-r--r--. 1 root root 2.1K Nov  2  2012 cachefilesd.aug
+-rw-r--r--. 1 root root 1.6K Nov  2  2012 carbon.aug
+-rw-r--r--. 1 root root 3.3K Nov  2  2012 cgconfig.aug
+-rw-r--r--. 1 root root 2.4K Nov  2  2012 cgrules.aug
+-rw-r--r--. 1 root root 3.9K Nov  2  2012 channels.aug
+-rw-r--r--. 1 root root  398 Nov  2  2012 cobblermodules.aug
+-rw-r--r--. 1 root root 2.3K Nov  2  2012 cobblersettings.aug
+-rw-r--r--. 1 root root  869 Nov  2  2012 collectd.aug
+-rw-r--r--. 1 root root 4.1K Nov  2  2012 cron.aug
+-rw-r--r--. 1 root root 3.1K Nov  2  2012 crypttab.aug
+-rw-r--r--. 1 root root  485 Nov  2  2012 cups.aug
+-rw-r--r--. 1 root root 1.6K Nov  2  2012 cyrus_imapd.aug
+-rw-r--r--. 1 root root  799 Nov  2  2012 darkice.aug
+-rw-r--r--. 1 root root 3.7K Nov  2  2012 debctrl.aug
+-rw-r--r--. 1 root root 1.4K Nov  2  2012 desktop.aug
+-rw-r--r--. 1 root root  633 Nov  2  2012 device_map.aug
+-rw-r--r--. 1 root root 6.2K Nov  2  2012 dhclient.aug
+-rw-r--r--. 1 root root  16K Dec 18  2012 dhcpd.aug
+-rw-r--r--. 1 root root 1.5K Nov  2  2012 dnsmasq.aug
+-rw-r--r--. 1 root root 2.8K Nov  2  2012 dpkg.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 dput.aug
+-rw-r--r--. 1 root root 3.4K Dec 18  2012 erlang.aug
+-rw-r--r--. 1 root root  663 Nov  2  2012 ethers.aug
+-rw-r--r--. 1 root root 2.4K Nov  2  2012 exports.aug
+-rw-r--r--. 1 root root 9.3K Nov  2  2012 fai_diskconfig.aug
+-rw-r--r--. 1 root root  824 Nov  2  2012 fonts.aug
+-rw-r--r--. 1 root root 1.2K Nov  2  2012 fstab.aug
+-rw-r--r--. 1 root root  890 Nov  2  2012 fuse.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 gdm.aug
+-rw-r--r--. 1 root root 1.4K Nov  2  2012 group.aug
+-rw-r--r--. 1 root root 9.1K Nov  2  2012 grub.aug
+-rw-r--r--. 1 root root  855 Nov  2  2012 gtkbookmarks.aug
+-rw-r--r--. 1 root root 1.9K Nov  2  2012 host_conf.aug
+-rw-r--r--. 1 root root  422 Nov  2  2012 hostname.aug
+-rw-r--r--. 1 root root 4.4K Nov  2  2012 hosts_access.aug
+-rw-r--r--. 1 root root  698 Nov  2  2012 hosts.aug
+-rw-r--r--. 1 root root 1.1K Dec 18  2012 htpasswd.aug
+-rw-r--r--. 1 root root 3.5K Nov  2  2012 httpd.aug
+-rw-r--r--. 1 root root 6.2K Nov  2  2012 inetd.aug
+-rw-r--r--. 1 root root  11K Nov  2  2012 inifile.aug
+-rw-r--r--. 1 root root  780 Nov  2  2012 inittab.aug
+-rw-r--r--. 1 root root 1.5K Nov  2  2012 inputrc.aug
+-rw-r--r--. 1 root root 3.7K Nov  2  2012 interfaces.aug
+-rw-r--r--. 1 root root 2.6K Nov  2  2012 iptables.aug
+-rw-r--r--. 1 root root 2.0K Nov  2  2012 json.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 kdump.aug
+-rw-r--r--. 1 root root 8.1K Nov  2  2012 keepalived.aug
+-rw-r--r--. 1 root root 5.8K Dec 22  2012 krb5.aug
+-rw-r--r--. 1 root root 7.7K Nov  2  2012 ldif.aug
+-rw-r--r--. 1 root root  868 Nov  2  2012 ldso.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 lightdm.aug
+-rw-r--r--. 1 root root 2.0K Nov  2  2012 limits.aug
+-rw-r--r--. 1 root root  630 Nov  2  2012 login_defs.aug
+-rw-r--r--. 1 root root 4.0K Nov  2  2012 logrotate.aug
+-rw-r--r--. 1 root root 1.5K Nov 21  2012 logwatch.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 lokkit.aug
+-rw-r--r--. 1 root root  994 Nov  2  2012 mcollective.aug
+-rw-r--r--. 1 root root  11K Nov  2  2012 mdadm_conf.aug
+-rw-r--r--. 1 root root 1.3K Nov  2  2012 memcached.aug
+-rw-r--r--. 1 root root 4.7K Nov  2  2012 mke2fs.aug
+-rw-r--r--. 1 root root 3.4K Nov  2  2012 modprobe.aug
+-rw-r--r--. 1 root root  741 Nov  2  2012 modules.aug
+-rw-r--r--. 1 root root 1.1K Nov  2  2012 modules_conf.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 monit.aug
+-rw-r--r--. 1 root root 2.9K Nov  2  2012 multipath.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 mysql.aug
+-rw-r--r--. 1 root root 1.1K Nov  2  2012 nagioscfg.aug
+-rw-r--r--. 1 root root 1.4K Nov  2  2012 nagiosobjects.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 netmasks.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 networkmanager.aug
+-rw-r--r--. 1 root root 1.1K Nov  2  2012 networks.aug
+-rw-r--r--. 1 root root 1.6K Dec 22  2012 nginx.aug
+-rw-r--r--. 1 root root 2.1K Nov  2  2012 nrpe.aug
+-rw-r--r--. 1 root root 2.3K Nov  2  2012 nsswitch.aug
+-rw-r--r--. 1 root root 4.9K Nov  2  2012 ntp.aug
+-rw-r--r--. 1 root root 1.5K Nov  2  2012 odbc.aug
+-rw-r--r--. 1 root root 5.6K Nov  2  2012 openvpn.aug
+-rw-r--r--. 1 root root 2.3K Nov  2  2012 pam.aug
+-rw-r--r--. 1 root root 1.3K Nov  2  2012 pamconf.aug
+-rw-r--r--. 1 root root 2.3K Nov  2  2012 passwd.aug
+-rw-r--r--. 1 root root  638 Nov  2  2012 pbuilder.aug
+-rw-r--r--. 1 root root 3.0K Dec 18  2012 pg_hba.aug
+-rw-r--r--. 1 root root 2.1K Nov  2  2012 php.aug
+-rw-r--r--. 1 root root 3.9K Nov  2  2012 phpvars.aug
+-rw-r--r--. 1 root root  732 Nov  2  2012 postfix_access.aug
+-rw-r--r--. 1 root root 1.5K Nov  2  2012 postfix_main.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 postfix_master.aug
+-rw-r--r--. 1 root root 1.5K Dec 18  2012 postfix_transport.aug
+-rw-r--r--. 1 root root 1.3K Nov  2  2012 postfix_virtual.aug
+-rw-r--r--. 1 root root 2.0K Dec 18  2012 postgresql.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 properties.aug
+-rw-r--r--. 1 root root 1.1K Nov  2  2012 protocols.aug
+-rw-r--r--. 1 root root 1.6K Dec 21  2012 puppet.aug
+-rw-r--r--. 1 root root 2.0K Dec 21  2012 puppet_auth.aug
+-rw-r--r--. 1 root root 3.2K Dec 21  2012 puppetfileserver.aug
+-rw-r--r--. 1 root root 2.0K Nov  2  2012 pythonpaste.aug
+-rw-r--r--. 1 root root  670 Nov  2  2012 qpid.aug
+-rw-r--r--. 1 root root 5.0K Dec 18  2012 quote.aug
+-rw-r--r--. 1 root root 3.8K Dec 18  2012 rabbitmq.aug
+-rw-r--r--. 1 root root 3.3K Dec 18  2012 redis.aug
+-rw-r--r--. 1 root root 4.8K Nov  2  2012 reprepro_uploaders.aug
+-rw-r--r--. 1 root root 3.4K Nov  2  2012 resolv.aug
+-rw-r--r--. 1 root root 2.0K Nov  2  2012 rsyncd.aug
+-rw-r--r--. 1 root root  824 Dec 18  2012 rsyslog.aug
+-rw-r--r--. 1 root root 3.2K Dec 18  2012 rx.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 samba.aug
+-rw-r--r--. 1 root root 1.9K Nov  2  2012 schroot.aug
+-rw-r--r--. 1 root root  450 Nov  2  2012 securetty.aug
+-rw-r--r--. 1 root root 1.3K Nov  2  2012 sep.aug
+-rw-r--r--. 1 root root 2.7K Nov  2  2012 services.aug
+-rw-r--r--. 1 root root  764 Nov  2  2012 shells.aug
+-rw-r--r--. 1 root root 8.0K Jan 14  2014 shellvars.aug
+-rw-r--r--. 1 root root 1.6K Nov  2  2012 shellvars_list.aug
+-rw-r--r--. 1 root root 1.1K Nov  2  2012 simplelines.aug
+-rw-r--r--. 1 root root 1.2K Dec 18  2012 simplevars.aug
+-rw-r--r--. 1 root root 5.2K Nov  2  2012 slapd.aug
+-rw-r--r--. 1 root root  747 Nov  2  2012 smbusers.aug
+-rw-r--r--. 1 root root 3.2K Nov  2  2012 solaris_system.aug
+-rw-r--r--. 1 root root 1.2K Nov  2  2012 soma.aug
+-rw-r--r--. 1 root root 1.4K Nov  2  2012 spacevars.aug
+-rw-r--r--. 1 root root  16K Nov  2  2012 squid.aug
+-rw-r--r--. 1 root root 2.1K Nov  2  2012 ssh.aug
+-rw-r--r--. 1 root root 3.4K Nov  2  2012 sshd.aug
+-rw-r--r--. 1 root root  858 Nov  2  2012 sssd.aug
+-rw-r--r--. 1 root root 2.3K Nov  2  2012 stunnel.aug
+-rw-r--r--. 1 root root 2.2K Nov  2  2012 subversion.aug
+-rw-r--r--. 1 root root  20K Nov  2  2012 sudoers.aug
+-rw-r--r--. 1 root root 2.3K Nov 10  2012 sysconfig.aug
+-rw-r--r--. 1 root root  837 Nov  2  2012 sysctl.aug
+-rw-r--r--. 1 root root 6.8K Nov  2  2012 syslog.aug
+-rw-r--r--. 1 root root 5.1K Nov  2  2012 systemd.aug
+-rw-r--r--. 1 root root 1.4K Nov  2  2012 thttpd.aug
+-rw-r--r--. 1 root root 2.3K Nov  2  2012 up2date.aug
+-rw-r--r--. 1 root root 4.3K Dec 18  2012 util.aug
+-rw-r--r--. 1 root root 1.8K Nov  2  2012 vfstab.aug
+-rw-r--r--. 1 root root  702 Nov  2  2012 vmware_config.aug
+-rw-r--r--. 1 root root 2.7K Nov  2  2012 vsftpd.aug
+-rw-r--r--. 1 root root 1.3K Nov  2  2012 webmin.aug
+-rw-r--r--. 1 root root 2.0K Nov  2  2012 wine.aug
+-rw-r--r--. 1 root root 1.1K Nov  2  2012 xendconfsxp.aug
+-rw-r--r--. 1 root root 4.0K Nov  2  2012 xinetd.aug
+-rw-r--r--. 1 root root 6.1K Nov  2  2012 xml.aug
+-rw-r--r--. 1 root root 9.5K Nov  2  2012 xorg.aug
+-rw-r--r--. 1 root root 2.3K Nov  2  2012 xymon.aug
+-rw-r--r--. 1 root root 2.1K Nov  2  2012 yum.aug
+[root@puppet ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-syslog01 ~]# mkdir ~/work/20150928-1342
+[root@vm-syslog01 ~]# cd !$
+cd ~/work/20150928-1342
+[root@vm-syslog01 20150928-1342]#
+
+
+[root@vm-syslog01 20150928-1342]# puppet module generate bsv-rsyslog
+We need to create a metadata.json file for this module.  Please answer the
+following questions; if the question is not applicable to this module, feel free
+to leave it blank.
+
+Puppet uses Semantic Versioning (semver.org) to version modules.
+What version is this module?  [0.1.0]
+--> y
+Error: We're sorry, we could not parse that as a Semantic Version.
+
+Puppet uses Semantic Versioning (semver.org) to version modules.
+What version is this module?  [0.1.0]
+--> Y
+Error: We're sorry, we could not parse that as a Semantic Version.
+
+Puppet uses Semantic Versioning (semver.org) to version modules.
+What version is this module?  [0.1.0]
+-->
+
+Who wrote this module?  [bsv]
+-->
+
+What license does this module code fall under?  [Apache 2.0]
+-->
+
+How would you describe this module in a single sentence?
+--> Set rsyslog.conf parameters
+
+Where is this module's source code repository?
+-->
+
+Where can others go to learn more about this module?
+-->
+
+Where can others go to file issues about this module?
+-->
+
+----------------------------------------
+{
+  "name": "bsv-rsyslog",
+  "version": "0.1.0",
+  "author": "bsv",
+  "summary": "Set rsyslog.conf parameters",
+  "license": "Apache 2.0",
+  "source": "",
+  "issues_url": null,
+  "project_page": null,
+  "dependencies": [
+    {
+      "version_range": ">= 1.0.0",
+      "name": "puppetlabs-stdlib"
+    }
+  ]
+}
+----------------------------------------
+
+About to generate this metadata; continue? [n/Y]
+--> Y
+
+Notice: Generating module at /root/work/20150928-1342/bsv-rsyslog...
+Notice: Populating ERB templates...
+Finished; module generated in bsv-rsyslog.
+bsv-rsyslog/manifests
+bsv-rsyslog/manifests/init.pp
+bsv-rsyslog/tests
+bsv-rsyslog/tests/init.pp
+bsv-rsyslog/spec
+bsv-rsyslog/spec/spec_helper.rb
+bsv-rsyslog/spec/classes
+bsv-rsyslog/spec/classes/init_spec.rb
+bsv-rsyslog/README.md
+bsv-rsyslog/Rakefile
+bsv-rsyslog/metadata.json
+[root@vm-syslog01 20150928-1342]#
+
+[root@vm-syslog01 20150928-1342]# ls -Alh
+total 4.0K
+drwxr-xr-x 5 root root 4.0K Sep 28 13:54 bsv-rsyslog
+[root@vm-syslog01 20150928-1342]# cd bsv-rsyslog/
+[root@vm-syslog01 bsv-rsyslog]# ls -Alh
+total 24K
+drwxr-xr-x 2 root root 4.0K Sep 28 13:54 manifests
+-rw-r--r-- 1 root root  309 Sep 28 13:54 metadata.json
+-rw-r--r-- 1 root root  633 Sep 28 13:54 Rakefile
+-rw-r--r-- 1 root root 2.9K Sep 28 13:54 README.md
+drwxr-xr-x 3 root root 4.0K Sep 28 13:54 spec
+drwxr-xr-x 2 root root 4.0K Sep 28 13:54 tests
+[root@vm-syslog01 bsv-rsyslog]# ls -Alh manifests/
+total 4.0K
+-rw-r--r-- 1 root root 975 Sep 28 13:54 init.pp
+[root@vm-syslog01 bsv-rsyslog]#
+
+
+[root@vm-syslog01 bsv-rsyslog]# cd manifests/
+[root@vm-syslog01 manifests]# touch vm-syslog01.pp
+[root@vm-syslog01 manifests]# ll
+total 4
+-rw-r--r-- 1 root root 975 Sep 28 13:54 init.pp
+-rw-r--r-- 1 root root   0 Sep 28 14:10 vm-syslog01.pp
+[root@vm-syslog01 manifests]#
+
+................................................................................
+
+http://www.puppetcookbook.com/posts/restart-a-service-when-a-file-changes.html
+Restart a service when a file changes
+
+Challenge
+
+You want to restart a service when its config file changes
+
+Solution
+
+# define the service to restart
+service { "sshd":
+    ensure  => "running",
+    enable  => "true",
+    require => Package["openssh-server"],
+}
+
+# add a notify to the file resource
+file { "/etc/ssh/sshd_config":
+    notify  => Service["sshd"],  # this sets up the relationship
+    mode    => 600,
+    owner   => "root",
+    group   => "root",
+    require => Package["openssh-server"],
+    content => template("ssh/sshd_config.erb"),
+}
+Explanation
+
+It would be very annoying if puppet allowed you to deploy a new config file without providing a way to restart a service to take advantage of the change. Using the “notify” metaparameter we can tell a resource to signal another resource, often a file notifying a service, and cause it to refresh, which in the case of a service causes a restart.
+
+Puppet will accumulate multiple notifies over a single run and only refresh the service once. This is useful for services like Nagios where a large number of config files can change for one amendment and nothing would be gained from multiple restarts.
+
+It’s worth noting that you probably don’t want to use this with larger, more important, services like mysql where a small white space change in a config file could cause a restart of your mysql database and begin a domino effect.
+
+See also
+
+................................................................................
+
+
+[root@puppet ~]# augtool
+augtool> ls
+error: Failed to execute command
+Not enough arguments for ls
+augtool> set /augeas/load/
+Display all 145 possibilities? (y or n)
+Access/              Cgrules/             Exports/             Interfaces/          Modprobe/            Pam/                 PythonPaste/         SmbUsers/            VMware_Config/
+Aliases/             CobblerModules/      Fonts/               Iptables/            Modules/             PamConf/             Qpid/                Solaris_System/      Vsftpd/
+Anacron/             CobblerSettings/     Fstab/               Kdump/               Modules_conf/        Passwd/              Rabbitmq/            Soma/                Webmin/
+Approx/              Collectd/            Fuse/                Keepalived/          Monit/               Pbuilder/            Redis/               Spacevars/           Xendconfsxp/
+AptConf/             Cron/                Gdm/                 Krb5/                Multipath/           Pg_Hba/              Resolv/              Squid/               Xinetd/
+AptPreferences/      Crypttab/            Group/               Ldif/                MySQL/               PHP/                 Rsyncd/              Ssh/                 Xml/
+Aptsources/          Cups/                Grub/                LdSo/                NagiosCfg/           Phpvars/             Rsyslog/             Sshd/                Xorg/
+Apt_Update_Manager/  Cyrus_Imapd/         GtkBookmarks/        Lightdm/             NagiosObjects/       Postfix_Access/      Samba/               Sssd/                Xymon/
+Authorized_Keys/     Darkice/             Host_Conf/           Limits/              Netmasks/            Postfix_Main/        Schroot/             Stunnel/             Yum/
+Automaster/          Debctrl/             Hostname/            Login_defs/          NetworkManager/      Postfix_Master/      Securetty/           Subversion/
+Automounter/         Device_map/          Hosts/               Logrotate/           Networks/            Postfix_Transport/   Services/            Sudoers/
+Avahi/               Dhclient/            Hosts_Access/        Logwatch/            Nginx/               Postfix_Virtual/     Shells/              Sysctl/
+BackupPCHosts/       Dhcpd/               Htpasswd/            Lokkit/              Nrpe/                Postgresql/          Shellvars/           Syslog/
+BBhosts/             Dnsmasq/             Httpd/               MCollective/         Nsswitch/            Protocols/           Shellvars_list/      Systemd/
+Cachefilesd/         Dpkg/                Inetd/               Mdadm_conf/          Ntp/                 Puppet/              Simplelines/         Thttpd/
+Carbon/              Dput/                Inittab/             Memcached/           Odbc/                Puppet_Auth/         Simplevars/          Up2date/
+Cgconfig/            Ethers/              Inputrc/             Mke2fs/              OpenVPN/             PuppetFileserver/    Slapd/               Vfstab/
+augtool> set /augeas/load/Rsyslog/
+incl  lens
+augtool> set /augeas/load/Rsyslog/
+
+................................................................................
+
+[root@puppet ~]# augtool
+augtool> print /augeas/files/etc/rsyslog.conf/
+/augeas/files/etc/rsyslog.conf
+/augeas/files/etc/rsyslog.conf/path = "/files/etc/rsyslog.conf"
+/augeas/files/etc/rsyslog.conf/mtime = "1428417289"
+/augeas/files/etc/rsyslog.conf/lens = "@Rsyslog"
+/augeas/files/etc/rsyslog.conf/lens/info = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+/augeas/files/etc/rsyslog.conf/error = "parse_failed"
+/augeas/files/etc/rsyslog.conf/error/pos = "2840"
+/augeas/files/etc/rsyslog.conf/error/line = "81"
+/augeas/files/etc/rsyslog.conf/error/char = "0"
+/augeas/files/etc/rsyslog.conf/error/lens = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+/augeas/files/etc/rsyslog.conf/error/message = "Get did not match entire input"
+augtool>
+
+................................................................................
+
+[root@puppet ~]# rpm -qa | grep aug
+augeas-libs-1.0.0-5.el6_5.1.x86_64
+augeas-1.0.0-5.el6_5.1.x86_64
+ruby-augeas-0.4.1-3.el6.x86_64
+[root@puppet ~]# rpm -ql augeas
+/usr/bin/augparse
+/usr/bin/augtool
+/usr/bin/fadot
+/usr/share/man/man1/augparse.1.gz
+/usr/share/man/man1/augtool.1.gz
+/usr/share/vim/vimfiles/ftdetect/augeas.vim
+/usr/share/vim/vimfiles/syntax/augeas.vim
+[root@puppet ~]# rpm -ql augeas-libs
+/usr/lib64/libaugeas.so.0
+/usr/lib64/libaugeas.so.0.16.0
+/usr/lib64/libfa.so.1
+/usr/lib64/libfa.so.1.4.0
+/usr/share/augeas/lenses/dist
+/usr/share/augeas/lenses/dist/access.aug
+/usr/share/augeas/lenses/dist/aliases.aug
+/usr/share/augeas/lenses/dist/anacron.aug
+/usr/share/augeas/lenses/dist/approx.aug
+/usr/share/augeas/lenses/dist/apt_update_manager.aug
+/usr/share/augeas/lenses/dist/aptconf.aug
+/usr/share/augeas/lenses/dist/aptpreferences.aug
+/usr/share/augeas/lenses/dist/aptsources.aug
+/usr/share/augeas/lenses/dist/authorized_keys.aug
+/usr/share/augeas/lenses/dist/automaster.aug
+/usr/share/augeas/lenses/dist/automounter.aug
+/usr/share/augeas/lenses/dist/avahi.aug
+/usr/share/augeas/lenses/dist/backuppchosts.aug
+/usr/share/augeas/lenses/dist/bbhosts.aug
+/usr/share/augeas/lenses/dist/build.aug
+/usr/share/augeas/lenses/dist/cachefilesd.aug
+/usr/share/augeas/lenses/dist/carbon.aug
+/usr/share/augeas/lenses/dist/cgconfig.aug
+/usr/share/augeas/lenses/dist/cgrules.aug
+/usr/share/augeas/lenses/dist/channels.aug
+/usr/share/augeas/lenses/dist/cobblermodules.aug
+/usr/share/augeas/lenses/dist/cobblersettings.aug
+/usr/share/augeas/lenses/dist/collectd.aug
+/usr/share/augeas/lenses/dist/cron.aug
+/usr/share/augeas/lenses/dist/crypttab.aug
+/usr/share/augeas/lenses/dist/cups.aug
+/usr/share/augeas/lenses/dist/cyrus_imapd.aug
+/usr/share/augeas/lenses/dist/darkice.aug
+/usr/share/augeas/lenses/dist/debctrl.aug
+/usr/share/augeas/lenses/dist/desktop.aug
+/usr/share/augeas/lenses/dist/device_map.aug
+/usr/share/augeas/lenses/dist/dhclient.aug
+/usr/share/augeas/lenses/dist/dhcpd.aug
+/usr/share/augeas/lenses/dist/dnsmasq.aug
+/usr/share/augeas/lenses/dist/dpkg.aug
+/usr/share/augeas/lenses/dist/dput.aug
+/usr/share/augeas/lenses/dist/erlang.aug
+/usr/share/augeas/lenses/dist/ethers.aug
+/usr/share/augeas/lenses/dist/exports.aug
+/usr/share/augeas/lenses/dist/fai_diskconfig.aug
+/usr/share/augeas/lenses/dist/fonts.aug
+/usr/share/augeas/lenses/dist/fstab.aug
+/usr/share/augeas/lenses/dist/fuse.aug
+/usr/share/augeas/lenses/dist/gdm.aug
+/usr/share/augeas/lenses/dist/group.aug
+/usr/share/augeas/lenses/dist/grub.aug
+/usr/share/augeas/lenses/dist/gtkbookmarks.aug
+/usr/share/augeas/lenses/dist/host_conf.aug
+/usr/share/augeas/lenses/dist/hostname.aug
+/usr/share/augeas/lenses/dist/hosts.aug
+/usr/share/augeas/lenses/dist/hosts_access.aug
+/usr/share/augeas/lenses/dist/htpasswd.aug
+/usr/share/augeas/lenses/dist/httpd.aug
+/usr/share/augeas/lenses/dist/inetd.aug
+/usr/share/augeas/lenses/dist/inifile.aug
+/usr/share/augeas/lenses/dist/inittab.aug
+/usr/share/augeas/lenses/dist/inputrc.aug
+/usr/share/augeas/lenses/dist/interfaces.aug
+/usr/share/augeas/lenses/dist/iptables.aug
+/usr/share/augeas/lenses/dist/json.aug
+/usr/share/augeas/lenses/dist/kdump.aug
+/usr/share/augeas/lenses/dist/keepalived.aug
+/usr/share/augeas/lenses/dist/krb5.aug
+/usr/share/augeas/lenses/dist/ldif.aug
+/usr/share/augeas/lenses/dist/ldso.aug
+/usr/share/augeas/lenses/dist/lightdm.aug
+/usr/share/augeas/lenses/dist/limits.aug
+/usr/share/augeas/lenses/dist/login_defs.aug
+/usr/share/augeas/lenses/dist/logrotate.aug
+/usr/share/augeas/lenses/dist/logwatch.aug
+/usr/share/augeas/lenses/dist/lokkit.aug
+/usr/share/augeas/lenses/dist/mcollective.aug
+/usr/share/augeas/lenses/dist/mdadm_conf.aug
+/usr/share/augeas/lenses/dist/memcached.aug
+/usr/share/augeas/lenses/dist/mke2fs.aug
+/usr/share/augeas/lenses/dist/modprobe.aug
+/usr/share/augeas/lenses/dist/modules.aug
+/usr/share/augeas/lenses/dist/modules_conf.aug
+/usr/share/augeas/lenses/dist/monit.aug
+/usr/share/augeas/lenses/dist/multipath.aug
+/usr/share/augeas/lenses/dist/mysql.aug
+/usr/share/augeas/lenses/dist/nagioscfg.aug
+/usr/share/augeas/lenses/dist/nagiosobjects.aug
+/usr/share/augeas/lenses/dist/netmasks.aug
+/usr/share/augeas/lenses/dist/networkmanager.aug
+/usr/share/augeas/lenses/dist/networks.aug
+/usr/share/augeas/lenses/dist/nginx.aug
+/usr/share/augeas/lenses/dist/nrpe.aug
+/usr/share/augeas/lenses/dist/nsswitch.aug
+/usr/share/augeas/lenses/dist/ntp.aug
+/usr/share/augeas/lenses/dist/odbc.aug
+/usr/share/augeas/lenses/dist/openvpn.aug
+/usr/share/augeas/lenses/dist/pam.aug
+/usr/share/augeas/lenses/dist/pamconf.aug
+/usr/share/augeas/lenses/dist/passwd.aug
+/usr/share/augeas/lenses/dist/pbuilder.aug
+/usr/share/augeas/lenses/dist/pg_hba.aug
+/usr/share/augeas/lenses/dist/php.aug
+/usr/share/augeas/lenses/dist/phpvars.aug
+/usr/share/augeas/lenses/dist/postfix_access.aug
+/usr/share/augeas/lenses/dist/postfix_main.aug
+/usr/share/augeas/lenses/dist/postfix_master.aug
+/usr/share/augeas/lenses/dist/postfix_transport.aug
+/usr/share/augeas/lenses/dist/postfix_virtual.aug
+/usr/share/augeas/lenses/dist/postgresql.aug
+/usr/share/augeas/lenses/dist/properties.aug
+/usr/share/augeas/lenses/dist/protocols.aug
+/usr/share/augeas/lenses/dist/puppet.aug
+/usr/share/augeas/lenses/dist/puppet_auth.aug
+/usr/share/augeas/lenses/dist/puppetfileserver.aug
+/usr/share/augeas/lenses/dist/pythonpaste.aug
+/usr/share/augeas/lenses/dist/qpid.aug
+/usr/share/augeas/lenses/dist/quote.aug
+/usr/share/augeas/lenses/dist/rabbitmq.aug
+/usr/share/augeas/lenses/dist/redis.aug
+/usr/share/augeas/lenses/dist/reprepro_uploaders.aug
+/usr/share/augeas/lenses/dist/resolv.aug
+/usr/share/augeas/lenses/dist/rsyncd.aug
+/usr/share/augeas/lenses/dist/rsyslog.aug
+/usr/share/augeas/lenses/dist/rx.aug
+/usr/share/augeas/lenses/dist/samba.aug
+/usr/share/augeas/lenses/dist/schroot.aug
+/usr/share/augeas/lenses/dist/securetty.aug
+/usr/share/augeas/lenses/dist/sep.aug
+/usr/share/augeas/lenses/dist/services.aug
+/usr/share/augeas/lenses/dist/shells.aug
+/usr/share/augeas/lenses/dist/shellvars.aug
+/usr/share/augeas/lenses/dist/shellvars_list.aug
+/usr/share/augeas/lenses/dist/simplelines.aug
+/usr/share/augeas/lenses/dist/simplevars.aug
+/usr/share/augeas/lenses/dist/slapd.aug
+/usr/share/augeas/lenses/dist/smbusers.aug
+/usr/share/augeas/lenses/dist/solaris_system.aug
+/usr/share/augeas/lenses/dist/soma.aug
+/usr/share/augeas/lenses/dist/spacevars.aug
+/usr/share/augeas/lenses/dist/squid.aug
+/usr/share/augeas/lenses/dist/ssh.aug
+/usr/share/augeas/lenses/dist/sshd.aug
+/usr/share/augeas/lenses/dist/sssd.aug
+/usr/share/augeas/lenses/dist/stunnel.aug
+/usr/share/augeas/lenses/dist/subversion.aug
+/usr/share/augeas/lenses/dist/sudoers.aug
+/usr/share/augeas/lenses/dist/sysconfig.aug
+/usr/share/augeas/lenses/dist/sysctl.aug
+/usr/share/augeas/lenses/dist/syslog.aug
+/usr/share/augeas/lenses/dist/systemd.aug
+/usr/share/augeas/lenses/dist/thttpd.aug
+/usr/share/augeas/lenses/dist/up2date.aug
+/usr/share/augeas/lenses/dist/util.aug
+/usr/share/augeas/lenses/dist/vfstab.aug
+/usr/share/augeas/lenses/dist/vmware_config.aug
+/usr/share/augeas/lenses/dist/vsftpd.aug
+/usr/share/augeas/lenses/dist/webmin.aug
+/usr/share/augeas/lenses/dist/wine.aug
+/usr/share/augeas/lenses/dist/xendconfsxp.aug
+/usr/share/augeas/lenses/dist/xinetd.aug
+/usr/share/augeas/lenses/dist/xml.aug
+/usr/share/augeas/lenses/dist/xorg.aug
+/usr/share/augeas/lenses/dist/xymon.aug
+/usr/share/augeas/lenses/dist/yum.aug
+/usr/share/doc/augeas-libs-1.0.0
+/usr/share/doc/augeas-libs-1.0.0/AUTHORS
+/usr/share/doc/augeas-libs-1.0.0/COPYING
+/usr/share/doc/augeas-libs-1.0.0/NEWS
+[root@puppet ~]#
+
+
+[root@puppet ~]# cat /usr/share/augeas/lenses/dist/rsyslog.aug
+(*
+Module: Rsyslog
+  Parses /etc/rsyslog.conf
+
+Author: Raphael Pinson <raphael.pinsons@camptocamp.com>
+
+About: Reference
+  This lens tries to keep as close as possible to `man 5 rsyslog.conf` where possible.
+
+About: License
+   This file is licenced under the LGPL v2+, like the rest of Augeas.
+
+About: Lens Usage
+   To be documented
+
+About: Configuration files
+   This lens applies to /etc/rsyslog.conf. See <filter>.
+
+About: Examples
+   The <Test_Rsyslog> file contains various examples and tests.
+*)
+module Rsyslog =
+
+autoload xfm
+
+let macro = [ key /$[A-Za-z0-9]+/ . Sep.space . store Rx.neg1 . Util.comment_or_eol ]
+
+let entries = ( Syslog.empty | Syslog.comment | Syslog.entry | macro )*
+
+let lns = entries . ( Syslog.program | Syslog.hostname )*
+
+let filter = incl "/etc/rsyslog.conf"
+
+let xfm = transform lns filter
+
+[root@puppet ~]#
+
+
+................................................................................
+
+[root@puppet 20150828-1915]# augtool
+augtool> print /augeas//error
+/augeas/files/etc/sysconfig/iptables.save/error = "parse_failed"
+/augeas/files/etc/sysconfig/iptables.save/error/pos = "64"
+/augeas/files/etc/sysconfig/iptables.save/error/line = "2"
+/augeas/files/etc/sysconfig/iptables.save/error/char = "0"
+/augeas/files/etc/sysconfig/iptables.save/error/lens = "/usr/share/augeas/lenses/dist/shellvars.aug:163.12-.99:"
+/augeas/files/etc/sysconfig/iptables.save/error/message = "Syntax error"
+/augeas/files/etc/xinetd.d/observium_agent_xinetd/error = "parse_failed"
+/augeas/files/etc/xinetd.d/observium_agent_xinetd/error/pos = "0"
+/augeas/files/etc/xinetd.d/observium_agent_xinetd/error/line = "1"
+/augeas/files/etc/xinetd.d/observium_agent_xinetd/error/char = "0"
+/augeas/files/etc/xinetd.d/observium_agent_xinetd/error/lens = "/usr/share/augeas/lenses/dist/xinetd.aug:94.12-.74:"
+/augeas/files/etc/xinetd.d/observium_agent_xinetd/error/message = "Iterated lens matched less than it should"
+/augeas/files/etc/rsyslog.conf/error = "parse_failed"
+/augeas/files/etc/rsyslog.conf/error/pos = "2840"
+/augeas/files/etc/rsyslog.conf/error/line = "81"
+/augeas/files/etc/rsyslog.conf/error/char = "0"
+/augeas/files/etc/rsyslog.conf/error/lens = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+/augeas/files/etc/rsyslog.conf/error/message = "Get did not match entire input"
+/augeas/files/etc/yum.repos.d/passenger.repo/error = "parse_failed"
+/augeas/files/etc/yum.repos.d/passenger.repo/error/pos = "185"
+/augeas/files/etc/yum.repos.d/passenger.repo/error/line = "5"
+/augeas/files/etc/yum.repos.d/passenger.repo/error/char = "0"
+/augeas/files/etc/yum.repos.d/passenger.repo/error/lens = "/usr/share/augeas/lenses/dist/yum.aug:49.13-.41:"
+/augeas/files/etc/yum.repos.d/passenger.repo/error/message = "Get did not match entire input"
+/augeas/files/etc/sudoers/error = "parse_failed"
+/augeas/files/etc/sudoers/error/pos = "3733"
+/augeas/files/etc/sudoers/error/line = "111"
+/augeas/files/etc/sudoers/error/char = "0"
+/augeas/files/etc/sudoers/error/lens = "/usr/share/augeas/lenses/dist/sudoers.aug:530.10-.70:"
+/augeas/files/etc/sudoers/error/message = "Iterated lens matched less than it should"
+/augeas/files/etc/nagios/nrpe.cfg/error = "parse_failed"
+/augeas/files/etc/nagios/nrpe.cfg/error/pos = "3565"
+/augeas/files/etc/nagios/nrpe.cfg/error/line = "115"
+/augeas/files/etc/nagios/nrpe.cfg/error/char = "0"
+/augeas/files/etc/nagios/nrpe.cfg/error/lens = "/usr/share/augeas/lenses/dist/nrpe.aug:87.10-.72:"
+/augeas/files/etc/nagios/nrpe.cfg/error/message = "Iterated lens matched less than it should"
+/augeas/files/etc/ld.so.conf.d/kernel-2.6.32-358.el6.x86_64.conf/error = "parse_failed"
+/augeas/files/etc/ld.so.conf.d/kernel-2.6.32-358.el6.x86_64.conf/error/pos = "307"
+/augeas/files/etc/ld.so.conf.d/kernel-2.6.32-358.el6.x86_64.conf/error/line = "6"
+/augeas/files/etc/ld.so.conf.d/kernel-2.6.32-358.el6.x86_64.conf/error/char = "0"
+/augeas/files/etc/ld.so.conf.d/kernel-2.6.32-358.el6.x86_64.conf/error/lens = "/usr/share/augeas/lenses/dist/ldso.aug:31.10-.55:"
+/augeas/files/etc/ld.so.conf.d/kernel-2.6.32-358.el6.x86_64.conf/error/message = "Iterated lens matched less than it should"
+augtool>
+
+................................................................................
+
+augtool> match /augeas/files/etc/rsyslog.conf/*
+/augeas/files/etc/rsyslog.conf/path = /files/etc/rsyslog.conf
+/augeas/files/etc/rsyslog.conf/mtime = 1428417289
+/augeas/files/etc/rsyslog.conf/lens = @Rsyslog
+/augeas/files/etc/rsyslog.conf/error = parse_failed
+augtool>
+
+augtool> get /augeas/files/etc/rsyslog.conf/path
+/augeas/files/etc/rsyslog.conf/path = /files/etc/rsyslog.conf
+augtool>
+
+augtool> help
+
+Admin commands:
+  help       - print help
+  load       - (re)load files under /files
+  quit       - exit the program
+  retrieve   - transform tree into text
+  save       - save all pending changes
+  store      - parse text into tree
+  transform  - add a file transform
+
+Read commands:
+  dump-xml   - print a subtree as XML
+  get        - get the value of a node
+  label      - get the label of a node
+  ls         - list children of a node
+  match      - print matches for a path expression
+  print      - print a subtree
+  span       - print position in input file corresponding to tree
+
+Write commands:
+  clear      - clear the value of a node
+  clearm     - clear the value of multiple nodes
+  ins        - insert new node
+  insert     - insert new node (alias of 'ins')
+  mv         - move a subtree
+  move       - move a subtree (alias of 'mv')
+  rename     - rename a subtree label
+  rm         - delete nodes and subtrees
+  set        - set the value of a node
+  setm       - set the value of multiple nodes
+  touch      - create a new node
+
+Path expression commands:
+  defnode    - set a variable, possibly creating a new node
+  defvar     - set a variable
+
+Type 'help <command>' for more information on a command
+
+augtool>
+
+
+augtool> dump-xml /augeas/files/etc/rsyslog.conf/
+<augeas match="/augeas/files/etc/rsyslog.conf">
+  <node label="rsyslog.conf" path="/augeas/files/etc/rsyslog.conf">
+    <node label="path">
+      <value>/files/etc/rsyslog.conf</value>
+    </node>
+    <node label="mtime">
+      <value>1428417289</value>
+    </node>
+    <node label="lens">
+      <value>@Rsyslog</value>
+      <node label="info">
+        <value>/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:</value>
+      </node>
+    </node>
+    <node label="error">
+      <value>parse_failed</value>
+      <node label="pos">
+        <value>2840</value>
+      </node>
+      <node label="line">
+        <value>81</value>
+      </node>
+      <node label="char">
+        <value>0</value>
+      </node>
+      <node label="lens">
+        <value>/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:</value>
+      </node>
+      <node label="message">
+        <value>Get did not match entire input</value>
+      </node>
+    </node>
+  </node>
+</augeas>
+augtool>
+
+................................................................................
+
+#   Beneath is how to make for augeas his own sandbox to prevent damage one of
+#   important system files.
+
+[root@puppet 20151002-1454]# ls /root/work/20151002-1454/etc/
+rsyslog.conf
+[root@puppet 20151002-1454]#
+
+[root@puppet 20151002-1454]# augtool -r /root/work/20151002-1454/
+augtool> print /augeas/error
+augtool> print /augeas/files/etc/rsyslog.conf/
+/augeas/files/etc/rsyslog.conf
+/augeas/files/etc/rsyslog.conf/path = "/files/etc/rsyslog.conf"
+/augeas/files/etc/rsyslog.conf/mtime = "1428417289"
+/augeas/files/etc/rsyslog.conf/lens = "@Rsyslog"
+/augeas/files/etc/rsyslog.conf/lens/info = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+/augeas/files/etc/rsyslog.conf/error = "parse_failed"
+/augeas/files/etc/rsyslog.conf/error/pos = "2840"
+/augeas/files/etc/rsyslog.conf/error/line = "81"
+/augeas/files/etc/rsyslog.conf/error/char = "0"
+/augeas/files/etc/rsyslog.conf/error/lens = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+/augeas/files/etc/rsyslog.conf/error/message = "Get did not match entire input"
+augtool>
+
+augtool> ls /augeas/files/etc/
+rsyslog.conf/ = (none)
+fstab/ = (none)
+augtool>
+
+augtool> get /augeas/span
+/augeas/span = disable
+augtool>
+
+[root@puppet 20151002-1454]# augtool --backup -r /root/work/20151002-1454/ --span
+augtool> get /augeas/span
+/augeas/span = enable
+augtool> print /augeas/files/etc/hosts/
+/augeas/files/etc/hosts
+/augeas/files/etc/hosts/path = "/files/etc/hosts"
+/augeas/files/etc/hosts/mtime = "1443788346"
+/augeas/files/etc/hosts/lens = "@Hosts"
+/augeas/files/etc/hosts/lens/info = "/usr/share/augeas/lenses/dist/hosts.aug:23.12-.42:"
+augtool> print /files/etc/hosts/
+/files/etc/hosts
+/files/etc/hosts/1
+/files/etc/hosts/1/ipaddr = "127.0.0.1"
+/files/etc/hosts/1/canonical = "localhost"
+/files/etc/hosts/1/alias[1] = "localhost.localdomain"
+/files/etc/hosts/1/alias[2] = "localhost4"
+/files/etc/hosts/1/alias[3] = "localhost4.localdomain4"
+/files/etc/hosts/2
+/files/etc/hosts/2/ipaddr = "::1"
+/files/etc/hosts/2/canonical = "localhost"
+/files/etc/hosts/2/alias[1] = "localhost.localdomain"
+/files/etc/hosts/2/alias[2] = "localhost6"
+/files/etc/hosts/2/alias[3] = "localhost6.localdomain6"
+augtool>
+
+
+augtool> print /files/etc/fstab/
+/files/etc/fstab
+/files/etc/fstab/#comment[1] = "/etc/fstab"
+/files/etc/fstab/#comment[2] = "Created by anaconda on Wed Jun  4 16:35:00 2014"
+/files/etc/fstab/#comment[3] = "Accessible filesystems, by reference, are maintained under '/dev/disk'"
+/files/etc/fstab/#comment[4] = "See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info"
+/files/etc/fstab/1
+/files/etc/fstab/1/spec = "/dev/mapper/vg_puppet-root_fs"
+/files/etc/fstab/1/file = "/"
+/files/etc/fstab/1/vfstype = "ext4"
+/files/etc/fstab/1/opt = "defaults"
+/files/etc/fstab/1/dump = "1"
+/files/etc/fstab/1/passno = "1"
+/files/etc/fstab/2
+/files/etc/fstab/2/spec = "UUID=39b45840-1700-4931-a607-ebac5a55a935"
+/files/etc/fstab/2/file = "/boot"
+/files/etc/fstab/2/vfstype = "ext2"
+/files/etc/fstab/2/opt = "defaults"
+/files/etc/fstab/2/dump = "1"
+/files/etc/fstab/2/passno = "2"
+/files/etc/fstab/3
+/files/etc/fstab/3/spec = "/dev/mapper/vg_puppet-var_fs"
+/files/etc/fstab/3/file = "/var"
+/files/etc/fstab/3/vfstype = "ext4"
+/files/etc/fstab/3/opt = "defaults"
+/files/etc/fstab/3/dump = "1"
+/files/etc/fstab/3/passno = "2"
+/files/etc/fstab/4
+/files/etc/fstab/4/spec = "/dev/mapper/vg_puppet-swap_fs"
+/files/etc/fstab/4/file = "swap"
+/files/etc/fstab/4/vfstype = "swap"
+/files/etc/fstab/4/opt = "defaults"
+/files/etc/fstab/4/dump = "0"
+/files/etc/fstab/4/passno = "0"
+/files/etc/fstab/5
+/files/etc/fstab/5/spec = "tmpfs"
+/files/etc/fstab/5/file = "/dev/shm"
+/files/etc/fstab/5/vfstype = "tmpfs"
+/files/etc/fstab/5/opt = "defaults"
+/files/etc/fstab/5/dump = "0"
+/files/etc/fstab/5/passno = "0"
+/files/etc/fstab/6
+/files/etc/fstab/6/spec = "devpts"
+/files/etc/fstab/6/file = "/dev/pts"
+/files/etc/fstab/6/vfstype = "devpts"
+/files/etc/fstab/6/opt[1] = "gid"
+/files/etc/fstab/6/opt[1]/value = "5"
+/files/etc/fstab/6/opt[2] = "mode"
+/files/etc/fstab/6/opt[2]/value = "620"
+/files/etc/fstab/6/dump = "0"
+/files/etc/fstab/6/passno = "0"
+/files/etc/fstab/7
+/files/etc/fstab/7/spec = "sysfs"
+/files/etc/fstab/7/file = "/sys"
+/files/etc/fstab/7/vfstype = "sysfs"
+/files/etc/fstab/7/opt = "defaults"
+/files/etc/fstab/7/dump = "0"
+/files/etc/fstab/7/passno = "0"
+/files/etc/fstab/8
+/files/etc/fstab/8/spec = "proc"
+/files/etc/fstab/8/file = "/proc"
+/files/etc/fstab/8/vfstype = "proc"
+/files/etc/fstab/8/opt = "defaults"
+/files/etc/fstab/8/dump = "0"
+/files/etc/fstab/8/passno = "0"
+augtool>
+
+augtool> ls /files/etc/
+hosts/ = (none)
+fstab/ = (none)
+augtool> ls /augeas/files/etc/
+hosts/ = (none)
+rsyslog.conf/ = (none)
+fstab/ = (none)
+augtool>
+
+................................................................................
+augtool> print /augeas/root
+/augeas/root = "/root/work/20151002-1454/"
+augtool>
+................................................................................
+augtool> print /augeas/version/
+/augeas/version = "1.0.0"
+/augeas/version/save
+/augeas/version/save/mode[1] = "backup"
+/augeas/version/save/mode[2] = "newfile"
+/augeas/version/save/mode[3] = "noop"
+/augeas/version/save/mode[4] = "overwrite"
+/augeas/version/defvar
+/augeas/version/defvar/expr
+/augeas/version/pathx
+/augeas/version/pathx/functions
+/augeas/version/pathx/functions/count
+/augeas/version/pathx/functions/glob
+/augeas/version/pathx/functions/label
+/augeas/version/pathx/functions/last
+/augeas/version/pathx/functions/position
+/augeas/version/pathx/functions/regexp
+augtool>
+................................................................................
+augtool> print /augeas/load/Rsyslog/
+/augeas/load/Rsyslog
+/augeas/load/Rsyslog/lens = "@Rsyslog"
+/augeas/load/Rsyslog/incl = "/etc/rsyslog.conf"
+augtool>
+................................................................................
+augtool> print /augeas/load/Hosts
+/augeas/load/Hosts
+/augeas/load/Hosts/lens = "@Hosts"
+/augeas/load/Hosts/incl = "/etc/hosts"
+augtool> print /augeas/load/Fstab/
+/augeas/load/Fstab
+/augeas/load/Fstab/lens = "@Fstab"
+/augeas/load/Fstab/incl[1] = "/etc/mtab"
+/augeas/load/Fstab/incl[2] = "/etc/fstab"
+augtool>
+augtool> set /augeas/load/Rsyslog/lens "@Rsyslog"
+augtool> set /augeas/load/Rsyslog/incl "/etc/rsyslog.conf"
+augtool> print /augeas/load/Rsyslog
+/augeas/load/Rsyslog
+/augeas/load/Rsyslog/lens = "@Rsyslog"
+/augeas/load/Rsyslog/incl = "/etc/rsyslog.conf"
+augtool> ls /files/etc/
+hosts/ = (none)
+fstab/ = (none)
+augtool>
+................................................................................
+augtool> print /augeas/files/etc/rsyslog.conf/lens/info
+/augeas/files/etc/rsyslog.conf/lens/info = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+augtool>
+................................................................................
+augtool> print /augeas/files/etc/rsyslog.conf/error/pos
+/augeas/files/etc/rsyslog.conf/error/pos = "2840"
+augtool> print /augeas/files/etc/rsyslog.conf/error/line
+/augeas/files/etc/rsyslog.conf/error/line = "81"
+augtool> print /augeas/files/etc/rsyslog.conf/error/char
+/augeas/files/etc/rsyslog.conf/error/char = "0"
+augtool> print /augeas/files/etc/rsyslog.conf/error/lens
+/augeas/files/etc/rsyslog.conf/error/lens = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+augtool> print /augeas/files/etc/rsyslog.conf/error/message
+/augeas/files/etc/rsyslog.conf/error/message = "Get did not match entire input"
+augtool>
+................................................................................
+#   I have commented out this lines.
+ 78 #$ActionResumeRetryCount -1    # infinite retries if host is down
+ 79 # remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional
+ 80 #*.* @@remote-host:514
+> 81 #*.* @@vm-syslog01.tcsbank.ru:514
+> 82 #*.* @@vm-dbamon02.tcsbank.ru:514
+ 83 # ### end of the forwarding rule ###
+"etc/rsyslog.conf" 83L, 2945C written
+................................................................................
+#   After my correction all three files become available to parse via augeas!
+#   Hoorah!
+[root@puppet 20151002-1454]# augtool --backup -r /root/work/20151002-1454/ --span
+augtool> print /augeas/files/etc/rsyslog.conf/error/line
+augtool> print /augeas/files/etc/rsyslog.conf/error/pos
+augtool> print /augeas/files/etc/rsyslog.conf/error/line
+augtool> print /augeas/files/etc/rsyslog.conf/error/char
+augtool> print /augeas/files/etc/rsyslog.conf/error/lens
+augtool> print /augeas/files/etc/rsyslog.conf/lens/info
+/augeas/files/etc/rsyslog.conf/lens/info = "/usr/share/augeas/lenses/dist/rsyslog.aug:30.10-.57:"
+augtool>
+augtool> ls /files/etc/
+hosts/ = (none)
+rsyslog.conf/ = (none)
+fstab/ = (none)
+augtool>
+
+augtool> print /files/etc/rsyslog.conf/
+/files/etc/rsyslog.conf
+/files/etc/rsyslog.conf/#comment[1] = "rsyslog v5 configuration file"
+/files/etc/rsyslog.conf/#comment[2] = "For more information see /usr/share/doc/rsyslog-*/rsyslog_conf.html"
+/files/etc/rsyslog.conf/#comment[3] = "If you experience problems, see http://www.rsyslog.com/doc/troubleshoot.html"
+/files/etc/rsyslog.conf/#comment[4] = "### MODULES ####"
+/files/etc/rsyslog.conf/$ModLoad[1] = "imuxsock"
+/files/etc/rsyslog.conf/$ModLoad[1]/#comment = "provides support for local system logging (e.g. via logger command)"
+/files/etc/rsyslog.conf/$ModLoad[2] = "imklog"
+/files/etc/rsyslog.conf/$ModLoad[2]/#comment = "provides kernel logging support (previously done by rklogd)"
+/files/etc/rsyslog.conf/#comment[5] = "$ModLoad immark  # provides --MARK-- message capability"
+/files/etc/rsyslog.conf/#comment[6] = "Provides UDP syslog reception"
+/files/etc/rsyslog.conf/#comment[7] = "$ModLoad imudp"
+/files/etc/rsyslog.conf/#comment[8] = "$UDPServerRun 514"
+/files/etc/rsyslog.conf/#comment[9] = "Provides TCP syslog reception"
+/files/etc/rsyslog.conf/#comment[10] = "$ModLoad imtcp"
+/files/etc/rsyslog.conf/#comment[11] = "$InputTCPServerRun 514"
+/files/etc/rsyslog.conf/#comment[12] = "### GLOBAL DIRECTIVES ####"
+/files/etc/rsyslog.conf/#comment[13] = "Use default timestamp format"
+/files/etc/rsyslog.conf/$ActionFileDefaultTemplate = "RSYSLOG_TraditionalFileFormat"
+/files/etc/rsyslog.conf/#comment[14] = "File syncing capability is disabled by default. This feature is usually not required,"
+/files/etc/rsyslog.conf/#comment[15] = "not useful and an extreme performance hit"
+/files/etc/rsyslog.conf/#comment[16] = "$ActionFileEnableSync on"
+/files/etc/rsyslog.conf/#comment[17] = "Include all config files in /etc/rsyslog.d/"
+/files/etc/rsyslog.conf/$IncludeConfig = "/etc/rsyslog.d/*.conf"
+/files/etc/rsyslog.conf/#comment[18] = "### RULES ####"
+/files/etc/rsyslog.conf/#comment[19] = "Log all kernel messages to the console."
+/files/etc/rsyslog.conf/#comment[20] = "Logging much else clutters up the screen."
+/files/etc/rsyslog.conf/#comment[21] = "kern.*                                                 /dev/console"
+/files/etc/rsyslog.conf/#comment[22] = "Log anything (except mail) of level info or higher."
+/files/etc/rsyslog.conf/#comment[23] = "Don't log private authentication messages!"
+/files/etc/rsyslog.conf/entry[1]
+/files/etc/rsyslog.conf/entry[1]/selector[1]
+/files/etc/rsyslog.conf/entry[1]/selector[1]/facility = "*"
+/files/etc/rsyslog.conf/entry[1]/selector[1]/level = "info"
+/files/etc/rsyslog.conf/entry[1]/selector[2]
+/files/etc/rsyslog.conf/entry[1]/selector[2]/facility = "mail"
+/files/etc/rsyslog.conf/entry[1]/selector[2]/level = "none"
+/files/etc/rsyslog.conf/entry[1]/selector[3]
+/files/etc/rsyslog.conf/entry[1]/selector[3]/facility = "authpriv"
+/files/etc/rsyslog.conf/entry[1]/selector[3]/level = "none"
+/files/etc/rsyslog.conf/entry[1]/selector[4]
+/files/etc/rsyslog.conf/entry[1]/selector[4]/facility = "cron"
+/files/etc/rsyslog.conf/entry[1]/selector[4]/level = "none"
+/files/etc/rsyslog.conf/entry[1]/action
+/files/etc/rsyslog.conf/entry[1]/action/file = "/var/log/messages"
+/files/etc/rsyslog.conf/#comment[24] = "The authpriv file has restricted access."
+/files/etc/rsyslog.conf/entry[2]
+/files/etc/rsyslog.conf/entry[2]/selector
+/files/etc/rsyslog.conf/entry[2]/selector/facility = "authpriv"
+/files/etc/rsyslog.conf/entry[2]/selector/level = "*"
+/files/etc/rsyslog.conf/entry[2]/action
+/files/etc/rsyslog.conf/entry[2]/action/file = "/var/log/secure"
+/files/etc/rsyslog.conf/#comment[25] = "Log all the mail messages in one place."
+/files/etc/rsyslog.conf/entry[3]
+/files/etc/rsyslog.conf/entry[3]/selector
+/files/etc/rsyslog.conf/entry[3]/selector/facility = "mail"
+/files/etc/rsyslog.conf/entry[3]/selector/level = "*"
+/files/etc/rsyslog.conf/entry[3]/action
+/files/etc/rsyslog.conf/entry[3]/action/no_sync
+/files/etc/rsyslog.conf/entry[3]/action/file = "/var/log/maillog"
+/files/etc/rsyslog.conf/#comment[26] = "Log cron stuff"
+/files/etc/rsyslog.conf/entry[4]
+/files/etc/rsyslog.conf/entry[4]/selector
+/files/etc/rsyslog.conf/entry[4]/selector/facility = "cron"
+/files/etc/rsyslog.conf/entry[4]/selector/level = "*"
+/files/etc/rsyslog.conf/entry[4]/action
+/files/etc/rsyslog.conf/entry[4]/action/file = "/var/log/cron"
+/files/etc/rsyslog.conf/#comment[27] = "Everybody gets emergency messages"
+/files/etc/rsyslog.conf/entry[5]
+/files/etc/rsyslog.conf/entry[5]/selector
+/files/etc/rsyslog.conf/entry[5]/selector/facility = "*"
+/files/etc/rsyslog.conf/entry[5]/selector/level = "emerg"
+/files/etc/rsyslog.conf/entry[5]/action
+/files/etc/rsyslog.conf/entry[5]/action/user = "*"
+/files/etc/rsyslog.conf/#comment[28] = "Save news errors of level crit and higher in a special file."
+/files/etc/rsyslog.conf/entry[6]
+/files/etc/rsyslog.conf/entry[6]/selector
+/files/etc/rsyslog.conf/entry[6]/selector/facility[1] = "uucp"
+/files/etc/rsyslog.conf/entry[6]/selector/facility[2] = "news"
+/files/etc/rsyslog.conf/entry[6]/selector/level = "crit"
+/files/etc/rsyslog.conf/entry[6]/action
+/files/etc/rsyslog.conf/entry[6]/action/file = "/var/log/spooler"
+/files/etc/rsyslog.conf/#comment[29] = "Save boot messages also to boot.log"
+/files/etc/rsyslog.conf/entry[7]
+/files/etc/rsyslog.conf/entry[7]/selector
+/files/etc/rsyslog.conf/entry[7]/selector/facility = "local7"
+/files/etc/rsyslog.conf/entry[7]/selector/level = "*"
+/files/etc/rsyslog.conf/entry[7]/action
+/files/etc/rsyslog.conf/entry[7]/action/file = "/var/log/boot.log"
+/files/etc/rsyslog.conf/#comment[30] = "### begin forwarding rule ###"
+/files/etc/rsyslog.conf/#comment[31] = "The statement between the begin ... end define a SINGLE forwarding"
+/files/etc/rsyslog.conf/#comment[32] = "rule. They belong together, do NOT split them. If you create multiple"
+/files/etc/rsyslog.conf/#comment[33] = "forwarding rules, duplicate the whole block!"
+/files/etc/rsyslog.conf/#comment[34] = "Remote Logging (we use TCP for reliable delivery)"
+/files/etc/rsyslog.conf/#comment[35] = "An on-disk queue is created for this action. If the remote host is"
+/files/etc/rsyslog.conf/#comment[36] = "down, messages are spooled to disk and sent when it is up again."
+/files/etc/rsyslog.conf/#comment[37] = "$WorkDirectory /var/lib/rsyslog # where to place spool files"
+/files/etc/rsyslog.conf/#comment[38] = "$ActionQueueFileName fwdRule1 # unique name prefix for spool files"
+/files/etc/rsyslog.conf/#comment[39] = "$ActionQueueMaxDiskSpace 1g   # 1gb space limit (use as much as possible)"
+/files/etc/rsyslog.conf/#comment[40] = "$ActionQueueSaveOnShutdown on # save messages to disk on shutdown"
+/files/etc/rsyslog.conf/#comment[41] = "$ActionQueueType LinkedList   # run asynchronously"
+/files/etc/rsyslog.conf/#comment[42] = "$ActionResumeRetryCount -1    # infinite retries if host is down"
+/files/etc/rsyslog.conf/#comment[43] = "remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional"
+/files/etc/rsyslog.conf/#comment[44] = "*.* @@remote-host:514"
+/files/etc/rsyslog.conf/#comment[45] = "*.* @@vm-syslog01.tcsbank.ru:514"
+/files/etc/rsyslog.conf/#comment[46] = "*.* @@vm-dbamon02.tcsbank.ru:514"
+/files/etc/rsyslog.conf/#comment[47] = "### end of the forwarding rule ###"
+augtool>
+................................................................................
+#   Mon Oct  5 12:24:40 MSK 2015
+[root@puppet ~]# cd ~/work/20151002-1454/
+[root@puppet 20151002-1454]# ll
+total 4
+drwxr-xr-x 2 root root 4096 Oct  2 22:14 etc
+[root@puppet 20151002-1454]# mkdir augeas_lenses
+[root@puppet 20151002-1454]# cp /usr/share/augeas/lenses/dist/rsyslog.aug augeas_lenses/
+[root@puppet 20151002-1454]#
+................................................................................
+[root@puppet 20151002-1454]# augparse --help
+Usage: augparse [OPTIONS] MODULE
+Evaluate MODULE. Generally, MODULE should contain unit tests.
+
+Options:
+
+  -I, --include DIR  search DIR for modules; can be given mutiple times
+  --nostdinc         do not search the builtin default directories for modules
+  --notypecheck      do not typecheck lenses
+  --version          print version information and exit
+[root@puppet 20151002-1454]# augparse --nostdinc augeas_lenses/rsyslog.aug
+Syntax error in lens definition
+augeas_lenses/rsyslog.aug:26.36-.45:Could not load module Sep for Sep.space
+augeas_lenses/rsyslog.aug:26.36-.45:Undefined variable Sep.space
+augeas_lenses/rsyslog.aug:28.16-.28:Could not load module Syslog for Syslog.empty
+augeas_lenses/rsyslog.aug:28.16-.28:Undefined variable Syslog.empty
+augeas_lenses/rsyslog.aug:30.10-.17:Undefined variable entries
+augeas_lenses/rsyslog.aug:34.20-.23:Undefined variable lns
+[root@puppet 20151002-1454]# augparse augeas_lenses/rsyslog.aug
+[root@puppet 20151002-1454]#
+................................................................................
+[root@puppet 20151002-1454]# cp /usr/share/augeas/lenses/dist/util.aug .
+[root@puppet 20151002-1454]# cp /usr/share/augeas/lenses/dist/sep.aug .
+[root@puppet 20151002-1454]# cp /usr/share/augeas/lenses/dist/rx.aug .
+
+
+
+
+

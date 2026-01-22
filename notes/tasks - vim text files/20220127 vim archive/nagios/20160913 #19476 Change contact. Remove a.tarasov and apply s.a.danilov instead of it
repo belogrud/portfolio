@@ -1,0 +1,149 @@
+
+................................................................................
+
+Сотрудник А.Тарасов (a.tarasov) уволился, просьба заменить данные сотрудника в нотификации Нагиос на данные Данилова Сергея (s.a.danilov).
+
+С уважением, Виктория Волкова
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="danilov"
+contact_name         filename
+--------------------------------------------------------------------------------
+s.a.danilov_email    /usr/local/nagios/etc/objects/contacts/s.a.danilov.cfg
+s.a.danilov_sms      /usr/local/nagios/etc/objects/contacts/s.a.danilov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="tarasov"
+contact_name         filename
+--------------------------------------------------------------------------------
+a.tarasov_email      /usr/local/nagios/etc/objects/contacts/a.tarasov.cfg
+a.tarasov_sms        /usr/local/nagios/etc/objects/contacts/a.tarasov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name service_description filename contacts where contacts__contains="tarasov"
+host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+m1-sblapp03p         Drive D: Space       /usr/local/nagios/etc/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg i.afanasyev_email,i.afanasyev_sms,a.tarasov_email,s.a.danilov_email,s.a.danilov_sms
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
+
+
+[root@vm-vol-nag4-tst objects]# grep -ire "tarasov" groups/contact-group/*
+groups/contact-group/sibel-admins.cfg:        members                 v.meagcov_email,m.kovalev_email,v.dyupina_email,v.dyupina_sms,i.afanasyev_email,i.afanasyev_sms,a.tarasov_email,a.tarasov_sms,s.a.danilov_email,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim groups/contact-group/sibel-admins.cfg
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add/rm <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#   deleted:    contacts/a.tarasov.cfg
+#   modified:   groups/contact-group/sibel-admins.cfg
+#   modified:   servers/dc-m1/linux/sas/m1-sasfront02p.cfg
+#   modified:   servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
+#   modified:   servers/vmware/vm-ds-repo01.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#   servers/vmware/vm-bicms01t.cfg
+#   servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDNew#19476. Replace contact a.tarasov with s.a.danilov." contacts/a.tarasov.cfg groups/contact-group/sibel-admins.cfg servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
+[master 9cf7fca] SDNew#19476. Replace contact a.tarasov with s.a.danilov.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 2 insertions(+), 17 deletions(-)
+ delete mode 100644 objects/contacts/a.tarasov.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                  Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 23, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (12/12), done.
+Writing objects: 100% (12/12), 936 bytes, done.
+Total 12 (delta 11), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   714de5f..9cf7fca  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager show -p 9cf7fca
+commit 9cf7fcaf16fbc45b5368edc932ed0bc66caf5d99
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Tue Sep 13 18:42:09 2016 +0300
+
+    SDNew#19476. Replace contact a.tarasov with s.a.danilov.
+
+diff --git a/objects/contacts/a.tarasov.cfg b/objects/contacts/a.tarasov.cfg
+deleted file mode 100644
+index ceb0d0d..0000000
+--- a/objects/contacts/a.tarasov.cfg
++++ /dev/null
+@@ -1,15 +0,0 @@
+-define contact{
+-        contact_name            a.tarasov_email
+-        use                     generic-contact
+-        alias                   Tarasov Artur
+-        email                   a.tarasov@tinkoff.ru
+-}
+-
+-define contact{
+-        contact_name            a.tarasov_sms
+-        use                     generic-contact-critical
+-        alias                   Tarasov Artur
+-        email                   a.tarasov@tinkoff.ru
+-        #address1                79167851020
+-        address1                79199923541
+-}
+diff --git a/objects/groups/contact-group/sibel-admins.cfg b/objects/groups/contact-group/sibel-admins.cfg
+index 6a1c91e..220b0d9 100644
+--- a/objects/groups/contact-group/sibel-admins.cfg
++++ b/objects/groups/contact-group/sibel-admins.cfg
+@@ -1,5 +1,5 @@
+ define contactgroup{
+         contactgroup_name       sibel-admins
+         alias                   Sibel Administrators
+-        members                 v.meagcov_email,m.kovalev_email,v.dyupina_email,v.dyupina_sms,i.afanasyev_email,i.afanasyev_sms,a.tarasov_email,a.tarasov_sms,s.a.danilov_email,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
++        members                 v.meagcov_email,m.kovalev_email,v.dyupina_email,v.dyupina_sms,i.afanasyev_email,i.afanasyev_sms,s.a.danilov_email,s.a.danilov_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
+ }
+diff --git a/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg b/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
+index c9ad6a6..7cd5e09 100644
+--- a/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
++++ b/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
+@@ -45,7 +45,7 @@ define service{
+    service_description           Drive D: Space
+     check_command           check_nt!USEDDISKSPACE!-l d -w 90 -c 95
+     contact_groups          sibel-admins, windows-admins-critical
+-    contacts      i.afanasyev_email,i.afanasyev_sms,a.tarasov_email,s.a.danilov_email,s.a.danilov_sms
++    contacts      i.afanasyev_email,i.afanasyev_sms,s.a.danilov_email,s.a.danilov_sms
+     notifications_enabled   1
+    flap_detection_enabled        0
+ }
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+

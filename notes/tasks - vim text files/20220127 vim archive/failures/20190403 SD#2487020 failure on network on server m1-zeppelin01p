@@ -1,0 +1,415 @@
+
+...........................................................................
+
+#
+# SD#2487020
+#
+https://sd.tcsbank.ru/0/Nui/ViewModule.aspx#SectionModuleV2/CaseSection/CasePage/edit/76f468f2-e48a-4762-b480-5b84840712dc
+***** Nagios ***** Notification Type: PROBLEM Host: m1-zeppelin01p State: DOWN Address: 10.216.26.26 Info: PING CRITICAL - Packet loss = 100% Date/Time: Wed Apr 3 15:19:08 MSK 2019
+
+
+From: Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru> 
+Sent: Wednesday, April 3, 2019 3:51 PM
+To: net-admins <net-admins@tinkoff.ru>
+Cc: unix-admins <unix-admins@tinkoff.ru>
+Subject: Сбой сервера
+Importance: High
+
+Коллеги net-admins посмотрите пожалуйста  сервер. Он у нас упал, unix считают что там сетевая проблема
+https://sd.tcsbank.ru/0/Nui/ViewModule.aspx#SectionModuleV2/CaseSection/CasePage/edit/76f468f2-e48a-4762-b480-5b84840712dc
+
+
+Вопрос критичный у нас упал сервис.
+
+С уважением,
+
+Дмитрий Овчинников
+Тел.: +7 495 648-10-00, доб. 2460
+
+
+...........................................................................
+
+#
+#	20190403
+#	After the failure with network connectivity on server m1-zeppelin01p.
+#
+
+[root@m1-zeppelin01p ~]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ;echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+NAME=em1
+UUID=918f7aec-8653-42f5-80e8-fa0115abd51c
+DEVICE=em1
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+NAME=em2
+UUID=1b4fa15d-b51b-4323-8ff4-5ab8237de26c
+DEVICE=em2
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":200}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+BOOTPROTO=dhcp
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=03647cc6-351c-47aa-88a7-c473fff124c5
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+BOOTPROTO=dhcp
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes                                                                                                                                                                                          [0/77]
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=30d691a8-cc8a-4187-b8a6-859359173319
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+NAME=team0
+ONBOOT=yes
+DEVICETYPE=Team
+# TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+TEAM_CONFIG='{"runner":{"name": "lacp","active": true,"fast_rate":true,"tx_hash": ["eth", "ipv4", "ipv6"]},"link_watch": {"name": "ethtool"}}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1626
+VLAN=yes
+TYPE=Vlan
+DEVICE=team0.1626
+VLAN_ID=1626
+BOOTPROTO=none
+IPADDR=10.216.26.26
+PREFIX=24
+GATEWAY=10.216.26.254
+DNS1=10.219.50.5
+DNS2=10.219.50.4
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1765
+VLAN=yes
+TYPE=Vlan
+DEVICE=team0.1765
+VLAN_ID=1765
+BOOTPROTO=none
+IPADDR=10.217.65.25
+PREFIX=24
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+MTU=1500
+[root@m1-zeppelin01p ~]#
+
+
+
+[root@m1-zeppelin01p ~]# teamdctl team0 state view
+setup:
+  runner: lacp
+ports:
+  em1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 1
+    runner:
+      aggregator ID: 3, Selected
+      selected: yes
+      state: current
+  em2
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 1
+    runner:
+      aggregator ID: 3, Selected
+      selected: yes
+      state: current
+runner:
+  active: yes
+  fast rate: yes
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# teamdctl team0 state view -v
+setup:
+  runner: lacp
+  kernel team mode: loadbalance
+  D-BUS enabled: yes
+  ZeroMQ enabled: no
+  debug level: 0
+  daemonized: no
+  PID: 114053
+  PID file: /var/run/teamd/team0.pid
+ports:
+  em1
+    ifindex: 2
+    addr: 18:66:da:56:c0:f4
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 1
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 3, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 18:66:da:56:c0:f4
+        key: 0
+        port_priority: 255
+        port: 2
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 02:15:16:16:16:33
+        key: 16
+        port_priority: 127
+        port: 20
+        state: 0x3f
+  em2
+    ifindex: 3
+    addr: 18:66:da:56:c0:f4
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 1
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 3, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 18:66:da:56:c0:f4
+        key: 0
+        port_priority: 255
+        port: 3
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 02:15:16:16:16:33
+        key: 16
+        port_priority: 127
+        port: 16
+        state: 0x3f
+runner:
+  active: yes
+  fast rate: yes
+  system priority: 65535
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# ethtool -i em1
+driver: bnx2x
+version: 1.712.30-0
+firmware-version: FFV14.07.06 bc 7.14.11
+expansion-rom-version:
+bus-info: 0000:01:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# ethtool -i em2
+driver: bnx2x
+version: 1.712.30-0
+firmware-version: FFV14.07.06 bc 7.14.11
+expansion-rom-version:
+bus-info: 0000:01:00.1
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# lspci -s 0000:01:00.0
+01:00.0 Ethernet controller: Broadcom Limited NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+[root@m1-zeppelin01p ~]# lspci -s 0000:01:00.1
+01:00.1 Ethernet controller: Broadcom Limited NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# lspci -s 0000:01:00.0 -v
+01:00.0 Ethernet controller: Broadcom Limited NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+        Subsystem: Dell BCM57800 10-Gigabit Ethernet
+        Flags: bus master, fast devsel, latency 0, IRQ 67, NUMA node 0
+        Memory at 95000000 (64-bit, prefetchable) [size=8M]
+        Memory at 95800000 (64-bit, prefetchable) [size=8M]
+        Memory at 96030000 (64-bit, prefetchable) [size=64K]
+        Expansion ROM at 91a00000 [disabled] [size=512K]
+        Capabilities: [48] Power Management version 3
+        Capabilities: [50] Vital Product Data
+        Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+        Capabilities: [a0] MSI-X: Enable+ Count=32 Masked-
+        Capabilities: [ac] Express Endpoint, MSI 00
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [13c] Device Serial Number 18-66-da-ff-fe-56-c0-f4
+        Capabilities: [150] Power Budgeting <?>
+        Capabilities: [160] Virtual Channel
+        Capabilities: [1b8] Alternative Routing-ID Interpretation (ARI)
+        Capabilities: [220] #15
+        Capabilities: [300] #19
+        Kernel driver in use: bnx2x
+        Kernel modules: bnx2x
+
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# lspci -s 0000:01:00.1 -v
+01:00.1 Ethernet controller: Broadcom Limited NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+        Subsystem: Dell BCM57800 10-Gigabit Ethernet
+        Flags: bus master, fast devsel, latency 0, IRQ 82, NUMA node 0
+        Memory at 94000000 (64-bit, prefetchable) [size=8M]
+        Memory at 94800000 (64-bit, prefetchable) [size=8M]
+        Memory at 96020000 (64-bit, prefetchable) [size=64K]
+        Expansion ROM at 91a80000 [disabled] [size=512K]
+        Capabilities: [48] Power Management version 3
+        Capabilities: [50] Vital Product Data
+        Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+        Capabilities: [a0] MSI-X: Enable+ Count=32 Masked-
+        Capabilities: [ac] Express Endpoint, MSI 00
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [13c] Device Serial Number 18-66-da-ff-fe-56-c0-f4
+        Capabilities: [150] Power Budgeting <?>
+        Capabilities: [160] Virtual Channel
+        Capabilities: [1b8] Alternative Routing-ID Interpretation (ARI)
+        Capabilities: [220] #15
+        Kernel driver in use: bnx2x
+        Kernel modules: bnx2x
+
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+10: team0.1626@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 10.216.26.26/24 brd 10.216.26.255 scope global team0.1626
+       valid_lft forever preferred_lft forever
+11: team0.1765@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 10.217.65.25/24 brd 10.217.65.255 scope global team0.1765
+       valid_lft forever preferred_lft forever
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# ip route
+default via 10.216.26.254 dev team0.1626
+10.216.26.0/24 dev team0.1626  proto kernel  scope link  src 10.216.26.26
+10.217.65.0/24 dev team0.1765  proto kernel  scope link  src 10.217.65.25
+169.254.0.0/16 dev team0  scope link  metric 1009
+169.254.0.0/16 dev team0.1626  scope link  metric 1010
+169.254.0.0/16 dev team0.1765  scope link  metric 1011
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# ip -s link show em1
+2: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq master team0 state UP mode DEFAULT qlen 1000
+    link/ether 18:66:da:56:c0:f4 brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    12732013901 19895116 0       1       0       9163
+    TX: bytes  packets  errors  dropped carrier collsns
+    1303097653 4382159  0       0       0       0
+[root@m1-zeppelin01p ~]#
+[root@m1-zeppelin01p ~]# ip -s link show em2
+3: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq master team0 state UP mode DEFAULT qlen 1000
+    link/ether 18:66:da:56:c0:f4 brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    9880113978 7189220  0       0       0       8463
+    TX: bytes  packets  errors  dropped carrier collsns
+    162256011424 115676853 0       0       0       0
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# cat /etc/os-release
+NAME="CentOS Linux"
+VERSION="7 (Core)"
+ID="centos"
+ID_LIKE="rhel fedora"
+VERSION_ID="7"
+PRETTY_NAME="CentOS Linux 7 (Core)"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:centos:centos:7"
+HOME_URL="https://www.centos.org/"
+BUG_REPORT_URL="https://bugs.centos.org/"
+
+CENTOS_MANTISBT_PROJECT="CentOS-7"
+CENTOS_MANTISBT_PROJECT_VERSION="7"
+REDHAT_SUPPORT_PRODUCT="centos"
+REDHAT_SUPPORT_PRODUCT_VERSION="7"
+
+[root@m1-zeppelin01p ~]# cat /etc/redhat-release
+CentOS Linux release 7.3.1611 (Core)
+[root@m1-zeppelin01p ~]#
+[root@m1-zeppelin01p ~]# uname -a
+Linux m1-zeppelin01p.tcsbank.ru 3.10.0-514.el7.x86_64 #1 SMP Tue Nov 22 16:42:41 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+[root@m1-zeppelin01p ~]#
+
+...........................................................................
+

@@ -1,0 +1,93 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   927650
+Название    №927650
+Приоритет   Низкий
+Класс обслуживания  24x7
+Дата и время обращения  05.07.2016 23:02
+Дата регистрации    05.07.2016 23:02
+Тип запроса Nagios запрос
+Категория
+Критичность 2 - Средняя
+Срочность   Высокая
+Описание запроса
+Nagios notification. Host: vm-wfl-app01. Service: Root Partition.
+
+Critical state duration, for services without comment, downtime, acknowledge, has more than 8 hours.
+Instruction for the first line of technical support: https://wiki.tcsbank.ru/pages/viewpa...
+
+Host: vm-wfl-app01
+Service: Root Partition
+Duration: 8 hours 45 minutes 6 seconds
+
+................................................................................
+
+Дата
+Комментарий Автор
+06.07.2016 16:16    Ненужные логи удалил, место освободилось.
+
+Коллеги, добавьте, пожалуйста использование файловой системы на серверах vm-wfl-app01 и vm-wfl-app02 в мониторинг Nagios с оповещением esb-admins. При создании ВМ вроде бы просили.
+
+После добавления запрос можно закрывать.    Кирсанов Сергей
+06.07.2016 14:52    Службе первичной поддержки.
+
+Назначить заявку на владельцев сервера (esb-admins@tinkoff.ru).
+
+Задача: освободить место в разделе /.
+Место занято файлами прикладного ПО в каталоге /var/log/mqsi.
+
+[root@vm-wfl-app01 ~]# df -h /
+Filesystem Size Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+49G 43G 3.8G 92% /
+[root@vm-wfl-app01 ~]#
+
+[root@vm-wfl-app01 ~]# du -sh /var/log/mqsi
+39G /var/log/mqsi
+[root@vm-wfl-app01 ~]#
+Белогруд Сергей В
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# find -name vm-wfl-app01*
+./servers/vmware/wfl/vm-wfl-app01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+define service{
+        use                             generic-service
+        host_name                       vm-wfl-app01
+        service_description             Root Partition
+        check_command                   check_nrpe!check_root_fs
+        contact_groups                  esb-admins, servicedesk-duty-critical-group, linux-admins-non-critical
+}
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#927650. Added notification for contact groups esb-admins for service, that checks space in root partition." servers/vmware/wfl/vm-wfl-app01.cfg servers/vmware/wfl/vm-wfl-app02.cfg
+[master 440a97b] SD#927650. Added notification for contact groups esb-admins for service, that checks space in root partition.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull
+Already up-to-date.
+[root@vm-vol-nag4-tst objects]# git push
+Counting objects: 15, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 779 bytes, done.
+Total 8 (delta 7), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   032f493..440a97b  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                  Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+
+
+

@@ -1,0 +1,1719 @@
+
+
+................................................................................
+
+[root@m1-gp-tst-sdw17 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ3236VT8E
+        UUID: 39333835-3431-5A43-3332-333656543845
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-tst-sdw17 ~]#
+
+[root@m1-gp-tst-sdw17 ~]# lsb_release -a
+LSB Version:    :base-4.0-amd64:base-4.0-noarch:core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch
+Distributor ID: RedHatEnterpriseServer
+Description:    Red Hat Enterprise Linux Server release 6.9 (Santiago)
+Release:        6.9
+Codename:       Santiago
+[root@m1-gp-tst-sdw17 ~]#
+
+
+[root@m1-gp-tst-sdw17 ~]# hpssacli controller all diag file=/tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip && chmod o+r /tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip
+
+   Generating diagnostic report...done
+
+[root@m1-gp-tst-sdw17 ~]#
+
+[root@m1-gp-tst-sdw17 ~]# ls -Alh /tmp/20171006*
+-rw-r--r-- 1 root root 283K Oct  6 14:53 /tmp/20171006-1453.hpssacli.diag.m1-gp-tst-sdw17.zip
+[root@m1-gp-tst-sdw17 ~]#
+
+
+[root@m1-gp-tst-sdw17 ~]# hpssacli controller all show config
+
+Smart Array P410 in Slot 1                (sn: PACCRID122508G7)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438021D7DE4F)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 500143802254B660)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 500143802254B66F)
+
+[root@m1-gp-tst-sdw17 ~]#
+
+
+[root@m1-gp-tst-sdw17 ~]# lsscsi -g
+[0:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sda   /dev/sg1
+[0:3:0:0]    storage HP       P410i            6.64  -         /dev/sg0
+[1:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sdb   /dev/sg3
+[1:3:0:0]    storage HP       P410             6.64  -         /dev/sg2
+[root@m1-gp-tst-sdw17 ~]#
+
+[root@m1-gp-tst-sdw17 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg0
+| grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; d
+one
+
+Count: 0
+Serial number:        S0M51WBD0000M5343BUX
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 2895944805
+  Number of read and write commands whose size > segment size = 62
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     877798.225           0
+write:         0        0         0         0          0     271417.231           0
+Non-medium error count:       85
+
+Count: 1
+Serial number:        6XR32Y6Q0000B302A4PT
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1745028339
+  Number of read and write commands whose size > segment size = 8264999
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  2099699490          0    1530893.422           0
+write:         0        0         0         0          0     839234.503           0
+Non-medium error count:     5028
+
+Count: 2
+Serial number:        6XR32XNJ0000B252C82S
+Elements in grown defect list: 6
+  Number of read and write commands whose size <= segment size = 1514094645
+  Number of read and write commands whose size > segment size = 8242934
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  728467676          0    1495009.943           0
+write:         0        0         0         0          0     843477.162           0
+Non-medium error count:       49
+
+Count: 3
+Serial number:        6XR356XF0000B302A66H
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1623465764
+  Number of read and write commands whose size > segment size = 8879560
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  2730575514          0    1465482.492           0
+write:         0        0         0         0          0     841782.966           0
+Non-medium error count:      695
+
+Count: 4
+Serial number:        6XR32Z3Q0000B301DNEG
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1456171261
+  Number of read and write commands whose size > segment size = 8858792
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  1141684838          0    1480169.872           0
+write:         0        0         0         0          0     843823.799           0
+Non-medium error count:     1654
+
+Count: 5
+Serial number:        6XR356M30000B301DG74
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1742293254
+  Number of read and write commands whose size > segment size = 10153136
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  3172768350          0    1519381.838           0
+write:         0        0         0         0          0     864192.062           0
+Non-medium error count:     2656
+
+Count: 6
+Serial number:        6XR35D540000B302AHKF
+Elements in grown defect list: 1
+  Number of read and write commands whose size <= segment size = 1724997263
+  Number of read and write commands whose size > segment size = 12036468
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  2027259733          0    1518760.111           0
+write:         0        0         0         0          0     869039.589           0
+Non-medium error count:     4687
+
+Count: 7
+Serial number:        6XR32Y5B0000B301DGX6
+Elements in grown defect list: 3
+  Number of read and write commands whose size <= segment size = 1879176576
+  Number of read and write commands whose size > segment size = 13680617
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  1517637789          0    1560216.297           0
+write:         0        0         0         0          0     856614.814           0
+Non-medium error count:     6019
+[root@m1-gp-tst-sdw17 ~]#
+[root@m1-gp-tst-sdw17 ~]#
+[root@m1-gp-tst-sdw17 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg2
+| grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; d
+one
+
+Count: 0
+Serial number:        6XR357TS0000B302A58W
+Elements in grown defect list: 19
+  Number of read and write commands whose size <= segment size = 2002165052
+  Number of read and write commands whose size > segment size = 8664565
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       20         0  48948292          0    2117069.377          10
+write:         0        0         0         0          0     849690.539           0
+Non-medium error count:     1912
+
+Count: 1
+Serial number:        6XR32Y0N0000B2429QBB
+Elements in grown defect list: 2
+  Number of read and write commands whose size <= segment size = 2251729613
+  Number of read and write commands whose size > segment size = 9026248
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0  282929945          0    2089109.597           0
+write:         0        0         0         0          0     865561.991           0
+Non-medium error count:     2958
+
+Count: 2
+Serial number:                KWGKRW0R
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0     712922.552           0
+write:         0        0         0         0          0     572722.736           0
+Non-medium error count:       77
+
+Count: 3
+Serial number:        25I0A07EFTM21508
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       16         0         0          0    1724099.301           0
+write:         0        0         0         0          0     536247.573           0
+Non-medium error count:     1439
+
+Count: 4
+Serial number:        6XR1LKRZ0000B2219BG7
+Elements in grown defect list: 18
+  Number of read and write commands whose size <= segment size = 2056109084
+  Number of read and write commands whose size > segment size = 1307
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      111         0  2702062328          0    1853719.939           1
+write:         0        0         0         0          0      99901.221           0
+Non-medium error count:      257
+
+Count: 5
+Serial number:        6XR32Z9M0000B302A35F
+Elements in grown defect list: 9
+  Number of read and write commands whose size <= segment size = 2121674448
+  Number of read and write commands whose size > segment size = 11163959
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  1334581911          0    2094618.058           0
+write:         0        0         0         0          0     877472.834           0
+Non-medium error count:      871
+
+Count: 6
+Serial number:        6XR32XRM0000B25197HH
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 2117732104
+  Number of read and write commands whose size > segment size = 12931271
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  2546748263          0    2116867.610           0
+write:         0        0         0         0          0     868897.127           0
+Non-medium error count:       36
+
+Count: 7
+Serial number:        6XR32ZH00000B301DV99
+Elements in grown defect list: 2
+  Number of read and write commands whose size <= segment size = 2225646206
+  Number of read and write commands whose size > segment size = 15136857
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       80         0  347667577          0    2131062.821           2
+write:         0        0         0         1          0     867441.729           0
+Non-medium error count:     1887
+[root@m1-gp-tst-sdw17 ~]#
+
+
+
+[root@m1-gp-tst-sdw17 ~]# hpacucli controller all show config detail | grep -e Slot -e Array -e physicaldrive -e Serial\ Number
+Smart Array P410 in Slot 1
+   Slot: 1
+   Serial Number: PACCRID122508G7
+   Cache Serial Number: PBCDF0CRH2M0Y4
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:1
+         Serial Number: 6XR357TS0000B302A58W
+      physicaldrive 1I:1:2
+         Serial Number: 6XR32Y0N0000B2429QBB
+      physicaldrive 1I:1:3
+         Serial Number:         KWGKRW0R
+      physicaldrive 1I:1:4
+         Serial Number: 25I0A07EFTM21508
+      physicaldrive 2I:1:5
+         Serial Number: 6XR1LKRZ0000B2219BG7
+      physicaldrive 2I:1:6
+         Serial Number: 6XR32Z9M0000B302A35F
+      physicaldrive 2I:1:7
+         Serial Number: 6XR32XRM0000B25197HH
+      physicaldrive 2I:1:8
+         Serial Number: 6XR32ZH00000B301DV99
+Smart Array P410i in Slot 0 (Embedded)
+   Slot: 0
+   Serial Number: 500143802254B660
+   Cache Serial Number: PBCDF0CRH2V5Q5
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:1
+         Serial Number: S0M51WBD0000M5343BUX
+      physicaldrive 1I:1:2
+         Serial Number: 6XR32Y6Q0000B302A4PT
+      physicaldrive 1I:1:3
+         Serial Number: 6XR32XNJ0000B252C82S
+      physicaldrive 1I:1:4
+         Serial Number: 6XR356XF0000B302A66H
+      physicaldrive 2I:1:5
+         Serial Number: 6XR32Z3Q0000B301DNEG
+      physicaldrive 2I:1:6
+         Serial Number: 6XR356M30000B301DG74
+      physicaldrive 2I:1:7
+         Serial Number: 6XR35D540000B302AHKF
+      physicaldrive 2I:1:8
+         Serial Number: 6XR32Y5B0000B301DGX6
+[root@m1-gp-tst-sdw17 ~]#
+
+
+#	Count: 0
+#	Serial number:        6XR357TS0000B302A58W
+#	Elements in grown defect list: 19
+#	  Number of read and write commands whose size <= segment size = 2002165052
+#	  Number of read and write commands whose size > segment size = 8664565
+#	           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+#	read:          0       20         0  48948292          0    2117069.377          10
+#	write:         0        0         0         0          0     849690.539           0
+#	Non-medium error count:     1912
+
+[root@m1-gp-tst-sdw17 ~]# hpssacli controller slot=1 physicaldrive 1I:1:1 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD8
+         Serial Number: 6XR357TS0000B302A58W
+         Model: HP      EG0600FBLSH
+         Current Temperature (C): 24
+         Maximum Temperature (C): 35
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+[root@m1-gp-tst-sdw17 ~]#
+
+[root@m1-gp-tst-sdw17 ~]# at 18:00 today <<< 'hpacucli controller slot=1 array A physicaldrive 1I:1:1 modify led=on d
+uration=3600'
+job 1 at 2017-10-06 18:00
+[root@m1-gp-tst-sdw17 ~]# atq
+1       2017-10-06 18:00 a root
+[root@m1-gp-tst-sdw17 ~]#
+
+
+
+
+#	Count: 4
+#	Serial number:        6XR1LKRZ0000B2219BG7
+#	Elements in grown defect list: 18
+#	  Number of read and write commands whose size <= segment size = 2056109084
+#	  Number of read and write commands whose size > segment size = 1307
+#	           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+#	read:          0      111         0  2702062328          0    1853719.939           1
+#	write:         0        0         0         0          0      99901.221           0
+#	Non-medium error count:      257
+
+[root@m1-gp-tst-sdw17 ~]# hpssacli controller slot=1 physicaldrive 2I:1:5 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 2I:1:5
+         Port: 2I
+         Box: 1
+         Bay: 5
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD8
+         Serial Number: 6XR1LKRZ0000B2219BG7
+         Model: HP      EG0600FBLSH
+         Current Temperature (C): 28
+         Maximum Temperature (C): 41
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw17 ~]#
+
+
+#	Count: 7
+#	Serial number:        6XR32ZH00000B301DV99
+#	Elements in grown defect list: 2
+#	  Number of read and write commands whose size <= segment size = 2225646206
+#	  Number of read and write commands whose size > segment size = 15136857
+#	           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+#	read:          0       80         0  347667577          0    2131062.821           2
+#	write:         0        0         0         1          0     867441.729           0
+#	Non-medium error count:     1887
+
+[root@m1-gp-tst-sdw17 ~]# hpssacli controller slot=1 physicaldrive 2I:1:8 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 2I:1:8
+         Port: 2I
+         Box: 1
+         Bay: 8
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD8
+         Serial Number: 6XR32ZH00000B301DV99
+         Model: HP      EG0600FBLSH
+         Current Temperature (C): 30
+         Maximum Temperature (C): 36
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw17 ~]#
+
+
+
+
+................................................................................
+................................................................................
+
+
+[root@m1-gp-tst-sdw34 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BNL
+        UUID: 32333536-3030-5A43-3233-323930424E4C
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-tst-sdw34 ~]#
+
+
+[root@m1-gp-tst-sdw34 ~]# lsb_release -a
+LSB Version:    :base-4.0-amd64:base-4.0-noarch:core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch
+Distributor ID: RedHatEnterpriseServer
+Description:    Red Hat Enterprise Linux Server release 6.9 (Santiago)
+Release:        6.9
+Codename:       Santiago
+[root@m1-gp-tst-sdw34 ~]#
+
+
+[root@m1-gp-tst-sdw34 ~]# hpssacli controller all diag file=/tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip && chmod o+r /tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip
+
+   Generating diagnostic report...done
+
+[root@m1-gp-tst-sdw34 ~]#
+
+[root@m1-gp-tst-sdw34 ~]# ls -Alh /tmp/20171006*
+-rw-r--r-- 1 root root 322K Oct  6 14:57 /tmp/20171006-1457.hpssacli.diag.m1-gp-tst-sdw34.zip
+[root@m1-gp-tst-sdw34 ~]#
+
+
+[root@m1-gp-tst-sdw34 ~]# hpssacli controller all show config
+
+Smart Array P420 in Slot 2                (sn: PDSXK0BRH5W2TV)
+
+
+   Port Name: 2I
+
+   Port Name: 1I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SAS, 600 GB, OK)
+      physicaldrive 2I:1:1 (port 2I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 2I:1:2 (port 2I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 2I:1:3 (port 2I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 2I:1:4 (port 2I:box 1:bay 4, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 5001438028F5896F)
+
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 001438026447060)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 500143802644706F)
+
+[root@m1-gp-tst-sdw34 ~]#
+
+
+
+[root@m1-gp-tst-sdw34 ~]# lsscsi -g
+[2:0:0:0]    disk    HP       LOGICAL VOLUME   8.00  /dev/sda   /dev/sg1
+[2:3:0:0]    storage HP       P420i            8.00  -         /dev/sg0
+[3:0:0:0]    disk    HP       LOGICAL VOLUME   8.00  /dev/sdb   /dev/sg3
+[3:3:0:0]    storage HP       P420             8.00  -         /dev/sg2
+[root@m1-gp-tst-sdw34 ~]#
+
+
+[root@m1-gp-tst-sdw34 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg0|
+ grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; do
+ne
+
+Count: 0
+Serial number:                KNH274DF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     5027         0         0          0    1060215.910           0
+write:         0        0         0         0          0    1195628.052           0
+Non-medium error count:      979
+
+Count: 1
+Serial number:                KNH9PK1F
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     1239         0         0          0    1050898.122           0
+write:         0        0         0         0          0    1188378.941           0
+Non-medium error count:      979
+
+Count: 2
+Serial number:                KNH9EPZF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      920         0         0          0    1014068.279           0
+write:         0        0         0         0          0    1183254.173           0
+Non-medium error count:      979
+
+Count: 3
+Serial number:        26R0A0C9FTM21608
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       27         0         0          0     523472.799           0
+write:         0        0         0         0          0     383181.327           0
+Non-medium error count:       20
+
+Count: 4
+Serial number:                KNH898VF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    79735         0         3          0     990435.564           0
+write:         0        0         0         0          0    1175321.906           0
+Non-medium error count:      981
+
+Count: 5
+Serial number:                KNH9XLSF
+Elements in grown defect list: 198
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0  3675106         0      2328          0    1015468.516         189
+write:         0        0         0         0          0    1197567.801           0
+Non-medium error count:     3370
+
+Count: 6
+Serial number:                KNH9SBGF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     5974         0         0          0    1037423.114           0
+write:         0        0         0         0          0    1188430.781           0
+Non-medium error count:      978
+
+Count: 7
+Serial number:                KNH9HV4F
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    10198         0         5          0    1062816.116           0
+write:         0        0         0         0          0    1190401.395           0
+Non-medium error count:      985
+[root@m1-gp-tst-sdw34 ~]#
+
+
+[root@m1-gp-tst-sdw34 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg2|
+ grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; do
+ne
+
+Count: 0
+Serial number:        S0M7RZEV0000E711DKXW
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1612489130
+  Number of read and write commands whose size > segment size = 18595
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     415903.193           0
+write:         0        0         0         0          0     119351.785           0
+Non-medium error count:       17
+
+Count: 1
+Serial number:                KNH9ML7F
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    73528         0        12          0    1130505.132           0
+write:         0        0         0         0          0    1097821.596           0
+Non-medium error count:     1032
+
+Count: 2
+Serial number:        S0M2SV4J0000K444660B
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 558352134
+  Number of read and write commands whose size > segment size = 16058785
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0    1530986.789           0
+write:         0        0         0         0          0    1145634.428           0
+Non-medium error count:       86
+
+Count: 3
+Serial number:                KNH9GRSF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      553         0         0          0    1226349.908           0
+write:         0        0         0         0          0    1281769.473           0
+Non-medium error count:      975
+
+Count: 4
+Serial number:                W7GPGEZZ
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      861         0         0          0     416505.905           0
+write:         0        0         0         0          0     728573.486           0
+Non-medium error count:      275
+
+Count: 5
+Serial number:        S0M7GPNK0000M648AYL4
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 632073248
+  Number of read and write commands whose size > segment size = 24319
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     327526.369           0
+write:         0        0         0         0          0      35346.885           0
+Non-medium error count:       13
+
+Count: 6
+Serial number:                KNHABVXF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     4114         0         0          0    1225481.755           0
+write:         0        0         0         0          0    1299198.420           0
+Non-medium error count:      990
+
+Count: 7
+Serial number:                KNH8XMWF
+Elements in grown defect list: 1
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     2446         0         6          0    1198971.925           0
+write:         0        0         0         0          0    1278050.347           0
+Non-medium error count:      991
+[root@m1-gp-tst-sdw34 ~]#
+
+
+[root@m1-gp-tst-sdw34 ~]# hpacucli controller all show config detail | grep -e Slot -e Array -e physicaldrive -e Serial\ Number
+Smart Array P420 in Slot 2
+   Slot: 2
+   Serial Number: PDSXK0BRH5W2TV
+   Cache Serial Number: PBKUC0BRH4VF2M
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:5
+         Serial Number:         W7GPGEZZ
+      physicaldrive 1I:1:6
+         Serial Number: S0M7GPNK0000M648AYL4
+      physicaldrive 1I:1:7
+         Serial Number:         KNHABVXF
+      physicaldrive 1I:1:8
+         Serial Number:         KNH8XMWF
+      physicaldrive 2I:1:1
+         Serial Number: S0M7RZEV0000E711DKXW
+      physicaldrive 2I:1:2
+         Serial Number:         KNH9ML7F
+      physicaldrive 2I:1:3
+         Serial Number: S0M2SV4J0000K444660B
+      physicaldrive 2I:1:4
+         Serial Number:         KNH9GRSF
+Smart Array P420i in Slot 0 (Embedded)
+   Slot: 0
+   Serial Number: 001438026447060
+   Cache Serial Number: PBKUC0BRH4VEWR
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:2:1
+         Serial Number:         KNH274DF
+      physicaldrive 1I:2:2
+         Serial Number:         KNH9PK1F
+      physicaldrive 1I:2:3
+         Serial Number:         KNH9EPZF
+      physicaldrive 1I:2:4
+         Serial Number: 26R0A0C9FTM21608
+      physicaldrive 2I:2:5
+         Serial Number:         KNH898VF
+      physicaldrive 2I:2:6
+         Serial Number:         KNH9XLSF
+      physicaldrive 2I:2:7
+         Serial Number:         KNH9SBGF
+      physicaldrive 2I:2:8
+         Serial Number:         KNH9HV4F
+[root@m1-gp-tst-sdw34 ~]#
+
+
+
+
+#	Count: 5
+#	Serial number:                KNH9XLSF
+#	Elements in grown defect list: 198
+#	           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+#	read:          0  3675106         0      2328          0    1015468.516         189
+#	write:         0        0         0         0          0    1197567.801           0
+#	Non-medium error count:     3370
+
+[root@m1-gp-tst-sdw34 ~]# hpssacli controller slot=0 physicaldrive 2I:2:6 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 2I:2:6
+         Port: 2I
+         Box: 2
+         Bay: 6
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number: KNH9XLSF
+         Model: HP      EG0600FBVFP
+         Current Temperature (C): 34
+         Maximum Temperature (C): 40
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Drive Authentication Status: OK
+         Carrier Application Version: 11
+         Carrier Bootloader Version: 6
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw34 ~]#
+
+[root@m1-gp-tst-sdw34 ~]# at 18:00 today <<< 'hpacucli controller slot=0 array A physicaldrive 2I:2:6 modify led=on d
+uration=3600'
+job 1 at 2017-10-06 18:00
+[root@m1-gp-tst-sdw34 ~]# atq
+1       2017-10-06 18:00 a root
+[root@m1-gp-tst-sdw34 ~]#
+
+
+
+
+................................................................................
+
+................................................................................
+
+................................................................................
+
+
+[s.belogrud.TCS4357] b mkdir /drives/c/Users/s.belogrud/Downloads/20171006.m1-gp-tst-sdw17
+
+[s.belogrud.TCS4357] b mkdir /drives/c/Users/s.belogrud/Downloads/20171006.m1-gp-tst-sdw34
+
+[2017-10-06 14:59.54]  ~
+[s.belogrud.TCS4357] b scp bsv@m1-gp-tst-sdw17:/tmp/20171006-1453.hpssacli.diag.m1-gp-tst-sdw17.zip /drives/c/Users/
+s.belogrud/Downloads/20171006.m1-gp-tst-sdw17
+20171006-1453.hpssacli.diag.m1-gp-tst-sdw17.zip                                   100%  283KB 282.7KB/s   00:00
+
+[2017-10-06 15:00.47]  ~
+[s.belogrud.TCS4357] b scp bsv@m1-gp-tst-sdw34:/tmp/20171006-1457.hpssacli.diag.m1-gp-tst-sdw34.zip /drives/c/Users/
+s.belogrud/Downloads/20171006.m1-gp-tst-sdw34
+20171006-1457.hpssacli.diag.m1-gp-tst-sdw34.zip                                   100%  321KB 321.0KB/s   00:00
+
+................................................................................
+................................................................................
+................................................................................
+................................................................................
+
+
+[root@m1-gp-tst-sdw21 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ3236VT8Y
+        UUID: 39333835-3431-5A43-3332-333656543859
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-tst-sdw21 ~]#
+
+[root@m1-gp-tst-sdw21 ~]# lsb_release -a
+LSB Version:    :base-4.0-amd64:base-4.0-noarch:core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch
+Distributor ID: RedHatEnterpriseServer
+Description:    Red Hat Enterprise Linux Server release 6.9 (Santiago)
+Release:        6.9
+Codename:       Santiago
+[root@m1-gp-tst-sdw21 ~]#
+
+
+[root@m1-gp-tst-sdw21 ~]# hpssacli controller all diag file=/tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip && chmod o+r /tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip ; ls -Alh /tmp/$(date +%Y%m%d-%H%M)*
+
+   Generating diagnostic report...done
+
+-rw-r--r-- 1 root root 305K Oct  6 18:56 /tmp/20171006-1856.hpssacli.diag.m1-gp-tst-sdw21.zip
+[root@m1-gp-tst-sdw21 ~]#
+
+
+[s.belogrud.TCS4357] b mkdir /drives/c/Users/s.belogrud/Downloads/20171006.m1-gp-tst-sdw21
+
+
+[s.belogrud.TCS4357] b scp bsv@m1-gp-tst-sdw21:/tmp/20171006-1856.hpssacli.diag.m1-gp-tst-sdw21.zip /drives/c/Users/
+s.belogrud/Downloads/20171006.m1-gp-tst-sdw21
+20171006-1856.hpssacli.diag.m1-gp-tst-sdw21.zip                                   100%  304KB 304.5KB/s   00:00
+
+
+
+
+[root@m1-gp-tst-sdw21 ~]# hpssacli controller all show config
+
+Smart Array P410 in Slot 1                (sn: PACCRID1226015N)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438021BC7A8F)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 500143801859B220)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 500143801859B22F)
+
+[root@m1-gp-tst-sdw21 ~]#
+
+
+[root@m1-gp-tst-sdw21 ~]# lsscsi -g
+[0:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sda   /dev/sg1
+[0:3:0:0]    storage HP       P410i            6.64  -         /dev/sg0
+[1:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sdb   /dev/sg3
+[1:3:0:0]    storage HP       P410             6.64  -         /dev/sg2
+[root@m1-gp-tst-sdw21 ~]#
+
+
+[s.belogrud.TCS4357] b ssh bsv@m1-gp-tst-sdw21
+Last login: Fri Oct  6 18:54:09 2017 from 172.16.28.74
+[bsv@m1-gp-tst-sdw21 ~]$ sudo -i
+[root@m1-gp-tst-sdw21 ~]#
+[root@m1-gp-tst-sdw21 ~]#
+[root@m1-gp-tst-sdw21 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg0| grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:        6XR34E4D0000B252B17S
+Elements in grown defect list: 4
+  Number of read and write commands whose size <= segment size = 1607934125
+  Number of read and write commands whose size > segment size = 14582355
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  1574294725          0    1326083.888           0
+write:         0        0         0         0          0     826194.872           0
+Non-medium error count:      106
+
+Count: 1
+Serial number:                KSHLGPZJ
+Elements in grown defect list: 2
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       28         0         0          0     533106.920           0
+write:         0        0         0         0          0     723284.662           0
+Non-medium error count:       67
+
+Count: 2
+Serial number:        6XR2STRQ0000B242AL90
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1230017674
+  Number of read and write commands whose size > segment size = 14597207
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  1746455782          0    1239447.734           0
+write:         0        0         0         0          0     806519.709           0
+Non-medium error count:     1132
+
+Count: 3
+Serial number:        6XR357T30000B301DQH2
+Elements in grown defect list: 10
+  Number of read and write commands whose size <= segment size = 1359222455
+  Number of read and write commands whose size > segment size = 15449104
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        6         0  1728694179          0    1246738.043           4
+write:         0        0         0         0          0     810714.187           0
+Non-medium error count:     1170
+
+Count: 4
+Serial number:        6XR32Y2R0000B301BMF4
+Elements in grown defect list: 4
+  Number of read and write commands whose size <= segment size = 1095964038
+  Number of read and write commands whose size > segment size = 14759088
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  1677131380          0    1234881.423           0
+write:         0        0         0         0          0     804381.949           0
+Non-medium error count:     9066
+
+Count: 5
+Serial number:        S0M7PNDT0000K7081KDQ
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 656357250
+  Number of read and write commands whose size > segment size = 382627
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     136388.271           0
+write:         0        0         0         0          0      38874.525           0
+Non-medium error count:       27
+
+Count: 6
+Serial number:        6XR246DX0000B2349E81
+Elements in grown defect list: 1970
+  Number of read and write commands whose size <= segment size = 1156567763
+  Number of read and write commands whose size > segment size = 20324005
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    12678         0  2830674553          0    1241848.194         182
+write:         0        0         0         0          0     839822.129           0
+Non-medium error count:    18045
+
+Count: 7
+Serial number:        6XR25F0M0000B234BNZE
+Elements in grown defect list: 3
+  Number of read and write commands whose size <= segment size = 1496280060
+  Number of read and write commands whose size > segment size = 23163570
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        4         0  2390423213          0    1312909.614           2
+write:         0        0         0         0          0     822558.050           0
+Non-medium error count:      148
+[root@m1-gp-tst-sdw21 ~]#
+
+[root@m1-gp-tst-sdw21 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg2
+| grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; d
+one
+
+Count: 0
+Serial number:        6XR357RD0000B301CWJ0
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1676991044
+  Number of read and write commands whose size > segment size = 14403145
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  264260700          0    1583272.743           0
+write:         0        0         0         0          0     826964.547           0
+Non-medium error count:      480
+
+Count: 1
+Serial number:        6XR34D8Q0000B302ABFT
+Elements in grown defect list: 1
+  Number of read and write commands whose size <= segment size = 1530499653
+  Number of read and write commands whose size > segment size = 14525916
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  241075648          0    1520287.845           0
+write:         0        0         0         0          0     814003.692           0
+Non-medium error count:      169
+
+Count: 2
+Serial number:        6XR35D790000B302ASUP
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1245539440
+  Number of read and write commands whose size > segment size = 13180862
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  376815095          0    1531651.651           0
+write:         0        0         0         0          0     813326.804           0
+Non-medium error count:      590
+
+Count: 3
+Serial number:        6XR3580S0000B301DQ20
+Elements in grown defect list: 2
+  Number of read and write commands whose size <= segment size = 1218322880
+  Number of read and write commands whose size > segment size = 14302179
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0  147561504          0    1477221.336           0
+write:         0        0         0         0          0     826367.347           0
+Non-medium error count:      385
+
+Count: 4
+Serial number:        6XR3580G0000B301DN5V
+Elements in grown defect list: 3
+  Number of read and write commands whose size <= segment size = 1514118640
+  Number of read and write commands whose size > segment size = 15697533
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  4091099049          0    1515734.918           0
+write:         0        0         0         0          0     831946.227           0
+Non-medium error count:      701
+
+Count: 5
+Serial number:        6XR35D8S0000B302AUC2
+Elements in grown defect list: 2
+  Number of read and write commands whose size <= segment size = 1454561475
+  Number of read and write commands whose size > segment size = 18250354
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  354049046          0    1526767.931           2
+write:         0        0         0         0          0     830899.603           0
+Non-medium error count:      201
+
+Count: 6
+Serial number:        6XR35CX00000B302CGGE
+Elements in grown defect list: 5
+  Number of read and write commands whose size <= segment size = 1276314162
+  Number of read and write commands whose size > segment size = 19256184
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  247543987          0    1515005.321           0
+write:         0        0         0         0          0     814982.762           0
+Non-medium error count:      211
+
+Count: 7
+Serial number:        6XR330XP0000B302A7EG
+Elements in grown defect list: 1
+  Number of read and write commands whose size <= segment size = 1661389445
+  Number of read and write commands whose size > segment size = 24337147
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0  132411308          0    1575684.387           2
+write:         0        0         0         0          0     833169.503           0
+Non-medium error count:      390
+[root@m1-gp-tst-sdw21 ~]#
+
+
+[root@m1-gp-tst-sdw21 ~]# hpacucli controller all show config detail | grep -e Slot -e Array -e physicaldrive -e Serial\ Number
+Smart Array P410 in Slot 1
+   Slot: 1
+   Serial Number: PACCRID1226015N
+   Cache Serial Number: PBCDF0CRH2J15R
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:1
+         Serial Number: 6XR357RD0000B301CWJ0
+      physicaldrive 1I:1:2
+         Serial Number: 6XR34D8Q0000B302ABFT
+      physicaldrive 1I:1:3
+         Serial Number: 6XR35D790000B302ASUP
+      physicaldrive 1I:1:4
+         Serial Number: 6XR3580S0000B301DQ20
+      physicaldrive 2I:1:5
+         Serial Number: 6XR3580G0000B301DN5V
+      physicaldrive 2I:1:6
+         Serial Number: 6XR35D8S0000B302AUC2
+      physicaldrive 2I:1:7
+         Serial Number: 6XR35CX00000B302CGGE
+      physicaldrive 2I:1:8
+         Serial Number: 6XR330XP0000B302A7EG
+Smart Array P410i in Slot 0 (Embedded)
+   Slot: 0
+   Serial Number: 500143801859B220
+   Cache Serial Number: PBCDF0CRHZK68F
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:1
+         Serial Number: 6XR34E4D0000B252B17S
+      physicaldrive 1I:1:2
+         Serial Number:         KSHLGPZJ
+      physicaldrive 1I:1:3
+         Serial Number: 6XR2STRQ0000B242AL90
+      physicaldrive 1I:1:4
+         Serial Number: 6XR357T30000B301DQH2
+      physicaldrive 2I:1:5
+         Serial Number: 6XR32Y2R0000B301BMF4
+      physicaldrive 2I:1:6
+         Serial Number: S0M7PNDT0000K7081KDQ
+      physicaldrive 2I:1:7
+         Serial Number: 6XR246DX0000B2349E81
+      physicaldrive 2I:1:8
+         Serial Number: 6XR25F0M0000B234BNZE
+[root@m1-gp-tst-sdw21 ~]#
+
+
+#	Count: 6
+#	Serial number:        6XR246DX0000B2349E81
+#	Elements in grown defect list: 1970
+#	  Number of read and write commands whose size <= segment size = 1156567763
+#	  Number of read and write commands whose size > segment size = 20324005
+#	           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+#	read:          0    12678         0  2830674553          0    1241848.194         182
+#	write:         0        0         0         0          0     839822.129           0
+#	Non-medium error count:    18045
+
+[root@m1-gp-tst-sdw21 ~]# hpssacli controller slot=0 physicaldrive 2I:1:7 show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 2I:1:7
+         Port: 2I
+         Box: 1
+         Bay: 7
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD8
+         Serial Number: 6XR246DX0000B2349E81
+         Model: HP      EG0600FBLSH
+         Current Temperature (C): 25
+         Maximum Temperature (C): 39
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw21 ~]#
+
+
+#
+#	20171011
+#
+[s.belogrud.TCS4357] b ssh bsv@m1-gp-tst-sdw21
+Last login: Mon Oct  9 17:27:33 2017 from 172.16.28.74
+[bsv@m1-gp-tst-sdw21 ~]$ at 10:00 tomorrow <<< 'hpacucli controller slot=0 array A physicaldrive 2I:1:7 modify led=on
+ duration=7200'
+job 1 at 2017-10-12 10:00
+[bsv@m1-gp-tst-sdw21 ~]$ at 12:00 tomorrow <<< 'hpacucli controller slot=0 array A physicaldrive 2I:1:7 modify led=on
+ duration=7200'
+job 2 at 2017-10-12 12:00
+[bsv@m1-gp-tst-sdw21 ~]$ at 14:00 tomorrow <<< 'hpacucli controller slot=0 array A physicaldrive 2I:1:7 modify led=on
+ duration=7200'
+job 3 at 2017-10-12 14:00
+[bsv@m1-gp-tst-sdw21 ~]$ at 16:00 tomorrow <<< 'hpacucli controller slot=0 array A physicaldrive 2I:1:7 modify led=on
+ duration=7200'
+job 4 at 2017-10-12 16:00
+[bsv@m1-gp-tst-sdw21 ~]$
+
+
+
+................................................................................
+................................................................................
+
+#
+#	20171009
+#
+
+
+[root@m1-gp-tst-sdw17 ~]# hpssacli controller slot=1 show config
+
+Smart Array P410 in Slot 1                (sn: PACCRID122508G7)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, Predictive Failure)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438021D7DE4F)
+
+[root@m1-gp-tst-sdw17 ~]#
+
+[root@m1-gp-tst-sdw17 ~]#  hpssacli controller slot=1 physicaldrive 1I:1:1 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: Predictive Failure
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD8
+         Serial Number: 6XR42WNF0000M329T9N5
+         Model: HP      EG0600FBLSH
+         Current Temperature (C): 24
+         Maximum Temperature (C): 41
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw17 ~]#
+
+
+[root@m1-gp-tst-sdw17 ~]# hpssacli controller all diag file=/tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip && chmod o+r /tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip ; ls -Alh /tmp/$(date +%Y%m%d-%H%M)*
+
+   Generating diagnostic report...done
+
+-rw-r--r-- 1 root root 327K Oct  9 12:44 /tmp/20171009-1244.hpssacli.diag.m1-gp-tst-sdw17.zip
+[root@m1-gp-tst-sdw17 ~]#
+
+
+[s.belogrud.TCS4357] b scp bsv@m1-gp-tst-sdw17:/tmp/20171009-1244.hpssacli.diag.m1-gp-tst-sdw17.zip /drives/c/Users/
+s.belogrud/Downloads/20171006.m1-gp-tst-sdw17
+20171009-1244.hpssacli.diag.m1-gp-tst-sdw17.zip                                   100%  327KB 326.9KB/s   00:00
+
+
+#
+#	20171010
+#
+
+[root@m1-gp-tst-sdw17 20171009-0913]# at 17:30 today <<< 'hpacucli controller slot=1 array A physicaldrive 1I:1:1 mod
+ify led=on duration=3600'
+job 2 at 2017-10-10 17:30
+[root@m1-gp-tst-sdw17 20171009-0913]#
+
+
+
+
+
+
+................................................................................
+................................................................................
+
+#
+#	20171010
+#
+
+[root@m1-gp-tst-sdw3 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ31450H6F
+        UUID: 39333835-3431-5A43-3331-343530483646
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-tst-sdw3 ~]#
+
+[root@m1-gp-tst-sdw3 ~]# lsb_release -a
+LSB Version:    :base-4.0-amd64:base-4.0-noarch:core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch
+Distributor ID: RedHatEnterpriseServer
+Description:    Red Hat Enterprise Linux Server release 6.9 (Santiago)
+Release:        6.9
+Codename:       Santiago
+[root@m1-gp-tst-sdw3 ~]#
+
+
+[root@m1-gp-tst-sdw3 ~]# hpssacli controller all show config
+
+Smart Array P410 in Slot 1                (sn: PACCRID11320C8F)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SAS, 600 GB, OK)
+      physicaldrive 2I:1:1 (port 2I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 2I:1:2 (port 2I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 2I:1:3 (port 2I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 2I:1:4 (port 2I:box 1:bay 4, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 50014380167EEABF)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438014D76160)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438014D7616F)
+
+[root@m1-gp-tst-sdw3 ~]#
+
+[root@m1-gp-tst-sdw3 ~]# lsscsi -g
+[0:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sda   /dev/sg1
+[0:3:0:0]    storage HP       P410i            6.64  -         /dev/sg0
+[1:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sdb   /dev/sg3
+[1:3:0:0]    storage HP       P410             6.64  -         /dev/sg2
+[root@m1-gp-tst-sdw3 ~]#
+[root@m1-gp-tst-sdw3 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg0 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:                PPJNS7KB
+Elements in grown defect list: 1930
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 37213567         0      3294          0    1296387.800         106
+write:         0   740137         0    740137          0     979476.302           0
+Non-medium error count:     4041
+
+Count: 1
+Serial number:                PPJWNZBB
+Elements in grown defect list: 28
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 29921060         0        27          0    1266215.108           4
+write:         0  1209011         0   1209011          0     976654.508           0
+Non-medium error count:      275
+
+Count: 2
+Serial number:                PPJWJPVB
+Elements in grown defect list: 2775
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 27104174         0      2001          0    1237571.090        1873
+write:         0   461855         0    461855          0     977731.149           0
+Non-medium error count:     2359
+
+Count: 3
+Serial number:        Z0M0ACMA0000C53340QL
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 324650844
+  Number of read and write commands whose size > segment size = 3408337
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0    1035028.039           0
+write:         0        0         0         0          0     445837.305           0
+Non-medium error count:       67
+
+Count: 4
+Serial number:                PPJ1HSNB
+Elements in grown defect list: 3
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 31479176         0         1          0    1226442.112           3
+write:         0  1948785         0   1948785          0     987275.910           0
+Non-medium error count:      394
+
+Count: 5
+Serial number:                PPJHUGNB
+Elements in grown defect list: 1
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 27827937         0         0          0    1237338.580           1
+write:         0  1079094         0   1079094          0     978535.652           0
+Non-medium error count:      215
+
+Count: 6
+Serial number:                PPJ24WDB
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 28986782         0         0          0    1259593.748           0
+write:         0  1656294         0   1656294          0     973168.439           0
+Non-medium error count:      379
+
+Count: 7
+Serial number:                PPJV3A2B
+Elements in grown defect list: 3
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 55448328         0       117          0    1297874.837           1
+write:         0  9343836         0   9343836          0     986524.116           0
+Non-medium error count:      523
+[root@m1-gp-tst-sdw3 ~]#
+[root@m1-gp-tst-sdw3 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg2 |
+ grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; do
+ne
+
+Count: 0
+Serial number:                PPJMD21B
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 33271934         0         3          0    1375472.838           0
+write:         0   709386         0    709386          0     986083.414           0
+Non-medium error count:      253
+
+Count: 1
+Serial number:                PPK1PX2B
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 30997632         0         3          0    1339916.974           0
+write:         0  2565451         0   2565451          0     976461.329           0
+Non-medium error count:      252
+
+Count: 2
+Serial number:        6XR35TGZ0000N301556G
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1220407318
+  Number of read and write commands whose size > segment size = 4446867
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0      5275          0    1143018.843           0
+write:         0        0         0         0          0     476978.107           0
+Non-medium error count:       38
+
+Count: 3
+Serial number:                PPJZ90DB
+Elements in grown defect list: 9
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 41755028         0        26          0    1297585.682           9
+write:         0  3939833         0   3939833          0     984138.574           0
+Non-medium error count:      407
+
+Count: 4
+Serial number:                PPJX1H6B
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 25030508         0         0          0    1298019.886           0
+write:         0   857638         0    857638          0     982756.425           0
+Non-medium error count:      272
+
+Count: 5
+Serial number:        Z0M0B2H10000C535H6XL
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 350937990
+  Number of read and write commands whose size > segment size = 3388855
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0    1118010.338           0
+write:         0        0         0         0          0     442467.429           0
+Non-medium error count:       86
+
+Count: 6
+Serial number:        X5R0A035FTM21544
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       16         0         0          0    1089128.696           0
+write:         0        0         0         0          0     416940.442           0
+Non-medium error count:       23
+
+Count: 7
+Serial number:                PPJWJNLB
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 34414608         0         3          0    1367183.730           0
+write:         0  1513365         0   1513365          0     976227.532           0
+Non-medium error count:      280
+[root@m1-gp-tst-sdw3 ~]#
+
+
+[root@m1-gp-tst-sdw3 ~]# hpacucli controller all show config detail | grep -e Slot -e Array -e physicaldrive -e Serial\ Number
+Smart Array P410 in Slot 1
+   Slot: 1
+   Serial Number: PACCRID11320C8F
+   Cache Serial Number: PBCDF0CRH1A1QD
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:5
+         Serial Number:         PPJMD21B
+      physicaldrive 1I:1:6
+         Serial Number:         PPK1PX2B
+      physicaldrive 1I:1:7
+         Serial Number: 6XR35TGZ0000N301556G
+      physicaldrive 1I:1:8
+         Serial Number:         PPJZ90DB
+      physicaldrive 2I:1:1
+         Serial Number:         PPJX1H6B
+      physicaldrive 2I:1:2
+         Serial Number: Z0M0B2H10000C535H6XL
+      physicaldrive 2I:1:3
+         Serial Number: X5R0A035FTM21544
+      physicaldrive 2I:1:4
+         Serial Number:         PPJWJNLB
+Smart Array P410i in Slot 0 (Embedded)
+   Slot: 0
+   Serial Number: 5001438014D76160
+   Cache Serial Number: PBCDF0CRH1G2Z3
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:1
+         Serial Number:         PPJNS7KB
+      physicaldrive 1I:1:2
+         Serial Number:         PPJWNZBB
+      physicaldrive 1I:1:3
+         Serial Number:         PPJWJPVB
+      physicaldrive 1I:1:4
+         Serial Number: Z0M0ACMA0000C53340QL
+      physicaldrive 2I:1:5
+         Serial Number:         PPJ1HSNB
+      physicaldrive 2I:1:6
+         Serial Number:         PPJHUGNB
+      physicaldrive 2I:1:7
+         Serial Number:         PPJ24WDB
+      physicaldrive 2I:1:8
+         Serial Number:         PPJV3A2B
+[root@m1-gp-tst-sdw3 ~]#
+
+
+
+#	Count: 0
+#	Serial number:                PPJNS7KB
+#	Elements in grown defect list: 1930
+#	           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+#	read:          0 37213567         0      3294          0    1296387.800         106
+#	write:         0   740137         0    740137          0     979476.302           0
+#	Non-medium error count:     4041
+
+[root@m1-gp-tst-sdw3 ~]# hpssacli controller slot=0 physicaldrive 1I:1:1 show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDA
+         Serial Number: PPJNS7KB
+         Model: HP      EG0600FBDBU
+         Current Temperature (C): 20
+         Maximum Temperature (C): 34
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw3 ~]#
+
+
+
+#	Count: 2
+#	Serial number:                PPJWJPVB
+#	Elements in grown defect list: 2775
+#	           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+#	read:          0 27104174         0      2001          0    1237571.090        1873
+#	write:         0   461855         0    461855          0     977731.149           0
+#	Non-medium error count:     2359
+
+[root@m1-gp-tst-sdw3 ~]# hpssacli controller slot=0 physicaldrive 1I:1:3 show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:3
+         Port: 1I
+         Box: 1
+         Bay: 3
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDA
+         Serial Number: PPJWJPVB
+         Model: HP      EG0600FBDBU
+         Current Temperature (C): 21
+         Maximum Temperature (C): 34
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw3 ~]#
+
+[root@m1-gp-tst-sdw3 ~]# hpssacli controller all diag file=/tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip && chmod o+r /tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip ; ls -Alh /tmp/$(date +%Y%m%d-%H%M)*
+
+   Generating diagnostic report...done
+
+-rw-r--r-- 1 root root 349K Oct 10 17:53 /tmp/20171010-1753.hpssacli.diag.m1-gp-tst-sdw3.zip
+[root@m1-gp-tst-sdw3 ~]#
+
+
+[s.belogrud.TCS4357] b mkdir /drives/c/Users/s.belogrud/Downloads/20171010.m1-gp-tst-sdw3
+
+[2017-10-10 17:54.07]  ~
+[s.belogrud.TCS4357] b scp bsv@m1-gp-tst-sdw3:/tmp/20171010-1753.hpssacli.diag.m1-gp-tst-sdw3.zip /drives/c/Users/s.
+belogrud/Downloads/20171010.m1-gp-tst-sdw3/
+20171010-1753.hpssacli.diag.m1-gp-tst-sdw3.zip                                    100%  348KB 348.4KB/s   00:00
+
+
+................................................................................
+................................................................................
+
+

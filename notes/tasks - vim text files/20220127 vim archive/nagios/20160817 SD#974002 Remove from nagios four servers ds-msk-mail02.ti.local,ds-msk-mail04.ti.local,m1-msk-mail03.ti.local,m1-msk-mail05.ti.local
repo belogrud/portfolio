@@ -1,0 +1,322 @@
+
+
+[root@vm-vol-nag4-tst objects]# find . -name ds-msk-mail02.ti.local*
+./servers/dc-ds/windows/exchange/ds-msk-mail02.ti.local.cfg
+[root@vm-vol-nag4-tst objects]# find . -name ds-msk-mail04.ti.local*
+./servers/dc-ds/windows/exchange/ds-msk-mail04.ti.local.cfg
+[root@vm-vol-nag4-tst objects]# mv ./servers/dc-ds/windows/exchange/ds-msk-mail02.ti.local.cfg ~/work/20160817-1443/
+[root@vm-vol-nag4-tst objects]# mv ./servers/dc-ds/windows/exchange/ds-msk-mail04.ti.local.cfg ~/work/20160817-1443/
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# find . -name m1-msk-mail03.ti.local*
+./servers/dc-m1/windows/exchange/m1-msk-mail03.ti.local.cfg
+[root@vm-vol-nag4-tst objects]# find . -name m1-msk-mail05.ti.local*
+./servers/dc-m1/windows/exchange/m1-msk-mail05.ti.local.cfg
+[root@vm-vol-nag4-tst objects]# mv ./servers/dc-m1/windows/exchange/m1-msk-mail03.ti.local.cfg ~/work/20160817-1443/
+[root@vm-vol-nag4-tst objects]# mv ./servers/dc-m1/windows/exchange/m1-msk-mail05.ti.local.cfg ~/work/20160817-1443/
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#974002. Removed from nagios four servers: ds-msk-mail02.ti.local, ds-msk-mail04.ti.local, m1-msk-mail03.ti.local, m1-msk-mail05.ti.local" servers/dc-ds/windows/exchange/ds-msk-mail02.ti.local.cfg servers/dc-ds/windows/exchange/ds-msk-mail04.ti.local.cfg servers/dc-m1/windows/exchange/m1-msk-mail03.ti.local.cfg servers/dc-m1/windows/exchange/m1-msk-mail05.ti.local.cfg
+[master be3cb62] SD#974002. Removed from nagios four servers: ds-msk-mail02.ti.local, ds-msk-mail04.ti.local, m1-msk-mail03.ti.local, m1-msk-mail05.ti.local
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 4 files changed, 0 insertions(+), 1106 deletions(-)
+ delete mode 100644 objects/servers/dc-ds/windows/exchange/ds-msk-mail02.ti.local.cfg
+ delete mode 100644 objects/servers/dc-ds/windows/exchange/ds-msk-mail04.ti.local.cfg
+ delete mode 100644 objects/servers/dc-m1/windows/exchange/m1-msk-mail03.ti.local.cfg
+ delete mode 100644 objects/servers/dc-m1/windows/exchange/m1-msk-mail05.ti.local.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+
+Nagios Core 4.1.2-Pre1
+Copyright (c) 2009-present Nagios Core Development Team and Community Contributors
+Copyright (c) 1999-2009 Ethan Galstad
+Last Modified: 11-16-2015
+License: GPL
+
+Website: https://www.nagios.org
+Reading configuration data...
+   Read main config file okay...
+Error: Could not find any host matching 'm1-msk-mail05.ti.local' (config file '/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg', starting on line 181)
+Error: Failed to expand host list 'm1-msk-mail05.ti.local' for service 'Service: MSExchangeUMCR' (/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg:181)
+   Error processing object config files!
+
+
+***> One or more problems was encountered while processing the config files...
+
+     Check your configuration file(s) to ensure that they contain valid
+     directives and data defintions.  If you are upgrading from a previous
+     version of Nagios, you should be aware that some variables/definitions
+     may have been removed or modified in this version.  Make sure to read
+     the HTML documentation regarding the config files, as well as the
+     'Whats New' section to find out what has changed.
+
+[root@vm-vol-nag4-tst objects]#
+
+vim + 181 /usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg
+...
+181 define service{
+182     use                     generic-service
+183     host_name               m1-msk-mail05.ti.local
+184     service_description     Service: MSExchangeUMCR
+185     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeUMCR
+186     check_interval          5
+187     retry_interval          5
+188 }
+...
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+
+Nagios Core 4.1.2-Pre1
+Copyright (c) 2009-present Nagios Core Development Team and Community Contributors
+Copyright (c) 1999-2009 Ethan Galstad
+Last Modified: 11-16-2015
+License: GPL
+
+Website: https://www.nagios.org
+Reading configuration data...
+   Read main config file okay...
+Error: Could not find any host matching 'm1-msk-mail05.ti.local' (config file '/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg', starting on line 173)
+Error: Failed to expand host list 'm1-msk-mail05.ti.local' for service 'Service: MSExchangeServiceHost' (/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg:173)
+   Error processing object config files!
+
+
+***> One or more problems was encountered while processing the config files...
+
+     Check your configuration file(s) to ensure that they contain valid
+     directives and data defintions.  If you are upgrading from a previous
+     version of Nagios, you should be aware that some variables/definitions
+     may have been removed or modified in this version.  Make sure to read
+     the HTML documentation regarding the config files, as well as the
+     'Whats New' section to find out what has changed.
+
+[root@vm-vol-nag4-tst objects]#
+
+173 define service{
+174     use                     generic-service
+175     host_name               m1-msk-mail05.ti.local
+176     service_description     Service: MSExchangeServiceHost
+177     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeServiceHost
+178     check_interval          5
+179     retry_interval          5
+180 }
+
+125 define service{
+126     use                     generic-service
+127     host_name               m1-msk-mail05.ti.local
+128     service_description     Service: MSExchangeADTopology
+129     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeADTopology
+130     check_interval          5
+131     retry_interval          5
+132 }
+133 define service{
+134     use                     generic-service
+135     host_name               m1-msk-mail05.ti.local
+136     service_description     Service: MSExchangeDiagnostics
+137     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeDiagnostics
+138     check_interval          5
+139     retry_interval          5
+140 }
+141 define service{
+142     use                     generic-service
+143     host_name               m1-msk-mail05.ti.local
+144     service_description     Service: MSExchangeFrontEndTransport
+145     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeFrontEndTransport
+146     check_interval          5
+147     retry_interval          5
+148 }
+
+125 define service{
+126     use                     generic-service
+127     host_name               m1-msk-mail05.ti.local
+128     service_description     Service: MSExchangeHM
+129     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeHM
+130     check_interval          5
+131     retry_interval          5
+132 }
+133 define service{
+134     use                     generic-service
+135     host_name               m1-msk-mail05.ti.local
+136     service_description     Service: MSExchangeImap4
+137     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeImap4
+138     check_interval          5
+139     retry_interval          5
+140 }
+141 define service{
+142     use                     generic-service
+143     host_name               m1-msk-mail05.ti.local
+144     service_description     Service: MSExchangePop3
+145     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangePop3
+146     check_interval          5
+147     retry_interval          5
+148 }
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+
+Nagios Core 4.1.2-Pre1
+Copyright (c) 2009-present Nagios Core Development Team and Community Contributors
+Copyright (c) 1999-2009 Ethan Galstad
+Last Modified: 11-16-2015
+License: GPL
+
+Website: https://www.nagios.org
+Reading configuration data...
+   Read main config file okay...
+Error: Could not find any host matching 'm1-msk-mail05.ti.local' (config file '/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1305.cfg', starting on line 181)
+Error: Failed to expand host list 'm1-msk-mail05.ti.local' for service 'Service: MSExchangeUMCR' (/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1305.cfg:181)
+   Error processing object config files!
+
+
+***> One or more problems was encountered while processing the config files...
+
+     Check your configuration file(s) to ensure that they contain valid
+     directives and data defintions.  If you are upgrading from a previous
+     version of Nagios, you should be aware that some variables/definitions
+     may have been removed or modified in this version.  Make sure to read
+     the HTML documentation regarding the config files, as well as the
+     'Whats New' section to find out what has changed.
+
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+
+/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1305.cfg
+...
+173 define service{
+174     use                     generic-service
+175     host_name               m1-msk-mail05.ti.local
+176     service_description     Service: MSExchangeServiceHost
+177     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeServiceHost
+178     check_interval          5
+179     retry_interval          5
+180 }
+181 define service{
+182     use                     generic-service
+183     host_name               m1-msk-mail05.ti.local
+184     service_description     Service: MSExchangeUMCR
+185     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeUMCR
+186     check_interval          5
+187     retry_interval          5
+188 }
+
+125 define service{
+126     use                     generic-service
+127     host_name               m1-msk-mail05.ti.local
+128     service_description     Service: MSExchangeADTopology
+129     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeADTopology
+130     check_interval          5
+131     retry_interval          5
+132 }
+133 define service{
+134     use                     generic-service
+135     host_name               m1-msk-mail05.ti.local
+136     service_description     Service: MSExchangeDiagnostics
+137     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeDiagnostics
+138     check_interval          5
+139     retry_interval          5
+140 }
+141 define service{
+142     use                     generic-service
+143     host_name               m1-msk-mail05.ti.local
+144     service_description     Service: MSExchangeFrontEndTransport
+145     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeFrontEndTransport
+146     check_interval          5
+147     retry_interval          5
+148 }
+
+125 define service{
+126     use                     generic-service
+127     host_name               m1-msk-mail05.ti.local
+128     service_description     Service: MSExchangeHM
+129     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeHM
+130     check_interval          5
+131     retry_interval          5
+132 }
+133 define service{
+134     use                     generic-service
+135     host_name               m1-msk-mail05.ti.local
+136     service_description     Service: MSExchangeImap4
+137     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangeImap4
+138     check_interval          5
+139     retry_interval          5
+140 }
+141 define service{
+142     use                     generic-service
+143     host_name               m1-msk-mail05.ti.local
+144     service_description     Service: MSExchangePop3
+145     check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSExchangePop3
+146     check_interval          5
+147     retry_interval          5
+148 }
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Your branch is ahead of 'origin/master' by 1 commit.
+#
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       new file:   servers/dc-m1/windows/m1-sblshr02.cfg
+#
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   contacts/a.chumikanov.cfg
+#       modified:   contacts/v.bushuev.cfg
+#       modified:   servers/dc-ds/windows/exchange/ds-msk-mail1305.cfg
+#       modified:   servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+#       ../tools/
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#974002. Removed dependent section, contained: m1-msk-mail05.ti.local." servers/dc-ds/windows/exchange/ds-msk-mail1305.cfg servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg                                                                                                                         [master 474eead] SD#974002. Removed dependent section, contained: m1-msk-mail05.ti.local.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 0 insertions(+), 128 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git pull
+Already up-to-date.
+[root@vm-vol-nag4-tst objects]# git push
+Counting objects: 32, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (22/22), done.
+Writing objects: 100% (22/22), 1.92 KiB, done.
+Total 22 (delta 19), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   cb4671e..474eead  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# find $(pwd) \( -name ds-msk-mail02* -o -name ds-msk-mail04* -o -name m1-msk-mail03* -o -name m1-msk-mail05* \)
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+

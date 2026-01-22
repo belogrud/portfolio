@@ -1,0 +1,78 @@
+
+
+
+
+
+
+
+
+
+[root@vm-vol-nag4-tst objects]# find . -name vm-kafka*
+./servers/vmware/vm-kafka03p.cfg
+./servers/vmware/vm-kafka01p.cfg
+./servers/vmware/vm-kafka02p.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+...
+define service{
+        use                             generic-service
+        host_name                       vm-kafka03p
+        service_description             Opt Partition
+        check_command                   check_nrpe!check_opt_fs
+        contact_groups                  dwh-admins, linux-admins
+        contacts                        a.v.rudenko_sms, a.v.rudenko_email
+}
+...
+
+[root@vm-vol-nag4-tst objects]# vim +view templates/services-templates.cfg
+...
+#       notification_options            w,u,c,r
+...
+
+[root@vm-vol-nag4-tst objects]# vim -o ./servers/vmware/vm-kafka0{1,2,3}p.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-kafka03p
+        service_description             Opt Partition
+        check_command                   check_nrpe!check_opt_fs
+        contact_groups                  dwh-admins, linux-admins
+        contacts                        a.v.rudenko_sms, a.v.rudenko_email
+        notification_options            u,c,r
+}
+...
+"./servers/vmware/vm-kafka01p.cfg" 48L, 2128C written
+"./servers/vmware/vm-kafka02p.cfg" 48L, 2128C written
+"./servers/vmware/vm-kafka03p.cfg" 48L, 2128C written
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#899932. Turn off notification from services, when it state become as warning." servers/vmware/vm-kafka01p.cfg servers/vmware/vm-kafka02p.cfg servers/vmware/vm-kafka03p.cfg
+[master d7f6f8a] SD#899932. Turn off notification from services, when it state become as warning.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 3 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull
+Already up-to-date.
+[root@vm-vol-nag4-tst objects]# git push
+Counting objects: 15, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 799 bytes, done.
+Total 8 (delta 7), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   ef8a69a..d7f6f8a  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+

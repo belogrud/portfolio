@@ -1,0 +1,71 @@
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat manifests/03_cloud.pp
+node "oracle-database-12.2.0.1.171017--rhel-7.novalocal" {
+  include role::database_server
+}
+
+node /.*\.novalocal$/ {
+  include role::cloud_instance
+}
+
+node /.*\.tinkoff\.cloud$/ {
+  include role::cloud_instance
+  include profile::accounts::vne
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat .git/config
+[core]
+        repositoryformatversion = 0
+        filemode = false
+        bare = false
+        logallrefupdates = true
+        ignorecase = true
+[remote "origin"]
+        url = git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+        fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "production"]
+        remote = origin
+        merge = refs/heads/production
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+class profile::accounts::vne inherits profile::accounts::params {
+
+  group { 'vne':
+    ensure => present,
+    gid    => '807',
+  }
+
+  user { 'vne':
+    ensure     => 'present',
+    home       => '/home/vne',
+    uid        => '807',
+    gid        => '807',
+    password   => '$6$jKAGwHF.$Ip6HyakNMO79wPVKwJexg3Rt7KYO0sS2THXJuPVA.mCA1G8J/8GqxwBsytYCgvNzlsdYDmt/LBclGzWuBqKK5.',
+    comment    => 'Eranov Vyacheslav Nikolaevich,BC Vodny,3661',
+    shell      => '/bin/bash',
+    managehome => true,
+    provider   => 'useradd',
+    membership => 'inclusive',
+    require    => Group['vne'],
+  }
+
+  ssh_authorized_key { 'vne@':
+    user       => 'vne',
+    type       => 'ssh-rsa',
+    key        => 'AAAAB3NzaC1yc2EAAAADAQABAAABAQDK4Wh8KAOge6XW+t/PjTfhbMThdFr+M5zCw4kSK/jp0Si53YlCTz/gpTNBNI7qfXdvt2F2jBLbHWqk+Eq/ex/pmrxOHFn0oaTXKHIWiREZQsK64VGjZW2H1+W0KBK40V/vEjDXzDj/Dkl1xhORqrIzKww6E5DcNkuoP1/vQsPqlJiM0uWAZZj+rmMGbnvBm7ahaA+dLvmrVDmnZlkXR0AiMmWiyu/EdC8jsuWjNNUnfMOrMggLUQ1KOfwFql80vJ6D3GQjjK/H2ORoKuXimGJoLVIUG5P37tyQY+1LzcjoO1afOuuOb147iDG6EKh0gkgWDqnLjqm8665NtTjyFXrl',
+    require    => User['vne'],
+  }
+
+}
+
+................................................................................
+
+
+

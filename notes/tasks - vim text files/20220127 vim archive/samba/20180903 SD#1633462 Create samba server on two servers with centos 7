@@ -1,0 +1,482 @@
+
+...........................................................................
+
+#
+#	Below are text, that was shared by Pavel Selin.
+#	This is recommendation how to enter linux computer into MS Windows Active Directory domain.
+
+yum install sssd realm realmd krb5-workstation sssd-ad oddjob-mkhomedir vim authconfig man pam_krb5 nscd adcli
+vi /etc/krb5.conf
+adcli join -S tcsbank.ru -K /etc/krb5.keytab -U s.belogrud -O "OU=Unix,OU=Servers,DC=tcsbank,DC=ru" --os-name=RHEL --os-version 7.5 -W
+authconfig --enablecache --enablesssd --enablesssdauth --smbsecurity=ads --smbworkgroup=TCSBANK --smbrealm=TCSBANK.RU --enablelocauthorize --enablemkhomedir --enablepamaccess --updateall
+klist -kte
+vi /etc/sssd/sssd.conf
+chown root:root /etc/sssd/sssd.conf
+chmod 600 /etc/sssd/sssd.conf
+service sssd start
+#	Below are Pavel's test. He tried to save hash to loging via ssh into active directory.
+#	vi /usr/bin/sss_ssh
+#	chmod +x /usr/bin/sss_ssh
+#	vi /etc/ssh/sshd_config
+#	service sshd restart
+
+#
+#	Below is for krb5.conf.
+[logging]
+ default = FILE:/var/log/krb5libs.log
+
+[libdefaults]
+ default_realm = TCSBANK.RU
+ dns_lookup_realm = true
+ dns_lookup_kdc = true
+ ticket_lifetime = 24h
+ renew_lifetime = 7d
+ forwardable = true
+
+[realms]
+ TCSBANK.RU = {
+  kdc = tcsbank.ru
+  admin_server = tcsbank.ru
+ }
+
+[domain_realm]
+ .tcsbank.ru = TCSBANK.RU
+ tcsbank.ru = TCSBANK.RU
+
+#
+#	This is for sssd.conf
+[sssd]
+services = nss, pam, ssh, autofs
+config_file_version = 2
+domains = TCSBANK.RU
+
+[domain/TCSBANK.RU]
+id_provider = ad
+default_shell = /bin/bash
+create_homedir = true
+cache_credentials = true
+override_homedir = /home/%u
+
+...........................................................................
+
+#
+#	Here I configure simple samba server without AD authorization.
+#	Only needs - network access from source servers to target server via cifs protocol.
+#	If I configure it with AD - additionaly need access to domain controllers from target servers, where
+#		samba installed.
+#
+[root@ds-asterisk-str05p ~]# cat /etc/redhat-release
+CentOS Linux release 7.5.1804 (Core)
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# systemctl status firewalld.service
+? firewalld.service - firewalld - dynamic firewall daemon
+   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; disabled; vendor preset: enabled)
+   Active: inactive (dead)
+     Docs: man:firewalld(1)
+[root@ds-asterisk-str05p ~]# getenforce
+Disabled
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# yum install samba
+
+[root@ds-asterisk-str05p ~]# yum history info 14
+Loaded plugins: fastestmirror, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+Transaction ID : 14
+Begin time     : Mon Sep  3 15:50:53 2018
+Begin rpmdb    : 808:05dfb87a07d7c4e7eee1e9b588bd782423b8fbfe
+End time       :            15:50:56 2018 (3 seconds)
+End rpmdb      : 808:86118fdd25f055deb3ba233c23a36f776d9334c7
+User           : Belogrud Sergey Vladimirovich,BC Diapazone,2173 <bsv>
+Return-Code    : Success
+Command Line   : install samba
+Transaction performed with:
+    Installed     rpm-4.11.3-32.el7.x86_64                         @anaconda
+    Installed     subscription-manager-1.20.11-1.el7.centos.x86_64 @tcs-centos-base
+    Installed     yum-3.4.3-158.el7.centos.noarch                  @anaconda
+    Installed     yum-metadata-parser-1.1.4-10.el7.x86_64          @anaconda
+    Installed     yum-plugin-fastestmirror-1.1.31-45.el7.noarch    @anaconda
+Packages Altered:
+    Updated libsmbclient-4.7.1-6.el7.x86_64         @anaconda
+    Update               4.7.1-9.el7_5.x86_64       @tcs-centos-updates
+    Updated libwbclient-4.7.1-6.el7.x86_64          @anaconda
+    Update              4.7.1-9.el7_5.x86_64        @tcs-centos-updates
+    Updated samba-4.7.1-6.el7.x86_64                @anaconda
+    Update        4.7.1-9.el7_5.x86_64              @tcs-centos-updates
+    Updated samba-client-4.7.1-6.el7.x86_64         @anaconda
+    Update               4.7.1-9.el7_5.x86_64       @tcs-centos-updates
+    Updated samba-client-libs-4.7.1-6.el7.x86_64    @anaconda
+    Update                    4.7.1-9.el7_5.x86_64  @tcs-centos-updates
+    Updated samba-common-4.7.1-6.el7.noarch         @anaconda
+    Update               4.7.1-9.el7_5.noarch       @tcs-centos-updates
+    Updated samba-common-libs-4.7.1-6.el7.x86_64    @anaconda
+    Update                    4.7.1-9.el7_5.x86_64  @tcs-centos-updates
+    Updated samba-common-tools-4.7.1-6.el7.x86_64   @anaconda
+    Update                     4.7.1-9.el7_5.x86_64 @tcs-centos-updates
+    Updated samba-libs-4.7.1-6.el7.x86_64           @anaconda
+    Update             4.7.1-9.el7_5.x86_64         @tcs-centos-updates
+history info
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# find / -type d -name storage
+/usr/lib/modules/3.10.0-862.el7.x86_64/kernel/drivers/usb/storage
+/usr/lib/modules/3.10.0-862.2.3.el7.x86_64/kernel/drivers/usb/storage
+/usr/lib/python2.7/site-packages/lmi/storage
+/usr/lib/python2.7/site-packages/tuned/storage
+/etc/openlmi/storage
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# df -hT
+Filesystem           Type      Size  Used Avail Use% Mounted on
+/dev/sda5            ext4       99G  1.8G   92G   2% /
+devtmpfs             devtmpfs   63G     0   63G   0% /dev
+tmpfs                tmpfs      63G     0   63G   0% /dev/shm
+tmpfs                tmpfs      63G  1.2G   62G   2% /run
+tmpfs                tmpfs      63G     0   63G   0% /sys/fs/cgroup
+/dev/sda2            ext4      976M  151M  759M  17% /boot
+/dev/sdb1            xfs        81T   24G   81T   1% /data
+/dev/sda3            ext4      435G  1.4G  412G   1% /var
+10.217.165.135:/data nfs        80T   11G   80T   1% /dataM1
+tmpfs                tmpfs      13G     0   13G   0% /run/user/525
+[root@ds-asterisk-str05p ~]# mkdir /storage
+[root@ds-asterisk-str05p ~]# cp /etc/samba/smb.conf{,.20180903-1552.orig}
+[root@ds-asterisk-str05p ~]# vim /etc/samba/smb.conf
+
+[root@ds-asterisk-str05p ~]# tail -n 16 /etc/samba/smb.conf
+
+[global]
+        security = user
+        workgroup = MYGROUP
+        server string = Samba
+        guest account = nobody
+        map to guest = Bad Password
+
+[storage]
+        path = /storage
+        browsable = yes
+        writable = yes
+        guest ok = yes
+        read only = no
+        hosts allow = 10.216.41.125 10.216.42.125
+
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# chmod 0777 /storage
+
+[root@ds-asterisk-str05p ~]# systemctl status smb.service
+? smb.service - Samba SMB Daemon
+   Loaded: loaded (/usr/lib/systemd/system/smb.service; disabled; vendor preset: disabled)
+   Active: inactive (dead)
+[root@ds-asterisk-str05p ~]# systemctl start smb.service
+[root@ds-asterisk-str05p ~]# systemctl status smb.service
+? smb.service - Samba SMB Daemon
+   Loaded: loaded (/usr/lib/systemd/system/smb.service; disabled; vendor preset: disabled)
+   Active: active (running) since Mon 2018-09-03 16:06:48 MSK; 2s ago
+ Main PID: 39276 (smbd)
+   Status: "smbd: ready to serve connections..."
+   CGroup: /system.slice/smb.service
+           +-39276 /usr/sbin/smbd --foreground --no-process-group
+           +-39278 /usr/sbin/smbd --foreground --no-process-group
+           +-39279 /usr/sbin/smbd --foreground --no-process-group
+           L-39280 /usr/sbin/smbd --foreground --no-process-group
+
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru systemd[1]: Starting Samba SMB Daemon...
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru smbd[39276]: [2018/09/03 16:06:48.839637,  0] ../lib/util/become_daemon.c:124(daemon_ready)
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru smbd[39276]:   STATUS=daemon 'smbd' finished starting up and ready to serve connections
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru systemd[1]: Started Samba SMB Daemon.
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# systemctl enable smb.service
+Created symlink from /etc/systemd/system/multi-user.target.wants/smb.service to /usr/lib/systemd/system/smb.service.
+
+[root@ds-asterisk-str05p ~]# systemctl status smb.service
+? smb.service - Samba SMB Daemon
+   Loaded: loaded (/usr/lib/systemd/system/smb.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2018-09-03 16:06:48 MSK; 2min 7s ago
+ Main PID: 39276 (smbd)
+   Status: "smbd: ready to serve connections..."
+   CGroup: /system.slice/smb.service
+           +-39276 /usr/sbin/smbd --foreground --no-process-group
+           +-39278 /usr/sbin/smbd --foreground --no-process-group
+           +-39279 /usr/sbin/smbd --foreground --no-process-group
+           L-39280 /usr/sbin/smbd --foreground --no-process-group
+
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru systemd[1]: Starting Samba SMB Daemon...
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru smbd[39276]: [2018/09/03 16:06:48.839637,  0] ../lib/util/become_daemon.c:124(daemon_ready)
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru smbd[39276]:   STATUS=daemon 'smbd' finished starting up and ready to serve connections
+Sep 03 16:06:48 ds-asterisk-str05p.tcsbank.ru systemd[1]: Started Samba SMB Daemon.
+[root@ds-asterisk-str05p ~]#
+
+
+[root@ds-asterisk-str05p ~]# smbstatus
+
+Samba version 4.7.1
+PID     Username     Group        Machine                                   Protocol Version  Encryption           Signing
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Service      pid     Machine       Connected at                     Encryption   Signing
+---------------------------------------------------------------------------------------------
+
+No locked files
+
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# testparm
+Load smb config files from /etc/samba/smb.conf
+rlimit_max: increasing rlimit_max (1024) to minimum Windows limit (16384)
+Processing section "[share]"
+Loaded services file OK.
+WARNING: The 'netbios name' is too long (max. 15 chars).
+
+Server role: ROLE_STANDALONE
+
+Press enter to see a dump of your service definitions
+
+# Global parameters
+[global]
+        map to guest = Bad Password
+        security = USER
+        server string = Samba
+        workgroup = MYGROUP
+        idmap config * : backend = tdb
+
+
+[share]
+        guest ok = Yes
+        hosts allow = 10.216.41.125 10.216.42.125
+        path = /storage
+        read only = No
+[root@ds-asterisk-str05p ~]#
+
+
+[root@ds-asterisk-str05p ~]# systemctl status winbind.service
+Unit winbind.service could not be found.
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# ps faux | grep sm[b]
+root     39276  0.0  0.0 422704 11772 ?        Ss   16:06   0:00 /usr/sbin/smbd --foreground --no-process-group
+root     39278  0.0  0.0 415184  2952 ?        S    16:06   0:00  \_ /usr/sbin/smbd --foreground --no-process-group
+root     39279  0.0  0.0 415176  2632 ?        S    16:06   0:00  \_ /usr/sbin/smbd --foreground --no-process-group
+root     39280  0.0  0.0 422704  3388 ?        S    16:06   0:00  \_ /usr/sbin/smbd --foreground --no-process-group
+[root@ds-asterisk-str05p ~]#
+
+
+[root@ds-asterisk-str05p ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.97.9/24 brd 10.216.97.255 scope global team0.1697
+    inet 10.217.165.137/24 brd 10.217.165.255 scope global team0.2765
+    inet 10.219.94.11/24 brd 10.219.94.255 scope global team0.1994
+[root@ds-asterisk-str05p ~]# host ds-asterisk-str05p
+ds-asterisk-str05p.tcsbank.ru has address 10.216.97.9
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# ls -Alh /var/log/samba/
+total 12K
+drwx------  3 root root 4.0K Sep  3 16:06 cores
+-rw-r--r--  1 root root  308 Sep  3 16:31 log.smbd
+drwx------. 2 root root 4.0K Aug 16 18:49 old
+[root@ds-asterisk-str05p ~]#
+
+...........................................................................
+
+Сергей Белогруд [4:33 PM]
+Дмитрий приветствую.
+По теме SD#1633462 ( https://sd.tcsbank.ru/0/NUI/ViewModule.aspx#CardModuleV2/CasePage/edit/463bcc51-e51e-429d-ac2b-66a6b9e6f22a ).
+
+
+Я установил, настроил, запустил ПО samba на сервере ds-asterisk-str05p.tcsbank.ru.
+Попробуйте подключиться с серверов m1-tqm-media01, ds-tqm-media01 к серверу ds-asterisk-str05p - открыть в проводнике MS Windows адрес \\ds-asterisk-str05p\storage
+
+...........................................................................
+
+[root@ds-asterisk-str05p ~]# smbstatus
+
+Samba version 4.7.1
+PID     Username     Group        Machine                                   Protocol Version  Encryption           Signing
+----------------------------------------------------------------------------------------------------------------------------------------
+41389   nobody       nobody       10.216.41.125 (ipv4:10.216.41.125:63712)  SMB3_11           -                    -
+
+Service      pid     Machine       Connected at                     Encryption   Signing
+---------------------------------------------------------------------------------------------
+storage      41389   10.216.41.125 Mon Sep  3 04:34:51 PM 2018 MSK  -            -
+IPC$         41389   10.216.41.125 Mon Sep  3 04:36:20 PM 2018 MSK  -            -
+
+Locked files:
+Pid          Uid        DenyMode   Access      R/W        Oplock           SharePath   Name   Time
+--------------------------------------------------------------------------------------------------
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /storage   .   Mon Sep  3 16:36:02 2018
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /storage   .   Mon Sep  3 16:36:02 2018
+41389        99         DENY_NONE  0x100080    RDONLY     NONE             /storage   .   Mon Sep  3 16:36:19 2018
+
+[root@ds-asterisk-str05p ~]#
+
+...........................................................................
+
+[root@ds-asterisk-str05p ~]# namei -l /data/backups/magent-prod/2018/07/13/21/d1a31f9c-c074-49ed-983d-e2bfecee8c70-42d1fb4.wav
+f: /data/backups/magent-prod/2018/07/13/21/d1a31f9c-c074-49ed-983d-e2bfecee8c70-42d1fb4.wav
+dr-xr-xr-x root root     /
+drwxrwxrwx root root     data
+drwxrwxrwx root asterstr backups
+drwxrwxrwx root root     magent-prod
+drwxr-xr-x 1000 1000     2018
+drwxr-xr-x 1000 1000     07
+drwxr-xr-x 1000 1000     13
+drwxr-xr-x 1000 1000     21
+-rw-r--r-- 1000 1000     d1a31f9c-c074-49ed-983d-e2bfecee8c70-42d1fb4.wav
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# vim /etc/samba/smb.conf
+
+[root@ds-asterisk-str05p ~]# tail -n 24 /etc/samba/smb.conf
+
+[global]
+        security = user
+        workgroup = MYGROUP
+        server string = Samba
+        guest account = nobody
+        map to guest = Bad Password
+
+[storage]
+        path = /storage
+        browsable = yes
+        writable = yes
+        guest ok = yes
+        read only = no
+        hosts allow = 10.216.41.125 10.216.42.125
+
+[magent-prod]
+        path = /data/backups/magent-prod
+        browsable = yes
+        writable = no
+        guest ok = yes
+        read only = yes
+        hosts allow = 10.216.41.125 10.216.42.125
+
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# systemctl reload smb.service
+
+
+[root@ds-asterisk-str05p ~]# smbstatus
+
+Samba version 4.7.1
+PID     Username     Group        Machine                                   Protocol Version  Encryption           Signing
+----------------------------------------------------------------------------------------------------------------------------------------
+43955   nobody       nobody       10.216.42.125 (ipv4:10.216.42.125:63403)  SMB3_11           -                    -
+41389   nobody       nobody       10.216.41.125 (ipv4:10.216.41.125:63712)  SMB3_11           -                    -
+
+Service      pid     Machine       Connected at                     Encryption   Signing
+---------------------------------------------------------------------------------------------
+magent-prod  41389   10.216.41.125 Mon Sep  3 04:53:44 PM 2018 MSK  -            -
+IPC$         41389   10.216.41.125 Mon Sep  3 04:54:08 PM 2018 MSK  -            -
+magent-prod  43955   10.216.42.125 Mon Sep  3 04:53:11 PM 2018 MSK  -            -
+
+Locked files:
+Pid          Uid        DenyMode   Access      R/W        Oplock           SharePath   Name   Time
+--------------------------------------------------------------------------------------------------
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03/15   Mon Sep  3 16:54:01 2018
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03/15   Mon Sep  3 16:54:01 2018
+43955        99         DENY_NONE  0x100080    RDONLY     NONE             /data/backups/magent-prod   .   Mon Sep  3 16:53:10 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   .   Mon Sep  3 16:53:15 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   .   Mon Sep  3 16:53:15 2018
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03   Mon Sep  3 16:53:46 2018
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03   Mon Sep  3 16:53:46 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018   Mon Sep  3 16:53:11 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018   Mon Sep  3 16:53:11 2018
+
+[root@ds-asterisk-str05p ~]#
+
+...........................................................................
+
+#
+#	I stay only required resource.
+#	Useless resource, that I created before, I've removed.
+#
+[root@ds-asterisk-str05p ~]# vim /etc/samba/smb.conf
+
+[root@ds-asterisk-str05p ~]# tail -n 16 /etc/samba/smb.conf
+
+[global]
+        security = user
+        workgroup = MYGROUP
+        server string = Samba
+        guest account = nobody
+        map to guest = Bad Password
+
+[magent-prod]
+        path = /data/backups/magent-prod
+        browsable = yes
+        writable = no
+        guest ok = yes
+        read only = yes
+        hosts allow = 10.216.41.125 10.216.42.125
+
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# systemctl reload smb.service
+
+[root@ds-asterisk-str05p ~]# rmdir /storage/
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# smbstatus
+
+Samba version 4.7.1
+PID     Username     Group        Machine                                   Protocol Version  Encryption           Signing
+----------------------------------------------------------------------------------------------------------------------------------------
+43955   nobody       nobody       10.216.42.125 (ipv4:10.216.42.125:63403)  SMB3_11           -                    -
+41389   nobody       nobody       10.216.41.125 (ipv4:10.216.41.125:63712)  SMB3_11           -                    -
+
+Service      pid     Machine       Connected at                     Encryption   Signing
+---------------------------------------------------------------------------------------------
+magent-prod  41389   10.216.41.125 Mon Sep  3 04:53:44 PM 2018 MSK  -            -
+magent-prod  43955   10.216.42.125 Mon Sep  3 04:53:11 PM 2018 MSK  -            -
+
+Locked files:
+Pid          Uid        DenyMode   Access      R/W        Oplock           SharePath   Name   Time
+--------------------------------------------------------------------------------------------------
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03/15   Mon Sep  3 16:54:01 2018
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03/15   Mon Sep  3 16:54:01 2018
+43955        99         DENY_NONE  0x100080    RDONLY     NONE             /data/backups/magent-prod   .   Mon Sep  3 16:53:10 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   .   Mon Sep  3 16:53:15 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   .   Mon Sep  3 16:53:15 2018
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03   Mon Sep  3 16:53:46 2018
+41389        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018/09/03   Mon Sep  3 16:53:46 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018   Mon Sep  3 16:53:11 2018
+43955        99         DENY_NONE  0x100081    RDONLY     NONE             /data/backups/magent-prod   2018   Mon Sep  3 16:53:11 2018
+
+[root@ds-asterisk-str05p ~]#
+
+...........................................................................
+
+[root@ds-asterisk-str05p ~]# grep -ie "smb" /var/log/messages
+Sep  3 15:50:54 ds-asterisk-str05p yum[38120]: Updated: libsmbclient-4.7.1-9.el7_5.x86_64
+Sep  3 16:06:48 ds-asterisk-str05p systemd: Starting Samba SMB Daemon...
+Sep  3 16:06:48 ds-asterisk-str05p smbd[39276]: [2018/09/03 16:06:48.839637,  0] ../lib/util/become_daemon.c:124(daemon_ready)
+Sep  3 16:06:48 ds-asterisk-str05p smbd[39276]:  STATUS=daemon 'smbd' finished starting up and ready to serve connections
+Sep  3 16:06:48 ds-asterisk-str05p systemd: Started Samba SMB Daemon.
+Sep  3 16:31:07 ds-asterisk-str05p systemd: Stopping Samba SMB Daemon...
+Sep  3 16:31:07 ds-asterisk-str05p systemd: Stopped Samba SMB Daemon.
+Sep  3 16:31:46 ds-asterisk-str05p systemd: Starting Samba SMB Daemon...
+Sep  3 16:31:46 ds-asterisk-str05p smbd[41196]: [2018/09/03 16:31:46.071841,  0] ../lib/util/become_daemon.c:124(daemon_ready)
+Sep  3 16:31:46 ds-asterisk-str05p smbd[41196]:  STATUS=daemon 'smbd' finished starting up and ready to serve connections
+Sep  3 16:31:46 ds-asterisk-str05p systemd: Started Samba SMB Daemon.
+Sep  3 16:50:54 ds-asterisk-str05p systemd: Reloaded Samba SMB Daemon.
+Sep  3 17:02:11 ds-asterisk-str05p systemd: Reloaded Samba SMB Daemon.
+[root@ds-asterisk-str05p ~]#
+
+[root@ds-asterisk-str05p ~]# ls -Alh /var/log/samba/*
+-rw-r--r--  1 root root  308 Sep  3 16:31 /var/log/samba/log.smbd
+
+/var/log/samba/cores:
+total 4.0K
+drwx------ 2 root root 4.0K Sep  3 16:06 smbd
+
+/var/log/samba/old:
+total 0
+[root@ds-asterisk-str05p ~]#
+
+...........................................................................
+
+
+

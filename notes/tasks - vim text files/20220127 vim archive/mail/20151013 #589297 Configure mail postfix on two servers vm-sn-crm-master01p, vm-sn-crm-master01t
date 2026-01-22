@@ -1,0 +1,105 @@
+
+Параметры запроса
+[редактировать критичность]
+Номер   589297
+Название    №589297
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  13.10.2015 11:27
+Дата регистрации    13.10.2015 11:27
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Здравствуйте, коллеги!
+
+Просьба настроить отправку почты с vm-sn-crm-master01p, vm-sn-crm-master01t аналогично мастерам ГП.
+Требуется для отправки ошибок приложений.
+
+С уважением,
+
+Георгий Безруких
+Системный администратор
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Безруких Георгий
+Соглашение  Базовое соглашение
+Сервис  Электронная почта
+Контактное лицо Безруких Георгий
+Контактный e-mail   g.bezrukikh@tinkoff.ru
+Контактные телефоны 79262001923, 2659
+
+................................................................................
+
+[root@vm-sn-crm-master01p ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-sn-crm-master01p
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@vm-sn-crm-master01p ~]#
+
+[root@vm-sn-crm-master01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@vm-sn-crm-master01p ~]# tail /var/log/maillog
+Oct 13 15:18:20 rhel64-template postfix/pickup[3303]: warning: inet_protocols: configuring for IPv4 support only
+Oct 13 15:23:09 rhel64-template postfix/postfix-script[3348]: stopping the Postfix mail system
+Oct 13 15:23:09 rhel64-template postfix/master[1854]: terminating on signal 15
+Oct 13 15:23:10 rhel64-template postfix/postfix-script[3420]: starting the Postfix mail system
+Oct 13 15:23:10 rhel64-template postfix/master[3421]: daemon started -- version 2.6.6, configuration /etc/postfix
+Oct 13 15:23:59 rhel64-template postfix/pickup[3423]: 531861C0050: uid=0 from=<root>
+Oct 13 15:23:59 rhel64-template postfix/cleanup[3435]: 531861C0050: message-id=<20151013122359.531861C0050@vm-sn-crm-master01p>
+Oct 13 15:23:59 rhel64-template postfix/qmgr[3424]: 531861C0050: from=<root@vm-sn-crm-master01p.tcsbank.ru>, size=551, nrcpt=1 (queue active)
+Oct 13 15:23:59 rhel64-template postfix/smtp[3437]: 531861C0050: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.53, delays=0.03/0.03/0.01/0.46, dsn=2.6.0, status=sent (250 2.6.0 <20151013122359.531861C0050@vm-sn-crm-master01p> [InternalId=42503426] Queued mail for delivery)
+Oct 13 15:23:59 rhel64-template postfix/qmgr[3424]: 531861C0050: removed
+[root@vm-sn-crm-master01p ~]#
+
+................................................................................
+
+[root@vm-sn-crm-master01t ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@vm-sn-crm-master01t ~]# mailq
+Mail queue is empty
+[root@vm-sn-crm-master01t ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-sn-crm-master01t
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@vm-sn-crm-master01t ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@vm-sn-crm-master01t ~]# tail /var/log/maillog
+Oct 13 13:57:57 rhel64-template postfix/pickup[7522]: warning: inet_protocols: configuring for IPv4 support only
+Oct 13 15:27:37 rhel64-template postfix/postfix-script[11634]: stopping the Postfix mail system
+Oct 13 15:27:37 rhel64-template postfix/master[1797]: terminating on signal 15
+Oct 13 15:27:37 rhel64-template postfix/postfix-script[12823]: starting the Postfix mail system
+Oct 13 15:27:37 rhel64-template postfix/master[12842]: daemon started -- version 2.6.6, configuration /etc/postfix
+Oct 13 15:27:59 rhel64-template postfix/pickup[12918]: 7DD6B1C0056: uid=0 from=<root>
+Oct 13 15:27:59 rhel64-template postfix/cleanup[25689]: 7DD6B1C0056: message-id=<20151013122759.7DD6B1C0056@vm-sn-crm-master01t>
+Oct 13 15:27:59 rhel64-template postfix/qmgr[12919]: 7DD6B1C0056: from=<root@vm-sn-crm-master01t.tcsbank.ru>, size=551, nrcpt=1 (queue active)
+Oct 13 15:27:59 rhel64-template postfix/smtp[25752]: 7DD6B1C0056: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.48, delays=0.02/0.03/0.01/0.43, dsn=2.6.0, status=sent (250 2.6.0 <20151013122759.7DD6B1C0056@vm-sn-crm-master01t> [InternalId=44162569] Queued mail for delivery)
+Oct 13 15:27:59 rhel64-template postfix/qmgr[12919]: 7DD6B1C0056: removed
+[root@vm-sn-crm-master01t ~]#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

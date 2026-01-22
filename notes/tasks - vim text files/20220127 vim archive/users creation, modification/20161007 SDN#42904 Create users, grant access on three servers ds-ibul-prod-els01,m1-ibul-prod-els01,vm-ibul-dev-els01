@@ -1,0 +1,121 @@
+
+
+
+
+
+
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@ds-ibul-prod-els01
+Warning: Permanently added 'ds-ibul-prod-els01,10.218.7.77' (RSA) to the list of known hosts.
+Permission denied, please try again.
+[support@centos00 ~]$ ssh bsv@ds-ibul-prod-els01
+bsv@ds-ibul-prod-els01's password:
+Permission denied, please try again.
+bsv@ds-ibul-prod-els01's password:
+
+[support@centos00 ~]$ ssh root@ds-ibul-prod-els01
+root@ds-ibul-prod-els01's password:
+Last login: Thu Oct  6 15:24:45 2016
+[root@ds-ibul-prod-els01 ~]# id bsv
+id: bsv: No such user
+[root@ds-ibul-prod-els01 ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-prt-prod-elk01 ~]# id vov
+uid=618(vov) gid=618(vov) groups=618(vov),0(root),10(wheel)
+[root@vm-prt-prod-elk01 ~]#
+
+[root@vm-prt-prod-elk01 ~]# grep vov /etc/passwd /etc/shadow
+/etc/passwd:vov:x:618:618:Polikha Vladimir:/home/vov:/bin/bash
+/etc/shadow:vov:$6$$THSnVtZFqSaoJNsCH7OBTwRBea3dEfU9.XmvcyxxzFnKaf9VsJCUz7dUm9VD4/2ThC88MeQdjhPQhi5hmj6Rv.:17066:0:99999:7:::
+[root@vm-prt-prod-elk01 ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-prt-prod-elk01 ~]# id lzn
+uid=504(lzn) gid=504(lzn) groups=504(lzn),0(root),10(wheel)
+[root@vm-prt-prod-elk01 ~]# id ema
+uid=571(ema) gid=571(ema) groups=571(ema),0(root),10(wheel)
+[root@vm-prt-prod-elk01 ~]# id tms
+uid=557(tms) gid=557(tms) groups=557(tms),0(root),10(wheel)
+[root@vm-prt-prod-elk01 ~]#
+
+[root@vm-prt-prod-elk01 ~]# egrep "lzn|ema|tms" /etc/passwd /etc/shadow
+/etc/passwd:tms:x:557:557:Aboltin Nikita,,,:/home/tms:/bin/bash
+/etc/passwd:ema:x:571:571:Efremov Mikhail,,,:/home/ema:/bin/bash
+/etc/passwd:lzn:x:504:504:Makhnev Nikita,,,:/home/lzn:/bin/bash
+/etc/shadow:tms:$6$SALTsalt$7MlFAUjjMU5aUZauiOeqIu9XY.M1AfJ.Mhy.o2dvXFoq44HdsPdKuGGA9mA1up1dXhThpPect8CC0YWFGI8Gz1:17050:0:99999:7:::
+/etc/shadow:ema:$6$.GL0BSb/$db9ENx54QeyH/cVAHbcVeThes6A80KJaJ/vcdKY7HM9m6Emo4kMutY1BSLPs9IWhMxbB8wGYd0CWiPeY/yyw60:17050:0:99999:7:::
+/etc/shadow:lzn:$6$dJfNiGSD$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/:17050:0:99999:7:::
+[root@vm-prt-prod-elk01 ~]#
+
+................................................................................
+................................................................................
+
+[root@puppet ~]# vim /etc/puppet/modules/accounts/manifests/devops.pp
+
+  group { 'vov':
+    ensure               => present,
+    gid                  => '618',
+  }
+
+  user { 'vov':
+    home                 => '/home/vov',
+    ensure               => 'present',
+    uid                  => '618',
+    gid                  => '618',
+    groups               => ['root', 'wheel'],
+    password             => '$6$$THSnVtZFqSaoJNsCH7OBTwRBea3dEfU9.XmvcyxxzFnKaf9VsJCUz7dUm9VD4/2ThC88MeQdjhPQhi5hmj6Rv.',
+    comment              => 'Polikha Vladimir,,,',
+    shell                => '/bin/bash',
+    managehome           => true,
+    provider             => 'useradd',
+    require              => Group['vov'],
+  }
+
+[root@puppet ~]# etckeeper vcs --no-pager diff /etc/puppet/modules/accounts/manifests/devops.pp
+diff --git a/puppet/modules/accounts/manifests/devops.pp b/puppet/modules/accounts/manifests/devops.pp
+index 8e37451..5a39124 100644
+--- a/puppet/modules/accounts/manifests/devops.pp
++++ b/puppet/modules/accounts/manifests/devops.pp
+@@ -56,4 +56,24 @@ class accounts::devops{
+     provider            => 'useradd',
+     require             => Group['lzn'],
+    }
++
++  group { 'vov':
++    ensure               => present,
++    gid                  => '618',
++  }
++
++  user { 'vov':
++    home                 => '/home/vov',
++    ensure               => 'present',
++    uid                  => '618',
++    gid                  => '618',
++    groups               => ['root', 'wheel'],
++    password             => '$6$$THSnVtZFqSaoJNsCH7OBTwRBea3dEfU9.XmvcyxxzFnKaf9VsJCUz7dUm9VD4/2ThC88MeQdjhPQhi5hmj6Rv.',
++    comment              => 'Polikha Vladimir,,,',
++    shell                => '/bin/bash',
++    managehome           => true,
++    provider             => 'useradd',
++    require              => Group['vov'],
++  }
++
+ }
+[root@puppet ~]#
+
+
+
+
+
+
+
+
+

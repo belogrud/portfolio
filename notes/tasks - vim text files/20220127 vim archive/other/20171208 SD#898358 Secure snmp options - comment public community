@@ -1,0 +1,252 @@
+
+
+................................................................................
+
+
+[root@m1-wmq-app02 ~]# grep -rie "public" /etc/snmp/
+/etc/snmp/snmptrapd.conf:# authCommunity   log,execute,net public
+/etc/snmp/snmpd.conf:com2sec notConfigUser  default       public
+[root@m1-wmq-app02 ~]#
+
+
+................................................................................
+
+[root@m1-wmq-app02 ~]# cat $(puppet agent --configprint classfile)
+tcs_nrpe
+ntp
+tcs_repos::dell
+puppet
+accounts::plm
+tcs_repos
+accounts::admins
+settings
+default
+tcs_nrpe::params
+tcs_nrpe
+tcs_nrpe::install
+tcs_nrpe::config
+tcs_nrpe::service
+ntp::params
+ntp
+ntp::install
+ntp::config
+ntp::service
+tcs_repos::dell
+puppet
+puppet::install
+puppet::config
+puppet::service
+accounts::plm
+sudo::params
+sudo
+sudo::package
+sudo::configs
+tcs_repos
+accounts::admins
+[root@m1-wmq-app02 ~]#
+
+................................................................................
+
+[root@m1-wmq-app02 ~]# snmpwalk -v 2c -c public localhost | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-wmq-app02.tcsbank.ru 3.10.0-693.el7.x86_64 #1 SMP Thu Jul 6 19:56:57 EDT 2017 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (77092139) 8 days, 22:08:41.39
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-wmq-app02.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (0) 0:00:00.00
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@m1-wmq-app02 ~]#
+
+................................................................................
+
+[root@m1-wmq-app02 ~]# grep -rie "^com2sec" /etc/snmp/
+/etc/snmp/snmpd.conf:com2sec notConfigUser  default       public
+[root@m1-wmq-app02 ~]#
+
+................................................................................
+
+[root@m1-wmq-app02 ~]# sed -i "s/^com2sec/# com2sec/g" /etc/snmp/snmpd.conf
+[root@m1-wmq-app02 ~]# snmpwalk -v 2c -c public localhost | head -n 5
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-wmq-app02.tcsbank.ru 3.10.0-693.el7.x86_64 #1 SMP Thu Jul 6 19:56:57 EDT 2017 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (77119730) 8 days, 22:13:17.30
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-wmq-app02.tcsbank.ru
+[root@m1-wmq-app02 ~]#
+
+[root@m1-wmq-app02 ~]# systemctl reload snmpd.service
+[root@m1-wmq-app02 ~]# snmpwalk -v 2c -c public localhost | head -n 5
+Timeout: No Response from localhost
+[root@m1-wmq-app02 ~]#
+
+................................................................................
+
+[support@centos ~]$ list_of_hosts="" ; while read var1_hosts ; do list_of_hosts="${list_of_hosts} ${var1_hosts}" ; done << 'EOF' ; for var1_hosts in ${list_of_hosts} ; do SSHPASS="$(pass common/linux-default)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hosts}.tcsbank.ru "( echo ; hostname ; grep -rie "public" /etc/snmp/ ; snmpwalk -v 2c -c public localhost | head -n 5 ; sed -i \"s/^com2sec/# com2sec/g\" /etc/snmp/snmpd.conf ; grep -rie "public" /etc/snmp/ ; systemctl reload snmpd.service ; snmpwalk -v 2c -c public localhost | head -n 5 )" ; done
+> ds-wmq-app02
+> EOF
+Warning: Permanently added 'ds-wmq-app02.tcsbank.ru,10.216.32.216' (ECDSA) to the list of known hosts.
+
+ds-wmq-app02.tcsbank.ru
+/etc/snmp/snmptrapd.conf:# authCommunity   log,execute,net public
+/etc/snmp/snmpd.conf:com2sec notConfigUser  default       public
+SNMPv2-MIB::sysDescr.0 = STRING: Linux ds-wmq-app02.tcsbank.ru 3.10.0-693.el7.x86_64 #1 SMP Thu Jul 6 19:56:57 EDT 2017 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (77174115) 8 days, 22:22:21.15
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: ds-wmq-app02.tcsbank.ru
+/etc/snmp/snmptrapd.conf:# authCommunity   log,execute,net public
+/etc/snmp/snmpd.conf:# com2sec notConfigUser  default       public
+Timeout: No Response from localhost
+Connection to ds-wmq-app02.tcsbank.ru closed.
+[support@centos ~]$
+
+
+................................................................................
+
+
+10.217.50.13,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.24,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.31,161,"public","Linux m1-db12-prod.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+10.217.50.34,161,"public","Linux ds-db12-prod.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+10.217.50.41,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.43,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.46,161,"public","Linux m1-db07-prod.tcsbank.ru 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.47,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.50,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.52,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.53,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.55,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.57,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.60,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.72,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.73,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.77,161,"public","Linux m1-db12-prod.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+10.217.50.78,161,"public","Linux m1-db12-prod.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+10.217.50.85,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.88,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.90,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.92,161,"public","Linux ds-db12-prod.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+10.217.50.93,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.99,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.101,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.102,161,"public","Linux m1-db12-prod.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+10.217.50.105,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.106,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.111,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.112,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.116,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.147,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.148,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.149,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.167,161,"public","Linux vm-dbamon02.tcsbank.ru 2.6.32-358.el6.x86_64 #1 SMP Tue Jan 29 11:47:41 EST 2013 x86_64"
+10.217.50.172,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.173,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.157,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.158,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.193,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.194,161,"public","Linux m1-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.210,161,"public","Linux m1-db07-prod.tcsbank.ru 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.234,161,"public","Linux ds-db02-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.235,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.236,161,"public","Linux m1-db08-prod 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+10.217.50.245,161,"public","Linux ds-db10-prod.tcsbank.ru 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+
+
+
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db12-prod	.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+ds-db12-prod	.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db07-prod	.tcsbank.ru 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db12-prod	.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+m1-db12-prod	.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db12-prod	.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db12-prod	.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+vm-dbamon02	tcsbank.ru 2.6.32-358.el6.x86_64 #1 SMP Tue Jan 29 11:47:41 EST 2013 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db07-prod	.tcsbank.ru 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db02-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+m1-db08-prod	 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+ds-db10-prod	.tcsbank.ru 2.6.32-696.1.1.el6.x86_64 #1 SMP Tue Mar 21 12:19:18 EDT 2017 x86_64"
+
+
+ds-db02-prod
+m1-db02-prod
+m1-db12-prod
+ds-db12-prod
+m1-db02-prod
+m1-db02-prod
+m1-db07-prod
+m1-db02-prod
+m1-db02-prod
+m1-db02-prod
+m1-db02-prod
+ds-db02-prod
+m1-db02-prod
+m1-db08-prod
+m1-db08-prod
+m1-db08-prod
+m1-db12-prod
+m1-db12-prod
+m1-db08-prod
+ds-db02-prod
+m1-db02-prod
+ds-db12-prod
+m1-db02-prod
+m1-db02-prod
+ds-db02-prod
+m1-db12-prod
+ds-db02-prod
+ds-db02-prod
+ds-db02-prod
+ds-db02-prod
+m1-db08-prod
+m1-db02-prod
+ds-db02-prod
+ds-db02-prod
+vm-dbamon02 
+m1-db02-prod
+m1-db02-prod
+m1-db08-prod
+m1-db08-prod
+m1-db02-prod
+m1-db02-prod
+m1-db07-prod
+ds-db02-prod
+m1-db08-prod
+m1-db08-prod
+ds-db10-prod

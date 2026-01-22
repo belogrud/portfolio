@@ -1,0 +1,1199 @@
+
+
+................................................................................
+
+From: Arkhipov Maksim Nikolaevich 
+Sent: Tuesday, November 27, 2018 3:52 PM
+To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>
+Cc: Makeev Dmitriy Alekseevich <d.a.makeev@tinkoff.ru>; Shapkin Nikolay Sergeevich <n.shapkin@tinkoff.ru>; Lazykin Mikhail Aleksandrovich <m.lazykin@tinkoff.ru>; Leshchuk Vitaliy Viktorovich <v.leshchuk@tinkoff.ru>; Chernyh Aleksandr Vladimirovich <a.chernyh@tinkoff.ru>
+Subject: RE: Уточнение по SD#1352953
+
+Сергей, добрый день.
+
+По новому серверу:
+1. Имя ds-pr-onlapp02
+2. ОС: RHEL 7.5
+3. Raid: 2*300GB sas 10k – raid 0, 
+SSD – raid 0, 
+7*2TB 7.2k – raid 5
+4. Диски: 2*300GB sas 10k – ROOT, 
+SSD - /opt/online, 
+7*2TB 7.2k - /data
+
+Пример с ds-pr-onlapp01:
+$ df -h
+Filesystem             Size  Used Avail Use% Mounted on
+/dev/mapper/rhel-root  200G   18G  182G  10% /
+devtmpfs               252G     0  252G   0% /dev
+tmpfs                  252G   38M  252G   1% /dev/shm
+tmpfs                  252G  651M  252G   1% /run
+tmpfs                  252G     0  252G   0% /sys/fs/cgroup
+/dev/sdb1              745G  143M  745G   1% /opt/online
+/dev/sdc1               11T  1.2T  9.8T  11% /data
+/dev/sda1             1014M  224M  791M  23% /boot
+/dev/mapper/rhel-var    74G   14G   61G  19% /var
+tmpfs                   51G     0   51G   0% /run/user/0
+tmpfs                   51G     0   51G   0% /run/user/530
+
+5. Создать пользователя: online 
+                добавить его в sudoers
+6. Должен быть доступ к management консоли сервера для доменной группы ilo_online_users
+
+
+В целом настройки должны быть аналогичны серверу ds-pr-onlapp01
+
+
+
+From: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru> 
+Sent: Tuesday, November 27, 2018 2:59 PM
+To: Arkhipov Maksim Nikolaevich <m.arkhipov@tinkoff.ru>
+Subject: Уточнение по SD#1352953
+
+Добрый день.
+
+Требуется уточнение по SD#1352953.
+
+Нужны детали по подготовке двух серверов к использованию.
+1. Наименование серверов.
+2. Какую ОС устанавливать.
+3. Конфигурация raid масса.
+4. Какие разделы дисковые создавать, куда смонтировать.
+5. Прочее, что имеет важность.
+
+В netbox ссылка на два сервер: https://netbox.tcsbank.ru/dcim/devices/?tag=purchase_oct2018_type07_app_processing_online
+
+................................................................................
+
+
+[root@m1-pr-onlapp01 ~]# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R930
+        Version: Not Specified
+        Serial Number: 30WN1M2
+        UUID: 4C4C4544-0030-5710-804E-B3C04F314D32
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R930
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-pr-onlapp01 ~]# cat
+
+[root@m1-pr-onlapp01 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 7.5 (Maipo)
+[root@m1-pr-onlapp01 ~]#
+
+
+[root@m1-pr-onlapp01 ~]# racadm storage get vdisks -o -p layout,status,availableprotocols,mediatype
+Disk.Virtual.0:RAID.Integrated.1-1
+   Layout                           = Raid-1
+   Status                           = Ok
+   AvailableProtocols               = SAS
+   MediaType                        = HDD
+Disk.Virtual.1:RAID.Integrated.1-1
+   Layout                           = Raid-1
+   Status                           = Ok
+   AvailableProtocols               = SATA
+   MediaType                        = SSD
+Disk.Virtual.2:RAID.Integrated.1-1
+   Layout                           = Raid-5
+   Status                           = Ok
+   AvailableProtocols               = SAS
+   MediaType                        = HDD
+
+[root@m1-pr-onlapp01 ~]#
+
+
+[root@m1-pr-onlapp01 ~]# racadm storage get vdisks -o
+Disk.Virtual.0:RAID.Integrated.1-1
+   Status                           = Ok
+   DeviceDescription                = Virtual Disk 0 on Integrated RAID Controller 1
+   Name                             = Virtual Disk 0
+   RollupStatus                     = Ok
+   State                            = Online
+   OperationalState                 = Not applicable
+   Layout                           = Raid-1
+   Size                             = 278.88 GB
+   SpanDepth                        = 1
+   AvailableProtocols               = SAS
+   MediaType                        = HDD
+   ReadPolicy                       = Adaptive Read Ahead
+   WritePolicy                      = Write Back
+   StripeSize                       = 64K
+   DiskCachePolicy                  = Default
+   BadBlocksFound                   = NO
+   Secured                          = NO
+   RemainingRedundancy              = 1
+   EnhancedCache                    = Not Applicable
+   T10PIStatus                      = Disabled
+   BlockSizeInBytes                 = 512
+Disk.Virtual.1:RAID.Integrated.1-1
+   Status                           = Ok
+   DeviceDescription                = Virtual Disk 1 on Integrated RAID Controller 1
+   Name                             = RAID-1-ssd
+   RollupStatus                     = Ok
+   State                            = Online
+   OperationalState                 = Not applicable
+   Layout                           = Raid-1
+   Size                             = 744.63 GB
+   SpanDepth                        = 1
+   AvailableProtocols               = SATA
+   MediaType                        = SSD
+   ReadPolicy                       = Adaptive Read Ahead
+   WritePolicy                      = Write Back
+   StripeSize                       = 64K
+   DiskCachePolicy                  = Default
+   BadBlocksFound                   = NO
+   Secured                          = NO
+   RemainingRedundancy              = 1
+   EnhancedCache                    = Not Applicable
+   T10PIStatus                      = Disabled
+   BlockSizeInBytes                 = 512
+Disk.Virtual.2:RAID.Integrated.1-1
+   Status                           = Ok
+   DeviceDescription                = Virtual Disk 2 on Integrated RAID Controller 1
+   Name                             = RAID-5
+   RollupStatus                     = Ok
+   State                            = Online
+   OperationalState                 = Not applicable
+   Layout                           = Raid-5
+   Size                             = 11175.00 GB
+   SpanDepth                        = 1
+   AvailableProtocols               = SAS
+   MediaType                        = HDD
+   ReadPolicy                       = Adaptive Read Ahead
+   WritePolicy                      = Write Back
+   StripeSize                       = 64K
+   DiskCachePolicy                  = Default
+   BadBlocksFound                   = NO
+   Secured                          = NO
+   RemainingRedundancy              = 1
+   EnhancedCache                    = Not Applicable
+   T10PIStatus                      = Disabled
+   BlockSizeInBytes                 = 512
+
+[root@m1-pr-onlapp01 ~]#
+
+[root@m1-pr-onlapp01 ~]# racadm storage get pdisks -o -p Status,Size,BusProtocol,MediaType,NegotiatedSpeed,FormFactor
+Disk.Bay.0:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 278.88 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.1:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 278.88 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.2:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 1862.50 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.3:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 1862.50 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.4:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 1862.50 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.5:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 1862.50 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.6:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 1862.50 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.7:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 1862.50 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.8:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 1862.50 GB
+   BusProtocol                      = SAS
+   MediaType                        = HDD
+   NegotiatedSpeed                  = 12.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.22:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 744.63 GB
+   BusProtocol                      = SATA
+   MediaType                        = SSD
+   NegotiatedSpeed                  = 6.0 Gb/s
+   FormFactor                       = 2.5 Inch
+Disk.Bay.23:Enclosure.Internal.0-1:RAID.Integrated.1-1
+   Status                           = Ok
+   Size                             = 744.63 GB
+   BusProtocol                      = SATA
+   MediaType                        = SSD
+   NegotiatedSpeed                  = 6.0 Gb/s
+   FormFactor                       = 2.5 Inch
+
+[root@m1-pr-onlapp01 ~]#
+
+[root@m1-pr-onlapp01 ~]# uname -a
+Linux m1-pr-onlapp01.tcsbank.ru 3.10.0-862.6.3.el7.x86_64 #1 SMP Fri Jun 15 17:57:37 EDT 2018 x86_64 x86_64 x86_64 GNU/Linux
+[root@m1-pr-onlapp01 ~]#
+
+[root@m1-pr-onlapp01 ~]# lsblk -o NAME,MOUNTPOINT,FSTYPE,SIZE
+NAME          MOUNTPOINT  FSTYPE        SIZE
+sda                                   278.9G
+├─sda1        /boot       xfs             1G
+└─sda2                    LVM2_member 277.9G
+  ├─rhel-root /           xfs           200G
+  ├─rhel-swap [SWAP]      swap            4G
+  └─rhel-var  /var        xfs          73.9G
+sdb                                   744.6G
+└─sdb1        /opt/online xfs         744.6G
+sdc                                    10.9T
+└─sdc1        /data       xfs          10.9T
+[root@m1-pr-onlapp01 ~]#
+
+[root@m1-pr-onlapp01 ~]# findmnt
+TARGET                                SOURCE                FSTYPE      OPTIONS
+/                                     /dev/mapper/rhel-root xfs         rw,relatime,attr2,inode64,noquota
+├─/sys                                sysfs                 sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security              securityfs            securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                    tmpfs                 tmpfs       ro,nosuid,nodev,noexec,mode=755
+│ │ ├─/sys/fs/cgroup/systemd          cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd
+│ │ ├─/sys/fs/cgroup/freezer          cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,freezer
+│ │ ├─/sys/fs/cgroup/pids             cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,pids
+│ │ ├─/sys/fs/cgroup/memory           cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,memory
+│ │ ├─/sys/fs/cgroup/net_cls,net_prio cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,net_prio,net_cls
+│ │ ├─/sys/fs/cgroup/cpuset           cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,cpuset
+│ │ ├─/sys/fs/cgroup/perf_event       cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,perf_event
+│ │ ├─/sys/fs/cgroup/cpu,cpuacct      cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,cpuacct,cpu
+│ │ ├─/sys/fs/cgroup/hugetlb          cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,hugetlb
+│ │ ├─/sys/fs/cgroup/blkio            cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,blkio
+│ │ └─/sys/fs/cgroup/devices          cgroup                cgroup      rw,nosuid,nodev,noexec,relatime,devices
+│ ├─/sys/fs/pstore                    pstore                pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/debug                 debugfs               debugfs     rw,relatime
+│ └─/sys/kernel/config                configfs              configfs    rw,relatime
+├─/proc                               proc                  proc        rw,nosuid,nodev,noexec,relatime
+│ └─/proc/sys/fs/binfmt_misc          systemd-1             autofs      rw,relatime,fd=32,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=158
+│   └─/proc/sys/fs/binfmt_misc        binfmt_misc           binfmt_misc rw,relatime
+├─/dev                                devtmpfs              devtmpfs    rw,nosuid,size=264022940k,nr_inodes=66005735,mode=755
+│ ├─/dev/shm                          tmpfs                 tmpfs       rw,nosuid,nodev
+│ ├─/dev/pts                          devpts                devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/hugepages                    hugetlbfs             hugetlbfs   rw,relatime
+│ └─/dev/mqueue                       mqueue                mqueue      rw,relatime
+├─/run                                tmpfs                 tmpfs       rw,nosuid,nodev,mode=755
+│ ├─/run/user/0                       tmpfs                 tmpfs       rw,nosuid,nodev,relatime,size=52807024k,mode=700
+│ ├─/run/user/530                     tmpfs                 tmpfs       rw,nosuid,nodev,relatime,size=52807024k,mode=700,uid=530,gid=530
+│ └─/run/user/525                     tmpfs                 tmpfs       rw,nosuid,nodev,relatime,size=52807024k,mode=700,uid=525,gid=525
+├─/data                               /dev/sdc1             xfs         rw,relatime,attr2,inode64,noquota
+├─/boot                               /dev/sda1             xfs         rw,relatime,attr2,inode64,noquota
+├─/opt/online                         /dev/sdb1             xfs         rw,relatime,attr2,inode64,noquota
+└─/var                                /dev/mapper/rhel-var  xfs         rw,relatime,attr2,inode64,noquota
+  └─/var/lib/nfs/rpc_pipefs           sunrpc                rpc_pipefs  rw,relatime
+[root@m1-pr-onlapp01 ~]#
+
+
+[root@m1-pr-onlapp01 ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.217.111.11/24 brd 10.217.111.255 scope global em3
+    inet 10.217.108.10/24 brd 10.217.108.255 scope global team0.2708
+    inet 10.217.110.11/24 brd 10.217.110.255 scope global team0.2710
+[root@m1-pr-onlapp01 ~]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@vm-pxe01p
+Last login: Thu Sep 27 16:42:12 2018 from 172.16.28.74
+[bsv@vm-pxe01p ~]$ sudo -
+[sudo] password for bsv:
+[bsv@vm-pxe01p ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-pxe01p ~]# grep -ie "fixed-address" /etc/dhcp/dhcpd.conf
+        fixed-address 10.218.15.123;
+        fixed-address 10.218.15.126;
+        fixed-address 10.218.15.130;
+        fixed-address 10.218.15.112;
+        fixed-address 10.218.15.127;
+        fixed-address 10.218.15.131;
+        fixed-address 10.218.15.124;
+        fixed-address 10.218.15.133;
+        fixed-address 10.218.15.134;
+        fixed-address 192.168.1.100;
+        fixed-address 10.218.15.128;
+        fixed-address 10.218.15.120;
+        fixed-address 10.218.15.129;
+        fixed-address 10.218.15.125;
+        fixed-address 10.218.15.135;
+        fixed-address 10.218.15.111;
+        fixed-address 10.218.15.122;
+        fixed-address 10.218.15.121;
+        fixed-address 10.218.15.132;
+        fixed-address 10.218.15.2;
+[root@vm-pxe01p ~]#
+
+\\tcsbank.ru\soft$\soft4\Linux\RedHat\
+rhel-server-7.5-x86_64-dvd.iso 
+
+................................................................................
+
+[root@vm-pxe01p ~]# ip route
+default via 10.218.15.254 dev eth0
+10.218.15.0/24 dev eth0 proto kernel scope link src 10.218.15.1
+169.254.0.0/16 dev eth0 scope link metric 1002
+[root@vm-pxe01p ~]# cat /etc/resolv.conf
+nameserver 10.216.41.4
+nameserver 10.216.42.4
+domain tcsbank.ru
+search tcsbank.ru
+[root@vm-pxe01p ~]# ping -c 3 10.218.15.131
+PING 10.218.15.131 (10.218.15.131) 56(84) bytes of data.
+
+--- 10.218.15.131 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 1999ms
+
+[root@vm-pxe01p ~]#
+
+................................................................................
+
+[root@ds-pr-onlapp01 ~]# ethtool em3
+Settings for em3:
+        Supported ports: [ TP ]
+        Supported link modes:   10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: 1000Mb/s
+        Duplex: Full
+        Port: Twisted Pair
+        PHYAD: 1
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: off (auto)
+        Supports Wake-on: pumbg
+        Wake-on: d
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: yes
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# teamdctl team0 state view
+setup:
+  runner: activebackup
+ports:
+  em1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+  em2
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+runner:
+  active port: em1
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# ethtool em1
+Settings for em1:
+        Supported ports: [ FIBRE ]
+        Supported link modes:   Not reported
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: No
+        Supported FEC modes: Not reported
+        Advertised link modes:  Not reported
+        Advertised pause frame use: No
+        Advertised auto-negotiation: No
+        Advertised FEC modes: Not reported
+        Speed: 10000Mb/s
+        Duplex: Full
+        Port: Direct Attach Copper
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: off
+        Supports Wake-on: g
+        Wake-on: g
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: yes
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# ethtool em2
+Settings for em2:
+        Supported ports: [ FIBRE ]
+        Supported link modes:   Not reported
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: No
+        Supported FEC modes: Not reported
+        Advertised link modes:  Not reported
+        Advertised pause frame use: No
+        Advertised auto-negotiation: No
+        Advertised FEC modes: Not reported
+        Speed: 10000Mb/s
+        Duplex: Full
+        Port: Direct Attach Copper
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: off
+        Supports Wake-on: g
+        Wake-on: g
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: yes
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.217.111.10/24 brd 10.217.111.255 scope global em3
+    inet 10.217.109.10/24 brd 10.217.109.255 scope global team0.2709
+    inet 10.217.110.10/24 brd 10.217.110.255 scope global team0.2710
+[root@ds-pr-onlapp01 ~]#
+
+
+#
+#	20181204 I've found one additional interface...
+#	10.217.12.213 -> team0.1712
+#
+[root@ds-pr-onlapp01 ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.217.111.10/24 brd 10.217.111.255 scope global em3
+    inet 10.217.12.213/24 scope global team0.1712
+    inet 10.217.109.10/24 brd 10.217.109.255 scope global team0.2709
+    inet 10.217.110.10/24 brd 10.217.110.255 scope global team0.2710
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# host 10.217.109.10
+10.109.217.10.in-addr.arpa domain name pointer ds-pr-onlapp01.tcsbank.ru.
+[root@ds-pr-onlapp01 ~]# host 10.217.110.10
+10.110.217.10.in-addr.arpa domain name pointer ds-pr-onlapp01-hb01.tcsbank.ru.
+[root@ds-pr-onlapp01 ~]#
+[root@ds-pr-onlapp01 ~]# host 10.217.111.10
+Host 10.111.217.10.in-addr.arpa. not found: 3(NXDOMAIN)
+[root@ds-pr-onlapp01 ~]# host 10.217.12.213
+213.12.217.10.in-addr.arpa domain name pointer pr-onl-ha.tcsbank.ru.
+[root@ds-pr-onlapp01 ~]#
+
+
+[root@ds-pr-onlapp01 ~]# host ds-pr-onlapp01
+ds-pr-onlapp01.tcsbank.ru has address 10.217.109.10
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ; echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=06420a18-7c6c-4f28-bd96-c1feec1fc7b0
+DEVICE=em1
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+MTU=9000
+NM_CONTROLLED=no
+
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+UUID=c5c1482c-f733-4677-b1eb-c212a1244ef4
+DEVICE=em2
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+MTU=9000
+NM_CONTROLLED=no
+
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=bac40917-dc44-4222-8258-5144e6e914ca
+DEVICE=em3
+ONBOOT=yes
+IPADDR=10.217.111.10
+NETMASK=255.255.255.0
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=0b63f240-62e7-40a0-9862-985095b1aa9c
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=team0
+ONBOOT=yes
+DEVICETYPE=Team
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+MTU=9000
+NM_CONTROLLED=no
+
+
+/etc/sysconfig/network-scripts/ifcfg-team0.1712
+DEVICE=team0.1712
+TYPE=Ethernet
+BOOTPROTO=none
+NM_CONTROLLED=no
+ONBOOT=yes
+USERCTL=no
+IPV6INIT=no
+VLAN=yes
+#IPADDR=10.217.12.209
+#NETMASK=255.255.255.0
+#GATEWAY=10.217.12.254
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-team0.2709
+DEVICE=team0.2709
+TYPE=Ethernet
+BOOTPROTO=none
+NM_CONTROLLED=no
+ONBOOT=yes
+USERCTL=no
+IPV6INIT=no
+VLAN=yes
+IPADDR=10.217.109.10
+NETMASK=255.255.255.0
+GATEWAY=10.217.109.254
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-team0.2710
+DEVICE=team0.2710
+TYPE=Ethernet
+BOOTPROTO=none
+NM_CONTROLLED=no
+ONBOOT=yes
+USERCTL=no
+IPV6INIT=no
+VLAN=yes
+IPADDR=10.217.110.10
+NETMASK=255.255.255.0
+MTU=1500
+[root@ds-pr-onlapp01 ~]#
+
+
+[root@ds-pr-onlapp01 ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain
+::1         localhost localhost.localdomain
+10.217.109.10 ds-pr-onlapp01.tcsbank.ru
+10.217.108.10 m1-pr-onlapp01.tcsbank.ru
+10.217.110.10 ds-pr-onlapp01-hb01
+10.217.110.11 m1-pr-onlapp01-hb01
+10.217.111.10 ds-pr-onlapp01-hb02
+10.217.111.11 m1-pr-onlapp01-hb02
+
+# Processing Systems
+10.217.12.5        iris            # F5 for IRIS
+#10.217.12.15       web_api         # PRIME WEB LIVE
+
+# MasterCard Payment System
+#10.49.90.55        mip             # MIP 03I
+10.49.90.56        mip             # MIP 0LS
+#10.0.22.55         mip             # MasterCard MIP 1H0
+#10.0.22.56         mip             # MasterCard MIP 1H1
+
+
+# VISA Payment System
+209.65.33.52            vap             # Visa East - M1 Site 664
+209.65.32.52            vap1            # Visa West - M1 Site 664
+10.216.254.103          vapdr           # Visa East - DR Site 742
+10.216.254.102          vapdr1          # Visa West - DR Site 742
+
+# NSPC Payment System
+194.226.50.4       minp            # MasterCard NSPC
+194.226.50.4       vapnspc         # Visa NSPC
+194.226.50.4       vap1nspc        # Visa NSPC
+194.226.50.68      minp2           # MasterCard NSPC backup line
+194.226.50.68      vapnspc2        # Visa NSPC backup line
+194.226.50.68      vap1nspc2       # Visa NSPC backup line
+# 194.226.50.4     rnp_nspk1       # MIR live Old
+# 194.226.50.68    rnp_nspk2       # MIR backup line Old
+194.226.50.39      rnp_nspk1       # MIR live
+194.226.50.103     rnp_nspk2       # MIR backup line
+
+# UCS Host
+172.20.200.23      ucs             # UCS live host
+
+10.217.12.63  onlacq
+
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# ping -c 3 10.217.109.20
+PING 10.217.109.20 (10.217.109.20) 56(84) bytes of data.
+From 10.217.109.10 icmp_seq=1 Destination Host Unreachable
+From 10.217.109.10 icmp_seq=2 Destination Host Unreachable
+From 10.217.109.10 icmp_seq=3 Destination Host Unreachable
+
+--- 10.217.109.20 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2000ms
+pipe 3
+[root@ds-pr-onlapp01 ~]#
+
+[root@ds-pr-onlapp01 ~]# ping -c 3 10.217.110.20
+PING 10.217.110.20 (10.217.110.20) 56(84) bytes of data.
+From 10.217.110.10 icmp_seq=1 Destination Host Unreachable
+From 10.217.110.10 icmp_seq=2 Destination Host Unreachable
+From 10.217.110.10 icmp_seq=3 Destination Host Unreachable
+
+--- 10.217.110.20 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 1999ms
+pipe 3
+[root@ds-pr-onlapp01 ~]#
+
+
+................................................................................
+
+
+[root@ds-pr-onlapp02 ~]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ; echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=b3454ad0-86a1-49a1-bff3-00afe129ab3f
+DEVICE=em1
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+UUID=87b8d790-ec4d-4160-b849-e2c83af17d58
+DEVICE=em2
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=c9ebf85f-4be4-4ae4-a702-b8c050c53d4b
+DEVICE=em3
+ONBOOT=yes
+IPADDR=10.217.111.20
+NETMASK=255.255.255.0
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=47f2c752-3b83-4265-b33f-33a222aff2b9
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=team0
+ONBOOT=yes
+DEVICETYPE=Team
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-team0.2709
+DEVICE=team0.2709
+TYPE=Ethernet
+BOOTPROTO=none
+NM_CONTROLLED=no
+ONBOOT=yes
+USERCTL=no
+IPV6INIT=no
+VLAN=yes
+IPADDR=10.217.109.20
+NETMASK=255.255.255.0
+GATEWAY=10.217.109.254
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-team0.2710
+DEVICE=team0.2710
+TYPE=Ethernet
+BOOTPROTO=none
+NM_CONTROLLED=no
+ONBOOT=yes
+USERCTL=no
+IPV6INIT=no
+VLAN=yes
+IPADDR=10.217.110.20
+NETMASK=255.255.255.0
+MTU=1500
+[root@ds-pr-onlapp02 ~]#
+
+[root@ds-pr-onlapp02 ~]# teamdctl team0 state view
+setup:
+  runner: activebackup
+ports:
+  em1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+  em2
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+runner:
+  active port: em1
+[root@ds-pr-onlapp02 ~]# teamdctl team0 state view -v
+setup:
+  runner: activebackup
+  kernel team mode: activebackup
+  D-BUS enabled: yes
+  ZeroMQ enabled: no
+  debug level: 0
+  daemonized: no
+  PID: 9040
+  PID file: /var/run/teamd/team0.pid
+ports:
+  em1
+    ifindex: 4
+    addr: e4:43:4b:26:25:32
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+  em2
+    ifindex: 5
+    addr: e4:43:4b:26:25:32
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+runner:
+  active port: em1
+[root@ds-pr-onlapp02 ~]#
+
+[root@ds-pr-onlapp02 ~]# ethtool -i em1
+driver: i40e
+version: 2.1.14-k
+firmware-version: 6.00 0x8000374f 18.5.17
+expansion-rom-version:
+bus-info: 0000:01:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes
+[root@ds-pr-onlapp02 ~]# lspci -s 0000:01:00.0
+01:00.0 Ethernet controller: Intel Corporation Ethernet Controller X710 for 10GbE SFP+ (rev 01)
+[root@ds-pr-onlapp02 ~]# lspci -s 0000:01:00.0 -v
+01:00.0 Ethernet controller: Intel Corporation Ethernet Controller X710 for 10GbE SFP+ (rev 01)
+        Subsystem: Dell Ethernet 10G 4P X710/I350 rNDC
+        Flags: bus master, fast devsel, latency 0, IRQ 134, NUMA node 0
+        Memory at 91000000 (64-bit, prefetchable) [size=16M]
+        Memory at 92008000 (64-bit, prefetchable) [size=32K]
+        Expansion ROM at 92100000 [disabled] [size=512K]
+        Capabilities: [40] Power Management version 3
+        Capabilities: [50] MSI: Enable- Count=1/1 Maskable+ 64bit+
+        Capabilities: [70] MSI-X: Enable+ Count=129 Masked-
+        Capabilities: [a0] Express Endpoint, MSI 00
+        Capabilities: [e0] Vital Product Data
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [140] Device Serial Number 32-25-26-ff-ff-4b-43-e4
+        Capabilities: [150] Alternative Routing-ID Interpretation (ARI)
+        Capabilities: [1a0] Transaction Processing Hints
+        Capabilities: [1b0] Access Control Services
+        Capabilities: [1d0] #19
+        Kernel driver in use: i40e
+        Kernel modules: i40e
+
+[root@ds-pr-onlapp02 ~]#
+
+[root@ds-pr-onlapp02 ~]# ethtool -i em3
+driver: igb
+version: 5.4.0-k
+firmware-version: 1.67, 0x80000fa8, 18.5.17
+expansion-rom-version:
+bus-info: 0000:02:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes
+[root@ds-pr-onlapp02 ~]# lspci -s 0000:02:00.0
+02:00.0 Ethernet controller: Intel Corporation I350 Gigabit Network Connection (rev 01)
+[root@ds-pr-onlapp02 ~]#
+
+
+#
+#	After Sakalkin had configured network ports.
+#
+[s.belogrud@TCS4357]# ssh root@10.217.109.20
+Warning: Permanently added '10.217.109.20' (ECDSA) to the list of known hosts.
+root@10.217.109.20's password:
+Last login: Mon Dec  3 18:00:54 2018
+[root@ds-pr-onlapp02 ~]#
+
+[root@ds-pr-onlapp02 ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.217.111.20/24 brd 10.217.111.255 scope global em3
+    inet 10.217.109.20/24 brd 10.217.109.255 scope global team0.2709
+    inet 10.217.110.20/24 brd 10.217.110.255 scope global team0.2710
+[root@ds-pr-onlapp02 ~]#
+
+
+[support@centos puppet]$ ansible-playbook 20180808-1512.install.puppet-agent.yaml -i 20180808-1512.list_of_hosts --become --extra-vars "ansible_user=root ansible_password=$(pass common/linux-default) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'"
+gpg: Invalid passphrase; please try again ...
+
+PLAY [all] *******************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************************************************************
+ok: [10.217.109.20]
+
+TASK [Add Puppetlabs Repo v5 (rpm) for RHEL] *********************************************************************************************************************************************************
+changed: [10.217.109.20]
+
+TASK [Add Puppetlabs Repo v5 (deb)] ******************************************************************************************************************************************************************
+skipping: [10.217.109.20]
+
+TASK [Add Puppetlabs Repo key (deb)] *****************************************************************************************************************************************************************
+skipping: [10.217.109.20]
+
+TASK [Install puppet-agent via apt module on Ubuntu with option -y] **********************************************************************************************************************************
+skipping: [10.217.109.20]
+
+TASK [Install new puppet] ****************************************************************************************************************************************************************************
+fatal: [10.217.109.20]: FAILED! => {"changed": false, "msg": "No package matching 'puppet-agent' found available, installed or updated", "rc": 126, "results": ["No package matching 'puppet-agent' found available, installed or updated"]}
+        to retry, use: --limit @/home/support/work/20180525-1714/puppet/20180808-1512.install.puppet-agent.retry
+
+PLAY RECAP *******************************************************************************************************************************************************************************************
+10.217.109.20              : ok=2    changed=1    unreachable=0    failed=1   
+
+[support@centos puppet]$
+
+
+[root@ds-pr-onlapp02 ~]# vim /etc/resolv.conf
+[root@ds-pr-onlapp02 ~]# cat /etc/resolv.conf
+search tcsbank.ru
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+[root@ds-pr-onlapp02 ~]#
+
+#
+#	There is no access to repository server.
+#
+[root@ds-pr-onlapp02 ~]# curl repo-linux.tcsbank.ru 80
+
+[root@ds-pr-onlapp02 ~]# host repo-linux.tcsbank.ru
+repo-linux.tcsbank.ru is an alias for ds-repo01.tcsbank.ru.
+ds-repo01.tcsbank.ru has address 10.216.42.6
+[root@ds-pr-onlapp02 ~]#
+
+#
+#	After Garnyserv Igor make access propely - it's becom available.
+#
+
+[root@vm-puppetmaster02p ~]# puppet cert sign "ds-pr-onlapp02.tcsbank.ru"
+Signing Certificate Request for:
+  "ds-pr-onlapp02.tcsbank.ru" (SHA256) A0:47:FC:F6:E2:5D:92:32:A9:CE:22:1B:7B:91:C5:92:FD:AC:AC:0E:26:C6:40:22:B1:3D:DD:DD:8E:BF:13:64
+Notice: Signed certificate request for ds-pr-onlapp02.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest ds-pr-onlapp02.tcsbank.ru at '/etc/puppetlabs/puppet/ssl/ca/requests/ds-pr-onlapp02.tcsbank.ru.pem'
+[root@vm-puppetmaster02p ~]#
+
+
+[support@centos puppet]$ ansible-playbook 20180808-1512.install.puppet-agent.yaml -i 20180808-1512.list_of_hosts --become --extra-vars "ansible_user=root ansible_password=$(pass common/linux-default) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'"
+
+PLAY [all] *******************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************************************************************
+ok: [10.217.109.20]
+
+TASK [Add Puppetlabs Repo v5 (rpm) for RHEL] *********************************************************************************************************************************************************
+ok: [10.217.109.20]
+
+TASK [Add Puppetlabs Repo v5 (deb)] ******************************************************************************************************************************************************************
+skipping: [10.217.109.20]
+
+TASK [Add Puppetlabs Repo key (deb)] *****************************************************************************************************************************************************************
+skipping: [10.217.109.20]
+
+TASK [Install puppet-agent via apt module on Ubuntu with option -y] **********************************************************************************************************************************
+skipping: [10.217.109.20]
+
+TASK [Install new puppet] ****************************************************************************************************************************************************************************
+changed: [10.217.109.20]
+
+TASK [Set puppet server in config] *******************************************************************************************************************************************************************
+changed: [10.217.109.20]
+
+TASK [Enable agent (for ubuntu)] *********************************************************************************************************************************************************************
+skipping: [10.217.109.20]
+
+TASK [First run puppet] ******************************************************************************************************************************************************************************
+fatal: [10.217.109.20]: FAILED! => {"changed": false, "disabled": false, "error": true, "msg": "puppet did not run", "rc": 1, "stderr": "Error: Could not request certificate: execution expired\n", "stderr_lines": ["Error: Could not request certificate: execution expired"], "stdout": "Info: Creating a new SSL key for ds-pr-onlapp02.tcsbank.ru\nExiting; failed to retrieve certificate and waitforcert is disabled\n", "stdout_lines": ["Info: Creating a new SSL key for ds-pr-onlapp02.tcsbank.ru", "Exiting; failed to retrieve certificate and waitforcert is disabled"]}
+...ignoring
+
+PLAY RECAP *******************************************************************************************************************************************************************************************
+10.217.109.20              : ok=5    changed=2    unreachable=0    failed=0   
+
+[support@centos puppet]$
+
+
+
+
+
+................................................................................
+
+[root@ds-pr-onlapp02 ~]# parted -s -a optimal /dev/sdb mklabel GPT mkpart primary xfs 0% 100% print
+Model: DELL PERC H730P Adp (scsi)
+Disk /dev/sdb: 960GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End    Size   File system  Name     Flags
+ 1      1049kB  960GB  960GB               primary
+
+[root@ds-pr-onlapp02 ~]# parted -s -a optimal /dev/sdc mklabel GPT mkpart primary xfs 0% 100% print
+Model: DELL PERC H730P Adp (scsi)
+Disk /dev/sdc: 12.0TB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  12.0TB  12.0TB               primary
+
+[root@ds-pr-onlapp02 ~]#
+
+[root@ds-pr-onlapp02 ~]# mkfs.xfs /dev/sdb1
+meta-data=/dev/sdb1              isize=512    agcount=4, agsize=58572672 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=234290688, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=114399, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@ds-pr-onlapp02 ~]# mkfs.xfs /dev/sdc1
+meta-data=/dev/sdc1              isize=512    agcount=11, agsize=268435455 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=2929458688, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=521728, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@ds-pr-onlapp02 ~]#
+
+................................................................................
+
+
+
+
+
+[root@ds-pr-onlapp01 ~]# scp /opt/TCS/scripts/nagios/plugins/* ds-pr-onlapp02:/opt/TCS/scripts/nagios/plugins/
+root@ds-pr-onlapp02's password:
+check_core_files.sh                                                                                                                                                100% 1105     2.6MB/s   00:00
+check_core_files.sh.20180828.backup                                                                                                                                100%  946     2.5MB/s   00:00
+check_cron_errors.sh                                                                                                                                               100%  482     2.2MB/s   00:00
+check_netstat.sh                                                                                                                                                   100% 1579     3.9MB/s   00:00
+check_size_files_old.sh                                                                                                                                            100% 4906    12.6MB/s   00:00
+check_size_files.sh                                                                                                                                                100% 2658     7.0MB/s   00:00
+pwd-expire.sh                                                                                                                                                      100%   10KB  10.4MB/s   00:00
+[root@ds-pr-onlapp01 ~]#
+
+
+[root@ds-pr-onlapp01 ~]# scp /etc/sudoers.d/nrpe ds-pr-onlapp02:/etc/sudoers.d/nrpe
+root@ds-pr-onlapp02's password:
+nrpe                                                                                                                                                               100%  577     1.3MB/s   00:00
+[root@ds-pr-onlapp01 ~]#
+
+
+
+

@@ -1,0 +1,479 @@
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat site/role/manifests/mvno_dns_stup_unbound_install.pp
+class role::mvno_dns_stup_unbound_install {
+  # This role has conflicts in included profiles. I don't know how fix it at this time.
+  # To use it at the first time you need comment two strings "include profile::unbound_dnstap::dnstap"
+  # and "include profile::unbound_dnstap::unbound". Apply this role on target servers.
+  # Then comment string "include profile::dns::unbound" and uncomment commented before two strings.
+  # Again apply this role on target server.
+  # Then stay commented one string "include profile::unbound_dnstap::unbound".
+  include profile::base
+  # include profile::dns::unbound
+  include profile::unbound_dnstap::dnstap
+  include profile::unbound_dnstap::unbound
+  include profile::zabbix_agent
+  include profile::dns::zabbix_userparameters
+  include profile::accounts::aglaz
+}
+[s.belogrud@TCS4357]# ls site/profile/files/dns/
+zabbix_unbound.conf
+
+[s.belogrud@TCS4357]# ls site/profile/manifests/dns/
+unbound.pp                zabbix_userparameters.pp
+
+................................................................................
+
+[s.belogrud@TCS4357]# ls site/profile/manifests/unbound_dnstap/
+dnstap.pp   unbound.pp
+
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/unbound_dnstap/unbound.pp
+class profile::unbound_dnstap::unbound (
+  String $version = '1.6.6-300.tcs.el7.centos.x86_64',
+  Array $unbound_packages = [
+    'unbound',
+    'unbound-libs',
+  ],
+) {
+
+  class { '::tcs_repos::tcs_custom_builds': }
+
+  package { $unbound_packages :
+    ensure  => $version,
+    require => Class['::tcs_repos::tcs_custom_builds'],
+  }
+
+  if ! defined(Service['unbound']) {
+    service { 'unbound':
+      ensure  => running,
+      enable  => true,
+      require => Package[$unbound_packages],
+    }
+  }
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/unbound_dnstap/dnstap.pp
+class profile::unbound_dnstap::dnstap {
+
+  file { '/usr/sbin/dnstap':
+    mode   => '755',
+    owner  => 'root',
+    group  => 'root',
+    source => 'puppet:///modules/profile/unbound_dnstap/dnstap.go.bin',
+  }
+
+  package { 'socat':
+    ensure  => installed,
+    require => File['/usr/sbin/dnstap'],
+  }
+
+  file { '/usr/lib/systemd/system/dnstap.service':
+    mode   => '755',
+    owner  => 'root',
+    group  => 'root',
+    source => 'puppet:///modules/profile/unbound_dnstap/dnstap.service',
+    require => Package['socat'],
+  }
+
+  service { 'dnstap':
+    ensure => running,
+    enable => true,
+    require => File['/usr/lib/systemd/system/dnstap.service'],
+  }
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# ls site/profile/manifests/dns/*
+site/profile/manifests/dns/unbound.pp                site/profile/manifests/dns/zabbix_userparameters.pp
+[s.belogrud@TCS4357]# ls site/profile/files/dns/zabbix_unbound.conf
+site/profile/files/dns/zabbix_unbound.conf
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/dns/unbound.pp
+class profile::dns::unbound {
+
+  $unbound_log_file = hiera('unbound::logfile', undef)
+
+  if ($unbound_log_file) {
+    file { $unbound_log_file:
+      ensure => file,
+      owner => 'unbound',
+      group => 'unbound',
+      require => Class['::unbound'],
+    }
+  }
+
+  class { '::unbound': }
+
+  $defaults = {}
+  $forward_zones = hiera('unbound_forward_zones', {})
+  $local_zones = hiera('unbound_local_zones', {})
+  create_resources('unbound::forward', $forward_zones, $defaults)
+  create_resources('unbound::local', $local_zones, $defaults)
+
+
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[root@ds-mvno-dns-stub01 ~]# cat $(puppet agent --configprint classfile) | egrep -ie "dns|unbound"
+__node_regexp__dsm1-mvno-dns-stubd.tcsbank.ru
+role::mvno_dns_stup_unbound_install
+profile::unbound_dnstap::dnstap
+profile::unbound_dnstap::unbound
+profile::dns::zabbix_userparameters
+[root@ds-mvno-dns-stub01 ~]#
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/dns/zabbix_userparameters.pp
+class profile::dns::zabbix_userparameters {
+  zabbix::userparameters { 'zabbix_unbound':
+    source => 'puppet:///modules/profile/dns/zabbix_unbound.conf',
+  }
+}
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# cat site/profile/files/dns/zabbix_unbound.conf
+UserParameter=unbound.type[*],echo -n 0; sudo /usr/sbin/unbound-control stats_noreset | grep num.query.type.$1= | cut -d= -f2
+UserParameter=unbound.mem[*],sudo /usr/sbin/unbound-control stats_noreset | grep mem.$1= | cut -d= -f2
+UserParameter=unbound.flag[*],sudo /usr/sbin/unbound-control stats_noreset | grep num.query.$1= | cut -d= -f2
+UserParameter=unbound.total[*],sudo /usr/sbin/unbound-control stats_noreset | grep total.$1= | cut -d= -f2
+UserParameter=unbound.unwanted[*],sudo /usr/sbin/unbound-control stats_noreset | grep unwanted.$1= | cut -d= -f2
+UserParameter=unbound.rcode[*],sudo /usr/sbin/unbound-control stats_noreset | grep num.answer.rcode.$1= | cut -d= -f2
+UserParameter=unbound.infra_discover,printf "{\n \"data\":[\n"; sudo /usr/sbin/unbound-control dump_infra | /usr/bin/awk '{  print "{ \"{#NODE}\" : \"" $1 "\" },"}' | /usr/bin/head -c -2; /usr/bin/printf "]}\n\n"
+UserParameter=unbound.infra_ttl[*],sudo /usr/sbin/unbound-control dump_infra | grep "$1 " | cut -d' ' -f4
+UserParameter=unbound.infra_ping[*],sudo /usr/sbin/unbound-control dump_infra | grep "$1 " | cut -d' ' -f6
+UserParameter=unbound.infra_var[*],sudo /usr/sbin/unbound-control dump_infra | grep "$1 " | cut -d' ' -f8
+UserParameter=unbound.infra_rtt[*],sudo /usr/sbin/unbound-control dump_infra | grep "$1 " | cut -d' ' -f10
+UserParameter=unbound.infra_rto[*],sudo /usr/sbin/unbound-control dump_infra | grep "$1 " | cut -d' ' -f12
+UserParameter=unbound.trapper_stats,sudo /usr/sbin/unbound-control stats_noreset |grep -v thread | grep -v histogram | /usr/bin/awk -F = '{ print "- unbound."$1" "$2}' | zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i - >/dev/null; echo 1
+UserParameter=unbound.trapper_rto,sudo unbound-control dump_infra | /usr/bin/awk -F' '  '{ print "- unbound.rto["$1"] "$12}' | zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i - >/dev/null; echo 1
+UserParameter=unbound.trapper_rtt,sudo unbound-control dump_infra | /usr/bin/awk -F' '  '{ print "- unbound.rtt["$1"] "$10}' | zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i - >/dev/null; echo 1
+UserParameter=unbound.trapper_var,sudo unbound-control dump_infra | /usr/bin/awk -F' '  '{ print "- unbound.var["$1"] "$8}' | zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i - >/dev/null; echo 1
+UserParameter=unbound.trapper_ping,sudo unbound-control dump_infra | /usr/bin/awk -F' '  '{ print "- unbound.ping["$1"] "$6}' | zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i - >/dev/null; echo 1
+UserParameter=unbound.trapper_ttl,sudo unbound-control dump_infra | /usr/bin/awk -F' '  '{ print "- unbound.ttl["$1"] "$4}' | zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i - >/dev/null; echo 1
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/dns/zabbix_userparameters.pp
+class profile::dns::zabbix_userparameters {
+  zabbix::userparameters { 'zabbix_unbound':
+    source => 'puppet:///modules/profile/dns/zabbix_unbound.conf',
+  }
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# vim -O hieradata/nodes/m1-mvno-dns-clients01.tcsbank.ru.yaml hieradata/nodes/ds-mvno-dns-stub01.tcsbank.ru.yaml
+
+................................................................................
+
+
+unbound::chroot: ""
+unbound::username: "unbound"
+unbound::module_config: "validator iterator"
+unbound::trusted_keys_file: "/etc/unbound/keys.d/*.key"
+
+
+................................................................................
+
+#
+#	Original
+#
+[root@m1-mvno-dns-stub01 ~]# cat /etc/unbound/unbound.conf
+# !!! Managed by Puppet !!!
+
+server:
+        chroot: ""
+        username: "unbound"
+        module-config: "validator iterator"
+        auto-trust-anchor-file: "/var/lib/unbound/root.key"
+        trusted-keys-file: "/etc/unbound/keys.d/*.key"
+
+remote-control:
+        control-enable: yes
+        server-key-file: "/etc/unbound/unbound_server.key"
+        server-cert-file: "/etc/unbound/unbound_server.pem"
+        control-key-file: "/etc/unbound/unbound_control.key"
+        control-cert-file: "/etc/unbound/unbound_control.pem"
+[root@m1-mvno-dns-stub01 ~]#
+
+................................................................................
+................................................................................
+
+"hieradata/nodes/ds-mvno-dns-infra01.tcsbank.ru.yaml"
+...
+unbound_forward_zones:
+  'tapi.tinkoff.ru.':
+    name: 'tapi.tinkoff.ru.'
+    addr:
+      - '10.216.40.4'
+      - '10.216.42.5'
+  'tcsbank.ru.':
+    name: 'tcsbank.ru.'
+    addr:
+      - '10.216.40.4'
+      - '10.216.42.5'
+  '.':
+    name: '.'
+    addr:
+      - '10.216.41.78'
+      - '10.216.42.78'
+
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat hieradata/nodes/ds-mvno-dns-stub01.tcsbank.ru.yaml
+unbound::verbosity:                3
+unbound::statistics_interval:      0
+unbound::statistics_cumulative:    false
+unbound::extended_statistics:      true
+unbound::num_threads:              8
+unbound::interface:
+  - "0.0.0.0"
+unbound::interface_automatic:      true
+unbound::do_not_query_localhost:   false
+unbound::do_ip4:                   true
+unbound::do_udp:                   true
+unbound::do_tcp:                   true
+unbound::do_ip6:                   false
+unbound::infra_cache_numhosts:     10000
+unbound::infra_host_ttl:           180
+unbound::msg_cache_size:           '128m'
+unbound::msg_cache_slabs:          4
+unbound::rrset_cache_slabs:        8
+unbound::rrset_cache_size:         '512m'
+unbound::cache_min_ttl:            60
+unbound::logfile:                  "/var/log/unbound.log"
+unbound::log_time_ascii:           true
+unbound::pidfile:                  "/var/run/unbound/unbound.pid"
+unbound::hide_identity:            true
+unbound::hide_version:             true
+unbound::harden_glue:              true
+unbound::harden_dnssec_stripped:   true
+unbound::harden_below_nxdomain:    true
+unbound::harden_referral_path:     true
+unbound::use_caps_for_id:          false
+unbound::unwanted_reply_threshold: 10000000
+unbound::prefetch:                 true
+unbound::prefetch_key:             false
+unbound::rrset_roundrobin:         true
+unbound::minimal_responses:        true
+unbound::val_clean_additional:     true
+unbound::val_permissive_mode:      false
+unbound::val_log_level:            1
+unbound::control_enable:           true
+unbound::auto_trust_anchor_file:   false
+unbound::interface_automatic:      true
+unbound::manage_package:           false
+unbound::access_control:
+  - "0.0.0.0/0 allow"
+
+unbound_forward_zones:
+  '.':
+    name: '.'
+    addr:
+      - '8.8.8.8'
+      - '8.8.4.4'
+
+unbound_local_zones:
+  'tinkoff.ru.':
+    name: 'tinkoff.ru.'
+    type: 'transparent'
+    data:
+      - 'mobile6zo0xq4xdno3.tinkoff.ru. IN A 91.194.226.40'
+      - 'tapi.tinkoff.ru. IN A 91.194.226.40'
+      - 'tapi-qa.tinkoff.ru. IN A 91.194.226.14'
+      - 'tapi-qa-master.tinkoff.ru. IN A 91.194.226.14'
+      - 'tapi-qa-stable.tinkoff.ru. IN A 91.194.226.14'
+      - 'test.tinkoff.ru. IN A 10.250.134.3'
+      - 'acdn.tinkoff.ru. IN A 92.223.99.99'
+      - 'webim.tinkoff.ru. IN A 91.194.226.60'
+      - 'static2.tinkoff.ru. IN A 91.194.226.6'
+      - 'ms-dsp.tinkoff.ru. IN A 178.248.239.2'
+      - 'certs.tinkoff.ru. IN A 91.194.226.44'
+      - 'config.tinkoff.ru. IN A 178.248.232.114'
+      - 'api.tinkoff.ru. IN A 178.248.239.12'
+      - 'webim-tknzr.tinkoff.ru. IN A 91.194.226.60'
+      - 'media.tinkoff.ru. IN A 92.223.99.99'
+      - 'ms-ssp.tinkoff.ru. IN A 178.248.239.2'
+      - 'securepay.tinkoff.ru. IN A 91.194.226.63'
+      - 'securepay.tcsbank.ru. IN A 91.194.226.63'
+  'tcsbank.ru.':
+    name: 'tcsbank.ru.'
+    type: 'transparent'
+    data:
+      - 'tapi-qa.tcsbank.ru. IN A 91.194.226.14'
+      - 'tapi-qa-master.tcsbank.ru. IN A 91.194.226.14'
+      - 'tapi-qa-stable.tcsbank.ru. IN A 91.194.226.14'
+      - 'qa-noaccess.tcsbank.ru. IN A 10.219.6.231'
+      - 'qa-blocked.tcsbank.ru. IN A 10.219.6.231'
+
+  '.':
+    name: '.'
+    type: 'redirect'
+    data:
+      - '. IN A 127.0.0.1'
+
+profile::zabbix_agent::server:        '10.219.23.100,10.216.41.36'
+profile::zabbix_agent::server_active: '10.219.23.100,10.216.41.36'
+
+profile::base::firewall::firewall_enabled: true
+
+firewalld::custom_services:
+  zabbix_agent:
+    short: 'zabbix_agent'
+    description: 'Zabbix Agent'
+    port:
+      - port: 10050
+        protocol: 'tcp'
+      - port: 10051
+        protocol: 'tcp'
+  nrpe:
+      short: 'nrpe'
+      description: 'Nagios NRPE'
+      port:
+        - port: 5666
+          protocol: 'tcp'
+
+firewalld::rich_rules:
+  'Allow DNS from Tinkoff Mobile clients':
+    ensure: present
+    zone: 'mobile'
+    service: 'dns'
+    action: 'accept'
+  'Allow Zabbix from zabbix-server':
+    ensure: present
+    zone: public
+    service: 'zabbix_agent'
+    action: 'accept'
+  'Allow NRPE':
+      ensure: present
+      zone: public
+      service: 'nrpe'
+      action: 'accept'
+
+firewalld::zones:
+  mobile:
+    ensure: present
+    target: 'DROP'
+    sources:
+      - 100.64.0.0/10
+    purge_rich_rules: true
+    purge_services: true
+    purge_ports: true
+[s.belogrud@TCS4357]#
+
+
+................................................................................
+
+[root@ds-mvno-dns-stub01 ~]# cat /etc/unbound/unbound.conf
+# !!! Managed by Puppet !!!
+
+server:
+        verbosity: 3
+        statistics-interval: 0
+        statistics-cumulative: no
+        extended-statistics: yes
+        num-threads: 8
+        interface: 0.0.0.0
+        interface-automatic: yes
+        msg-cache-size: 128m
+        msg-cache-slabs: 4
+        rrset-cache-size: 512m
+        rrset-cache-slabs: 8
+        cache-min-ttl: 60
+        infra-host-ttl: 180
+        infra-cache-numhosts: 10000
+        do-ip4: yes
+        do-ip6: no
+        do-udp: yes
+        do-tcp: yes
+        access-control: 0.0.0.0/0 allow
+        chroot: ""
+        username: "unbound"
+        logfile: "/var/log/unbound.log"
+        log-time-ascii: yes
+        pidfile: "/var/run/unbound/unbound.pid"
+        hide-identity: yes
+        hide-version: yes
+        harden-glue: yes
+        harden-dnssec-stripped: yes
+        harden-below-nxdomain: yes
+        harden-referral-path: yes
+        use-caps-for-id: no
+        unwanted-reply-threshold: 10000000
+        do-not-query-localhost: no
+        prefetch: yes
+        prefetch-key: no
+        rrset-roundrobin: yes
+        minimal-responses: yes
+        module-config: "validator iterator"
+        trusted-keys-file: "/etc/unbound/keys.d/*.key"
+        val-clean-additional: yes
+        val-permissive-mode: no
+        val-log-level: 1
+
+        local-zone: "." redirect
+        local-data: ". IN A 127.0.0.1"
+
+        local-zone: "tcsbank.ru." transparent
+        local-data: "tapi-qa.tcsbank.ru. IN A 91.194.226.14"
+        local-data: "tapi-qa-master.tcsbank.ru. IN A 91.194.226.14"
+        local-data: "tapi-qa-stable.tcsbank.ru. IN A 91.194.226.14"
+        local-data: "qa-noaccess.tcsbank.ru. IN A 10.219.6.231"
+        local-data: "qa-blocked.tcsbank.ru. IN A 10.219.6.231"
+
+        local-zone: "tinkoff.ru." transparent
+        local-data: "mobile6zo0xq4xdno3.tinkoff.ru. IN A 91.194.226.40"
+        local-data: "tapi.tinkoff.ru. IN A 91.194.226.40"
+        local-data: "tapi-qa.tinkoff.ru. IN A 91.194.226.14"
+        local-data: "tapi-qa-master.tinkoff.ru. IN A 91.194.226.14"
+        local-data: "tapi-qa-stable.tinkoff.ru. IN A 91.194.226.14"
+        local-data: "test.tinkoff.ru. IN A 10.250.134.3"
+        local-data: "acdn.tinkoff.ru. IN A 92.223.99.99"
+        local-data: "webim.tinkoff.ru. IN A 91.194.226.60"
+        local-data: "static2.tinkoff.ru. IN A 91.194.226.6"
+        local-data: "ms-dsp.tinkoff.ru. IN A 178.248.239.2"
+        local-data: "certs.tinkoff.ru. IN A 91.194.226.44"
+        local-data: "config.tinkoff.ru. IN A 178.248.232.114"
+        local-data: "api.tinkoff.ru. IN A 178.248.239.12"
+        local-data: "webim-tknzr.tinkoff.ru. IN A 91.194.226.60"
+        local-data: "media.tinkoff.ru. IN A 92.223.99.99"
+        local-data: "ms-ssp.tinkoff.ru. IN A 178.248.239.2"
+        local-data: "securepay.tinkoff.ru. IN A 91.194.226.63"
+        local-data: "securepay.tcsbank.ru. IN A 91.194.226.63"
+
+remote-control:
+        control-enable: yes
+        server-key-file: "/etc/unbound/unbound_server.key"
+        server-cert-file: "/etc/unbound/unbound_server.pem"
+        control-key-file: "/etc/unbound/unbound_control.key"
+        control-cert-file: "/etc/unbound/unbound_control.pem"
+
+forward-zone:
+        name: "."
+        forward-addr: 8.8.8.8
+        forward-addr: 8.8.4.4
+[root@ds-mvno-dns-stub01 ~]#
+
+................................................................................
+
+
+
+
+
+
+
+
+
+
+

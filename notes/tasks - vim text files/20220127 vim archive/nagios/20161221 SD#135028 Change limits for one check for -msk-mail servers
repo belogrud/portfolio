@@ -1,0 +1,353 @@
+
+................................................................................
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# for var1 in ds-msk-mail{1302,1304,1306} m1-msk-mail{1301,1303,1305}  ; do pynag list filename where object_type=host and host_name="${var1}" --quiet ; done
+/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
+/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1304.cfg
+/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1306.cfg
+/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1301.cfg
+/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg
+/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1305.cfg
+[root@vm-vol-nag4-tst objects]#
+
+define service{
+    use                     generic-service
+    host_name               ds-msk-mail1302
+    service_description     Memory Usage
+    check_command           check_nt!MEMUSE!-w 60 -c 70
+}
+
+[root@vm-vol-nag4-tst objects]# check_nt -help
+check_nt v2.0.2 (nagios-plugins 2.0.2)
+Copyright (c) 2000 Yves Rubin (rubiyz@yahoo.com)
+Copyright (c) 2000-2014 Nagios Plugin Development Team
+        <devel@nagios-plugins.org>
+
+This plugin collects data from the NSClient service running on a
+Windows NT/2000/XP/2003 server.
+
+
+Usage:
+check_nt -H host -v variable [-p port] [-w warning] [-c critical]
+[-l params] [-d SHOWALL] [-u] [-t timeout]
+
+Options:
+ -h, --help
+    Print detailed help screen
+ -V, --version
+    Print version information
+ --extra-opts=[section][@file]
+    Read options from an ini file. See
+    https://www.nagios-plugins.org/doc/extra-opts.html
+    for usage and examples.
+Options:
+ -H, --hostname=HOST
+   Name of the host to check
+ -p, --port=INTEGER
+   Optional port number (default: 1248)
+ -s, --secret=<password>
+   Password needed for the request
+ -w, --warning=INTEGER
+   Threshold which will result in a warning status
+ -c, --critical=INTEGER
+   Threshold which will result in a critical status
+ -t, --timeout=INTEGER
+   Seconds before connection attempt times out (default:  -l, --params=<parameters>
+   Parameters passed to specified check (see below) -d, --display={SHOWALL}
+   Display options (currently only SHOWALL works) -u, --unknown-timeout
+   Return UNKNOWN on timeouts10)
+ -h, --help
+   Print this help screen
+ -V, --version
+   Print version information
+ -v, --variable=STRING
+   Variable to check
+
+Valid variables are:
+ CLIENTVERSION = Get the NSClient version
+  If -l <version> is specified, will return warning if versions differ.
+ CPULOAD =
+  Average CPU load on last x minutes.
+  Request a -l parameter with the following syntax:
+  -l <minutes range>,<warning threshold>,<critical threshold>.
+  <minute range> should be less than 24*60.
+  Thresholds are percentage and up to 10 requests can be done in one shot.
+  ie: -l 60,90,95,120,90,95
+ UPTIME =
+  Get the uptime of the machine.
+  -l <unit>
+  <unit> = seconds, minutes, hours, or days. (default: minutes)
+  Thresholds will use the unit specified above.
+ USEDDISKSPACE =
+  Size and percentage of disk use.
+  Request a -l parameter containing the drive letter only.
+  Warning and critical thresholds can be specified with -w and -c.
+ MEMUSE =
+  Memory use.
+  Warning and critical thresholds can be specified with -w and -c.
+ SERVICESTATE =
+  Check the state of one or several services.
+  Request a -l parameters with the following syntax:
+  -l <service1>,<service2>,<service3>,...
+  You can specify -d SHOWALL in case you want to see working services
+  in the returned string.
+ PROCSTATE =
+  Check if one or several process are running.
+  Same syntax as SERVICESTATE.
+ COUNTER =
+  Check any performance counter of Windows NT/2000.
+        Request a -l parameters with the following syntax:
+        -l "\\<performance object>\\counter","<description>
+        The <description> parameter is optional and is given to a printf
+  output command which requires a float parameter.
+  If <description> does not include "%%", it is used as a label.
+  Some examples:
+  "Paging file usage is %%.2f %%%%"
+  "%%.f %%%% paging file used."
+ INSTANCES =
+  Check any performance counter object of Windows NT/2000.
+  Syntax: check_nt -H <hostname> -p <port> -v INSTANCES -l <counter object>
+  <counter object> is a Windows Perfmon Counter object (eg. Process),
+  if it is two words, it should be enclosed in quotes
+  The returned results will be a comma-separated list of instances on
+   the selected computer for that object.
+  The purpose of this is to be run from command line to determine what instances
+   are available for monitoring without having to log onto the Windows server
+    to run Perfmon directly.
+  It can also be used in scripts that automatically create Nagios service
+   configuration files.
+  Some examples:
+  check_nt -H 192.168.1.1 -p 1248 -v INSTANCES -l Process
+
+Notes:
+ - The NSClient service should be running on the server to get any information
+   (http://nsclient.ready2run.nl).
+ - Critical thresholds should be lower than warning thresholds
+ - Default port 1248 is sometimes in use by other services. The error
+   output when this happens contains "Cannot map xxxxx to protocol number".
+   One fix for this is to change the port to something else on check_nt
+   and on the client service it's connecting to.
+
+Send email to help@nagios-plugins.org if you have questions regarding use
+of this software. To submit patches or suggest improvements, send email to
+devel@nagios-plugins.org
+
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# expr 160 \* 100 / 192
+83
+[root@vm-vol-nag4-tst objects]# expr 170 \* 100 / 192
+88
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# cp /tmp/{20161220-1856,20161221-1506}.sh
+[root@vm-vol-nag4-tst objects]# vim /tmp/20161221-1506.sh
+
+[root@vm-vol-nag4-tst objects]# cat /tmp/20161221-1506.sh
+for server_name in ds-msk-mail{1302,1304,1306} m1-msk-mail{1301,1303,1305}
+    do
+        echo
+        echo
+        echo -e "${server_name}"
+
+        while read service_name
+            do
+                echo -e "\t${service_name}"
+                pynag update set check_command="check_nt!MEMUSE!-w 83 -c 88" where object_type=host and host_name="${server_name}" and object_type=service and service_description="${service_name}" --force
+            done << 'EOF'
+Memory Usage
+EOF
+
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# . /tmp/20161221-1506.sh
+
+
+ds-msk-mail1302
+        Memory Usage
+/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg (ds-msk-mail1302/Memory Usage): changed check_command to check_nt!MEMUSE!-w 83 -c 88
+Updated 1 objects
+
+
+ds-msk-mail1304
+        Memory Usage
+/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1304.cfg (ds-msk-mail1304/Memory Usage): changed check_command to check_nt!MEMUSE!-w 83 -c 88
+Updated 1 objects
+
+
+ds-msk-mail1306
+        Memory Usage
+/usr/local/nagios/etc/objects/servers/dc-ds/windows/exchange/ds-msk-mail1306.cfg (ds-msk-mail1306/Memory Usage): changed check_command to check_nt!MEMUSE!-w 83 -c 88
+Updated 1 objects
+
+
+m1-msk-mail1301
+        Memory Usage
+/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1301.cfg (m1-msk-mail1301/Memory Usage): changed check_command to check_nt!MEMUSE!-w 83 -c 88
+Updated 1 objects
+
+
+m1-msk-mail1303
+        Memory Usage
+/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg (m1-msk-mail1303/Memory Usage): changed check_command to check_nt!MEMUSE!-w 83 -c 88
+Updated 1 objects
+
+
+m1-msk-mail1305
+        Memory Usage
+/usr/local/nagios/etc/objects/servers/dc-m1/windows/exchange/m1-msk-mail1305.cfg (m1-msk-mail1305/Memory Usage): changed check_command to check_nt!MEMUSE!-w 83 -c 88
+Updated 1 objects
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git diff servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
+diff --git a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
+index 33162f1..2de3ed3 100644
+--- a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
++++ b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
+@@ -27,7 +27,7 @@ define service{
+     use                     generic-service
+     host_name               ds-msk-mail1302
+     service_description     Memory Usage
+-    check_command           check_nt!MEMUSE!-w 60 -c 70
++       check_command                 check_nt!MEMUSE!-w 83 -c 88
+ }
+ define service{
+        use                           generic-service-drive-c-space
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                  Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#135028. Changed limits for one service check." servers/dc-ds/windows/exchange/ds-msk-mail{1302,1304,1306}.cfg servers/dc-m1/windows/exchange/m1-msk-mail{1301,1303,1305}.cfg
+Running configuration check...
+ OK.
+[master 15e98bf] SD#135028. Changed limits for one service check.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 30, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (16/16), done.
+Writing objects: 100% (16/16), 1.50 KiB, done.
+Total 16 (delta 14), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   1905f8e..15e98bf  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 30, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (16/16), done.
+Writing objects: 100% (16/16), 1.50 KiB, done.
+Total 16 (delta 14), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   1905f8e..15e98bf  master -> master
+[root@vm-vol-nag4-tst objects]#
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p 15e98bf                                                                                                                                   commit 15e98bfc60c3eda09d0350fbb5f233f10cd15570
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Dec 21 15:16:03 2016 +0300
+
+    SD#135028. Changed limits for one service check.
+
+diff --git a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
+index 33162f1..2de3ed3 100644
+--- a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
++++ b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
+@@ -27,7 +27,7 @@ define service{
+     use                     generic-service
+     host_name               ds-msk-mail1302
+     service_description     Memory Usage
+-    check_command           check_nt!MEMUSE!-w 60 -c 70
++       check_command                 check_nt!MEMUSE!-w 83 -c 88
+ }
+ define service{
+        use                           generic-service-drive-c-space
+diff --git a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1304.cfg b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1304.cfg
+index 5372646..d019b45 100644
+--- a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1304.cfg
++++ b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1304.cfg
+@@ -28,7 +28,7 @@ define service{
+     use                     generic-service
+     host_name               ds-msk-mail1304
+     service_description     Memory Usage
+-    check_command           check_nt!MEMUSE!-w 60 -c 70
++       check_command                 check_nt!MEMUSE!-w 83 -c 88
+     notifications_enabled   0
+ }
+ define service{
+diff --git a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1306.cfg b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1306.cfg
+index 4d5f4b8..ba59239 100644
+--- a/objects/servers/dc-ds/windows/exchange/ds-msk-mail1306.cfg
++++ b/objects/servers/dc-ds/windows/exchange/ds-msk-mail1306.cfg
+@@ -27,7 +27,7 @@ define service{
+     use                     generic-service
+     host_name               ds-msk-mail1306
+     service_description     Memory Usage
+-    check_command           check_nt!MEMUSE!-w 60 -c 70
++       check_command                 check_nt!MEMUSE!-w 83 -c 88
+ }
+ define service{
+        use                           generic-service-drive-c-space
+diff --git a/objects/servers/dc-m1/windows/exchange/m1-msk-mail1301.cfg b/objects/servers/dc-m1/windows/exchange/m1-msk-mail1301.cfg
+index 484ee40..c7ae209 100644
+--- a/objects/servers/dc-m1/windows/exchange/m1-msk-mail1301.cfg
++++ b/objects/servers/dc-m1/windows/exchange/m1-msk-mail1301.cfg
+@@ -27,7 +27,7 @@ define service{
+     use                     generic-service
+     host_name               m1-msk-mail1301
+     service_description     Memory Usage
+-    check_command           check_nt!MEMUSE!-w 60 -c 70
++       check_command                 check_nt!MEMUSE!-w 83 -c 88
+ }
+ define service{
+        use                           generic-service-drive-c-space
+diff --git a/objects/servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg b/objects/servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg
+index 50dc691..36a20f6 100644
+--- a/objects/servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg
++++ b/objects/servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg
+@@ -28,7 +28,7 @@ define service{
+     use                     generic-service
+     host_name               m1-msk-mail1303
+     service_description     Memory Usage
+-    check_command           check_nt!MEMUSE!-w 60 -c 70
++       check_command                 check_nt!MEMUSE!-w 83 -c 88
+     notifications_enabled   0
+ }
+ define service{
+diff --git a/objects/servers/dc-m1/windows/exchange/m1-msk-mail1305.cfg b/objects/servers/dc-m1/windows/exchange/m1-msk-mail1305.cfg
+index 0aba64d..c187ff6 100644
+--- a/objects/servers/dc-m1/windows/exchange/m1-msk-mail1305.cfg
++++ b/objects/servers/dc-m1/windows/exchange/m1-msk-mail1305.cfg
+@@ -27,7 +27,7 @@ define service{
+     use                     generic-service
+     host_name               m1-msk-mail1305
+     service_description     Memory Usage
+-    check_command           check_nt!MEMUSE!-w 60 -c 70
++       check_command                 check_nt!MEMUSE!-w 83 -c 88
+ }
+ define service{
+        use                           generic-service-drive-c-space
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+

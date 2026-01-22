@@ -1,0 +1,1776 @@
+
+
+................................................................................
+
+#
+#   I've found follow article:
+#   http://tecadmin.net/install-latest-nodejs-and-npm-on-centos/#
+#
+
+................................................................................
+
+[root@ds-gw-git01 ~]# mkdir -p ~/work/20170113-1456
+[root@ds-gw-git01 ~]# cd ~/work/20170113-1456
+[root@ds-gw-git01 20170113-1456]# cat > setup_6.x
+#!/bin/bash
+
+# Discussion, issues and change requests at:
+#   https://github.com/nodesource/distributions
+#
+# Script to install the NodeSource Node.js 6.x repo onto an
+# Enterprise Linux or Fedora Core based system.
+#
+# Run as root or insert `sudo -E` before `bash`:
+#
+# curl -sL https://rpm.nodesource.com/setup_6.x | bash -
+#   or
+# wget -qO- https://rpm.nodesource.com/setup_6.x | bash -
+#
+
+print_status() {
+  local outp=$(echo "$1" | sed -r 's/\\n/\\n## /mg')
+  echo
+  echo -e "## ${outp}"
+  echo
+}
+
+bail() {
+  echo 'Error executing command, exiting'
+  exit 1
+}
+
+exec_cmd_nobail() {
+  echo "+ $1"
+  bash -c "$1"
+}
+
+exec_cmd() {
+  exec_cmd_nobail "$1" || bail
+}
+
+print_status "Installing the NodeSource Node.js 6.x repo..."
+
+print_status "Inspecting system..."
+
+if [ ! -x /bin/rpm ]; then
+  print_status "\
+You don't appear to be running an Enterprise Linux based \
+system, please contact NodeSource at \
+https://github.com/nodesource/distributions/issues if you think this \
+is incorrect or would like your distribution to be considered for \
+support.\
+"
+  exit 1
+fi
+
+## Annotated section for auto extraction in test.sh
+#-check-distro-#
+
+## Check distro and arch
+echo "+ rpm -q --whatprovides redhat-release || rpm -q --whatprovides centos-release || rpm -q --whatprovides cloudlinux-release || rpm -q --whatprovides sl-release"
+DISTRO_PKG=$(rpm -q --whatprovides redhat-release || rpm -q --whatprovides centos-release || rpm -q --whatprovides cloudlinux-release || rpm -q --whatprovides sl-release)
+echo "+ uname -m"
+UNAME_ARCH=$(uname -m)
+
+
+if [ "X${UNAME_ARCH}" == "Xi686" ]; then
+  DIST_ARCH=i386
+elif [ "X${UNAME_ARCH}" == "Xx86_64" ]; then
+  DIST_ARCH=x86_64
+else
+
+  print_status "\
+You don't appear to be running a supported machine architecture: ${UNAME_ARCH}. \
+Please contact NodeSource at \
+https://github.com/nodesource/distributions/issues if you think this is \
+incorrect or would like your architecture to be considered for support. \
+"
+  exit 1
+
+fi
+
+if [[ $DISTRO_PKG =~ ^(redhat|centos|cloudlinux|sl)- ]]; then
+    DIST_TYPE=el
+elif [[ $DISTRO_PKG =~ ^system-release- ]]; then # Amazon Linux
+    DIST_TYPE=el
+elif [[ $DISTRO_PKG =~ ^(fedora|korora)- ]]; then
+    DIST_TYPE=fc
+else
+
+  print_status "\
+You don't appear to be running a supported version of Enterprise Linux. \
+Please contact NodeSource at \
+https://github.com/nodesource/distributions/issues if you think this is \
+incorrect or would like your architecture to be considered for support. \
+Include your 'distribution package' name: ${DISTRO_PKG}. \
+"
+  exit 1
+
+fi
+
+if [[ $DISTRO_PKG =~ ^system-release-201[4-9]\. ]]; then  #NOTE: not really future-proof
+
+  # Amazon Linux, for 2014.* use el7, older versions are unknown, perhaps el6
+  DIST_VERSION=7
+
+else
+
+  ## Using the redhat-release-server-X, centos-release-X, etc. pattern
+  ## extract the major version number of the distro
+  DIST_VERSION=$(echo $DISTRO_PKG | sed -r 's/^[[:alpha:]]+-release(-server|-workstation)?-([0-9]+).*$/\2/')
+
+  if ! [[ $DIST_VERSION =~ ^[0-9][0-9]?$ ]]; then
+
+    print_status "\
+Could not determine your distribution version, you may not be running a \
+supported version of Enterprise Linux. \
+Please contact NodeSource at \
+https://github.com/nodesource/distributions/issues if you think this is \
+incorrect. Include your 'distribution package' name: ${DISTRO_PKG}. \
+"
+    exit 1
+
+  fi
+
+fi
+
+
+## Given the distro, version and arch, construct the url for
+## the appropriate nodesource-release package (it's noarch but
+## we include the arch in the directory tree anyway)
+RELEASE_URL_VERSION_STRING="${DIST_TYPE}${DIST_VERSION}"
+RELEASE_URL="\
+https://rpm.nodesource.com/pub_6.x/\
+${DIST_TYPE}/\
+${DIST_VERSION}/\
+${DIST_ARCH}/\
+nodesource-release-${RELEASE_URL_VERSION_STRING}-1.noarch.rpm"
+
+#-check-distro-#
+
+print_status "Confirming \"${DIST_TYPE}${DIST_VERSION}-${DIST_ARCH}\" is supported..."
+
+## Simple fetch & fast-fail to see if the nodesource-release
+## file exists for this distro/version/arch
+exec_cmd_nobail "curl -sLf -o /dev/null '${RELEASE_URL}'"
+RC=$?
+
+if [[ $RC != 0 ]]; then
+    print_status "\
+Your distribution, identified as \"${DISTRO_PKG}\", \
+is not currently supported, please contact NodeSource at \
+https://github.com/nodesource/distributions/issues \
+if you think this is incorrect or would like your distribution to be considered for support"
+    exit 1
+fi
+
+## EPEL is needed for EL5, we don't install it if it's missing but
+## we can give guidance
+if [ "$DIST_TYPE" == "el" ] && [ "$DIST_VERSION" == "5" ]; then
+
+  print_status "Checking if EPEL is enabled..."
+
+  echo "+ yum repolist enabled 2> /dev/null | grep epel"
+  repolist=$(yum repolist enabled 2> /dev/null | grep epel)
+
+  if [ "X${repolist}" == "X" ]; then
+    print_status "Finding current EPEL release RPM..."
+
+    ## We can scrape the html to find the latest epel-release (likely 5.4)
+    epel_url="http://dl.fedoraproject.org/pub/epel/5/${DIST_ARCH}/"
+    epel_release_view="${epel_url}repoview/epel-release.html"
+    echo "+ curl -s $epel_release_view | grep -oE 'epel-release-[0-9\-]+\.noarch\.rpm'"
+    epel=$(curl -s $epel_release_view | grep -oE 'epel-release-[0-9\-]+\.noarch\.rpm')
+    if [ "X${epel}" = "X" ]; then
+      print_status "Error: Could not find current EPEL release RPM!"
+      exit 1
+    fi
+
+    print_status "\
+The EPEL (Extra Packages for Enterprise Linux) repository is a\n\
+prerequisite for installing Node.js on your operating system. Please\n\
+add it and re-run this setup script.\n\
+\n\
+The EPEL repository RPM is available at:\n\
+  ${epel_url}${epel}\n\
+You can try installing with: \`rpm -ivh <url>\`\
+"
+
+    exit 1
+  fi
+
+fi
+
+print_status "Downloading release setup RPM..."
+
+## Two-step process to install the nodesource-release RPM,
+## Download to a tmp file then install it directly with `rpm`.
+## We don't rely on RPM's ability to fetch from HTTPS directly
+echo "+ mktemp"
+RPM_TMP=$(mktemp || bail)
+
+exec_cmd "curl -sL -o '${RPM_TMP}' '${RELEASE_URL}'"
+
+print_status "Installing release setup RPM..."
+
+## --nosignature because nodesource-release contains the signature!
+exec_cmd "rpm -i --nosignature --force '${RPM_TMP}'"
+
+print_status "Cleaning up..."
+
+exec_cmd "rm -f '${RPM_TMP}'"
+
+print_status "Checking for existing installations..."
+
+## Nasty consequences if you have an existing Node or npm package
+## installed, need to inform if they are there
+echo "+ rpm -qa 'node|npm' | grep -v nodesource"
+EXISTING_NODE=$(rpm -qa 'node|npm|iojs' | grep -v nodesource)
+
+if [ "X${EXISTING_NODE}" != "X" ]; then
+
+  print_status "\
+Your system appears to already have Node.js installed from an alternative source.\n\
+Run \`\033[1myum remove -y nodejs npm\033[22m\` (as root) to remove these first.\
+"
+
+fi
+
+print_status "\
+Run \`\033[1myum install -y nodejs\033[22m\` (as root) to install Node.js 6.x and npm.\n\
+You may also need development tools to build native addons:\n\
+  \`yum install -y gcc-c++ make\`\
+"
+
+## Alternative to install dev tools: `yum groupinstall 'Development Tools'
+
+exit 0
+[root@ds-gw-git01 20170113-1456]#
+
+
+................................................................................
+
+[root@ds-gw-git01 20170113-1456]# . ./setup_6.x
+
+## Installing the NodeSource Node.js 6.x repo...
+
+
+## Inspecting system...
+
++ rpm -q --whatprovides redhat-release || rpm -q --whatprovides centos-release || rpm -q --whatprovides cloudlinux-release || rpm -q --whatprovides sl-release
++ uname -m
+
+## Confirming "el6-x86_64" is supported...
+
++ curl -sLf -o /dev/null 'https://rpm.nodesource.com/pub_6.x/el/6/x86_64/nodesource-release-el6-1.noarch.rpm'
+^C
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+
+[root@ds-gw-git01 20170113-1456]# telnet mwg.gtm.tcsbank.ru 8080
+Trying 10.218.11.51...
+Connected to mwg.gtm.tcsbank.ru.
+Escape character is '^]'.
+asd
+ 400 badrequest
+Connection: Close
+Content-Type: text/html
+Cache-Control: no-cache
+...
+
+................................................................................
+
+#
+#   I've downloaded rpm from this url: https://rpm.nodesource.com/pub_6.x/el/6/x86_64/nodesource-release-el6-1.noarch.rpm
+#   Direct typed this url in address field in web browser.
+#
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no ~/mnt/share/jenkins/nodesource-release-el6-1.noarch.rpm bsv@ds-gw-git01.ti-test.local:/tmp/
+[support@centos00 ~]$
+
+[root@ds-gw-git01 20170113-1456]# cp /tmp/nodesource-release-el6-1.noarch.rpm .
+
+[root@ds-gw-git01 20170113-1456]# rpm -qpl nodesource-release-el6-1.noarch.rpm
+warning: nodesource-release-el6-1.noarch.rpm: Header V3 RSA/SHA1 Signature, key ID 34fa74dd: NOKEY
+/etc/pki/rpm-gpg/NODESOURCE-GPG-SIGNING-KEY-EL
+/etc/yum.repos.d/nodesource-el.repo
+/usr/share/doc/nodesource-release
+/usr/share/doc/nodesource-release/MIT
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# yum localinstall nodesource-release-el6-1.noarch.rpm
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Local Package Process
+Examining nodesource-release-el6-1.noarch.rpm: nodesource-release-el6-1.noarch
+Marking nodesource-release-el6-1.noarch.rpm to be installed
+Resolving Dependencies
+--> Running transaction check
+---> Package nodesource-release.noarch 0:el6-1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                           Arch                                  Version                               Repository                                                       Size
+=====================================================================================================================================================================================================
+Installing:
+ nodesource-release                                noarch                                el6-1                                 /nodesource-release-el6-1.noarch                                3.1 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total size: 3.1 k
+Installed size: 3.1 k
+Is this ok [y/N]: y
+Downloading Packages:
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : nodesource-release-el6-1.noarch                                                                                                                                                   1/1
+  Verifying  : nodesource-release-el6-1.noarch                                                                                                                                                   1/1
+
+Installed:
+  nodesource-release.noarch 0:el6-1
+
+Complete!
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+
+[root@ds-gw-git01 20170113-1456]# yum repolist
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+nodesource                                                                                                                                                                    | 2.5 kB     00:00
+nodesource/primary_db                                                                                                                                                         |  33 kB     00:00
+repo id                                                                             repo name                                                                                                  status
+gitlab_gitlab-ce                                                                    gitlab_gitlab-ce                                                                                              208
+gitlab_gitlab-ce-source                                                             gitlab_gitlab-ce-source                                                                                         0
+nodesource                                                                          Node.js Packages for Enterprise Linux 6 - x86_64                                                               69
+tcs-epel                                                                            Extra Packages for Enterprise Linux 6Server - x86_64                                                       12,213
+tcs-puppetlabs-deps                                                                 Puppet Labs Dependencies EL 6Server - x86_64                                                                   77
+tcs-puppetlabs-products                                                             Puppet Labs Products EL 6Server - x86_64                                                                      565
+tcs-rhel-x86_64-server-6                                                            Red Hat Enterprise Linux Server (v. 6 for 64-bit x86_64)                                                   18,393
+tcs-rhel-x86_64-server-optional-6                                                   RHEL Server Optional (v. 6 64-bit x86_64)                                                                   7,308
+repolist: 38,833
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+
+[root@ds-gw-git01 20170113-1456]# yum install -y gcc-c++ make
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package gcc-c++.x86_64 0:4.4.7-17.el6 will be installed
+--> Processing Dependency: libstdc++-devel = 4.4.7-17.el6 for package: gcc-c++-4.4.7-17.el6.x86_64
+--> Processing Dependency: libstdc++ = 4.4.7-17.el6 for package: gcc-c++-4.4.7-17.el6.x86_64
+--> Processing Dependency: gcc = 4.4.7-17.el6 for package: gcc-c++-4.4.7-17.el6.x86_64
+---> Package make.x86_64 1:3.81-20.el6 will be updated
+---> Package make.x86_64 1:3.81-23.el6 will be an update
+--> Running transaction check
+---> Package gcc.x86_64 0:4.4.7-16.el6 will be updated
+---> Package gcc.x86_64 0:4.4.7-17.el6 will be an update
+--> Processing Dependency: libgomp = 4.4.7-17.el6 for package: gcc-4.4.7-17.el6.x86_64
+--> Processing Dependency: cpp = 4.4.7-17.el6 for package: gcc-4.4.7-17.el6.x86_64
+--> Processing Dependency: libgcc >= 4.4.7-17.el6 for package: gcc-4.4.7-17.el6.x86_64
+---> Package libstdc++.x86_64 0:4.4.7-16.el6 will be updated
+---> Package libstdc++.x86_64 0:4.4.7-17.el6 will be an update
+---> Package libstdc++-devel.x86_64 0:4.4.7-17.el6 will be installed
+--> Running transaction check
+---> Package cpp.x86_64 0:4.4.7-16.el6 will be updated
+---> Package cpp.x86_64 0:4.4.7-17.el6 will be an update
+---> Package libgcc.x86_64 0:4.4.7-16.el6 will be updated
+---> Package libgcc.x86_64 0:4.4.7-17.el6 will be an update
+---> Package libgomp.x86_64 0:4.4.7-16.el6 will be updated
+---> Package libgomp.x86_64 0:4.4.7-17.el6 will be an update
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                         Arch                                   Version                                       Repository                                                Size
+=====================================================================================================================================================================================================
+Installing:
+ gcc-c++                                         x86_64                                 4.4.7-17.el6                                  tcs-rhel-x86_64-server-6                                 4.7 M
+Updating:
+ make                                            x86_64                                 1:3.81-23.el6                                 tcs-rhel-x86_64-server-6                                 389 k
+Installing for dependencies:
+ libstdc++-devel                                 x86_64                                 4.4.7-17.el6                                  tcs-rhel-x86_64-server-6                                 1.6 M
+Updating for dependencies:
+ cpp                                             x86_64                                 4.4.7-17.el6                                  tcs-rhel-x86_64-server-6                                 3.7 M
+ gcc                                             x86_64                                 4.4.7-17.el6                                  tcs-rhel-x86_64-server-6                                  10 M
+ libgcc                                          x86_64                                 4.4.7-17.el6                                  tcs-rhel-x86_64-server-6                                 103 k
+ libgomp                                         x86_64                                 4.4.7-17.el6                                  tcs-rhel-x86_64-server-6                                 134 k
+ libstdc++                                       x86_64                                 4.4.7-17.el6                                  tcs-rhel-x86_64-server-6                                 295 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install       2 Package(s)
+Upgrade       6 Package(s)
+
+Total download size: 21 M
+Downloading Packages:
+(1/8): cpp-4.4.7-17.el6.x86_64.rpm                                                                                                                                            | 3.7 MB     00:00
+(2/8): gcc-4.4.7-17.el6.x86_64.rpm                                                                                                                                            |  10 MB     00:00
+(3/8): gcc-c++-4.4.7-17.el6.x86_64.rpm                                                                                                                                        | 4.7 MB     00:00
+(4/8): libgcc-4.4.7-17.el6.x86_64.rpm                                                                                                                                         | 103 kB     00:00
+(5/8): libgomp-4.4.7-17.el6.x86_64.rpm                                                                                                                                        | 134 kB     00:00
+(6/8): libstdc++-4.4.7-17.el6.x86_64.rpm                                                                                                                                      | 295 kB     00:00
+(7/8): libstdc++-devel-4.4.7-17.el6.x86_64.rpm                                                                                                                                | 1.6 MB     00:00
+(8/8): make-3.81-23.el6.x86_64.rpm                                                                                                                                            | 389 kB     00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                 13 MB/s |  21 MB     00:01
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Updating   : libgcc-4.4.7-17.el6.x86_64                                                                                                                                                       1/14
+  Updating   : libstdc++-4.4.7-17.el6.x86_64                                                                                                                                                    2/14
+  Installing : libstdc++-devel-4.4.7-17.el6.x86_64                                                                                                                                              3/14
+  Updating   : cpp-4.4.7-17.el6.x86_64                                                                                                                                                          4/14
+  Updating   : libgomp-4.4.7-17.el6.x86_64                                                                                                                                                      5/14
+  Updating   : gcc-4.4.7-17.el6.x86_64                                                                                                                                                          6/14
+  Installing : gcc-c++-4.4.7-17.el6.x86_64                                                                                                                                                      7/14
+  Updating   : 1:make-3.81-23.el6.x86_64                                                                                                                                                        8/14
+  Cleanup    : gcc-4.4.7-16.el6.x86_64                                                                                                                                                          9/14
+  Cleanup    : libstdc++-4.4.7-16.el6.x86_64                                                                                                                                                   10/14
+  Cleanup    : libgcc-4.4.7-16.el6.x86_64                                                                                                                                                      11/14
+  Cleanup    : cpp-4.4.7-16.el6.x86_64                                                                                                                                                         12/14
+  Cleanup    : libgomp-4.4.7-16.el6.x86_64                                                                                                                                                     13/14
+  Cleanup    : 1:make-3.81-20.el6.x86_64                                                                                                                                                       14/14
+  Verifying  : 1:make-3.81-23.el6.x86_64                                                                                                                                                        1/14
+  Verifying  : libgcc-4.4.7-17.el6.x86_64                                                                                                                                                       2/14
+  Verifying  : libstdc++-devel-4.4.7-17.el6.x86_64                                                                                                                                              3/14
+  Verifying  : gcc-c++-4.4.7-17.el6.x86_64                                                                                                                                                      4/14
+  Verifying  : gcc-4.4.7-17.el6.x86_64                                                                                                                                                          5/14
+  Verifying  : libstdc++-4.4.7-17.el6.x86_64                                                                                                                                                    6/14
+  Verifying  : libgomp-4.4.7-17.el6.x86_64                                                                                                                                                      7/14
+  Verifying  : cpp-4.4.7-17.el6.x86_64                                                                                                                                                          8/14
+  Verifying  : gcc-4.4.7-16.el6.x86_64                                                                                                                                                          9/14
+  Verifying  : libgomp-4.4.7-16.el6.x86_64                                                                                                                                                     10/14
+  Verifying  : libstdc++-4.4.7-16.el6.x86_64                                                                                                                                                   11/14
+  Verifying  : 1:make-3.81-20.el6.x86_64                                                                                                                                                       12/14
+  Verifying  : cpp-4.4.7-16.el6.x86_64                                                                                                                                                         13/14
+  Verifying  : libgcc-4.4.7-16.el6.x86_64                                                                                                                                                      14/14
+
+Installed:
+  gcc-c++.x86_64 0:4.4.7-17.el6
+
+Dependency Installed:
+  libstdc++-devel.x86_64 0:4.4.7-17.el6
+
+Updated:
+  make.x86_64 1:3.81-23.el6
+
+Dependency Updated:
+  cpp.x86_64 0:4.4.7-17.el6           gcc.x86_64 0:4.4.7-17.el6           libgcc.x86_64 0:4.4.7-17.el6           libgomp.x86_64 0:4.4.7-17.el6           libstdc++.x86_64 0:4.4.7-17.el6
+
+Complete!
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+
+[root@ds-gw-git01 20170113-1456]# yum install nodejs npm
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package nodejs.x86_64 2:6.9.4-1nodesource.el6 will be installed
+---> Package npm.noarch 0:1.3.6-5.el6 will be installed
+--> Processing Dependency: npm(npmlog) = 0.0.4 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(npm-user-validate) = 0.0.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(init-package-json) = 0.0.10 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(editor) = 0.0.4 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(block-stream) = 0.0.7 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(which) < 2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(uid-number) < 1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(tar) < 0.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(slide) < 1.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(sha) < 1.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(semver) < 2.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(rimraf) < 2.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(retry) < 0.7 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(request) < 3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(read-package-json) < 1.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(read-installed) < 0.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(read) < 1.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(osenv) < 1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(opener) < 1.4 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(once) < 1.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(npmconf) < 0.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(npm-registry-client) < 0.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(nopt) < 2.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(node-gyp) < 0.11 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(mkdirp) < 0.4 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(minimatch) < 0.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(lru-cache) < 2.4 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(lockfile) < 0.5 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(ini) < 1.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(graceful-fs) < 2.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(glob) < 3.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(fstream-npm) < 0.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(fstream) < 0.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(cmd-shim) < 1.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(chownr) < 1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(chmodr) < 0.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(child-process-close) < 0.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(archy) < 1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(ansi) < 0.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(abbrev) < 1.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(request) > 2.16 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(which) >= 1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(tar) >= 0.1.18 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(slide) >= 1.1.4 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(sha) >= 1.2.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(semver) >= 2.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(rimraf) >= 2.2.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(retry) >= 0.6.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(read-package-json) >= 1.1.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(read-installed) >= 0.2.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(read) >= 1.0.4 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(opener) >= 1.3.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(once) >= 1.1.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(npmconf) >= 0.1.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(npm-registry-client) >= 0.2.27 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(nopt) >= 2.1.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(node-gyp) >= 0.10.6 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(mkdirp) >= 0.3.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(minimatch) >= 0.2.12 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(lru-cache) >= 2.3.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(lockfile) >= 0.4.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(ini) >= 1.1.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(graceful-fs) >= 2.0.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(glob) >= 3.2.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(fstream-npm) >= 0.1.3 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(fstream) >= 0.1.23 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(cmd-shim) >= 1.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(chmodr) >= 0.1.0 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(child-process-close) >= 0.1.1 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(ansi) >= 0.2 for package: npm-1.3.6-5.el6.noarch
+--> Processing Dependency: npm(abbrev) >= 1.0.4 for package: npm-1.3.6-5.el6.noarch
+--> Running transaction check
+---> Package node-gyp.noarch 0:0.10.6-2.el6 will be installed
+--> Processing Dependency: v8-devel for package: node-gyp-0.10.6-2.el6.noarch
+--> Processing Dependency: nodejs-devel for package: node-gyp-0.10.6-2.el6.noarch
+--> Processing Dependency: libuv-devel for package: node-gyp-0.10.6-2.el6.noarch
+--> Processing Dependency: http-parser-devel for package: node-gyp-0.10.6-2.el6.noarch
+--> Processing Dependency: gyp for package: node-gyp-0.10.6-2.el6.noarch
+---> Package nodejs-abbrev.noarch 0:1.0.4-6.el6 will be installed
+---> Package nodejs-ansi.noarch 0:0.2.1-1.el6 will be installed
+---> Package nodejs-archy.noarch 0:0.0.2-8.el6 will be installed
+---> Package nodejs-block-stream.noarch 0:0.0.7-1.el6 will be installed
+--> Processing Dependency: npm(inherits) < 2.1 for package: nodejs-block-stream-0.0.7-1.el6.noarch
+--> Processing Dependency: npm(inherits) >= 2.0.0 for package: nodejs-block-stream-0.0.7-1.el6.noarch
+---> Package nodejs-child-process-close.noarch 0:0.1.1-2.el6 will be installed
+---> Package nodejs-chmodr.noarch 0:0.1.0-4.el6 will be installed
+---> Package nodejs-chownr.noarch 0:0.0.1-9.el6 will be installed
+---> Package nodejs-cmd-shim.noarch 0:1.1.0-3.el6 will be installed
+---> Package nodejs-editor.noarch 0:0.0.4-2.el6 will be installed
+---> Package nodejs-fstream.noarch 0:0.1.24-1.el6 will be installed
+---> Package nodejs-fstream-npm.noarch 0:0.1.5-1.el6 will be installed
+--> Processing Dependency: npm(fstream-ignore) < 0.1 for package: nodejs-fstream-npm-0.1.5-1.el6.noarch
+--> Processing Dependency: npm(fstream-ignore) >= 0.0.5 for package: nodejs-fstream-npm-0.1.5-1.el6.noarch
+---> Package nodejs-glob.noarch 0:3.2.6-1.el6 will be installed
+---> Package nodejs-graceful-fs.noarch 0:2.0.0-2.el6 will be installed
+---> Package nodejs-ini.noarch 0:1.1.0-3.el6 will be installed
+---> Package nodejs-init-package-json.noarch 0:0.0.10-1.el6 will be installed
+--> Processing Dependency: npm(promzard) < 0.3 for package: nodejs-init-package-json-0.0.10-1.el6.noarch
+--> Processing Dependency: npm(promzard) >= 0.2.0 for package: nodejs-init-package-json-0.0.10-1.el6.noarch
+---> Package nodejs-lockfile.noarch 0:0.4.2-1.el6 will be installed
+---> Package nodejs-lru-cache.noarch 0:2.3.0-3.el6 will be installed
+---> Package nodejs-minimatch.noarch 0:0.2.12-2.el6 will be installed
+--> Processing Dependency: npm(sigmund) < 1.1 for package: nodejs-minimatch-0.2.12-2.el6.noarch
+--> Processing Dependency: npm(sigmund) >= 1.0.0 for package: nodejs-minimatch-0.2.12-2.el6.noarch
+---> Package nodejs-mkdirp.noarch 0:0.3.5-3.el6 will be installed
+---> Package nodejs-nopt.noarch 0:2.1.2-1.el6 will be installed
+---> Package nodejs-npm-registry-client.noarch 0:0.2.28-3.el6 will be installed
+---> Package nodejs-npm-user-validate.noarch 0:0.0.3-1.el6 will be installed
+---> Package nodejs-npmconf.noarch 0:0.1.2-1.el6 will be installed
+--> Processing Dependency: npm(config-chain) < 1.2 for package: nodejs-npmconf-0.1.2-1.el6.noarch
+--> Processing Dependency: npm(config-chain) >= 1.1.1 for package: nodejs-npmconf-0.1.2-1.el6.noarch
+---> Package nodejs-npmlog.noarch 0:0.0.4-1.el6 will be installed
+---> Package nodejs-once.noarch 0:1.1.1-5.el6 will be installed
+---> Package nodejs-opener.noarch 0:1.3.0-7.el6 will be installed
+---> Package nodejs-osenv.noarch 0:0.0.3-5.el6 will be installed
+---> Package nodejs-read.noarch 0:1.0.5-1.el6 will be installed
+--> Processing Dependency: npm(mute-stream) < 0.1 for package: nodejs-read-1.0.5-1.el6.noarch
+--> Processing Dependency: npm(mute-stream) >= 0.0.4 for package: nodejs-read-1.0.5-1.el6.noarch
+---> Package nodejs-read-installed.noarch 0:0.2.4-1.el6 will be installed
+---> Package nodejs-read-package-json.noarch 0:1.1.3-1.el6 will be installed
+--> Processing Dependency: npm(normalize-package-data) < 1 for package: nodejs-read-package-json-1.1.3-1.el6.noarch
+--> Processing Dependency: npm(normalize-package-data) >= 0.2 for package: nodejs-read-package-json-1.1.3-1.el6.noarch
+---> Package nodejs-request.noarch 0:2.25.0-3.el6 will be installed
+--> Processing Dependency: npm(tunnel-agent) < 0.4 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(qs) < 0.7 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(oauth-sign) < 0.4 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(node-uuid) < 1.5 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(mime) < 1.3 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(json-stringify-safe) < 6 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(http-signature) < 0.11 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(hawk) < 2 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(form-data) < 1 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(forever-agent) < 0.6 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(cookie-jar) < 0.4 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(aws-sign) < 0.4 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(tunnel-agent) >= 0.3.0 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(qs) >= 0.6.0 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(oauth-sign) >= 0.3.0 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(node-uuid) >= 1.4.0 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(mime) >= 1.2.9 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(json-stringify-safe) >= 5 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(http-signature) >= 0.10 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(hawk) >= 1.0 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(form-data) >= 0.1 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(forever-agent) >= 0.5.0 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(cookie-jar) >= 0.3.0 for package: nodejs-request-2.25.0-3.el6.noarch
+--> Processing Dependency: npm(aws-sign) >= 0.3.0 for package: nodejs-request-2.25.0-3.el6.noarch
+---> Package nodejs-retry.noarch 0:0.6.0-5.el6 will be installed
+---> Package nodejs-rimraf.noarch 0:2.2.2-1.el6 will be installed
+---> Package nodejs-semver.noarch 0:2.1.0-1.el6 will be installed
+---> Package nodejs-sha.noarch 0:1.2.1-1.el6 will be installed
+---> Package nodejs-slide.noarch 0:1.1.5-1.el6 will be installed
+---> Package nodejs-tar.noarch 0:0.1.18-1.el6 will be installed
+---> Package nodejs-uid-number.noarch 0:0.0.3-7.el6 will be installed
+---> Package nodejs-which.noarch 0:1.0.5-8.el6 will be installed
+--> Running transaction check
+---> Package gyp.noarch 0:0.1-0.6.1010svn.el6 will be installed
+---> Package http-parser-devel.x86_64 0:2.0-4.20121128gitcd01361.el6 will be installed
+--> Processing Dependency: http-parser = 2.0-4.20121128gitcd01361.el6 for package: http-parser-devel-2.0-4.20121128gitcd01361.el6.x86_64
+--> Processing Dependency: libhttp_parser_strict.so.2()(64bit) for package: http-parser-devel-2.0-4.20121128gitcd01361.el6.x86_64
+--> Processing Dependency: libhttp_parser.so.2()(64bit) for package: http-parser-devel-2.0-4.20121128gitcd01361.el6.x86_64
+---> Package libuv-devel.x86_64 1:0.10.34-1.el6 will be installed
+--> Processing Dependency: libuv(x86-64) = 1:0.10.34-1.el6 for package: 1:libuv-devel-0.10.34-1.el6.x86_64
+--> Processing Dependency: libuv.so.0.10()(64bit) for package: 1:libuv-devel-0.10.34-1.el6.x86_64
+---> Package nodejs-aws-sign.noarch 0:0.3.0-1.el6 will be installed
+---> Package nodejs-config-chain.noarch 0:1.1.7-1.el6 will be installed
+--> Processing Dependency: npm(proto-list) < 1.3 for package: nodejs-config-chain-1.1.7-1.el6.noarch
+--> Processing Dependency: npm(proto-list) >= 1.2.1 for package: nodejs-config-chain-1.1.7-1.el6.noarch
+---> Package nodejs-cookie-jar.noarch 1:0.3.0-1.el6 will be installed
+---> Package nodejs-devel.x86_64 2:6.9.4-1nodesource.el6 will be installed
+---> Package nodejs-forever-agent.noarch 0:0.5.0-1.el6 will be installed
+---> Package nodejs-form-data.noarch 0:0.1.1-1.el6 will be installed
+--> Processing Dependency: npm(combined-stream) < 0.1 for package: nodejs-form-data-0.1.1-1.el6.noarch
+--> Processing Dependency: npm(async) < 0.3 for package: nodejs-form-data-0.1.1-1.el6.noarch
+--> Processing Dependency: npm(combined-stream) >= 0.0.4 for package: nodejs-form-data-0.1.1-1.el6.noarch
+--> Processing Dependency: npm(async) >= 0.2.9 for package: nodejs-form-data-0.1.1-1.el6.noarch
+---> Package nodejs-fstream-ignore.noarch 0:0.0.7-1.el6 will be installed
+---> Package nodejs-hawk.noarch 0:1.0.0-1.el6 will be installed
+--> Processing Dependency: npm(sntp) < 0.3 for package: nodejs-hawk-1.0.0-1.el6.noarch
+--> Processing Dependency: npm(hoek) < 0.10 for package: nodejs-hawk-1.0.0-1.el6.noarch
+--> Processing Dependency: npm(cryptiles) < 0.3 for package: nodejs-hawk-1.0.0-1.el6.noarch
+--> Processing Dependency: npm(boom) < 0.5 for package: nodejs-hawk-1.0.0-1.el6.noarch
+--> Processing Dependency: npm(sntp) >= 0.2 for package: nodejs-hawk-1.0.0-1.el6.noarch
+--> Processing Dependency: npm(hoek) >= 0.9 for package: nodejs-hawk-1.0.0-1.el6.noarch
+--> Processing Dependency: npm(cryptiles) >= 0.2 for package: nodejs-hawk-1.0.0-1.el6.noarch
+--> Processing Dependency: npm(boom) >= 0.4 for package: nodejs-hawk-1.0.0-1.el6.noarch
+---> Package nodejs-http-signature.noarch 0:0.10.0-3.el6 will be installed
+--> Processing Dependency: npm(ctype) < 0.6 for package: nodejs-http-signature-0.10.0-3.el6.noarch
+--> Processing Dependency: npm(assert-plus) < 0.2 for package: nodejs-http-signature-0.10.0-3.el6.noarch
+--> Processing Dependency: npm(asn1) < 0.2 for package: nodejs-http-signature-0.10.0-3.el6.noarch
+--> Processing Dependency: npm(ctype) >= 0.5.3 for package: nodejs-http-signature-0.10.0-3.el6.noarch
+--> Processing Dependency: npm(assert-plus) >= 0.1.2 for package: nodejs-http-signature-0.10.0-3.el6.noarch
+--> Processing Dependency: npm(asn1) >= 0.1.11 for package: nodejs-http-signature-0.10.0-3.el6.noarch
+---> Package nodejs-inherits.noarch 0:2.0.0-4.el6 will be installed
+---> Package nodejs-json-stringify-safe.noarch 0:5.0.0-1.el6 will be installed
+---> Package nodejs-mime.noarch 0:1.2.11-1.el6 will be installed
+---> Package nodejs-mute-stream.noarch 0:0.0.4-1.el6 will be installed
+---> Package nodejs-node-uuid.noarch 0:1.4.1-1.el6 will be installed
+---> Package nodejs-normalize-package-data.noarch 0:0.2.1-1.el6 will be installed
+--> Processing Dependency: npm(github-url-from-git) < 1.2 for package: nodejs-normalize-package-data-0.2.1-1.el6.noarch
+--> Processing Dependency: npm(github-url-from-git) >= 1.1.1 for package: nodejs-normalize-package-data-0.2.1-1.el6.noarch
+---> Package nodejs-oauth-sign.noarch 0:0.3.0-1.el6 will be installed
+---> Package nodejs-promzard.noarch 0:0.2.0-6.el6 will be installed
+---> Package nodejs-qs.noarch 0:0.6.6-3.el6 will be installed
+---> Package nodejs-sigmund.noarch 0:1.0.0-5.el6 will be installed
+---> Package nodejs-tunnel-agent.noarch 0:0.3.0-1.el6 will be installed
+---> Package v8-devel.x86_64 1:3.14.5.10-25.el6 will be installed
+--> Processing Dependency: v8 = 1:3.14.5.10-25.el6 for package: 1:v8-devel-3.14.5.10-25.el6.x86_64
+--> Processing Dependency: libv8preparser.so.3()(64bit) for package: 1:v8-devel-3.14.5.10-25.el6.x86_64
+--> Processing Dependency: libv8.so.3()(64bit) for package: 1:v8-devel-3.14.5.10-25.el6.x86_64
+--> Running transaction check
+---> Package http-parser.x86_64 0:2.0-4.20121128gitcd01361.el6 will be installed
+---> Package libuv.x86_64 1:0.10.34-1.el6 will be installed
+---> Package nodejs-asn1.noarch 0:0.1.11-3.el6 will be installed
+---> Package nodejs-assert-plus.noarch 0:0.1.4-1.el6 will be installed
+---> Package nodejs-async.noarch 0:0.2.10-1.el6 will be installed
+---> Package nodejs-boom.noarch 0:0.4.2-2.el6 will be installed
+---> Package nodejs-combined-stream.noarch 0:0.0.4-3.el6 will be installed
+--> Processing Dependency: npm(delayed-stream) = 0.0.5 for package: nodejs-combined-stream-0.0.4-3.el6.noarch
+---> Package nodejs-cryptiles.noarch 0:0.2.2-1.el6 will be installed
+---> Package nodejs-ctype.noarch 0:0.5.3-3.el6 will be installed
+---> Package nodejs-github-url-from-git.noarch 0:1.1.1-2.el6 will be installed
+---> Package nodejs-hoek.noarch 0:0.9.1-1.el6 will be installed
+---> Package nodejs-proto-list.noarch 0:1.2.2-5.el6 will be installed
+---> Package nodejs-sntp.noarch 0:0.2.4-1.el6 will be installed
+---> Package v8.x86_64 1:3.14.5.10-25.el6 will be installed
+--> Processing Dependency: libicuuc.so.42()(64bit) for package: 1:v8-3.14.5.10-25.el6.x86_64
+--> Processing Dependency: libicui18n.so.42()(64bit) for package: 1:v8-3.14.5.10-25.el6.x86_64
+--> Processing Dependency: libicudata.so.42()(64bit) for package: 1:v8-3.14.5.10-25.el6.x86_64
+--> Running transaction check
+---> Package libicu.x86_64 0:4.2.1-14.el6 will be installed
+---> Package nodejs-delayed-stream.noarch 0:0.0.5-5.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                               Arch                           Version                                                 Repository                                        Size
+=====================================================================================================================================================================================================
+Installing:
+ nodejs                                                x86_64                         2:6.9.4-1nodesource.el6                                 nodesource                                       9.8 M
+ npm                                                   noarch                         1.3.6-5.el6                                             tcs-epel                                         329 k
+Installing for dependencies:
+ gyp                                                   noarch                         0.1-0.6.1010svn.el6                                     tcs-epel                                         335 k
+ http-parser                                           x86_64                         2.0-4.20121128gitcd01361.el6                            tcs-epel                                          22 k
+ http-parser-devel                                     x86_64                         2.0-4.20121128gitcd01361.el6                            tcs-epel                                         9.2 k
+ libicu                                                x86_64                         4.2.1-14.el6                                            tcs-rhel-x86_64-server-6                         4.9 M
+ libuv                                                 x86_64                         1:0.10.34-1.el6                                         tcs-epel                                          57 k
+ libuv-devel                                           x86_64                         1:0.10.34-1.el6                                         tcs-epel                                          41 k
+ node-gyp                                              noarch                         0.10.6-2.el6                                            tcs-epel                                          25 k
+ nodejs-abbrev                                         noarch                         1.0.4-6.el6                                             tcs-epel                                         7.1 k
+ nodejs-ansi                                           noarch                         0.2.1-1.el6                                             tcs-epel                                          13 k
+ nodejs-archy                                          noarch                         0.0.2-8.el6                                             tcs-epel                                         6.3 k
+ nodejs-asn1                                           noarch                         0.1.11-3.el6                                            tcs-epel                                          10 k
+ nodejs-assert-plus                                    noarch                         0.1.4-1.el6                                             tcs-epel                                         7.0 k
+ nodejs-async                                          noarch                         0.2.10-1.el6                                            tcs-epel                                          21 k
+ nodejs-aws-sign                                       noarch                         0.3.0-1.el6                                             tcs-epel                                         5.4 k
+ nodejs-block-stream                                   noarch                         0.0.7-1.el6                                             tcs-epel                                         8.4 k
+ nodejs-boom                                           noarch                         0.4.2-2.el6                                             tcs-epel                                          36 k
+ nodejs-child-process-close                            noarch                         0.1.1-2.el6                                             tcs-epel                                         5.7 k
+ nodejs-chmodr                                         noarch                         0.1.0-4.el6                                             tcs-epel                                         5.6 k
+ nodejs-chownr                                         noarch                         0.0.1-9.el6                                             tcs-epel                                         6.1 k
+ nodejs-cmd-shim                                       noarch                         1.1.0-3.el6                                             tcs-epel                                         7.3 k
+ nodejs-combined-stream                                noarch                         0.0.4-3.el6                                             tcs-epel                                         7.6 k
+ nodejs-config-chain                                   noarch                         1.1.7-1.el6                                             tcs-epel                                         9.9 k
+ nodejs-cookie-jar                                     noarch                         1:0.3.0-1.el6                                           tcs-epel                                         5.8 k
+ nodejs-cryptiles                                      noarch                         0.2.2-1.el6                                             tcs-epel                                         6.5 k
+ nodejs-ctype                                          noarch                         0.5.3-3.el6                                             tcs-epel                                          31 k
+ nodejs-delayed-stream                                 noarch                         0.0.5-5.el6                                             tcs-epel                                         7.5 k
+ nodejs-devel                                          x86_64                         2:6.9.4-1nodesource.el6                                 nodesource                                       417 k
+ nodejs-editor                                         noarch                         0.0.4-2.el6                                             tcs-epel                                         6.0 k
+ nodejs-forever-agent                                  noarch                         0.5.0-1.el6                                             tcs-epel                                         5.3 k
+ nodejs-form-data                                      noarch                         0.1.1-1.el6                                             tcs-epel                                          10 k
+ nodejs-fstream                                        noarch                         0.1.24-1.el6                                            tcs-epel                                          24 k
+ nodejs-fstream-ignore                                 noarch                         0.0.7-1.el6                                             tcs-epel                                         8.5 k
+ nodejs-fstream-npm                                    noarch                         0.1.5-1.el6                                             tcs-epel                                          11 k
+ nodejs-github-url-from-git                            noarch                         1.1.1-2.el6                                             tcs-epel                                         5.7 k
+ nodejs-glob                                           noarch                         3.2.6-1.el6                                             tcs-epel                                          16 k
+ nodejs-graceful-fs                                    noarch                         2.0.0-2.el6                                             tcs-epel                                          10 k
+ nodejs-hawk                                           noarch                         1.0.0-1.el6                                             tcs-epel                                         104 k
+ nodejs-hoek                                           noarch                         0.9.1-1.el6                                             tcs-epel                                          51 k
+ nodejs-http-signature                                 noarch                         0.10.0-3.el6                                            tcs-epel                                          16 k
+ nodejs-inherits                                       noarch                         2.0.0-4.el6                                             tcs-epel                                         8.3 k
+ nodejs-ini                                            noarch                         1.1.0-3.el6                                             tcs-epel                                         7.9 k
+ nodejs-init-package-json                              noarch                         0.0.10-1.el6                                            tcs-epel                                         9.1 k
+ nodejs-json-stringify-safe                            noarch                         5.0.0-1.el6                                             tcs-epel                                         6.2 k
+ nodejs-lockfile                                       noarch                         0.4.2-1.el6                                             tcs-epel                                          11 k
+ nodejs-lru-cache                                      noarch                         2.3.0-3.el6                                             tcs-epel                                         9.2 k
+ nodejs-mime                                           noarch                         1.2.11-1.el6                                            tcs-epel                                          22 k
+ nodejs-minimatch                                      noarch                         0.2.12-2.el6                                            tcs-epel                                          18 k
+ nodejs-mkdirp                                         noarch                         0.3.5-3.el6                                             tcs-epel                                         7.2 k
+ nodejs-mute-stream                                    noarch                         0.0.4-1.el6                                             tcs-epel                                         7.1 k
+ nodejs-node-uuid                                      noarch                         1.4.1-1.el6                                             tcs-epel                                         9.8 k
+ nodejs-nopt                                           noarch                         2.1.2-1.el6                                             tcs-epel                                          15 k
+ nodejs-normalize-package-data                         noarch                         0.2.1-1.el6                                             tcs-epel                                          12 k
+ nodejs-npm-registry-client                            noarch                         0.2.28-3.el6                                            tcs-epel                                          20 k
+ nodejs-npm-user-validate                              noarch                         0.0.3-1.el6                                             tcs-epel                                         5.7 k
+ nodejs-npmconf                                        noarch                         0.1.2-1.el6                                             tcs-epel                                          16 k
+ nodejs-npmlog                                         noarch                         0.0.4-1.el6                                             tcs-epel                                         9.0 k
+ nodejs-oauth-sign                                     noarch                         0.3.0-1.el6                                             tcs-epel                                         4.6 k
+ nodejs-once                                           noarch                         1.1.1-5.el6                                             tcs-epel                                         5.7 k
+ nodejs-opener                                         noarch                         1.3.0-7.el6                                             tcs-epel                                         6.5 k
+ nodejs-osenv                                          noarch                         0.0.3-5.el6                                             tcs-epel                                         6.7 k
+ nodejs-promzard                                       noarch                         0.2.0-6.el6                                             tcs-epel                                          12 k
+ nodejs-proto-list                                     noarch                         1.2.2-5.el6                                             tcs-epel                                         6.4 k
+ nodejs-qs                                             noarch                         0.6.6-3.el6                                             tcs-epel                                         8.4 k
+ nodejs-read                                           noarch                         1.0.5-1.el6                                             tcs-epel                                         8.3 k
+ nodejs-read-installed                                 noarch                         0.2.4-1.el6                                             tcs-epel                                         9.1 k
+ nodejs-read-package-json                              noarch                         1.1.3-1.el6                                             tcs-epel                                          11 k
+ nodejs-request                                        noarch                         2.25.0-3.el6                                            tcs-epel                                          26 k
+ nodejs-retry                                          noarch                         0.6.0-5.el6                                             tcs-epel                                          10 k
+ nodejs-rimraf                                         noarch                         2.2.2-1.el6                                             tcs-epel                                         7.7 k
+ nodejs-semver                                         noarch                         2.1.0-1.el6                                             tcs-epel                                          16 k
+ nodejs-sha                                            noarch                         1.2.1-1.el6                                             tcs-epel                                         7.2 k
+ nodejs-sigmund                                        noarch                         1.0.0-5.el6                                             tcs-epel                                         7.9 k
+ nodejs-slide                                          noarch                         1.1.5-1.el6                                             tcs-epel                                         9.5 k
+ nodejs-sntp                                           noarch                         0.2.4-1.el6                                             tcs-epel                                         9.7 k
+ nodejs-tar                                            noarch                         0.1.18-1.el6                                            tcs-epel                                          22 k
+ nodejs-tunnel-agent                                   noarch                         0.3.0-1.el6                                             tcs-epel                                         6.0 k
+ nodejs-uid-number                                     noarch                         0.0.3-7.el6                                             tcs-epel                                         6.8 k
+ nodejs-which                                          noarch                         1.0.5-8.el6                                             tcs-epel                                         7.6 k
+ v8                                                    x86_64                         1:3.14.5.10-25.el6                                      tcs-epel                                         3.0 M
+ v8-devel                                              x86_64                         1:3.14.5.10-25.el6                                      tcs-epel                                          61 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install      82 Package(s)
+
+Total download size: 20 M
+Installed size: 69 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/82): gyp-0.1-0.6.1010svn.el6.noarch.rpm                                                                                                                                    | 335 kB     00:00
+(2/82): http-parser-2.0-4.20121128gitcd01361.el6.x86_64.rpm                                                                                                                   |  22 kB     00:00
+(3/82): http-parser-devel-2.0-4.20121128gitcd01361.el6.x86_64.rpm                                                                                                             | 9.2 kB     00:00
+(4/82): libicu-4.2.1-14.el6.x86_64.rpm                                                                                                                                        | 4.9 MB     00:00
+(5/82): libuv-0.10.34-1.el6.x86_64.rpm                                                                                                                                        |  57 kB     00:00
+(6/82): libuv-devel-0.10.34-1.el6.x86_64.rpm                                                                                                                                  |  41 kB     00:00
+(7/82): node-gyp-0.10.6-2.el6.noarch.rpm                                                                                                                                      |  25 kB     00:00
+(8/82): nodejs-6.9.4-1nodesource.el6.x86_64.rpm                                                                                                                               | 9.8 MB     00:02
+(9/82): nodejs-abbrev-1.0.4-6.el6.noarch.rpm                                                                                                                                  | 7.1 kB     00:00
+(10/82): nodejs-ansi-0.2.1-1.el6.noarch.rpm                                                                                                                                   |  13 kB     00:00
+(11/82): nodejs-archy-0.0.2-8.el6.noarch.rpm                                                                                                                                  | 6.3 kB     00:00
+(12/82): nodejs-asn1-0.1.11-3.el6.noarch.rpm                                                                                                                                  |  10 kB     00:00
+(13/82): nodejs-assert-plus-0.1.4-1.el6.noarch.rpm                                                                                                                            | 7.0 kB     00:00
+(14/82): nodejs-async-0.2.10-1.el6.noarch.rpm                                                                                                                                 |  21 kB     00:00
+(15/82): nodejs-aws-sign-0.3.0-1.el6.noarch.rpm                                                                                                                               | 5.4 kB     00:00
+(16/82): nodejs-block-stream-0.0.7-1.el6.noarch.rpm                                                                                                                           | 8.4 kB     00:00
+(17/82): nodejs-boom-0.4.2-2.el6.noarch.rpm                                                                                                                                   |  36 kB     00:00
+(18/82): nodejs-child-process-close-0.1.1-2.el6.noarch.rpm                                                                                                                    | 5.7 kB     00:00
+(19/82): nodejs-chmodr-0.1.0-4.el6.noarch.rpm                                                                                                                                 | 5.6 kB     00:00
+(20/82): nodejs-chownr-0.0.1-9.el6.noarch.rpm                                                                                                                                 | 6.1 kB     00:00
+(21/82): nodejs-cmd-shim-1.1.0-3.el6.noarch.rpm                                                                                                                               | 7.3 kB     00:00
+(22/82): nodejs-combined-stream-0.0.4-3.el6.noarch.rpm                                                                                                                        | 7.6 kB     00:00
+(23/82): nodejs-config-chain-1.1.7-1.el6.noarch.rpm                                                                                                                           | 9.9 kB     00:00
+(24/82): nodejs-cookie-jar-0.3.0-1.el6.noarch.rpm                                                                                                                             | 5.8 kB     00:00
+(25/82): nodejs-cryptiles-0.2.2-1.el6.noarch.rpm                                                                                                                              | 6.5 kB     00:00
+(26/82): nodejs-ctype-0.5.3-3.el6.noarch.rpm                                                                                                                                  |  31 kB     00:00
+(27/82): nodejs-delayed-stream-0.0.5-5.el6.noarch.rpm                                                                                                                         | 7.5 kB     00:00
+(28/82): nodejs-devel-6.9.4-1nodesource.el6.x86_64.rpm                                                                                                                        | 417 kB     00:00
+(29/82): nodejs-editor-0.0.4-2.el6.noarch.rpm                                                                                                                                 | 6.0 kB     00:00
+(30/82): nodejs-forever-agent-0.5.0-1.el6.noarch.rpm                                                                                                                          | 5.3 kB     00:00
+(31/82): nodejs-form-data-0.1.1-1.el6.noarch.rpm                                                                                                                              |  10 kB     00:00
+(32/82): nodejs-fstream-0.1.24-1.el6.noarch.rpm                                                                                                                               |  24 kB     00:00
+(33/82): nodejs-fstream-ignore-0.0.7-1.el6.noarch.rpm                                                                                                                         | 8.5 kB     00:00
+(34/82): nodejs-fstream-npm-0.1.5-1.el6.noarch.rpm                                                                                                                            |  11 kB     00:00
+(35/82): nodejs-github-url-from-git-1.1.1-2.el6.noarch.rpm                                                                                                                    | 5.7 kB     00:00
+(36/82): nodejs-glob-3.2.6-1.el6.noarch.rpm                                                                                                                                   |  16 kB     00:00
+(37/82): nodejs-graceful-fs-2.0.0-2.el6.noarch.rpm                                                                                                                            |  10 kB     00:00
+(38/82): nodejs-hawk-1.0.0-1.el6.noarch.rpm                                                                                                                                   | 104 kB     00:00
+(39/82): nodejs-hoek-0.9.1-1.el6.noarch.rpm                                                                                                                                   |  51 kB     00:00
+(40/82): nodejs-http-signature-0.10.0-3.el6.noarch.rpm                                                                                                                        |  16 kB     00:00
+(41/82): nodejs-inherits-2.0.0-4.el6.noarch.rpm                                                                                                                               | 8.3 kB     00:00
+(42/82): nodejs-ini-1.1.0-3.el6.noarch.rpm                                                                                                                                    | 7.9 kB     00:00
+(43/82): nodejs-init-package-json-0.0.10-1.el6.noarch.rpm                                                                                                                     | 9.1 kB     00:00
+(44/82): nodejs-json-stringify-safe-5.0.0-1.el6.noarch.rpm                                                                                                                    | 6.2 kB     00:00
+(45/82): nodejs-lockfile-0.4.2-1.el6.noarch.rpm                                                                                                                               |  11 kB     00:00
+(46/82): nodejs-lru-cache-2.3.0-3.el6.noarch.rpm                                                                                                                              | 9.2 kB     00:00
+(47/82): nodejs-mime-1.2.11-1.el6.noarch.rpm                                                                                                                                  |  22 kB     00:00
+(48/82): nodejs-minimatch-0.2.12-2.el6.noarch.rpm                                                                                                                             |  18 kB     00:00
+(49/82): nodejs-mkdirp-0.3.5-3.el6.noarch.rpm                                                                                                                                 | 7.2 kB     00:00
+(50/82): nodejs-mute-stream-0.0.4-1.el6.noarch.rpm                                                                                                                            | 7.1 kB     00:00
+(51/82): nodejs-node-uuid-1.4.1-1.el6.noarch.rpm                                                                                                                              | 9.8 kB     00:00
+(52/82): nodejs-nopt-2.1.2-1.el6.noarch.rpm                                                                                                                                   |  15 kB     00:00
+(53/82): nodejs-normalize-package-data-0.2.1-1.el6.noarch.rpm                                                                                                                 |  12 kB     00:00
+(54/82): nodejs-npm-registry-client-0.2.28-3.el6.noarch.rpm                                                                                                                   |  20 kB     00:00
+(55/82): nodejs-npm-user-validate-0.0.3-1.el6.noarch.rpm                                                                                                                      | 5.7 kB     00:00
+(56/82): nodejs-npmconf-0.1.2-1.el6.noarch.rpm                                                                                                                                |  16 kB     00:00
+(57/82): nodejs-npmlog-0.0.4-1.el6.noarch.rpm                                                                                                                                 | 9.0 kB     00:00
+(58/82): nodejs-oauth-sign-0.3.0-1.el6.noarch.rpm                                                                                                                             | 4.6 kB     00:00
+(59/82): nodejs-once-1.1.1-5.el6.noarch.rpm                                                                                                                                   | 5.7 kB     00:00
+(60/82): nodejs-opener-1.3.0-7.el6.noarch.rpm                                                                                                                                 | 6.5 kB     00:00
+(61/82): nodejs-osenv-0.0.3-5.el6.noarch.rpm                                                                                                                                  | 6.7 kB     00:00
+(62/82): nodejs-promzard-0.2.0-6.el6.noarch.rpm                                                                                                                               |  12 kB     00:00
+(63/82): nodejs-proto-list-1.2.2-5.el6.noarch.rpm                                                                                                                             | 6.4 kB     00:00
+(64/82): nodejs-qs-0.6.6-3.el6.noarch.rpm                                                                                                                                     | 8.4 kB     00:00
+(65/82): nodejs-read-1.0.5-1.el6.noarch.rpm                                                                                                                                   | 8.3 kB     00:00
+(66/82): nodejs-read-installed-0.2.4-1.el6.noarch.rpm                                                                                                                         | 9.1 kB     00:00
+(67/82): nodejs-read-package-json-1.1.3-1.el6.noarch.rpm                                                                                                                      |  11 kB     00:00
+(68/82): nodejs-request-2.25.0-3.el6.noarch.rpm                                                                                                                               |  26 kB     00:00
+(69/82): nodejs-retry-0.6.0-5.el6.noarch.rpm                                                                                                                                  |  10 kB     00:00
+(70/82): nodejs-rimraf-2.2.2-1.el6.noarch.rpm                                                                                                                                 | 7.7 kB     00:00
+(71/82): nodejs-semver-2.1.0-1.el6.noarch.rpm                                                                                                                                 |  16 kB     00:00
+(72/82): nodejs-sha-1.2.1-1.el6.noarch.rpm                                                                                                                                    | 7.2 kB     00:00
+(73/82): nodejs-sigmund-1.0.0-5.el6.noarch.rpm                                                                                                                                | 7.9 kB     00:00
+(74/82): nodejs-slide-1.1.5-1.el6.noarch.rpm                                                                                                                                  | 9.5 kB     00:00
+(75/82): nodejs-sntp-0.2.4-1.el6.noarch.rpm                                                                                                                                   | 9.7 kB     00:00
+(76/82): nodejs-tar-0.1.18-1.el6.noarch.rpm                                                                                                                                   |  22 kB     00:00
+(77/82): nodejs-tunnel-agent-0.3.0-1.el6.noarch.rpm                                                                                                                           | 6.0 kB     00:00
+(78/82): nodejs-uid-number-0.0.3-7.el6.noarch.rpm                                                                                                                             | 6.8 kB     00:00
+(79/82): nodejs-which-1.0.5-8.el6.noarch.rpm                                                                                                                                  | 7.6 kB     00:00
+(80/82): npm-1.3.6-5.el6.noarch.rpm                                                                                                                                           | 329 kB     00:00
+(81/82): v8-3.14.5.10-25.el6.x86_64.rpm                                                                                                                                       | 3.0 MB     00:00
+(82/82): v8-devel-3.14.5.10-25.el6.x86_64.rpm                                                                                                                                 |  61 kB     00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                1.7 MB/s |  20 MB     00:11
+warning: rpmts_HdrFromFdno: Header V4 RSA/SHA1 Signature, key ID 34fa74dd: NOKEY
+Retrieving key from file:///etc/pki/rpm-gpg/NODESOURCE-GPG-SIGNING-KEY-EL
+Importing GPG key 0x34FA74DD:
+ Userid : NodeSource <gpg-rpm@nodesource.com>
+ Package: nodesource-release-el6-1.noarch (@/nodesource-release-el6-1.noarch)
+ From   : /etc/pki/rpm-gpg/NODESOURCE-GPG-SIGNING-KEY-EL
+Is this ok [y/N]: y
+Running rpm_check_debug
+Running Transaction Test
+
+
+Transaction Check Error:
+  file /usr/lib/node_modules/npm/bin/node-gyp-bin/node-gyp conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/bin/npm conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/bin/npm-cli.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/bin/read-package-json.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/cli.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/doc conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/html conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/adduser.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/bin.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/bugs.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/build.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/cache.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/completion.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/config.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/dedupe.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/deprecate.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/docs.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/edit.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/explore.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/get.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/help-search.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/help.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/init.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/install.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/link.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/ls.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/npm.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/outdated.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/owner.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/pack.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/prefix.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/prune.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/publish.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/rebuild.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/restart.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/root.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/run-script.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/search.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/set.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/shrinkwrap.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/star.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/stars.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/start.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/stop.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/substack.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/tag.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/test.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/unbuild.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/uninstall.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/unpublish.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/update.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/completion.sh conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/completion/file-completion.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/completion/installed-deep.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/completion/installed-shallow.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/error-handler.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/gently-rm.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/lifecycle.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/link.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/utils/tar.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/version.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/view.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/visnup.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/whoami.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/lib/xmas.js conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/abbrev conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/archy conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/chownr conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/cmd-shim conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/editor conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/fstream conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/fstream-npm conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/glob conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/graceful-fs conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/ini conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/init-package-json conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/lockfile conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/mkdirp conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/node-gyp conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/nopt conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/npm-registry-client conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/npm-user-validate conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/npmlog conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/once conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/opener conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/osenv conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/read conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/read-installed conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/read-package-json conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/request conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/retry conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/rimraf conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/semver conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/sha conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/slide conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/tar conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/uid-number conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/node_modules/which conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+  file /usr/lib/node_modules/npm/package.json conflicts between attempted installs of nodejs-2:6.9.4-1nodesource.el6.x86_64 and npm-1.3.6-5.el6.noarch
+
+Error Summary
+-------------
+
+[root@ds-gw-git01 20170113-1456]#
+
+
+[root@ds-gw-git01 20170113-1456]# yum --showduplicates list npm
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Available Packages
+npm.noarch                                                                                    1.3.6-5.el6                                                                                    tcs-epel
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# yum --showduplicates list nodejs
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Available Packages
+nodejs.i686                                                                             0.10.48-3.el6                                                                                      tcs-epel
+nodejs.x86_64                                                                           0.10.48-3.el6                                                                                      tcs-epel
+nodejs.x86_64                                                                           6.0.0-1nodesource.el6                                                                              nodesource
+nodejs.x86_64                                                                           6.1.0-1nodesource.el6                                                                              nodesource
+nodejs.x86_64                                                                           6.2.0-1nodesource.el6                                                                              nodesource
+nodejs.x86_64                                                                           6.2.1-1nodesource.el6                                                                              nodesource
+nodejs.x86_64                                                                           1:6.3.0-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           1:6.3.1-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           1:6.4.0-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           1:6.5.0-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           1:6.6.0-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           1:6.7.0-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           2:6.8.0-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           2:6.8.1-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           2:6.9.0-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           2:6.9.1-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           2:6.9.2-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           2:6.9.3-1nodesource.el6                                                                            nodesource
+nodejs.x86_64                                                                           2:6.9.4-1nodesource.el6                                                                            nodesource
+[root@ds-gw-git01 20170113-1456]#
+
+
+[root@ds-gw-git01 20170113-1456]# rpm -qpi nodejs-6.9.4-1nodesource.el6.x86_64.rpm
+Name        : nodejs                       Relocations: (not relocatable)
+Version     : 6.9.4                             Vendor: (none)
+Release     : 1nodesource.el6               Build Date: Fri 06 Jan 2017 02:55:59 AM MSK
+Install Date: (not installed)               Build Host: ip-172-30-73-11.us-west-2.compute.internal
+Group       : Development/Languages         Source RPM: nodejs-6.9.4-1nodesource.el6.src.rpm
+Size        : 35171214                         License: MIT and ASL 2.0 and ISC and BSD
+Signature   : RSA/SHA1, Fri 06 Jan 2017 03:02:39 AM MSK, Key ID 5ddbe8d434fa74dd
+URL         : http://nodejs.org
+Summary     : JavaScript runtime
+Description :
+Node.js is a platform built on Chrome\'s JavaScript runtime
+for easily building fast, scalable network applications.
+Node.js uses an event-driven, non-blocking I/O model that
+makes it lightweight and efficient, perfect for data-intensive
+real-time applications that run across distributed devices.
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+
+[root@ds-gw-git01 20170113-1456]# yum install nodejs-6.9.2-1nodesource.el6 npm
+
+[root@ds-gw-git01 20170113-1456]# yum install nodejs
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package nodejs.x86_64 2:6.9.4-1nodesource.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                   Arch                                      Version                                                     Repository                                     Size
+=====================================================================================================================================================================================================
+Installing:
+ nodejs                                    x86_64                                    2:6.9.4-1nodesource.el6                                     nodesource                                    9.8 M
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total size: 9.8 M
+Installed size: 34 M
+Is this ok [y/N]: y
+Downloading Packages:
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : 2:nodejs-6.9.4-1nodesource.el6.x86_64                                                                                                                                             1/1
+  Verifying  : 2:nodejs-6.9.4-1nodesource.el6.x86_64                                                                                                                                             1/1
+
+Installed:
+  nodejs.x86_64 2:6.9.4-1nodesource.el6
+
+Complete!
+[root@ds-gw-git01 20170113-1456]#
+
+
+#
+#   As I understood from error records and from follow, the package nmp already integrated into package nodejs.
+#
+[root@ds-gw-git01 20170113-1456]# rpm -ql nodejs | grep npm | head
+/usr/bin/npm
+/usr/lib/node_modules/npm
+/usr/lib/node_modules/npm/.github
+/usr/lib/node_modules/npm/.github/issue_template.md
+/usr/lib/node_modules/npm/.mailmap
+/usr/lib/node_modules/npm/.npmignore
+/usr/lib/node_modules/npm/.travis.yml
+/usr/lib/node_modules/npm/AUTHORS
+/usr/lib/node_modules/npm/CHANGELOG.md
+/usr/lib/node_modules/npm/CONTRIBUTING.md
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+................................................................................
+
+#
+#   Next step is installing groovy.
+#   I trying to do it with follow article: http://itekblog.com/centos-groovy-installation-tutorial-newbs-centos-6-x/
+#
+
+
+[root@ds-gw-git01 20170113-1456]# tail -n 2 /etc/yum.conf
+proxy=http://mwg.gtm.tcsbank.ru:8080
+#proxy=http://192.168.5.22:8080
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# curl -x http://mwg.gtm.tcsbank.ru:8080 -s get.gvmtool.net | bash
+bash: line 1: syntax error near unexpected token `newline'
+bash: line 1: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+[root@ds-gw-git01 20170113-1456]#
+
+
+[root@ds-gw-git01 20170113-1456]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 6.7 (Santiago)
+[root@ds-gw-git01 20170113-1456]#
+
+#
+#   And I try to use follow link: http://groovy-lang.org/install.html
+#
+
+[root@ds-gw-git01 20170113-1456]# curl -x http://mwg.gtm.tcsbank.ru:8080 -s get.sdkman.io | bash
+
+Thanks for using...
+
+
+     SSSSSSSSSSSSSSS DDDDDDDDDDDDD       KKKKKKKKK    KKKKKKK
+   SS:::::::::::::::SD::::::::::::DDD    K:::::::K    K:::::K
+  S:::::SSSSSS::::::SD:::::::::::::::DD  K:::::::K    K:::::K
+  S:::::S     SSSSSSSDDD:::::DDDDD:::::D K:::::::K   K::::::K
+  S:::::S              D:::::D    D:::::DKK::::::K  K:::::KKK
+  S:::::S              D:::::D     D:::::D K:::::K K:::::K
+   S::::SSSS           D:::::D     D:::::D K::::::K:::::K
+    SS::::::SSSSS      D:::::D     D:::::D K:::::::::::K
+      SSS::::::::SS    D:::::D     D:::::D K:::::::::::K
+         SSSSSS::::S   D:::::D     D:::::D K::::::K:::::K
+              S:::::S  D:::::D     D:::::D K:::::K K:::::K
+              S:::::S  D:::::D    D:::::DKK::::::K  K:::::KKK
+  SSSSSSS     S:::::SDDD:::::DDDDD:::::D K:::::::K   K::::::K
+  S::::::SSSSSS:::::SD:::::::::::::::DD  K:::::::K    K:::::K
+  S:::::::::::::::SS D::::::::::::DDD    K:::::::K    K:::::K
+   SSSSSSSSSSSSSSS   DDDDDDDDDDDDD       KKKKKKKKK    KKKKKKK
+
+
+                      mmmmmmm    mmmmmmm     aaaaaaaaaaaaa  nnnn  nnnnnnnn
+                    mm:::::::m  m:::::::mm   a::::::::::::a n:::nn::::::::nn
+                   m::::::::::mm::::::::::m  aaaaaaaaa:::::an::::::::::::::nn
+                   m::::::::::::::::::::::m           a::::ann:::::::::::::::n
+                   m:::::mmm::::::mmm:::::m    aaaaaaa:::::a  n:::::nnnn:::::n
+                   m::::m   m::::m   m::::m  aa::::::::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::m a::::aaaa::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma::::a    a:::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma::::a    a:::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma:::::aaaa::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::m a::::::::::aa:::a n::::n    n::::n
+                   mmmmmm   mmmmmm   mmmmmm  aaaaaaaaaa  aaaa nnnnnn    nnnnnn
+
+
+                                                 Now attempting installation...
+
+Looking for a previous installation of SDKMAN...
+Looking for unzip...
+Looking for zip...
+Looking for curl...
+Looking for sed...
+Installing SDKMAN scripts...
+Create distribution directories...
+Getting available candidates...
+
+#
+#   Here I wait approximately 30 seconds.
+#   Appeard follow two lines.
+#
+Prime the config file...
+Download script archive...
+
+#
+#   After next 30 seconds I've received follow.
+#
+
+curl: (7) couldn't connect to host
+Extract script archive...
+[/root/.sdkman/tmp/res-5.5.2+183.zip]
+  End-of-central-directory signature not found.  Either this file is not
+  a zipfile, or it constitutes one disk of a multi-part archive.  In the
+  latter case the central directory and zipfile comment will be found on
+  the last disk(s) of this archive.
+unzip:  cannot find zipfile directory in one of /root/.sdkman/tmp/res-5.5.2+183.zip or
+        /root/.sdkman/tmp/res-5.5.2+183.zip.zip, and cannot find /root/.sdkman/tmp/res-5.5.2+183.zip.ZIP, period.
+Install scripts...
+mv: cannot stat `/root/.sdkman/tmp/stage/sdkman-init.sh': No such file or directory
+mv: cannot stat `/root/.sdkman/tmp/stage/sdkman-*': No such file or directory
+Set version to 5.5.2+183 ...
+Attempt update of bash profiles...
+Updated existing /root/.bash_profile
+Updated existing /root/.bashrc
+Attempt update of zsh profiles...
+Created and initialised /root/.zshrc
+
+
+
+All done!
+
+
+Please open a new terminal, or run the following in the existing one:
+
+    source "/root/.sdkman/bin/sdkman-init.sh"
+
+Then issue the following command:
+
+    sdk help
+
+Enjoy!!!
+[root@ds-gw-git01 20170113-1456]#
+
+
+[root@ds-gw-git01 20170113-1456]# source "/root/.sdkman/bin/sdkman-init.sh"
+-bash: /root/.sdkman/bin/sdkman-init.sh: No such file or directory
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# curl -x http://mwg.gtm.tcsbank.ru:8080 -s get.sdkman.io > groovy.sh
+
+................................................................................
+
+[root@ds-gw-git01 20170113-1456]# vim ~/.curlrc
+
+[root@ds-gw-git01 20170113-1456]# cat ~/.curlrc
+proxy = http://mwg.gtm.tcsbank.ru:8080
+[root@ds-gw-git01 20170113-1456]#
+
+
+[root@ds-gw-git01 20170113-1456]# curl -x http://mwg.gtm.tcsbank.ru:8080 -s get.sdkman.io | bash
+
+Thanks for using...
+
+
+     SSSSSSSSSSSSSSS DDDDDDDDDDDDD       KKKKKKKKK    KKKKKKK
+   SS:::::::::::::::SD::::::::::::DDD    K:::::::K    K:::::K
+  S:::::SSSSSS::::::SD:::::::::::::::DD  K:::::::K    K:::::K
+  S:::::S     SSSSSSSDDD:::::DDDDD:::::D K:::::::K   K::::::K
+  S:::::S              D:::::D    D:::::DKK::::::K  K:::::KKK
+  S:::::S              D:::::D     D:::::D K:::::K K:::::K
+   S::::SSSS           D:::::D     D:::::D K::::::K:::::K
+    SS::::::SSSSS      D:::::D     D:::::D K:::::::::::K
+      SSS::::::::SS    D:::::D     D:::::D K:::::::::::K
+         SSSSSS::::S   D:::::D     D:::::D K::::::K:::::K
+              S:::::S  D:::::D     D:::::D K:::::K K:::::K
+              S:::::S  D:::::D    D:::::DKK::::::K  K:::::KKK
+  SSSSSSS     S:::::SDDD:::::DDDDD:::::D K:::::::K   K::::::K
+  S::::::SSSSSS:::::SD:::::::::::::::DD  K:::::::K    K:::::K
+  S:::::::::::::::SS D::::::::::::DDD    K:::::::K    K:::::K
+   SSSSSSSSSSSSSSS   DDDDDDDDDDDDD       KKKKKKKKK    KKKKKKK
+
+
+                      mmmmmmm    mmmmmmm     aaaaaaaaaaaaa  nnnn  nnnnnnnn
+                    mm:::::::m  m:::::::mm   a::::::::::::a n:::nn::::::::nn
+                   m::::::::::mm::::::::::m  aaaaaaaaa:::::an::::::::::::::nn
+                   m::::::::::::::::::::::m           a::::ann:::::::::::::::n
+                   m:::::mmm::::::mmm:::::m    aaaaaaa:::::a  n:::::nnnn:::::n
+                   m::::m   m::::m   m::::m  aa::::::::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::m a::::aaaa::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma::::a    a:::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma::::a    a:::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma:::::aaaa::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::m a::::::::::aa:::a n::::n    n::::n
+                   mmmmmm   mmmmmm   mmmmmm  aaaaaaaaaa  aaaa nnnnnn    nnnnnn
+
+
+                                                 Now attempting installation...
+
+Looking for a previous installation of SDKMAN...
+SDKMAN found.
+
+======================================================================================================
+ You already have SDKMAN installed.
+ SDKMAN was found at:
+
+    /root/.sdkman
+
+ Please consider running the following if you need to upgrade.
+
+    $ sdk selfupdate force
+
+======================================================================================================
+
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# ls -Alh /root/.sdkman/
+total 32K
+drwxr-xr-x 2 root root 4.0K Jan 13 15:46 archives
+drwxr-xr-x 2 root root 4.0K Jan 13 15:46 bin
+drwxr-xr-x 2 root root 4.0K Jan 13 15:46 candidates
+drwxr-xr-x 2 root root 4.0K Jan 13 15:47 etc
+drwxr-xr-x 2 root root 4.0K Jan 13 15:46 ext
+drwxr-xr-x 2 root root 4.0K Jan 13 15:46 src
+drwxr-xr-x 3 root root 4.0K Jan 13 15:47 tmp
+drwxr-xr-x 2 root root 4.0K Jan 13 15:48 var
+[root@ds-gw-git01 20170113-1456]# du -sh /root/.sdkman/
+52K     /root/.sdkman/
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# mv /root/.sdkman{,.backup.1}
+
+
+[root@ds-gw-git01 20170113-1456]# curl -x http://mwg.gtm.tcsbank.ru:8080 -s get.sdkman.io | bash
+
+Thanks for using...
+
+
+     SSSSSSSSSSSSSSS DDDDDDDDDDDDD       KKKKKKKKK    KKKKKKK
+   SS:::::::::::::::SD::::::::::::DDD    K:::::::K    K:::::K
+  S:::::SSSSSS::::::SD:::::::::::::::DD  K:::::::K    K:::::K
+  S:::::S     SSSSSSSDDD:::::DDDDD:::::D K:::::::K   K::::::K
+  S:::::S              D:::::D    D:::::DKK::::::K  K:::::KKK
+  S:::::S              D:::::D     D:::::D K:::::K K:::::K
+   S::::SSSS           D:::::D     D:::::D K::::::K:::::K
+    SS::::::SSSSS      D:::::D     D:::::D K:::::::::::K
+      SSS::::::::SS    D:::::D     D:::::D K:::::::::::K
+         SSSSSS::::S   D:::::D     D:::::D K::::::K:::::K
+              S:::::S  D:::::D     D:::::D K:::::K K:::::K
+              S:::::S  D:::::D    D:::::DKK::::::K  K:::::KKK
+  SSSSSSS     S:::::SDDD:::::DDDDD:::::D K:::::::K   K::::::K
+  S::::::SSSSSS:::::SD:::::::::::::::DD  K:::::::K    K:::::K
+  S:::::::::::::::SS D::::::::::::DDD    K:::::::K    K:::::K
+   SSSSSSSSSSSSSSS   DDDDDDDDDDDDD       KKKKKKKKK    KKKKKKK
+
+
+                      mmmmmmm    mmmmmmm     aaaaaaaaaaaaa  nnnn  nnnnnnnn
+                    mm:::::::m  m:::::::mm   a::::::::::::a n:::nn::::::::nn
+                   m::::::::::mm::::::::::m  aaaaaaaaa:::::an::::::::::::::nn
+                   m::::::::::::::::::::::m           a::::ann:::::::::::::::n
+                   m:::::mmm::::::mmm:::::m    aaaaaaa:::::a  n:::::nnnn:::::n
+                   m::::m   m::::m   m::::m  aa::::::::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::m a::::aaaa::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma::::a    a:::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma::::a    a:::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::ma:::::aaaa::::::a  n::::n    n::::n
+                   m::::m   m::::m   m::::m a::::::::::aa:::a n::::n    n::::n
+                   mmmmmm   mmmmmm   mmmmmm  aaaaaaaaaa  aaaa nnnnnn    nnnnnn
+
+
+                                                 Now attempting installation...
+
+Looking for a previous installation of SDKMAN...
+Looking for unzip...
+Looking for zip...
+Looking for curl...
+Looking for sed...
+Installing SDKMAN scripts...
+Create distribution directories...
+Getting available candidates...
+Prime the config file...
+Download script archive...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 20475  100 20475    0     0   4548      0  0:00:04  0:00:04 --:--:-- 19407
+Extract script archive...
+Install scripts...
+Set version to 5.5.2+183 ...
+Attempt update of bash profiles...
+Attempt update of zsh profiles...
+
+
+
+All done!
+
+
+Please open a new terminal, or run the following in the existing one:
+
+    source "/root/.sdkman/bin/sdkman-init.sh"
+
+Then issue the following command:
+
+    sdk help
+
+Enjoy!!!
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# source "/root/.sdkman/bin/sdkman-init.sh"
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# sdk install groovy
+==== BROADCAST =================================================================
+* 06/01/17: Springboot 1.5.0.RC1 released on SDKMAN! #springboot
+* 03/01/17: Gradle 3.3 released on SDKMAN! #gradle
+* 27/12/16: Kotlin 1.0.6 released on SDKMAN! #kotlin
+================================================================================
+
+Downloading: groovy 2.4.7
+
+In progress...
+
+#
+#   After two or three minutes of waiting, appear follow:
+#
+
+######################################################################## 100.0%
+
+Installing: groovy 2.4.7
+Done installing!
+
+
+Setting groovy 2.4.7 as default.
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+................................................................................
+
+#
+#   Gradle 2.13 installation.
+#
+[root@ds-gw-git01 20170113-1456]# java -version
+java version "1.7.0_121"
+OpenJDK Runtime Environment (rhel-2.6.8.1.el6_8-x86_64 u121-b00)
+OpenJDK 64-Bit Server VM (build 24.121-b00, mixed mode)
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# yum search gradle
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+======================================================================================== N/S Matched: gradle ========================================================================================
+gradle-open-api.noarch : Open API definition for gradle
+
+  Name and summary matches only, use "search all" for everything.
+[root@ds-gw-git01 20170113-1456]#
+
+
+#
+#   I found follow link.
+#   https://gradle.org/post-download-gradle/
+#   Download archive 2.13, as it required.
+#
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no ~/mnt/share/jenkins/gradle-2.13-bin.zip bsv@ds-gw-git01.ti-test.local:/tmp/
+
+[root@ds-gw-git01 20170113-1456]# cp /tmp/gradle-2.13-bin.zip .
+
+[root@ds-gw-git01 20170113-1456]# ls -Alh /root/work/20170113-1456/gradle-2.13-bin.zip
+-rwxr-xr-x 1 root root 45M Jan 13 16:54 /root/work/20170113-1456/gradle-2.13-bin.zip
+[root@ds-gw-git01 20170113-1456]#
+
+#
+#   Follow I did to view http://wiki.deister.net/wiki/Linux:CentOS_install_gradle
+#
+
+[root@ds-gw-git01 20170113-1456]# mkdir /opt/gradle
+[root@ds-gw-git01 20170113-1456]# unzip -oq ./gradle-2.13-bin.zip -d /opt/gradle
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# ls -Alh !$
+ls -Alh /opt/gradle
+total 4.0K
+drwxr-xr-x 6 root root 4.0K Apr 25  2016 gradle-2.13
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# ln -sfnv gradle-2.13 /opt/gradle/latest
+`/opt/gradle/latest' -> `gradle-2.13'
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# ls -Alh /opt/gradle
+total 4.0K
+drwxr-xr-x 6 root root 4.0K Apr 25  2016 gradle-2.13
+lrwxrwxrwx 1 root root   11 Jan 13 17:02 latest -> gradle-2.13
+[root@ds-gw-git01 20170113-1456]#
+
+[root@ds-gw-git01 20170113-1456]# printf "export GRADLE_HOME=/opt/gradle/latest\nexport PATH=\$PATH:\$GRADLE_HOME/bin" > /etc/profile.d/gradle.sh
+
+[root@ds-gw-git01 20170113-1456]# . /etc/profile.d/gradle.sh
+
+[root@ds-gw-git01 20170113-1456]# hash -r ; sync
+
+[root@ds-gw-git01 20170113-1456]# gradle -v
+
+------------------------------------------------------------
+Gradle 2.13
+------------------------------------------------------------
+
+Build time:   2016-04-25 04:10:10 UTC
+Build number: none
+Revision:     3b427b1481e46232107303c90be7b05079b05b1c
+
+Groovy:       2.4.4
+Ant:          Apache Ant(TM) version 1.9.6 compiled on June 29 2015
+JVM:          1.7.0_121 (Oracle Corporation 24.121-b00)
+OS:           Linux 2.6.32-573.22.1.el6.x86_64 amd64
+
+[root@ds-gw-git01 20170113-1456]#
+
+................................................................................
+................................................................................
+
+#
+#   20170118
+#   Continuing this shit in SD#169737.
+#
+
+[root@ds-gw-git01 ~]# curl -x http://mwg.gtm.tcsbank.ru:8080 -k https://github.com |
+
+[root@ds-gw-git01 ~]# yum install w3m
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+gitlab_gitlab-ce/signature                                                                                                                                                    |  836 B     00:00
+gitlab_gitlab-ce/signature                                                                                                                                                    | 1.0 kB     00:00 ...
+gitlab_gitlab-ce-source/signature                                                                                                                                             |  836 B     00:00
+gitlab_gitlab-ce-source/signature                                                                                                                                             |  951 B     00:00 ...
+gitlab_gitlab-ce-source/primary                                                                                                                                               |  175 B     00:00
+nodesource                                                                                                                                                                    | 2.5 kB     00:00
+tcs-epel                                                                                                                                                                      | 4.3 kB     00:00
+tcs-epel/primary_db                                                                                                                                                           | 5.9 MB     00:00
+tcs-puppetlabs-deps                                                                                                                                                           | 2.5 kB     00:00
+tcs-puppetlabs-products                                                                                                                                                       | 2.5 kB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                      | 3.4 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                           |  43 MB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                             | 3.0 kB     00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package w3m.x86_64 0:0.5.2-19.el6 will be installed
+--> Processing Dependency: libgc.so.1()(64bit) for package: w3m-0.5.2-19.el6.x86_64
+--> Running transaction check
+---> Package gc.x86_64 0:7.1-12.el6_4 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                Arch                                      Version                                          Repository                                                   Size
+=====================================================================================================================================================================================================
+Installing:
+ w3m                                    x86_64                                    0.5.2-19.el6                                     tcs-rhel-x86_64-server-6                                    889 k
+Installing for dependencies:
+ gc                                     x86_64                                    7.1-12.el6_4                                     tcs-rhel-x86_64-server-6                                    146 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install       2 Package(s)
+
+Total download size: 1.0 M
+Installed size: 2.2 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/2): gc-7.1-12.el6_4.x86_64.rpm                                                                                                                                             | 146 kB     00:00
+(2/2): w3m-0.5.2-19.el6.x86_64.rpm                                                                                                                                            | 889 kB     00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                5.0 MB/s | 1.0 MB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : gc-7.1-12.el6_4.x86_64                                                                                                                                                            1/2
+  Installing : w3m-0.5.2-19.el6.x86_64                                                                                                                                                           2/2
+  Verifying  : w3m-0.5.2-19.el6.x86_64                                                                                                                                                           1/2
+  Verifying  : gc-7.1-12.el6_4.x86_64                                                                                                                                                            2/2
+
+Installed:
+  w3m.x86_64 0:0.5.2-19.el6
+
+Dependency Installed:
+  gc.x86_64 0:7.1-12.el6_4
+
+Complete!
+[root@ds-gw-git01 ~]#
+
+
+[root@ds-gw-git01 ~]# curl -x http://mwg.gtm.tcsbank.ru:8080 -k https://github.com | w3m -dump -T text/html
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 25598    0 25598    0     0  30083      0 --:--:-- --:--:-- --:--:-- 39321
+Skip to content
+
+Personal Open source Business Explore
+Sign up Sign in
+Pricing Blog Support Search GitHub
+[                    ]
+How people build software
+
+Millions of developers use GitHub to build personal projects, support their
+businesses, and work together on open source technologies.
+
+    Pick a username [                    ]
+
+    Enter your email address [                    ]
+
+    Create a password [                    ]
+
+    Use at least one letter, one numeral, and seven characters.
+
+Sign up for GitHub
+
+By clicking "Sign up for GitHub", you agree to our terms of service and privacy
+policy. We'll occasionally send you account related emails.
+
+Sign up for GitHub
+
+Welcome home, developers
+
+GitHub fosters a fast, flexible, and collaborative development process that
+lets you work on your own or with others.
+
+[home-ill-b]
+
+For everything you build
+
+Host and manage your code on GitHub. You can keep your work private or share it
+with the world.
+
+[home-ill-w]
+
+A better way to work
+
+From hobbyists to professionals, GitHub helps developers simplify the way they
+build software.
+
+[home-ill-p]
+
+Millions of projects
+
+GitHub is home to millions of open source projects. Try one out or get inspired
+to create your own.
+
+[home-ill-p]
+
+One platform, from start to finish
+
+With hundreds of integrations, GitHub is flexible enough to be at the center of
+your development process.
+
+Who uses GitHub?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Individuals
+
+Use GitHub to create a personal project, whether you want to experiment with a
+new programming language or host your life’s work.
+
+Communities
+
+GitHub hosts one of the largest collections of open source software. Create,
+manage, and work on some of today’s most influential technologies.
+
+Businesses
+
+Businesses of all sizes use GitHub to support their development process and
+securely build software.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GitHub is proud to host projects and organizations like NASA.
+
+NASA is on GitHub
+Sign up for GitHub
+Public projects are always free. Work together across unlimited private
+repositories for $7 / month.
+
+  • Contact GitHub
+  • API
+  • Training
+  • Shop
+  • Blog
+  • About
+
+
+
+  • © 2017 GitHub, Inc.
+  • Terms
+  • Privacy
+  • Security
+  • Status
+  • Help
+
+You can't perform that action at this time.
+You signed in with another tab or window. Reload to refresh your session. You
+signed out in another tab or window. Reload to refresh your session.
+[root@ds-gw-git01 ~]#
+
+................................................................................
+
+Для доступа к https://github.com/ используйте пожалуйста прокси-сервер: http://mwg.gtm.tcsbank.ru:8080
+Доступ через него к github.com есть:
+[root@ds-gw-git01 ~]# curl -x http://mwg.gtm.tcsbank.ru:8080 -k https://github.com | w3m -dump -T text/html
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 25598    0 25598    0     0  30083      0 --:--:-- --:--:-- --:--:-- 39321
+Skip to content
+Personal Open source Business Explore
+Sign up Sign in
+Pricing Blog Support Search GitHub
+[                    ]
+How people build software
+Millions of developers use GitHub to build personal projects, support their
+businesses, and work together on open source technologies.
+    Pick a username [                    ]
+    Enter your email address [                    ]
+...
+
+................................................................................
+
+Белогруд Сергей Владимирович
+Настройке Вашего ПРИКЛАДНОГО ПРОГРАММНОГО ОБЕСПЕЧЕНИЯ пожалуйста (gradle, groovy, Java и прочего) уделите внимание самостоятельно. Настройка рабочей среды по свои нужны это в целом задача тех, кто его использует.
+
+Я бы смог Вам помочь, если бы Вы чётко написали, что и где нужно прописать в каких-то конфигурационных файлах. Это в том случае, если под Вашей учётной записью не хватало бы прав (но права, как я понимаю у Вас есть).
+Пожалуйста читайте, как настраивается Ваше ПО и если будут конкретные вопросы, необходимость, что-то уточнить и т.п., то пожалуйста обращайтесь.
+Если у Вас нет желания вникать в подготовку к использованию Вашего ПО, то как Вы с ним работать-то вообще собираетесь... :-)
+
+
+Будет что-то конкретное - пожалуйста.
+
+................................................................................
+
+
+
+

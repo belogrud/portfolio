@@ -1,0 +1,294 @@
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh root@ds-net-dmz-l7-qlb01
+root@ds-net-dmz-l7-qlb01's password:
+Welcome to Ubuntu 18.04.1 LTS (GNU/Linux 4.15.0-39-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Mon Jan 14 04:21:24 EST 2019
+
+  System load:  0.0                Processes:           154
+  Usage of /:   14.5% of 19.56GB   Users logged in:     0
+  Memory usage: 9%                 IP address for eth0: 10.218.11.58
+  Swap usage:   0%
+
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+59 packages can be updated.
+41 updates are security updates.
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Fri Jan 11 10:10:03 2019
+root@ds-net-dmz-l7-qlb01:~#
+root@ds-net-dmz-l7-qlb01:~# puppet agent -t
+Info: Creating a new SSL key for ds-net-dmz-l7-qlb01.tcsbank.ru
+Warning: Downgrading to PSON for future requests
+Error: Could not request certificate: Error 400 on SERVER: The environment must be purely alphanumeric, not 'puppet-ca'
+Exiting; failed to retrieve certificate and waitforcert is disabled
+root@ds-net-dmz-l7-qlb01:~# telnet repo-linux 80
+Trying 10.216.42.6...
+Connected to ds-repo01.tcsbank.ru.
+Escape character is '^]'.
+^]
+
+telnet> quit
+Connection closed.
+root@ds-net-dmz-l7-qlb01:~# telnet vm-puppetmaster02p.tcsbank.ru 8140
+Trying 10.216.40.228...
+Connected to vm-puppetmaster02p.tcsbank.ru.
+Escape character is '^]'.
+^]
+
+telnet> quit
+Connection closed.
+root@ds-net-dmz-l7-qlb01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Hit:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease
+Hit:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease
+Ign:5 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release [54.2 kB]
+Get:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg [819 B]
+Ign:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg
+Reading package lists... Done
+W: GPG error: http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 7F438280EF8D349F
+E: The repository 'http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release' is not signed.
+N: Updating from such a repository can't be done securely, and is therefore disabled by default.
+N: See apt-secure(8) manpage for repository creation and user configuration details.
+root@ds-net-dmz-l7-qlb01:~# ls -Alh /etc/apt/sources.list.d/
+total 4.0K
+-rw-r--r-- 1 root root 64 Jan 14 04:26 tcs-puppet5.list
+root@ds-net-dmz-l7-qlb01:~# vim /etc/apt/sources.list.d/tcs-puppet5.list
+root@ds-net-dmz-l7-qlb01:~# ls /etc/apt/apt.conf.d/
+00aptitude      00trustcdrom  01autoremove-kernels  10periodic      20archive            50unattended-upgrades  99update-notifier
+00CDMountPoint  01autoremove  01-vendor-ubuntu      15update-stamp  50command-not-found  70debconf
+root@ds-net-dmz-l7-qlb01:~# echo 'APT::Get::AllowUnauthenticated "true";' > /etc/apt/apt.conf.d/99to-install-puppet
+root@ds-net-dmz-l7-qlb01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Hit:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease
+Hit:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease
+Ign:5 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release [54.2 kB]
+Get:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg [819 B]
+Ign:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg
+Reading package lists... Done
+W: GPG error: http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 7F438280EF8D349F
+E: The repository 'http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release' is not signed.
+N: Updating from such a repository can't be done securely, and is therefore disabled by default.
+N: See apt-secure(8) manpage for repository creation and user configuration details.
+root@ds-net-dmz-l7-qlb01:~# cat /etc/apt/apt.conf.d/99to-install-puppet
+APT::Get::AllowUnauthenticated "true";
+root@ds-net-dmz-l7-qlb01:~# vim /etc/apt/apt.conf
+root@ds-net-dmz-l7-qlb01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Hit:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease
+Hit:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease
+Ign:5 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release [54.2 kB]
+Get:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg [819 B]
+Ign:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg
+Reading package lists... Done
+W: GPG error: http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 7F438280EF8D349F
+E: The repository 'http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release' is not signed.
+N: Updating from such a repository can't be done securely, and is therefore disabled by default.
+N: See apt-secure(8) manpage for repository creation and user configuration details.
+root@ds-net-dmz-l7-qlb01:~# vim /etc/apt/apt.conf.d/99allow_unauth
+root@ds-net-dmz-l7-qlb01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Hit:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease
+Hit:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease
+Ign:5 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release [54.2 kB]
+Get:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg [819 B]
+Ign:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg
+Reading package lists... Done
+W: GPG error: http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 7F438280EF8D349F
+E: The repository 'http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release' is not signed.
+N: Updating from such a repository can't be done securely, and is therefore disabled by default.
+N: See apt-secure(8) manpage for repository creation and user configuration details.
+root@ds-net-dmz-l7-qlb01:~# cat
+
+................................................................................
+
+root@ds-net-dmz-l7-qlb01:~# dpkg -i /tmp/puppet6-release-bionic.deb
+Selecting previously unselected package puppet6-release.
+(Reading database ... 71589 files and directories currently installed.)
+Preparing to unpack .../tmp/puppet6-release-bionic.deb ...
+Unpacking puppet6-release (6.0.0-1bionic) ...
+Setting up puppet6-release (6.0.0-1bionic) ...
+root@ds-net-dmz-l7-qlb01:~# apt update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Hit:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease
+Hit:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease
+Ign:5 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release [54.2 kB]
+Get:7 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release.gpg [819 B]
+Get:8 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic/puppet5 amd64 Packages [13.4 kB]
+Get:9 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic/puppet5 i386 Packages [3,558 B]
+Get:10 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic/puppet5 all Packages [3,558 B]
+Err:11 http://apt.puppetlabs.com bionic InRelease
+  Could not connect to apt.puppetlabs.com:80 (13.33.23.157), connection timed out Could not connect to apt.puppetlabs.com:80 (13.33.23.225), connection timed out Could not connect to apt.puppetlabs.com:80 (13.33.23.111), connection timed out Could not connect to apt.puppetlabs.com:80 (13.33.23.4), connection timed out
+Fetched 75.6 kB in 31s (2,434 B/s)
+
+root@ds-net-dmz-l7-qlb01:~# ls -Alh /etc/apt/
+apt.conf        apt.conf.d/     preferences.d/  sources.list    sources.list~   sources.list.d/ trusted.gpg     trusted.gpg.d/
+root@ds-net-dmz-l7-qlb01:~# ls -Alh /etc/apt/sources.list/
+ls: cannot access '/etc/apt/sources.list/': Not a directory
+root@ds-net-dmz-l7-qlb01:~# ls -Alh /etc/apt/sources.list.d/
+total 8.0K
+-rw-r--r-- 1 root root 372 Sep 10 17:55 puppet6.list
+-rw-r--r-- 1 root root  64 Jan 14 04:26 tcs-puppet5.list
+root@ds-net-dmz-l7-qlb01:~# cat /etc/apt/sources.list.d/puppet6.list
+# Puppet 6 bionic Repository
+deb http://apt.puppetlabs.com bionic puppet6
+
+# Puppet 6 bionic Source Repository
+# The source repos are commented out by default because we
+# do not always make sources available for all packages or
+# for all platforms. If you want to access the source repos,
+# uncomment the following line.
+#deb-src http://apt.puppetlabs.com bionic puppet6
+root@ds-net-dmz-l7-qlb01:~# cat /etc/apt/sources.list.d/tcs-puppet5.list
+deb http://repo-linux.tcsbank.ru/puppetlabs/apt/ bionic puppet5
+root@ds-net-dmz-l7-qlb01:~# mv /etc/apt/sources.list.d/tcs-puppet{5,6}.list
+root@ds-net-dmz-l7-qlb01:~# vim /etc/apt/sources.list.d/tcs-puppet6.list
+root@ds-net-dmz-l7-qlb01:~#
+
+root@ds-net-dmz-l7-qlb01:~# rm /etc/apt/sources.list.d/puppet6.list
+root@ds-net-dmz-l7-qlb01:~# apt update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Hit:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease
+Hit:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease
+Ign:5 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease
+Hit:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic Release
+Get:8 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic/puppet6 all Packages [3,111 B]
+Get:9 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic/puppet6 amd64 Packages [9,214 B]
+Get:10 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic/puppet6 i386 Packages [3,111 B]
+Fetched 15.4 kB in 1s (30.3 kB/s)
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+60 packages can be upgraded. Run 'apt list --upgradable' to see them.
+root@ds-net-dmz-l7-qlb01:~#
+
+
+root@ds-net-dmz-l7-qlb01:~# apt-get install puppet-agent
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following NEW packages will be installed:
+  puppet-agent
+0 upgraded, 1 newly installed, 0 to remove and 60 not upgraded.
+Need to get 18.0 MB of archives.
+After this operation, 106 MB of additional disk space will be used.
+Get:1 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic/puppet6 amd64 puppet-agent amd64 6.1.0-1bionic [18.0 MB]
+Fetched 18.0 MB in 0s (37.9 MB/s)
+Selecting previously unselected package puppet-agent.
+(Reading database ... 71594 files and directories currently installed.)
+Preparing to unpack .../puppet-agent_6.1.0-1bionic_amd64.deb ...
+Unpacking puppet-agent (6.1.0-1bionic) ...
+dpkg: error processing archive /var/cache/apt/archives/puppet-agent_6.1.0-1bionic_amd64.deb (--unpack):
+ trying to overwrite '/lib/systemd/system/puppet.service', which is also in package puppet 5.4.0-2ubuntu3
+dpkg-deb: error: paste subprocess was killed by signal (Broken pipe)
+Errors were encountered while processing:
+ /var/cache/apt/archives/puppet-agent_6.1.0-1bionic_amd64.deb
+E: Sub-process /usr/bin/dpkg returned an error code (1)
+root@ds-net-dmz-l7-qlb01:~#
+
+#
+#	I've ran yaml script 20180625-1451.puppet-agent.yaml. This script have removed old puppet and install new one.
+#
+root@ds-net-dmz-l7-qlb01:~# logout
+Connection to ds-net-dmz-l7-qlb01 closed.
+[s.belogrud@TCS4357]# ssh root@ds-net-dmz-l7-qlb01
+Welcome to Ubuntu 18.04.1 LTS (GNU/Linux 4.15.0-39-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Mon Jan 14 07:03:03 EST 2019
+
+  System load:  0.17               Processes:           171
+  Usage of /:   15.1% of 19.56GB   Users logged in:     0
+  Memory usage: 11%                IP address for eth0: 10.218.11.58
+  Swap usage:   0%
+
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+59 packages can be updated.
+41 updates are security updates.
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Mon Jan 14 07:02:38 2019 from 172.16.28.74
+root@ds-net-dmz-l7-qlb01:~# puppet agent -t
+Info: Creating a new SSL key for ds-net-dmz-l7-qlb01.tcsbank.ru
+Info: Downloaded certificate for ca from vm-puppetmaster02p.tcsbank.ru
+Info: csr_attributes file loading from /etc/puppetlabs/puppet/csr_attributes.yaml
+Info: Creating a new SSL certificate request for ds-net-dmz-l7-qlb01.tcsbank.ru
+Info: Certificate Request fingerprint (SHA256): 72:47:5B:78:44:3E:00:F9:EA:D7:D4:8E:1B:96:EE:A2:50:F3:D9:03:E0:DD:CB:93:D0:73:3E:AF:3D:D9:16:0A
+Exiting; no certificate found and waitforcert is disabled
+root@ds-net-dmz-l7-qlb01:~#
+
+................................................................................
+
+root@ds-net-dmz-l7-qlb01:~# vim /etc/apt/apt.conf
+root@ds-net-dmz-l7-qlb01:~# cat /etc/apt/apt.conf
+APT { Get { AllowUnauthenticated "1"; }; };
+root@ds-net-dmz-l7-qlb01:~# rm /etc/apt/apt.conf
+root@ds-net-dmz-l7-qlb01:~#
+
+root@ds-net-dmz-l7-qlb01:~# ls /etc/apt/apt.conf.d/99*
+/etc/apt/apt.conf.d/99allow_unauth  /etc/apt/apt.conf.d/99to-install-puppet  /etc/apt/apt.conf.d/99update-notifier
+root@ds-net-dmz-l7-qlb01:~# cat /etc/apt/apt.conf.d/99allow_unauth
+APT { Get { AllowUnauthenticated "1"; }; };
+root@ds-net-dmz-l7-qlb01:~# rm /etc/apt/apt.conf.d/99allow_unauth
+root@ds-net-dmz-l7-qlb01:~# cat /etc/apt/apt.conf.d/99to-install-puppet
+APT::Get::AllowUnauthenticated "true";
+root@ds-net-dmz-l7-qlb01:~# rm /etc/apt/apt.conf.d/99to-install-puppet
+root@ds-net-dmz-l7-qlb01:~#
+
+................................................................................
+
+#
+#	On the second server I've not installed new repository. And there was not difficult to install puppet-agent.
+#	This means - the root of difficulties were I'd not removed previous version of puppet...
+#
+
+
+[root@vm-puppetmaster02p ~]# puppet cert list --all | grep -e "-net-dmz-l7-qlb01"
+  "ds-net-dmz-l7-qlb01.tcsbank.ru"                                  (SHA256) 72:47:5B:78:44:3E:00:F9:EA:D7:D4:8E:1B:96:EE:A2:50:F3:D9:03:E0:DD:CB:93:D0:73:3E:AF:3D:D9:16:0A
+  "m1-net-dmz-l7-qlb01.tcsbank.ru"                                  (SHA256) 5B:E5:D4:DC:C2:DE:01:BD:7D:B7:F7:B5:FB:CC:FB:3C:AF:A0:D5:FC:F0:73:C1:7D:BC:FB:C2:15:F4:A0:5C:EC
+[root@vm-puppetmaster02p ~]# puppet cert sign "ds-net-dmz-l7-qlb01.tcsbank.ru"
+Signing Certificate Request for:
+  "ds-net-dmz-l7-qlb01.tcsbank.ru" (SHA256) 72:47:5B:78:44:3E:00:F9:EA:D7:D4:8E:1B:96:EE:A2:50:F3:D9:03:E0:DD:CB:93:D0:73:3E:AF:3D:D9:16:0A
+Notice: Signed certificate request for ds-net-dmz-l7-qlb01.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest ds-net-dmz-l7-qlb01.tcsbank.ru at '/etc/puppetlabs/puppet/ssl/ca/requests/ds-net-dmz-l7-qlb01.tcsbank.ru.pem'
+[root@vm-puppetmaster02p ~]# puppet cert sign "m1-net-dmz-l7-qlb01.tcsbank.ru"
+Signing Certificate Request for:
+  "m1-net-dmz-l7-qlb01.tcsbank.ru" (SHA256) 5B:E5:D4:DC:C2:DE:01:BD:7D:B7:F7:B5:FB:CC:FB:3C:AF:A0:D5:FC:F0:73:C1:7D:BC:FB:C2:15:F4:A0:5C:EC
+Notice: Signed certificate request for m1-net-dmz-l7-qlb01.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest m1-net-dmz-l7-qlb01.tcsbank.ru at '/etc/puppetlabs/puppet/ssl/ca/requests/m1-net-dmz-l7-qlb01.tcsbank.ru.pem'
+[root@vm-puppetmaster02p ~]#
+
+................................................................................
+

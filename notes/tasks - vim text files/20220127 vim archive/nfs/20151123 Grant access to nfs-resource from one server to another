@@ -1,0 +1,135 @@
+
+
+................................................................................
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   635093
+Название    №635093
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  23.11.2015 17:26
+Дата регистрации    23.11.2015 17:26
+Тип запроса Инцидент
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Здравствуйте, коллеги!
+
+Требуются права на запись в nfs-шару vm-dmz-app112:/home/adobecatalyst/live.
+Сейчас при попытке создать подпапку выдает ошибку <read-only filesystem>.
+Запись будет производиться с vm-flume01p.
+
+С уважением,
+
+Георгий Безруких
+Системный администратор
+
+................................................................................
+................................................................................
+
+
+From: Bezrukikh Georgiy Gennadyevich
+Sent: Monday, November 23, 2015 5:56 PM
+To: Terentev Aleksey; Belogrud Sergey Vladimirovich
+Cc: unix-admins
+Subject: RE: Права на запись в vm-dmz-app112:/home/adobecatalyst/live
+
+Права теперь есть. Спасибо. До этого пробовал под рутом, выдавал read-only. Сейчас ок.
+
+
+Георгий Безруких
+Системный администратор
+
+From: Terentev Aleksey
+Sent: Monday, November 23, 2015 5:50 PM
+To: Belogrud Sergey Vladimirovich; Bezrukikh Georgiy Gennadyevich
+Cc: unix-admins
+Subject: RE: Права на запись в vm-dmz-app112:/home/adobecatalyst/live
+
+Георгий, под каким пользователем ?
+
+From: Belogrud Sergey Vladimirovich
+Sent: Monday, November 23, 2015 5:50 PM
+To: Bezrukikh Georgiy Gennadyevich
+Cc: unix-admins
+Subject: RE: Права на запись в vm-dmz-app112:/home/adobecatalyst/live
+
+Добрый день.
+
+Можно попробовать проверить.
+
+[root@vm-flume01p ~]# echo "test" >> /mnt/SiteCatalyst/test.tmp
+[root@vm-flume01p ~]# rm !$
+rm /mnt/SiteCatalyst/test.tmp
+rm: remove regular file `/mnt/SiteCatalyst/test.tmp'? y
+[root@vm-flume01p ~]
+
+
+From: Bezrukikh Georgiy Gennadyevich
+Sent: Monday, November 23, 2015 5:26 PM
+To: helpdesk_in; unix-admins
+Subject: Права на запись в vm-dmz-app112:/home/adobecatalyst/live
+
+Здравствуйте, коллеги!
+
+Требуются права на запись в nfs-шару vm-dmz-app112:/home/adobecatalyst/live.
+Сейчас при попытке создать подпапку выдает ошибку «read-only filesystem».
+Запись будет производиться с vm-flume01p.
+
+С уважением,
+
+Георгий Безруких
+Системный администратор
+
+
+................................................................................
+................................................................................
+
+
+#   Here is how it looks in the begining.
+[root@vm-flume01p ~]# echo "test" >> /mnt/SiteCatalyst/test.tmp
+-bash: /mnt/SiteCatalyst/test.tmp: Read-only file system
+[root@vm-flume01p ~]#
+
+#   I have added first line into this file, but without no_root_squash option at fists time.
+#   And access was absent, as you can see below.
+[root@vm-dmz-app112 ~]# cat /etc/exports
+/home/adobecatalyst/live  10.216.24.28(rw,no_root_squash)
+/home/adobecatalyst/live *(ro)
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# exportfs -r
+[root@vm-dmz-app112 ~]#
+
+[root@vm-flume01p ~]# echo "test" >> /mnt/SiteCatalyst/test.tmp
+-bash: /mnt/SiteCatalyst/test.tmp: Read-only file system
+[root@vm-flume01p ~]# mount -o remount /mnt/SiteCatalyst/
+[root@vm-flume01p ~]# echo "test" >> /mnt/SiteCatalyst/test.tmp
+-bash: /mnt/SiteCatalyst/test.tmp: Read-only file system
+[root@vm-flume01p ~]#
+
+
+#   Here I understood that I shold try to umount and mount this nfs-partition directly (without -o remount).
+#   And after that situation was changed. I have received different error than later.
+[root@vm-flume01p ~]# umount /mnt/SiteCatalyst ; mount /mnt/SiteCatalyst
+[root@vm-flume01p ~]# mount -t nfs
+v6250-m1:/vol/sas/flume on /mnt/flume type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+vm-dmz-app112:/home/adobecatalyst/live on /mnt/SiteCatalyst type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=192.168.5.112)
+[root@vm-flume01p ~]# echo "test" >> /mnt/SiteCatalyst/test.tmp
+-bash: /mnt/SiteCatalyst/test.tmp: Permission denied
+[root@vm-flume01p ~]#
+
+#   Next time I have added option no_root_squash and after that everything start works well.
+[root@vm-dmz-app112 ~]# exportfs -r
+
+[root@vm-flume01p ~]# echo "test" >> /mnt/SiteCatalyst/test.tmp
+[root@vm-flume01p ~]# rm !$
+rm /mnt/SiteCatalyst/test.tmp
+rm: remove regular file `/mnt/SiteCatalyst/test.tmp'? y
+[root@vm-flume01p ~]#
+
+
+

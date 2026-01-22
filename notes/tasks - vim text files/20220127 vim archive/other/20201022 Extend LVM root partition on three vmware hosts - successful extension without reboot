@@ -1,0 +1,511 @@
+
+................................................................................
+
+https://fsd.tcsbank.ru/case/4561632/info
+
+Добавить места на хостах
+назначить на vmware-adm
+Коллеги, привет. Добавьте, пожалуйста, в корень по 60гб на хосты:
+m1-tcb-prod-elastic-1.tcsbank.ru
+m1-tcb-prod-elastic-2.tcsbank.ru
+m1-tcb-prod-elastic-3.tcsbank.ru
+
+
+................................................................................
+
+root@m1-tcb-prod-elastic-1:~# cat /etc/os-release
+NAME="Ubuntu"
+VERSION="16.04.6 LTS (Xenial Xerus)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 16.04.6 LTS"
+VERSION_ID="16.04"
+HOME_URL="http://www.ubuntu.com/"
+SUPPORT_URL="http://help.ubuntu.com/"
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+VERSION_CODENAME=xenial
+UBUNTU_CODENAME=xenial
+root@m1-tcb-prod-elastic-1:~# df -hT
+Filesystem                Type      Size  Used Avail Use% Mounted on
+udev                      devtmpfs  3.9G     0  3.9G   0% /dev
+tmpfs                     tmpfs     799M   87M  712M  11% /run
+/dev/mapper/vg_root-lvol0 ext4       20G   12G  6.5G  65% /
+tmpfs                     tmpfs     3.9G     0  3.9G   0% /dev/shm
+tmpfs                     tmpfs     5.0M     0  5.0M   0% /run/lock
+tmpfs                     tmpfs     3.9G     0  3.9G   0% /sys/fs/cgroup
+/dev/sda1                 ext4      232M   88M  129M  41% /boot
+tmpfs                     tmpfs     799M     0  799M   0% /run/user/4482
+tmpfs                     tmpfs     799M     0  799M   0% /run/user/525
+root@m1-tcb-prod-elastic-1:~#
+root@m1-tcb-prod-elastic-1:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE       SIZE
+sda               disk                          60G
+├─sda1            part /boot      ext4         243M
+└─sda2            part            LVM2_member 59.8G
+  └─vg_root-lvol0 lvm  /          ext4        19.8G
+sr0               rom                         1024M
+root@m1-tcb-prod-elastic-1:~# parted /dev/sda print
+Model: VMware Virtual disk (scsi)
+Disk /dev/sda: 64.4GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  256MB   255MB   primary  ext4         boot
+ 2      256MB   64.4GB  64.2GB  primary               lvm
+
+root@m1-tcb-prod-elastic-1:~# pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sda2  vg_root lvm2 a--  59.76g 40.00g
+root@m1-tcb-prod-elastic-1:~# vgs
+  VG      #PV #LV #SN Attr   VSize  VFree
+  vg_root   1   1   0 wz--n- 59.76g 40.00g
+root@m1-tcb-prod-elastic-1:~# lvs
+  LV    VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 vg_root -wi-ao---- 19.76g
+root@m1-tcb-prod-elastic-1:~# echo 1 > /sys/block/sda/device/rescan
+
+#
+#	Size 120GB. Was 60GB.
+#
+root@m1-tcb-prod-elastic-1:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE       SIZE
+sda               disk                         120G
+├─sda1            part /boot      ext4         243M
+
+sr0               rom                         1024M
+root@m1-tcb-prod-elastic-1:~# parted /dev/sda print
+Model: VMware Virtual disk (scsi)
+Disk /dev/sda: 129GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  256MB   255MB   primary  ext4         boot
+ 2      256MB   64.4GB  64.2GB  primary               lvm
+
+root@m1-tcb-prod-elastic-1:~#
+
+
+root@m1-tcb-prod-elastic-1:~# growpart /dev/sda 2
+CHANGED: partition=2 start=499712 old: size=125329375 end=125829087 new: size=251158495,end=251658207
+root@m1-tcb-prod-elastic-1:~#
+
+root@m1-tcb-prod-elastic-1:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE        SIZE
+sda               disk                          120G
+├─sda1            part /boot      ext4          243M
+└─sda2            part            LVM2_member 119.8G
+  └─vg_root-lvol0 lvm  /          ext4         19.8G
+sr0               rom                          1024M
+root@m1-tcb-prod-elastic-1:~# parted /dev/sda print
+Model: VMware Virtual disk (scsi)
+Disk /dev/sda: 129GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End    Size   Type     File system  Flags
+ 1      1049kB  256MB  255MB  primary  ext4         boot
+ 2      256MB   129GB  129GB  primary               lvm
+
+root@m1-tcb-prod-elastic-1:~#
+
+
+root@m1-tcb-prod-elastic-1:~# pvresize /dev/sda2
+  Physical volume "/dev/sda2" changed
+  1 physical volume(s) resized / 0 physical volume(s) not resized
+root@m1-tcb-prod-elastic-1:~#
+
+root@m1-tcb-prod-elastic-1:~# pvs
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sda2  vg_root lvm2 a--  119.76g 100.00g
+root@m1-tcb-prod-elastic-1:~#
+
+
+root@m1-tcb-prod-elastic-1:~# lvresize -rl +60G /dev/mapper/vg_root-lvol0
+  Invalid argument for --extents: +60G
+  Error during parsing of command line.
+root@m1-tcb-prod-elastic-1:~# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sda2
+  VG Name               vg_root
+  PV Size               119.76 GiB / not usable 2.98 MiB
+  Allocatable           yes
+  PE Size               4.00 MiB
+  Total PE              30658
+  Free PE               25600
+  Allocated PE          5058
+  PV UUID               RQGjhB-lM1U-LSd8-bXwy-nZhS-mHhK-bX6yYd
+
+root@m1-tcb-prod-elastic-1:~# vgdisplay
+  --- Volume group ---
+  VG Name               vg_root
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  4
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                1
+  Open LV               1
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               119.76 GiB
+  PE Size               4.00 MiB
+  Total PE              30658
+  Alloc PE / Size       5058 / 19.76 GiB
+  Free  PE / Size       25600 / 100.00 GiB
+  VG UUID               3MhDK4-gSku-dZgG-DDCI-OuEG-8m2H-KHue5F
+
+root@m1-tcb-prod-elastic-1:~#
+
+
+root@m1-tcb-prod-elastic-1:~# expr 60 \* 25600 / 100
+15360
+root@m1-tcb-prod-elastic-1:~#
+
+root@m1-tcb-prod-elastic-1:~# expr 60 \* 25600 / 100
+15360
+root@m1-tcb-prod-elastic-1:~# #lvresize -rl +15360 /dev/mapper/vg_root-lvol0
+root@m1-tcb-prod-elastic-1:~# lvresize -rL +60G /dev/mapper/vg_root-lvol0
+  Size of logical volume vg_root/lvol0 changed from 19.76 GiB (5058 extents) to 79.76 GiB (20418 extents).
+  Logical volume lvol0 successfully resized.
+resize2fs 1.42.13 (17-May-2015)
+Filesystem at /dev/mapper/vg_root-lvol0 is mounted on /; on-line resizing required
+old_desc_blocks = 2, new_desc_blocks = 5
+The filesystem on /dev/mapper/vg_root-lvol0 is now 20908032 (4k) blocks long.
+
+root@m1-tcb-prod-elastic-1:~# lvs
+  LV    VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 vg_root -wi-ao---- 79.76g
+root@m1-tcb-prod-elastic-1:~#
+
+root@m1-tcb-prod-elastic-1:~# pvs
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sda2  vg_root lvm2 a--  119.76g 40.00g
+root@m1-tcb-prod-elastic-1:~# df -hT /
+Filesystem                Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0 ext4   79G   13G   63G  17% /
+root@m1-tcb-prod-elastic-1:~#
+
+root@m1-tcb-prod-elastic-1:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE        SIZE
+sda               disk                          120G
+├─sda1            part /boot      ext4          243M
+└─sda2            part            LVM2_member 119.8G
+  └─vg_root-lvol0 lvm  /          ext4         79.8G
+sr0               rom                          1024M
+root@m1-tcb-prod-elastic-1:~#
+
+................................................................................
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@m1-tcb-prod-elastic-2
+# Ansible managed
+                                      _    _                              _ _     _
+                                     | |  | |                            (_) |   | |
+ _ __   _____      _____ _ __ ___  __| |  | |__  _   _     __ _ _ __  ___ _| |__ | | ___
+| '_ \ / _ \ \ /\ / / _ \ '__/ _ \/ _` |  | '_ \| | | |   / _` | '_ \/ __| | '_ \| |/ _ \
+| |_) | (_) \ V  V /  __/ | |  __/ (_| |  | |_) | |_| |  | (_| | | | \__ \ | |_) | |  __/
+| .__/ \___/ \_/\_/ \___|_|  \___|\__,_|  |_.__/ \__, |   \__,_|_| |_|___/_|_.__/|_|\___|
+| |                                               __/ |
+|_|                                              |___/
+
+                                    with cow supahpower
+
+Welcome to "m1-tcb-prod-elastic-2":
+ - Server type........: "VMware"
+ - Architecture.......: "x86_64"
+ - CPU Cores..........: "4"
+ - Memory.............: "7983" Mb
+ - OS.................: "Ubuntu"
+ - Release............: "16.04"
+ - Kernel.............: "4.4.0-151-generic"
+ - Addresses..........: "10.218.2.14"
+ - Last provisioning..: "2019-11-11"
+
+### TODO
+#
+# - Server role
+# - Server apps
+#
+Last login: Thu Oct 22 14:21:12 2020 from 172.16.28.74
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+bsv@m1-tcb-prod-elastic-2:~$ sudo -i
+[sudo] password for bsv:
+root@m1-tcb-prod-elastic-2:~# passwd bsv
+New password:
+Retype new password:
+passwd: password updated successfully
+root@m1-tcb-prod-elastic-2:~# df -hT
+Filesystem                Type      Size  Used Avail Use% Mounted on
+udev                      devtmpfs  3.9G     0  3.9G   0% /dev
+tmpfs                     tmpfs     799M   87M  712M  11% /run
+/dev/mapper/vg_root-lvol0 ext4       20G   13G  6.2G  67% /
+tmpfs                     tmpfs     3.9G     0  3.9G   0% /dev/shm
+tmpfs                     tmpfs     5.0M     0  5.0M   0% /run/lock
+tmpfs                     tmpfs     3.9G     0  3.9G   0% /sys/fs/cgroup
+/dev/sda1                 ext4      232M   88M  129M  41% /boot
+tmpfs                     tmpfs     799M     0  799M   0% /run/user/525
+root@m1-tcb-prod-elastic-2:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE       SIZE
+sda               disk                          60G
+├─sda1            part /boot      ext4         243M
+└─sda2            part            LVM2_member 59.8G
+  └─vg_root-lvol0 lvm  /          ext4        19.8G
+sr0               rom                         1024M
+root@m1-tcb-prod-elastic-2:~# pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sda2  vg_root lvm2 a--  59.76g 40.00g
+root@m1-tcb-prod-elastic-2:~# vgs
+  VG      #PV #LV #SN Attr   VSize  VFree
+  vg_root   1   1   0 wz--n- 59.76g 40.00g
+root@m1-tcb-prod-elastic-2:~# lvs
+  LV    VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 vg_root -wi-ao---- 19.76g
+root@m1-tcb-prod-elastic-2:~# parted /dev/sda print
+Model: VMware Virtual disk (scsi)
+Disk /dev/sda: 64.4GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  256MB   255MB   primary  ext4         boot
+ 2      256MB   64.4GB  64.2GB  primary               lvm
+
+root@m1-tcb-prod-elastic-2:~# for device in $(ls /sys/class/scsi_device/); do echo 1 > /sys/class/scsi_device/$device/device/rescan; done
+root@m1-tcb-prod-elastic-2:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE       SIZE
+sda               disk                         120G
+├─sda1            part /boot      ext4         243M
+└─sda2            part            LVM2_member 59.8G
+  └─vg_root-lvol0 lvm  /          ext4        19.8G
+sr0               rom                         1024M
+root@m1-tcb-prod-elastic-2:~# pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sda2  vg_root lvm2 a--  59.76g 40.00g
+root@m1-tcb-prod-elastic-2:~# growpart /dev/sda 2
+CHANGED: partition=2 start=499712 old: size=125329375 end=125829087 new: size=251158495,end=251658207
+root@m1-tcb-prod-elastic-2:~# pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sda2  vg_root lvm2 a--  59.76g 40.00g
+root@m1-tcb-prod-elastic-2:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE        SIZE
+sda               disk                          120G
+├─sda1            part /boot      ext4          243M
+└─sda2            part            LVM2_member 119.8G
+  └─vg_root-lvol0 lvm  /          ext4         19.8G
+sr0               rom                          1024M
+root@m1-tcb-prod-elastic-2:~# lvresize -rL +60G /dev/mapper/vg_root-lvol0
+  Insufficient free space: 15360 extents needed, but only 10240 available
+root@m1-tcb-prod-elastic-2:~# pvresize /dev/sda2
+  Physical volume "/dev/sda2" changed
+  1 physical volume(s) resized / 0 physical volume(s) not resized
+root@m1-tcb-prod-elastic-2:~# pvs
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sda2  vg_root lvm2 a--  119.76g 100.00g
+root@m1-tcb-prod-elastic-2:~# lvresize -rL +60G /dev/mapper/vg_root-lvol0
+  Size of logical volume vg_root/lvol0 changed from 19.76 GiB (5058 extents) to 79.76 GiB (20418 extents).
+  Logical volume lvol0 successfully resized.
+resize2fs 1.42.13 (17-May-2015)
+Filesystem at /dev/mapper/vg_root-lvol0 is mounted on /; on-line resizing required
+old_desc_blocks = 2, new_desc_blocks = 5
+The filesystem on /dev/mapper/vg_root-lvol0 is now 20908032 (4k) blocks long.
+
+root@m1-tcb-prod-elastic-2:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE        SIZE
+sda               disk                          120G
+├─sda1            part /boot      ext4          243M
+└─sda2            part            LVM2_member 119.8G
+  └─vg_root-lvol0 lvm  /          ext4         79.8G
+sr0               rom                          1024M
+root@m1-tcb-prod-elastic-2:~# df -hT /
+Filesystem                Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0 ext4   79G   13G   63G  17% /
+root@m1-tcb-prod-elastic-2:~#
+
+................................................................................
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@m1-tcb-prod-elastic-3
+Warning: Permanently added 'm1-tcb-prod-elastic-3' (RSA) to the list of known hosts.
+You are required to change your password immediately (password aged)
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+# Ansible managed
+                                      _    _                              _ _     _
+                                     | |  | |                            (_) |   | |
+ _ __   _____      _____ _ __ ___  __| |  | |__  _   _     __ _ _ __  ___ _| |__ | | ___
+| '_ \ / _ \ \ /\ / / _ \ '__/ _ \/ _` |  | '_ \| | | |   / _` | '_ \/ __| | '_ \| |/ _ \
+| |_) | (_) \ V  V /  __/ | |  __/ (_| |  | |_) | |_| |  | (_| | | | \__ \ | |_) | |  __/
+| .__/ \___/ \_/\_/ \___|_|  \___|\__,_|  |_.__/ \__, |   \__,_|_| |_|___/_|_.__/|_|\___|
+| |                                               __/ |
+|_|                                              |___/
+
+                                    with cow supahpower
+
+Welcome to "m1-tcb-prod-elastic-3":
+ - Server type........: "VMware"
+ - Architecture.......: "x86_64"
+ - CPU Cores..........: "4"
+ - Memory.............: "7983" Mb
+ - OS.................: "Ubuntu"
+ - Release............: "16.04"
+ - Kernel.............: "4.4.0-151-generic"
+ - Addresses..........: "10.218.2.15"
+ - Last provisioning..: "2019-11-11"
+
+### TODO
+#
+# - Server role
+# - Server apps
+#
+WARNING: Your password has expired.
+You must change your password now and login again!
+Changing password for bsv.
+(current) UNIX password:
+New password:
+Retype new password:
+passwd: password updated successfully
+Connection to m1-tcb-prod-elastic-3 closed.
+[s.belogrud@TCS4357]# ssh bsv@m1-tcb-prod-elastic-3
+# Ansible managed
+                                      _    _                              _ _     _
+                                     | |  | |                            (_) |   | |
+ _ __   _____      _____ _ __ ___  __| |  | |__  _   _     __ _ _ __  ___ _| |__ | | ___
+| '_ \ / _ \ \ /\ / / _ \ '__/ _ \/ _` |  | '_ \| | | |   / _` | '_ \/ __| | '_ \| |/ _ \
+| |_) | (_) \ V  V /  __/ | |  __/ (_| |  | |_) | |_| |  | (_| | | | \__ \ | |_) | |  __/
+| .__/ \___/ \_/\_/ \___|_|  \___|\__,_|  |_.__/ \__, |   \__,_|_| |_|___/_|_.__/|_|\___|
+| |                                               __/ |
+|_|                                              |___/
+
+                                    with cow supahpower
+
+Welcome to "m1-tcb-prod-elastic-3":
+ - Server type........: "VMware"
+ - Architecture.......: "x86_64"
+ - CPU Cores..........: "4"
+ - Memory.............: "7983" Mb
+ - OS.................: "Ubuntu"
+ - Release............: "16.04"
+ - Kernel.............: "4.4.0-151-generic"
+ - Addresses..........: "10.218.2.15"
+ - Last provisioning..: "2019-11-11"
+
+### TODO
+#
+# - Server role
+# - Server apps
+#
+Last login: Thu Oct 22 14:21:42 2020 from 172.16.28.74
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+bsv@m1-tcb-prod-elastic-3:~$ sudo -i
+[sudo] password for bsv:
+root@m1-tcb-prod-elastic-3:~# passwd bsv
+New password:
+Retype new password:
+passwd: password updated successfully
+root@m1-tcb-prod-elastic-3:~# df -hT
+Filesystem                Type      Size  Used Avail Use% Mounted on
+udev                      devtmpfs  3.9G     0  3.9G   0% /dev
+tmpfs                     tmpfs     799M   87M  712M  11% /run
+/dev/mapper/vg_root-lvol0 ext4       20G   13G  6.2G  67% /
+tmpfs                     tmpfs     3.9G     0  3.9G   0% /dev/shm
+tmpfs                     tmpfs     5.0M     0  5.0M   0% /run/lock
+tmpfs                     tmpfs     3.9G     0  3.9G   0% /sys/fs/cgroup
+/dev/sda1                 ext4      232M   88M  129M  41% /boot
+tmpfs                     tmpfs     799M     0  799M   0% /run/user/525
+root@m1-tcb-prod-elastic-3:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE       SIZE
+sda               disk                          60G
+├─sda1            part /boot      ext4         243M
+└─sda2            part            LVM2_member 59.8G
+  └─vg_root-lvol0 lvm  /          ext4        19.8G
+sr0               rom                         1024M
+root@m1-tcb-prod-elastic-3:~# pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sda2  vg_root lvm2 a--  59.76g 40.00g
+root@m1-tcb-prod-elastic-3:~# vgs
+  VG      #PV #LV #SN Attr   VSize  VFree
+  vg_root   1   1   0 wz--n- 59.76g 40.00g
+root@m1-tcb-prod-elastic-3:~# lvs
+  LV    VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 vg_root -wi-ao---- 19.76g
+root@m1-tcb-prod-elastic-3:~# parted /dev/sda print
+Model: VMware Virtual disk (scsi)
+Disk /dev/sda: 64.4GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  256MB   255MB   primary  ext4         boot
+ 2      256MB   64.4GB  64.2GB  primary               lvm
+
+root@m1-tcb-prod-elastic-3:~# for device in $(ls /sys/class/scsi_device/); do echo 1 > /sys/class/scsi_device/$device/device/rescan; done
+root@m1-tcb-prod-elastic-3:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE       SIZE
+sda               disk                         120G
+├─sda1            part /boot      ext4         243M
+└─sda2            part            LVM2_member 59.8G
+  └─vg_root-lvol0 lvm  /          ext4        19.8G
+sr0               rom                         1024M
+root@m1-tcb-prod-elastic-3:~# pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sda2  vg_root lvm2 a--  59.76g 40.00g
+root@m1-tcb-prod-elastic-3:~# growpart /dev/sda 2
+CHANGED: partition=2 start=499712 old: size=125329375 end=125829087 new: size=251158495,end=251658207
+root@m1-tcb-prod-elastic-3:~# pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sda2  vg_root lvm2 a--  59.76g 40.00g
+root@m1-tcb-prod-elastic-3:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE        SIZE
+sda               disk                          120G
+├─sda1            part /boot      ext4          243M
+└─sda2            part            LVM2_member 119.8G
+  └─vg_root-lvol0 lvm  /          ext4         19.8G
+sr0               rom                          1024M
+root@m1-tcb-prod-elastic-3:~# pvresize /dev/sda2
+  Physical volume "/dev/sda2" changed
+  1 physical volume(s) resized / 0 physical volume(s) not resized
+root@m1-tcb-prod-elastic-3:~# pvs
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sda2  vg_root lvm2 a--  119.76g 100.00g
+root@m1-tcb-prod-elastic-3:~# lvresize -rL +60G /dev/mapper/vg_root-lvol0
+  Size of logical volume vg_root/lvol0 changed from 19.76 GiB (5058 extents) to 79.76 GiB (20418 extents).
+  Logical volume lvol0 successfully resized.
+resize2fs 1.42.13 (17-May-2015)
+Filesystem at /dev/mapper/vg_root-lvol0 is mounted on /; on-line resizing required
+old_desc_blocks = 2, new_desc_blocks = 5
+The filesystem on /dev/mapper/vg_root-lvol0 is now 20908032 (4k) blocks long.
+
+root@m1-tcb-prod-elastic-3:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME              TYPE MOUNTPOINT FSTYPE        SIZE
+sda               disk                          120G
+├─sda1            part /boot      ext4          243M
+└─sda2            part            LVM2_member 119.8G
+  └─vg_root-lvol0 lvm  /          ext4         79.8G
+sr0               rom                          1024M
+root@m1-tcb-prod-elastic-3:~# df -hT /
+Filesystem                Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0 ext4   79G   13G   63G  17% /
+root@m1-tcb-prod-elastic-3:~#
+
+................................................................................
+

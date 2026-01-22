@@ -1,0 +1,1068 @@
+
+
+OSS monitoring DTP
+
+Добрый день,
+Просьба  поставить на стандартный (CPU, Memory, SWAP, logs.......) мониторинг следующие хосты DTP:
+·         ds-mvno-dxa01p
+·         m1-mvno-dxa01p
+ 
+Также необходимо дополнительно под мониторинг на обоих серверах нижеследующее (в прикреплении документ описания API Nagios plugin):
+·         состояние счётчиков
+·         состояние процессов
+·         состояние кластера (основной+резерв)
+ 
+ 
+Спасибо.
+С уважением,
+
+Ольга Коченова
+Системный аналитик
+
+
+................................................................................
+
+
+[root@ds-mvno-dxa01p ~]# whereis dtp-status                                                                          
+dtp-status: /usr/bin/dtp-status
+[root@ds-mvno-dxa01p ~]# dtp-status --format=nagios
+OK Queue dtf_rx 0% full
+Queue dtf_tx 0% full
+BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+[root@ds-mvno-dxa01p ~]#
+
+................................................................................
+
+
+Также необходимо дополнительно под мониторинг на обоих серверах нижеследующее (в прикреплении документ описания API Nagios plugin):
+·         состояние счётчиков
+·         состояние процессов
+·         состояние кластера (основной+резерв)
+
+................................................................................
+
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios
+OK | lua.load_ok=27393 shm.block.tx_basket.GetRecordSize=71057431900
+OK | cluster.is_master=2 dtf.connections.Closed=110 dtf.connections.Closing=0 dtf.connections.I_Open=0 dtf.connections.R_Open=0 dtf.connections.Resolving=0 dtf.connections.Wait_Conn_Ack=0 dtf.connections.Wait_I_CEA=0 dtf.connections.Wait_R_CER=0 http.connection.count=0 settings.diameter.dwr_interval=30 settings.diameter.end_to_end_id=260785511 settings.diameter.hop_by_hop_id=260776902 settings.dtp.basket_erase_batch=100 settings.dtp.resend_count=3 settings.dtp.resend_interval_ms=3000 settings.dtp.session_ttl_sec=43200 settings.log.dtf.level=6 settings.log.dtp.level=6 shm.block.tx_basket.records=0 shm.block.tx_basket.used_bp=0 shm.block.tx_basket.used_size=0 shm.block.tx_message_data.records=0shm.block.tx_message_data.used_bp=0 shm.block.tx_message_data.used_size=0 shm.index.tx_idx_framed_ip.records=0 shm.index.tx_idx_framed_ip.used_bp=0 shm.index.tx_idx_session_id.records=0 shm.index.tx_idx_session_id.used_bp=0 shm.index.tx_idx_subscriber_id.records=0 shm.index.tx_idx_subscriber_id.used_bp=0 shm.ip_lock.tx_ip_lock.records=0 shm.ip_lock.tx_ip_lock.used_bp=0 shm.message_storage.tx_message.records=0 shm.message_storage.tx_message.used_bp=0 shm.queue.dtf_rx.message_count=0 shm.queue.dtf_tx.message_count=0 wd.baskets-export.last_active=1508336940 wd.baskets-export.uptime=0 wd.dtf.last_active=1508336949 wd.dtf.uptime=1632121 wd.dtp-console.last_active=1508336949 wd.dtp-console.uptime=1632119 wd.dtp.last_active=1508336949 wd.dtp.uptime=1632119
+OK | call.BasketsExport=0 call.Lua_SetScript=1 call.ShmBlockStorage_Clear=0 call.dtp_periodicErase=100 call.dtp_periodicResend=10 dtf.error.connection=0 dtf.error.general=0 dtf.error.rx_drop=0 dtf.error.rx_drop_vol=0 dtf.error.rx_error=0 dtf.error.tx_drop=0 dtf.error.tx_drop_vol=0 dtf.error.tx_error=0 dtf.msg.rx=0 dtf.msg.rx_vol=0 dtf.msg.tx=0 dtf.msg.tx_vol=0 dtf_api.error.rx_queue.error=0 dtp.error.cant_read_basket=0 dtp.error.cant_save_basket=0 dtp.error.configuration_error=0 dtp.error.error_replies=0 dtp.error.internal_error=0 dtp.error.unknown_reply_h2h=0 http.connection=0http.error.400=0 http.error.404=0 http.error.405=0 http.error.500=0 http.error.request=0 http.request=0 shm.queue.dtf_rx.error.PopFailed=0 shm.queue.dtf_rx.error.PushFailed=0 shm.queue.dtf_tx.error.PopFailed=0 shm.queue.dtf_tx.error.PushFailed=0
+[root@ds-mvno-dxa01p ~]#
+
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios --help
+Usage: txcc [OPTION...] prefix
+Telexir Counters Control Utility
+
+  -a, --add=VALUE            Add to counter value
+  -c, --create               Create counter with name specified by prefix
+  -f, --force                Force set counter value if counter not exists
+      --history              Use history counters only
+  -h, --hide                 Hide prefix
+      --incremented          Use incremented counters only
+  -l, --list                 List counter(s)
+  -s, --set=VALUE            Set counter value
+      --suffix=SUFFIX        Add suffix to counters storage name
+  -t, --format[=FORMAT]      Select output format
+                             SIMPLE|RAW|TABLE|NAGIOS|NAGIOS_5m|NAGIOS_TOTAL
+  -v, --verbose              Produce verbose output
+      --value                Use value counters only
+  -?, --help                 Give this help list
+      --usage                Give a short usage message
+  -V, --version              Print program version
+
+Mandatory or optional arguments to long options are also mandatory or optional
+for any corresponding short options.
+[root@ds-mvno-dxa01p ~]#
+
+
+[root@ds-mvno-dxa01p ~]# txcc --format=table --list
+|                             Name| Value|
+|                      lua.load_ok| 27398|
+|shm.block.tx_basket.GetRecordSize|71073M|
+|                                  Name| Value|
+|                     cluster.is_master|     2|
+|                dtf.connections.Closed|   110|
+|               dtf.connections.Closing|     0|
+|                dtf.connections.I_Open|     0|
+|                dtf.connections.R_Open|     0|
+|             dtf.connections.Resolving|     0|
+|         dtf.connections.Wait_Conn_Ack|     0|
+|            dtf.connections.Wait_I_CEA|     0|
+|            dtf.connections.Wait_R_CER|     0|
+|                 http.connection.count|     0|
+|        settings.diameter.dwr_interval|    30|
+|       settings.diameter.end_to_end_id|260.7M|
+|       settings.diameter.hop_by_hop_id|260.7M|
+|       settings.dtp.basket_erase_batch|   100|
+|             settings.dtp.resend_count|     3|
+|       settings.dtp.resend_interval_ms|  3000|
+|          settings.dtp.session_ttl_sec| 43200|
+|                settings.log.dtf.level|     6|
+|                settings.log.dtp.level|     6|
+|           shm.block.tx_basket.records|     0|
+|           shm.block.tx_basket.used_bp|     0|
+|         shm.block.tx_basket.used_size|     0|
+|     shm.block.tx_message_data.records|     0|
+|     shm.block.tx_message_data.used_bp|     0|
+|   shm.block.tx_message_data.used_size|     0|
+|    shm.index.tx_idx_framed_ip.records|     0|
+|    shm.index.tx_idx_framed_ip.used_bp|     0|
+|   shm.index.tx_idx_session_id.records|     0|
+|   shm.index.tx_idx_session_id.used_bp|     0|
+|shm.index.tx_idx_subscriber_id.records|     0|
+|shm.index.tx_idx_subscriber_id.used_bp|     0|
+|        shm.ip_lock.tx_ip_lock.records|     0|
+|        shm.ip_lock.tx_ip_lock.used_bp|     0|
+|shm.message_storage.tx_message.records|     0|
+|shm.message_storage.tx_message.used_bp|     0|
+|        shm.queue.dtf_rx.message_count|     0|
+|        shm.queue.dtf_tx.message_count|     0|
+|         wd.baskets-export.last_active| 1508M|
+|              wd.baskets-export.uptime|     0|
+|                    wd.dtf.last_active| 1508M|
+|                         wd.dtf.uptime| 1632k|
+|            wd.dtp-console.last_active| 1508M|
+|                 wd.dtp-console.uptime| 1632k|
+|                    wd.dtp.last_active| 1508M|
+|                         wd.dtp.uptime| 1632k|
+|                          Counter| Last second | Last 5 mins |    Total    |
+|                             Name| Count|Volume| Count|Volume| Count|Volume|
+|               call.BasketsExport|     0|     0|     5|593579| 27318| 3333M|
+|               call.Lua_SetScript|     0|     0|     5|  1152| 27398| 6073k|
+|       call.ShmBlockStorage_Clear|     0|     0|     0|     0|    10|390743|
+|           call.dtp_periodicErase|   100|  2566| 30064|523918|164.3M| 2903M|
+|          call.dtp_periodicResend|    10|     7|  3006|  2162|16437k|15227k|
+|             dtf.error.connection|     0|      |     0|      |     0|      |
+|                dtf.error.general|     0|      |     0|      |     0|      |
+|                dtf.error.rx_drop|     0|     0|     0|     0|     0|     0|
+|               dtf.error.rx_error|     0|      |     0|      |     0|      |
+|                dtf.error.tx_drop|     0|     0|     0|     0|     0|     0|
+|               dtf.error.tx_error|     0|      |     0|      |     0|      |
+|                       dtf.msg.rx|     0|     0|     0|     0|     0|     0|
+|                       dtf.msg.tx|     0|     0|     0|     0|     0|     0|
+|     dtf_api.error.rx_queue.error|     0|      |     0|      |     0|      |
+|       dtp.error.cant_read_basket|     0|      |     0|      |     0|      |
+|       dtp.error.cant_save_basket|     0|      |     0|      |     0|      |
+|    dtp.error.configuration_error|     0|      |     0|      |     0|      |
+|          dtp.error.error_replies|     0|      |     0|      |     0|      |
+|         dtp.error.internal_error|     0|      |     0|      |     0|      |
+|      dtp.error.unknown_reply_h2h|     0|      |     0|      |     0|      |
+|                  http.connection|     0|      |     0|      |     5|      |
+|                   http.error.400|     0|      |     0|      |     0|      |
+|                   http.error.404|     0|      |     0|      |     2|      |
+|                   http.error.405|     0|      |     0|      |     0|      |
+|                   http.error.500|     0|      |     0|      |     0|      |
+|               http.error.request|     0|      |     0|      |     0|      |
+|                     http.request|     0|      |     0|      |     5|      |
+| shm.queue.dtf_rx.error.PopFailed|     0|      |     0|      |     0|      |
+|shm.queue.dtf_rx.error.PushFailed|     0|      |     0|      |     0|      |
+| shm.queue.dtf_tx.error.PopFailed|     0|      |     0|      |     0|      |
+|shm.queue.dtf_tx.error.PushFailed|     0|      |     0|      |     0|      |
+[root@ds-mvno-dxa01p ~]#
+
+................................................................................
+
+
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios --history dtf.error --hide
+OK | .connection=0 .general=0 .rx_drop=0 .rx_drop_vol=0 .rx_error=0 .tx_drop=0 .tx_drop_vol=0 .tx_error=0
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios --history lua.load --hide
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios --history lua.load
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios lua.load
+OK | lua.load_ok=27468
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios cluster.is_master
+OK | cluster.is_master=2
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios call.BasketsExport
+OK | call.BasketsExport=0
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios --history call.BasketsExport
+OK | call.BasketsExport=0
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios dtf.connections
+OK | dtf.connections.Closed=110 dtf.connections.Closing=0 dtf.connections.I_Open=0 dtf.connections.R_Open=0 dtf.connections.Resolving=0 dtf.connections.Wait_Conn_Ack=0 dtf.connections.Wait_I_CEA=0 dtf.connections.Wait_R_CER=0
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios --history dtf.connections
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios_5m --history dtf.connections
+[root@ds-mvno-dxa01p ~]#
+
+................................................................................
+
+
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios lua
+OK | lua.load_ok=27475
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios lua.
+OK | lua.load_ok=27476
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios cluster
+OK | cluster.is_master=2
+[root@ds-mvno-dxa01p ~]# txcc --format=nagios call
+OK | call.BasketsExport=0 call.Lua_SetScript=0 call.ShmBlockStorage_Clear=0 call.dtp_periodicErase=100 call.dtp_periodicResend=10
+[root@ds-mvno-dxa01p ~]#
+
+................................................................................
+
+
+[root@ds-mvno-dxa01p nrpe.d]# cat check_diameter_traffic_processor.cfg
+command[check_dtp_lua]=/usr/bin/txcc --format=nagios lua
+command[check_dtp_cluster]=/usr/bin/txcc --format=nagios cluster
+command[check_dtp_call]=/usr/bin/txcc --format=nagios call
+[root@ds-mvno-dxa01p nrpe.d]#
+
+................................................................................
+
+[root@ds-mvno-dxa01p nrpe.d]# systemctl restart nrpe.service
+[root@ds-mvno-dxa01p nrpe.d]# systemctl status nrpe.service
+● nrpe.service - Nagios Remote Program Executor
+   Loaded: loaded (/usr/lib/systemd/system/nrpe.service; enabled; vendor preset: disabled)
+   Active: active (running) since Wed 2017-10-18 19:00:14 MSK; 3s ago
+     Docs: http://www.nagios.org/documentation
+  Process: 21963 ExecStart=/usr/sbin/nrpe -c /etc/nagios/nrpe.cfg -d $NRPE_SSL_OPT (code=exited, status=0/SUCCESS)
+ Main PID: 21964 (nrpe)
+   CGroup: /system.slice/nrpe.service
+           └─21964 /usr/sbin/nrpe -c /etc/nagios/nrpe.cfg -d
+
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Starting Nagios Remote Program Executor...
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru nrpe[21963]: add_ipv4_to_acl: Error, ip-address >nag2< incorrect length
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru nrpe[21964]: Starting up daemon
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Started Nagios Remote Program Executor.
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru nrpe[21964]: Server listening on 0.0.0.0 port 5666.
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru nrpe[21964]: Server listening on :: port 5666.
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru nrpe[21964]: Warning: Daemon is configured to accept command argumen...nts!
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru nrpe[21964]: Listening for connections on port 5666
+Oct 18 19:00:14 ds-mvno-dxa01p.tcsbank.ru nrpe[21964]: Allowing connections from: 127.0.0.1,172.16.1.11,172.16...k.ru
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@ds-mvno-dxa01p nrpe.d]#
+
+................................................................................
+
+[root@ds-mvno-dxa01p nrpe.d]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 7.3 (Maipo)
+[root@ds-mvno-dxa01p nrpe.d]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_nrpe -t 120 -H 10.250.105.2 -c check_dtp_call
+NRPE: Unable to read output
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+#
+#
+#
+[root@ds-mvno-dxa01p nrpe.d]# less /var/run/nrpe.log
+...
+[1508403058] Host 172.16.1.117 is asking for command 'check_dtp_call' to be run...
+[1508403058] Running command: /usr/bin/txcc --format=nagios call
+[1508403058] Command completed with return code 3 and output:
+[1508403058] Return Code: 3, Output: NRPE: Unable to read output
+[1508403058] Connection from 172.16.1.117 closed.
+
+................................................................................
+
+#
+#	20171101
+#
+
+[root@ds-mvno-dxa01p ~]# id nrpe
+uid=996(nrpe) gid=994(nrpe) groups=994(nrpe)
+[root@ds-mvno-dxa01p ~]# /usr/bin/txcc --format=nagios lua
+OK | lua.load_ok=25
+[root@ds-mvno-dxa01p ~]# su - bsv -c '/usr/bin/txcc --format=nagios lua'
+-bash: /usr/bin/txcc: Permission denied
+[root@ds-mvno-dxa01p ~]# su - nrpe -c '/usr/bin/txcc --format=nagios lua'
+This account is currently not available.
+[root@ds-mvno-dxa01p ~]#
+
+
+[root@ds-mvno-dxa01p ~]# EDITOR=vim visudo
+
+[root@ds-mvno-dxa01p ~]# tail -n 4 /etc/sudoers
+nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios lua
+nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios cluster
+nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios call
+
+[root@ds-mvno-dxa01p ~]#
+
+#
+#	tcs_nrpe manifest needs to be removed. It rewrite my debug options in cfg file.
+#
+[root@ds-mvno-dxa01p ~]# cat $(puppet agent --configprint classfile)
+settings
+__node_regexp__m1ds-mvno-dxa01p.tcsbank.ru
+role::mvno_dxa
+profile::base
+profile::base::repos_el
+tcs_repos::epel
+tcs_repos::puppet5
+tcs_repos::rhel
+profile::base::selinux
+selinux::params
+selinux
+selinux::package
+selinux::config
+profile::base::ntp
+ntp
+ntp::install
+ntp::config
+ntp::service
+profile::base::packages
+profile::base::sysstat_config
+profile::base::firewall
+firewall::params
+firewall
+firewall::linux
+firewall::linux::redhat
+profile::accounts::admins
+profile::base::nrpe
+tcs_nrpe::params
+tcs_nrpe
+tcs_nrpe::install
+tcs_nrpe::config
+tcs_nrpe::service
+profile::mvno_dxa
+profile::accounts::dtp
+tcs_repos::telexir
+tcs_repos::rhel_ha
+profile::accounts::params
+profile::accounts::aki
+profile::accounts::atyutyuev
+profile::accounts::aglaz
+[root@ds-mvno-dxa01p ~]#
+
+#
+#	This bitch is under OpenStack puppet.
+#
+[root@ds-mvno-dxa01p ~]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 7.3 (Maipo)
+[root@ds-mvno-dxa01p ~]#
+
+[root@ds-mvno-dxa01p ~]# systemctl stop puppet
+
+[root@ds-mvno-dxa01p ~]# systemctl status puppet
+● puppet.service - Puppet agent
+   Loaded: loaded (/usr/lib/systemd/system/puppet.service; enabled; vendor preset: disabled)
+      Active: inactive (dead) since Wed 2017-11-01 15:43:31 MSK; 15s ago
+       Main PID: 12185 (code=exited, status=0/SUCCESS)
+
+       Nov 01 12:55:27 ds-mvno-dxa01p.tcsbank.ru puppet-agent[24414]: (/Stage[main]/Tcs_nrpe::Service/Service[nrpe]) T...ent
+       Nov 01 12:55:27 ds-mvno-dxa01p.tcsbank.ru puppet-agent[24414]: Applied catalog in 1.14 seconds
+       Nov 01 13:25:27 ds-mvno-dxa01p.tcsbank.ru puppet-agent[25754]: Applied catalog in 1.10 seconds
+       Nov 01 13:55:27 ds-mvno-dxa01p.tcsbank.ru puppet-agent[26769]: Applied catalog in 1.07 seconds
+       Nov 01 14:25:27 ds-mvno-dxa01p.tcsbank.ru puppet-agent[27794]: Applied catalog in 1.10 seconds
+       Nov 01 14:55:28 ds-mvno-dxa01p.tcsbank.ru puppet-agent[28792]: Applied catalog in 1.10 seconds
+       Nov 01 15:25:28 ds-mvno-dxa01p.tcsbank.ru puppet-agent[29790]: Applied catalog in 1.08 seconds
+       Nov 01 15:43:31 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Stopping Puppet agent...
+       Nov 01 15:43:31 ds-mvno-dxa01p.tcsbank.ru puppet-agent[12185]: Caught TERM; exiting
+       Nov 01 15:43:31 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Stopped Puppet agent.
+       Hint: Some lines were ellipsized, use -l to show in full.
+       [root@ds-mvno-dxa01p ~]#
+
+#
+#	I've read /etc/nagios/nrpe.cfg and now not sure under who executed command by daemon nrpe.
+#
+[root@ds-mvno-dxa01p ~]# id nagios
+uid=997(nagios) gid=995(nagios) groups=995(nagios)
+[root@ds-mvno-dxa01p ~]#
+
+[root@ds-mvno-dxa01p ~]# tail -n 8 /etc/sudoers
+
+nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios lua
+nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios cluster
+nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios call
+nagios    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios lua
+nagios    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios cluster
+nagios    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios call
+
+[root@ds-mvno-dxa01p ~]#
+
+[root@ds-mvno-dxa01p ~]# systemctl restart nrpe.service
+
+
+[root@ds-mvno-dxa01p ~]# ls -alhd /opt/telexir/
+drwx------ 13 dtp dtp 290 Nov  1 16:07 /opt/telexir/
+[root@ds-mvno-dxa01p ~]# ls -alhd /opt/telexir/utils/
+drwxrwxr-x 3 dtp dtp 17 Oct 31 18:12 /opt/telexir/utils/
+[root@ds-mvno-dxa01p ~]#
+
+#
+#	Changing permission fix this difficulties.
+#
+[root@ds-mvno-dxa01p ~]# chmod o+rx /opt/telexir/
+[root@ds-mvno-dxa01p ~]# ls -alhd /opt/telexir/
+drwx---r-x 13 dtp dtp 290 Nov  1 16:07 /opt/telexir/
+[root@ds-mvno-dxa01p ~]#
+
+[root@ds-mvno-dxa01p ~]# su - bsv -c '/usr/bin/txcc --format=nagios lua'
+OK | lua.load_ok=27
+[root@ds-mvno-dxa01p ~]#
+
+[root@vm-vol-nag4-tst etc]# /usr/local/nagios/libexec/check_nrpe -t 120 -H 10.250.105.2 -c check_dtp_call
+OK | call.BasketsExport=0 call.Lua_SetScript=0 call.ShmBlockStorage_Clear=0 call.dtp_periodicErase=100 call.dtp_periodicResend=10
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+[root@ds-mvno-dxa01p ~]# EDITOR=vim visudo
+...
+#nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios lua
+#nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios cluster
+#nrpe    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios call
+#nagios    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios lua
+#nagios    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios cluster
+#nagios    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=nagios call
+#bsv    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=bsv lua
+#bsv    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=bsv cluster
+#bsv    ALL=(ALL)NOPASSWD: /usr/bin/txcc --format=bsv call
+
+[root@ds-mvno-dxa01p ~]# systemctl start puppet
+
+
+................................................................................
+................................................................................
+................................................................................
+
+[root@m1-mvno-dxa01p ~]# chmod o+rx /opt/telexir/
+[root@m1-mvno-dxa01p ~]# cat > /etc/nrpe.d/check_diameter_traffic_processor.cfg
+command[check_dtp_lua]=/usr/bin/txcc --format=nagios lua
+command[check_dtp_cluster]=/usr/bin/txcc --format=nagios cluster
+command[check_dtp_call]=/usr/bin/txcc --format=nagios call
+[root@m1-mvno-dxa01p ~]# systemctl restart nrpe.service
+
+
+
+................................................................................
+
+#
+#	Two checks become not working.
+#
+
+[root@ds-mvno-dxa01p ~]# cat /etc/nrpe.d/check_diameter_traffic_processor.cfg
+command[check_dtp_lua]=/usr/bin/txcc --format=nagios lua
+command[check_dtp_cluster]=/usr/bin/txcc --format=nagios cluster
+command[check_dtp_call]=/usr/bin/txcc --format=nagios call
+[root@ds-mvno-dxa01p ~]# /usr/bin/txcc --format=nagios lua
+OK | lua.load_ok=5
+OK | lua.error.file=0 lua.error.generic=0 lua.error.load=0 lua.error.memory=0 lua.error.panic=0 lua.error.run=0 lua.error.syntax=0 lua.run_gc=0 lua.run_gc_vol=0
+[root@ds-mvno-dxa01p ~]# /usr/bin/txcc --format=nagios cluster
+[root@ds-mvno-dxa01p ~]# /usr/bin/txcc --format=nagios call
+[root@ds-mvno-dxa01p ~]#
+
+#
+#	I've commented it in nagios config file for this host.
+#
+
+................................................................................
+
+
+#
+#	20171121
+#	SD#846655
+#
+
+[root@m1-mvno-dxa01p ~]# dtp-status --format=nagios
+OK Queue tx_dtf_rx 0% full
+Queue tx_dtf_tx 0% full
+BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+[root@m1-mvno-dxa01p ~]#
+
+[root@m1-mvno-dxa01p ~]# whereis dtp-status
+dtp-status: /usr/bin/dtp-status
+[root@m1-mvno-dxa01p ~]#
+
+[root@m1-mvno-dxa01p ~]# whereis dtp-status
+dtp-status: /usr/bin/dtp-status
+[root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-basket
+OK BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+[root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-dtf- errors
+Usage: dtp-status [OPTION...]
+Try `dtp-status --help' or `dtp-status --usage' for more information.
+[root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-dtf-errors
+OK [root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-diameter-errors
+OK [root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-dtp-errors
+OK [root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-http-errors
+OK [root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-lua-errors
+OK [root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-message
+OK BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+[root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-peers
+OK [root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-queues
+OK Queue tx_dtf_rx 0% full
+Queue tx_dtf_tx 0% full
+[root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-connections
+OK [root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report- listeners
+dtp-status: option '--report-' is ambiguous; possibilities: '--report-queues' '--report-message' '--report-basket' '--report-diameter-errors' '--report-lua-errors' '--report-dtp-errors' '--report-http-errors' '--report-dtf-errors' '--report-listeners' '--report-connections' '--report-peers'
+Try `dtp-status --help' or `dtp-status --usage' for more information.
+[root@m1-mvno-dxa01p ~]# dtp-status --format=nagios --report-listeners
+OK [root@m1-mvno-dxa01p ~]#
+
+
+[root@m1-mvno-dxa01p ~]# vim /etc/nrpe.d/check_diameter_traffic_processor.cfg
+[root@m1-mvno-dxa01p ~]# cat !$
+cat /etc/nrpe.d/check_diameter_traffic_processor.cfg
+command[check_dtp_lua]=/usr/bin/txcc --format=nagios lua
+command[check_dtp_cluster]=/usr/bin/txcc --format=nagios cluster
+command[check_dtp_call]=/usr/bin/txcc --format=nagios call
+command[check_dtp_status]=/usr/bin/dtp-status --format=nagios
+command[check_dtp_report_basket]=/usr/bin/dtp-status --format=nagios --report-basket
+command[check_dtp_report_dtf_errors]=/usr/bin/dtp-status --format=nagios --report-dtf-errors
+command[check_dtp_report_diameter_errors]=/usr/bin/dtp-status --format=nagios --report-diameter-errors
+command[check_dtp_report_dtp_errors]=/usr/bin/dtp-status --format=nagios --report-dtp-errors
+command[check_dtp_report_http_errors]=/usr/bin/dtp-status --format=nagios --report-http-errors
+command[check_dtp_report_lua_errors]=/usr/bin/dtp-status --format=nagios --report-lua-errors
+command[check_dtp_report_message]=/usr/bin/dtp-status --format=nagios --report-message
+command[check_dtp_report_peers]=/usr/bin/dtp-status --format=nagios --report-peers
+command[check_dtp_report_queues]=/usr/bin/dtp-status --format=nagios --report-queues
+command[check_dtp_report_connections]=/usr/bin/dtp-status --format=nagios --report-connections
+command[check_dtp_report_listeners]=/usr/bin/dtp-status --format=nagios --report-listeners
+[root@m1-mvno-dxa01p ~]#
+
+[root@m1-mvno-dxa01p ~]# systemctl restart nrpe.service
+
+................................................................................
+................................................................................
+
+
+#
+#	20171212
+#
+#	All tests stop working after owner of server have updated its software.
+#
+
+#	I've turned on debug in nrpe.
+[root@ds-mvno-dxa01p nrpe.d]# vim /etc/nagios/nrpe.cfg
+
+[root@ds-mvno-dxa01p nrpe.d]# grep -e "debug" /etc/nagios/nrpe.cfg
+# This option determines whether or not debugging messages are logged to the
+# Values: 0=debugging off, 1=debugging on
+debug=1
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# systemctl restart nrpe
+
+#
+#	Every time I run follow command.
+#	Every time I see output in /var/log/messages.
+#
+[root@vm-vol-nag4-tst ~]# /usr/local/nagios/libexec/check_nrpe -t 120 -H 10.250.105.2 -c check_dtp_status
+NRPE: Unable to read output
+[root@vm-vol-nag4-tst ~]#
+
+[root@ds-mvno-dxa01p nrpe.d]# ls /var/log/messages
+...
+Dec 12 18:06:17 ds-mvno-dxa01p nrpe[22282]: CONN_CHECK_PEER: is this a blessed machine: 172.16.1.117 port 54924
+Dec 12 18:06:17 ds-mvno-dxa01p nrpe[22282]: is_an_allowed_host (AF_INET): is host >172.16.1.117< an allowed host >172.16.1.117<
+Dec 12 18:06:17 ds-mvno-dxa01p nrpe[22282]: is_an_allowed_host (AF_INET): is host >172.16.1.117< an allowed host >172.16.1.117<
+Dec 12 18:06:17 ds-mvno-dxa01p nrpe[22282]: is_an_allowed_host (AF_INET): is host >172.16.1.117< an allowed host >172.16.1.117<
+Dec 12 18:06:17 ds-mvno-dxa01p nrpe[22282]: is_an_allowed_host (AF_INET): is host >172.16.1.117< an allowed host >172.16.1.117<
+Dec 12 18:06:17 ds-mvno-dxa01p nrpe[22282]: is_an_allowed_host (AF_INET): host is in allowed host list!
+Dec 12 18:06:17 ds-mvno-dxa01p kernel: dtp-status[22284]: segfault at 9c7c ip 0000000000475c64 sp 00007fff429fe320 error 4 in dtp-status[400000+c1000]
+...
+
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alh /var/crash/
+total 0
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# cat /etc/nrpe.d/check_diameter_traffic_processor.cfg
+command[check_dtp_lua]=/usr/bin/txcc --format=nagios lua
+command[check_dtp_cluster]=/usr/bin/txcc --format=nagios cluster
+command[check_dtp_call]=/usr/bin/txcc --format=nagios call
+
+#command[check_dtp_status]=/usr/bin/dtp-status --format=nagios
+command[check_dtp_status]=/opt/telexir/dtp/bin/dtp-status --format=nagios
+
+................................................................................
+
+
+command[check_dtp_report_basket]=/usr/bin/dtp-status --format=nagios --report-basket
+command[check_dtp_report_dtf_errors]=/usr/bin/dtp-status --format=nagios --report-dtf-errors
+command[check_dtp_report_diameter_errors]=/usr/bin/dtp-status --format=nagios --report-diameter-errors
+command[check_dtp_report_dtp_errors]=/usr/bin/dtp-status --format=nagios --report-dtp-errors
+command[check_dtp_report_http_errors]=/usr/bin/dtp-status --format=nagios --report-http-errors
+command[check_dtp_report_lua_errors]=/usr/bin/dtp-status --format=nagios --report-lua-errors
+command[check_dtp_report_message]=/usr/bin/dtp-status --format=nagios --report-message
+command[check_dtp_report_peers]=/usr/bin/dtp-status --format=nagios --report-peers
+command[check_dtp_report_queues]=/usr/bin/dtp-status --format=nagios --report-queues
+command[check_dtp_report_connections]=/usr/bin/dtp-status --format=nagios --report-connections
+command[check_dtp_report_listeners]=/usr/bin/dtp-status --format=nagios --report-listeners
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# /usr/bin/dtp-status --format=nagios
+CRITICAL Queue tx_dtf_rx 1% full
+Queue tx_dtf_tx 0% full
+BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+Process dtp_MA not active in last 20959 seconds!
+Process dtp_W1 not active in last 20949 seconds!
+Process dtp_W2 not active in last 20941 seconds!
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# su - bsv -c '/usr/bin/dtp-status --format=nagios'
+CRITICAL Queue tx_dtf_rx 1% full
+Queue tx_dtf_tx 0% full
+BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+Process dtp_MA not active in last 21412 seconds!
+Process dtp_W1 not active in last 21402 seconds!
+Process dtp_W2 not active in last 21394 seconds!
+[root@ds-mvno-dxa01p nrpe.d]#
+
+................................................................................
+
+[root@ds-mvno-dxa01p nrpe.d]# awk "/nrpe/{print}" /etc/{passwd,shadow}
+nrpe:x:996:994:NRPE user for the NRPE service:/var/run/nrpe:/sbin/nologin
+nrpe:!!:17205::::::
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# usermod -s /bin/bash nrpe
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# su - nrpe -c '/usr/bin/dtp-status --format=nagios'
+CRITICAL Queue tx_dtf_rx 1% full
+Queue tx_dtf_tx 0% full
+BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+Process dtp_MA not active in last 21800 seconds!
+Process dtp_W1 not active in last 21790 seconds!
+Process dtp_W2 not active in last 21782 seconds!
+[root@ds-mvno-dxa01p nrpe.d]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst ~]# /usr/local/nagios/libexec/check_nrpe -t 120 -H 10.250.105.2 -c check_load
+OK - load average: 0.01, 0.02, 0.05|load1=0.010;20.000;26.000;0; load5=0.020;18.000;24.000;0; load15=0.050;16.000;22.000;0;
+[root@vm-vol-nag4-tst ~]#
+
+[root@ds-mvno-dxa01p nrpe.d]# grep -irle "check_dtp_status" /etc/
+/etc/nrpe.d/check_diameter_traffic_processor.cfg
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alh /opt/telexir/dtp/bin/dtp-status
+-rwxr-xr-x 1 dtp dtp 1.1M Dec  4 13:51 /opt/telexir/dtp/bin/dtp-status
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alhd /opt/telexir/dtp/bin/
+drwxrwxr-x 2 dtp dtp 166 Dec 12 11:44 /opt/telexir/dtp/bin/
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alhd /opt/telexir/dtp
+drwxr-xr-x 5 dtp dtp 42 Dec 12 11:44 /opt/telexir/dtp
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alhd /opt/telexir
+drwx---r-x 15 dtp dtp 4.0K Dec 12 11:45 /opt/telexir
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alhd /opt
+drwxr-xr-x. 4 root root 39 Sep 29 16:56 /opt
+[root@ds-mvno-dxa01p nrpe.d]# chmod g+rx /opt/telexir
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alhd /opt/telexir
+drwxr-xr-x 15 dtp dtp 4.0K Dec 12 11:45 /opt/telexir
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# getenforce
+Disabled
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# vim /etc/nrpe.d/check_diameter_traffic_processor.cfg
+[root@ds-mvno-dxa01p nrpe.d]# grep -e "check_dtp_status" /etc/nrpe.d/check_diameter_traffic_processor.cfg
+#command[check_dtp_status]=/usr/bin/dtp-status --format=nagios
+#command[check_dtp_status]=/opt/telexir/dtp/bin/dtp-status --format=nagios
+command[check_dtp_status]=/bin/echo "OK"
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# systemctl restart nrpe
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@vm-vol-nag4-tst ~]# /usr/local/nagios/libexec/check_nrpe -t 120 -H 10.250.105.2 -c check_dtp_status
+OK
+[root@vm-vol-nag4-tst ~]#
+
+................................................................................
+
+[root@ds-mvno-dxa01p nrpe.d]# yum install gdb
+
+
+[root@ds-mvno-dxa01p nrpe.d]# gdb --args /opt/telexir/dtp/bin/dtp-status -v --format=nagios
+GNU gdb (GDB) Red Hat Enterprise Linux 7.6.1-100.el7
+Copyright (C) 2013 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-redhat-linux-gnu".
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>...
+Reading symbols from /opt/telexir/dtp/bin/dtp-status...(no debugging symbols found)...done.
+(gdb)
+(gdb) quit
+[root@ds-mvno-dxa01p nrpe.d]# catchsegv --help
+Usage: catchsegv PROGRAM ARGS...
+  --help      print this help, then exit
+  --version   print version number, then exit
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/libc/bugs.html>.
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# catchsegv /opt/telexir/dtp/bin/dtp-status --format=nagios
+CRITICAL Queue tx_dtf_rx 1% full
+Queue tx_dtf_tx 0% full
+BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+Process dtp_MA not active in last 22821 seconds!
+Process dtp_W1 not active in last 22811 seconds!
+Process dtp_W2 not active in last 22803 seconds!
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# whereis catchsegv
+catchsegv: /usr/bin/catchsegv
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# vim /etc/nrpe.d/check_diameter_traffic_processor.cfg
+[root@ds-mvno-dxa01p nrpe.d]# grep -e "check_dtp_status" /etc/nrpe.d/check_diameter_traffic_processor.cfg
+#command[check_dtp_status]=/usr/bin/dtp-status --format=nagios
+command[check_dtp_status]=/usr/bin/catchsegv /opt/telexir/dtp/bin/dtp-status --format=nagios
+#command[check_dtp_status]=/bin/echo "OK"
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# systemctl restart nrpe
+
+[root@vm-vol-nag4-tst ~]# /usr/local/nagios/libexec/check_nrpe -t 120 -H 10.250.105.2 -c check_dtp_status
+*** Segmentation fault
+Register dump:
+
+ RAX: 000000000000000a   RBX: 0000000000000034   RCX: 0000000000000011
+ RDX: 000000000000000a   RSI: 00007ffc401d5e91   RDI: 00007ffc401d5e91
+ RBP: 00007ffc401d3e00   R8 : 0000000000000004   R9 : 0000000000000000
+ R10: 00007ffc401d3970   R11: 0000000000000246   R12: 00007f9701f6675f
+ R13: 0000000000000003   R14: 00007ffc401d5e91   R15: 00007f9700042706
+ RSP: 00007ffc401d3d90
+
+ RIP: 0000000000475c64   EFLAGS: 00010206
+
+ CS: 0033   FS: 0000   GS: 0000
+
+ Trap: 0000000e   Error: 00000004   OldMask: 00000000   CR2: 00009c7c
+
+ FPUCW: 0000037f   FPUSW: 00000000   TAG: 00000000
+ RIP: 00000000   RDP: 00000000
+
+ ST(0) 0000 0000000000000000   ST(1) 0000 0000000000000000
+ ST(2) 0000 0000000000000000   ST(3) 0000 0000000000000000
+ ST(4) 0000 0000000000000000   ST(5) 0000 0000000000000000
+ ST(6) 0000 0000000000000000   ST(7) 0000 0000000000000000
+ mxcsr: 1fa0
+ XMM0:  00000000000000000000000000000000 XMM1:  00000000000000000000000000000000
+ XMM2:  00000000000000000000000000000000 XMM3
+[root@vm-vol-nag4-tst ~]#
+
+................................................................................
+
+[root@ds-mvno-dxa01p nrpe.d]# yum install abrt-addon-ccpp abrt-tui abrt-addon-kerneloops abrt-cli abrt-addon-python gdb
+
+[root@ds-mvno-dxa01p nrpe.d]# vim /etc/abrt/abrt-action-save-package-data.conf
+[root@ds-mvno-dxa01p nrpe.d]# grep -e "^##" -A 1 /etc/abrt/abrt-action-save-package-data.conf
+##OpenGPGCheck = yes
+OpenGPGCheck = no
+--
+##ProcessUnpackaged = no
+ProcessUnpackaged = yes
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# vim /etc/libreport/events.d/ccpp_event.conf
+...
+        # Generate hash
+        ##abrt-action-analyze-c &&
+        abrt-action-list-dsos -m maps -o dso_list &&
+...
+
+
+[root@ds-mvno-dxa01p nrpe.d]# service abrtd status
+Redirecting to /bin/systemctl status  abrtd.service
+● abrtd.service - ABRT Automated Bug Reporting Tool
+   Loaded: loaded (/usr/lib/systemd/system/abrtd.service; enabled; vendor preset: enabled)
+   Active: inactive (dead)
+[root@ds-mvno-dxa01p nrpe.d]# service abrtd start
+Redirecting to /bin/systemctl start  abrtd.service
+[root@ds-mvno-dxa01p nrpe.d]# service abrtd status
+Redirecting to /bin/systemctl status  abrtd.service
+● abrtd.service - ABRT Automated Bug Reporting Tool
+   Loaded: loaded (/usr/lib/systemd/system/abrtd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2017-12-12 19:04:17 MSK; 10s ago
+ Main PID: 27392 (abrtd)
+   CGroup: /system.slice/abrtd.service
+           └─27392 /usr/sbin/abrtd -d -s
+
+Dec 12 19:04:17 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Started ABRT Automated Bug Reporting Tool.
+Dec 12 19:04:17 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Starting ABRT Automated Bug Reporting Tool...
+Dec 12 19:04:17 ds-mvno-dxa01p.tcsbank.ru abrtd[27392]: Init complete, entering main loop
+[root@ds-mvno-dxa01p nrpe.d]# service abrt-ccpp status
+Redirecting to /bin/systemctl status  abrt-ccpp.service
+● abrt-ccpp.service - Install ABRT coredump hook
+   Loaded: loaded (/usr/lib/systemd/system/abrt-ccpp.service; enabled; vendor preset: enabled)
+   Active: inactive (dead)
+[root@ds-mvno-dxa01p nrpe.d]# service abrt-ccpp start
+Redirecting to /bin/systemctl start  abrt-ccpp.service
+[root@ds-mvno-dxa01p nrpe.d]# service abrt-ccpp status
+Redirecting to /bin/systemctl status  abrt-ccpp.service
+● abrt-ccpp.service - Install ABRT coredump hook
+   Loaded: loaded (/usr/lib/systemd/system/abrt-ccpp.service; enabled; vendor preset: enabled)
+   Active: active (exited) since Tue 2017-12-12 19:04:50 MSK; 2s ago
+  Process: 27437 ExecStart=/usr/sbin/abrt-install-ccpp-hook install (code=exited, status=0/SUCCESS)
+ Main PID: 27437 (code=exited, status=0/SUCCESS)
+
+Dec 12 19:04:50 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Starting Install ABRT coredump hook...
+Dec 12 19:04:50 ds-mvno-dxa01p.tcsbank.ru systemd[1]: Started Install ABRT coredump hook.
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alh /var/spool/abrt
+abrt/        abrt-upload/
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alh /var/spool/abrt/
+total 8.0K
+drwxr-x--- 2 root abrt 4.0K Dec 12 19:05 ccpp-2017-12-12-19:04:51-27452
+-rw------- 1 root root   31 Dec 12 19:04 last-ccpp
+[root@ds-mvno-dxa01p nrpe.d]# ls -Alh /var/spool/abrt-upload/
+total 0
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# less /var/log/messages
+...
+Dec 12 19:04:17 ds-mvno-dxa01p systemd: Started ABRT Automated Bug Reporting Tool.
+Dec 12 19:04:17 ds-mvno-dxa01p systemd: Starting ABRT Automated Bug Reporting Tool...
+Dec 12 19:04:17 ds-mvno-dxa01p abrtd: Init complete, entering main loop
+Dec 12 19:04:50 ds-mvno-dxa01p systemd: Starting Install ABRT coredump hook...
+Dec 12 19:04:50 ds-mvno-dxa01p systemd: Started Install ABRT coredump hook.
+Dec 12 19:04:51 ds-mvno-dxa01p abrt-hook-ccpp: Process 27452 (dtp-status) of user 996 killed by SIGSEGV - dumping core
+Dec 12 19:04:55 ds-mvno-dxa01p kernel: nr_pdflush_threads exported in /proc is scheduled for removal
+Dec 12 19:04:58 ds-mvno-dxa01p kernel: DCCP: Activated CCID 2 (TCP-like)
+Dec 12 19:04:58 ds-mvno-dxa01p kernel: DCCP: Activated CCID 3 (TCP-Friendly Rate Control)
+Dec 12 19:04:58 ds-mvno-dxa01p kernel: ip6_tables: (C) 2000-2006 Netfilter Core Team
+...
+
+
+[root@ds-mvno-dxa01p nrpe.d]# abrt-cli list
+id 3a1693c873f524fd3766ab8a3a8eb581f091d369
+reason:         dtp-status killed by SIGSEGV
+time:           Tue 12 Dec 2017 07:04:51 PM MSK
+cmdline:        /opt/telexir/dtp/bin/dtp-status --format=nagios
+package:        dtp-2.0.0-9013
+uid:            996 (nrpe)
+count:          3
+Directory:      /var/spool/abrt/ccpp-2017-12-12-19:04:51-27452
+Run 'abrt-cli report /var/spool/abrt/ccpp-2017-12-12-19:04:51-27452' for creating a case in Red Hat Customer Portal
+
+The Autoreporting feature is disabled. Please consider enabling it by issuing
+'abrt-auto-reporting enabled' as a user with root privileges
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# ls /var/spool/abrt/ccpp-2017-12-12-19\:04\:51-27452/
+abrt_version  core_backtrace  executable       machineid   pid          pkg_version       time
+analyzer      coredump        global_pid       maps        pkg_arch     proc_pid_status   type
+architecture  count           hostname         open_fds    pkg_epoch    pwd               uid
+cgroup        dso_list        kernel           os_info     pkg_name     reason            username
+cmdline       environ         last_occurrence  os_release  pkg_release  runlevel          var_log_messages
+component     event_log       limits           package     pkg_vendor   sosreport.tar.xz
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# service abrtd stop
+Redirecting to /bin/systemctl stop  abrtd.service
+[root@ds-mvno-dxa01p nrpe.d]# service abrt-ccpp stop
+Redirecting to /bin/systemctl stop  abrt-ccpp.service
+[root@ds-mvno-dxa01p nrpe.d]# systemctl disable abrtd
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrtd.service.
+[root@ds-mvno-dxa01p nrpe.d]# systemctl disable abrt-ccpp.service
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrt-ccpp.service.
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# abrt-cli list
+id 3a1693c873f524fd3766ab8a3a8eb581f091d369
+reason:         dtp-status killed by SIGSEGV
+time:           Tue 12 Dec 2017 07:04:51 PM MSK
+cmdline:        /opt/telexir/dtp/bin/dtp-status --format=nagios
+package:        dtp-2.0.0-9013
+uid:            996 (nrpe)
+count:          13
+Directory:      /var/spool/abrt/ccpp-2017-12-12-19:04:51-27452
+Run 'abrt-cli report /var/spool/abrt/ccpp-2017-12-12-19:04:51-27452' for creating a case in Red Hat Customer Portal
+
+id ca5e037dd32bcc21c5339b19e5a43944927c215a
+reason:         dtp killed by SIGABRT
+time:           Tue 12 Dec 2017 07:13:34 PM MSK
+cmdline:        /opt/telexir/dtp/bin/dtp --silent --max-message-count=200000 --max-session-count=1000000
+package:        dtp-2.0.0-9013
+uid:            34900 (dtp)
+count:          1
+Directory:      /var/spool/abrt/ccpp-2017-12-12-19:13:34-31757
+Run 'abrt-cli report /var/spool/abrt/ccpp-2017-12-12-19:13:34-31757' for creating a case in Red Hat Customer Portal
+
+id 9bf745920378c4d93dbc12a108517fed3882676a
+reason:         txcc killed by SIGSEGV
+time:           Tue 12 Dec 2017 07:11:51 PM MSK
+cmdline:        /usr/bin/txcc --format=nagios lua
+package:        dtp-utils-2.0.0-9013
+uid:            996 (nrpe)
+count:          1
+Directory:      /var/spool/abrt/ccpp-2017-12-12-19:11:51-30245
+Run 'abrt-cli report /var/spool/abrt/ccpp-2017-12-12-19:11:51-30245' for creating a case in Red Hat Customer Portal
+
+The Autoreporting feature is disabled. Please consider enabling it by issuing
+'abrt-auto-reporting enabled' as a user with root privileges
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# grep -irle "/usr/bin/txcc --format=nagios lua" /etc/
+/etc/nrpe.d/check_diameter_traffic_processor.cfg
+[root@ds-mvno-dxa01p nrpe.d]# grep -ire "/usr/bin/txcc --format=nagios lua" /etc/
+/etc/nrpe.d/check_diameter_traffic_processor.cfg:command[check_dtp_lua]=/usr/bin/txcc --format=nagios lua
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# gdb /usr/bin/txcc /var/spool/abrt/ccpp-2017-12-12-19\:11\:51-30245/coredump
+GNU gdb (GDB) Red Hat Enterprise Linux 7.6.1-100.el7
+Copyright (C) 2013 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-redhat-linux-gnu".
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>...
+Reading symbols from /opt/telexir/utils/bin/txcc...(no debugging symbols found)...done.
+[New LWP 30245]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+Core was generated by `/usr/bin/txcc --format=nagios lua'.
+Program terminated with signal 11, Segmentation fault.
+#0  0x0000000000406c44 in CDictionary<5000u, 255000u>::Add(char const*) ()
+Missing separate debuginfos, use: debuginfo-install dtp-utils-2.0.0-9013.x86_64
+(gdb) quit
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# debuginfo-install dtp-utils-2.0.0-9013.x86_64
+Loaded plugins: product-id
+telexir-stable                                                                                | 2.9 kB  00:00:00
+Could not find debuginfo for main pkg: dtp-utils-2.0.0-9013.x86_64
+Could not find debuginfo pkg for dependency package glibc-2.17-157.el7_3.1.x86_64
+Could not find debuginfo pkg for dependency package libev-4.15-7.el7.x86_64
+Could not find debuginfo pkg for dependency package libgcc-4.8.5-11.el7.x86_64
+Could not find debuginfo pkg for dependency package gperftools-libs-2.4-8.el7.x86_64
+Could not find debuginfo pkg for dependency package protobuf-2.5.0-8.el7.x86_64
+Could not find debuginfo pkg for dependency package libstdc++-4.8.5-11.el7.x86_64
+Could not find debuginfo pkg for dependency package libxml2-2.9.1-6.el7_2.3.x86_64
+No debuginfo packages available to install
+[root@ds-mvno-dxa01p nrpe.d]#
+
+[root@ds-mvno-dxa01p nrpe.d]# yum list --showduplicates dtp-utils
+Loaded plugins: product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Installed Packages
+dtp-utils.x86_64                                     2.0.0-9013                                      @telexir-testing
+Available Packages
+dtp-utils.x86_64                                     2.0.0-117                                       telexir-stable
+dtp-utils.x86_64                                     2.0.0-118                                       telexir-stable
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+[root@ds-mvno-dxa01p nrpe.d]# gdb /usr/bin/txcc /var/spool/abrt/ccpp-2017-12-12-19\:11\:51-30245/coredump
+GNU gdb (GDB) Red Hat Enterprise Linux 7.6.1-100.el7
+Copyright (C) 2013 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-redhat-linux-gnu".
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>...
+Reading symbols from /opt/telexir/utils/bin/txcc...(no debugging symbols found)...done.
+[New LWP 30245]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+Core was generated by `/usr/bin/txcc --format=nagios lua'.
+Program terminated with signal 11, Segmentation fault.
+#0  0x0000000000406c44 in CDictionary<5000u, 255000u>::Add(char const*) ()
+Missing separate debuginfos, use: debuginfo-install dtp-utils-2.0.0-9013.x86_64
+(gdb) list
+No symbol table is loaded.  Use the "file" command.
+(gdb) bt
+#0  0x0000000000406c44 in CDictionary<5000u, 255000u>::Add(char const*) ()
+#1  0x000000000040caa5 in log_write_record(log_level_t, char const*, int) ()
+#2  0x000000000040c0de in log_write_str(log_level_t, char const*, int) ()
+#3  0x000000000040c269 in log_writev(log_level_t, char const*, __va_list_tag*) ()
+#4  0x000000000040c459 in log_write(log_level_t, char const*, ...) ()
+#5  0x000000000040e371 in ShmBase::Open(char const*, unsigned long, bool) ()
+#6  0x000000000040ba6a in HistoryCounters::Open(char const*, char const*) ()
+#7  0x000000000040a2ea in GetHistoryCounters() ()
+#8  0x0000000000402d86 in main ()
+(gdb) list
+No symbol table is loaded.  Use the "file" command.
+(gdb)
+
+
+................................................................................
+................................................................................
+
+#
+#	20171213
+#	After ovner software made some tunes of its program it become work as it need.
+#
+
+[root@ds-mvno-dxa01p nrpe.d]# grep -ire "check_dtp_status" /etc/
+/etc/nrpe.d/check_diameter_traffic_processor.cfg:#command[check_dtp_status]=/usr/bin/dtp-status --format=nagios
+/etc/nrpe.d/check_diameter_traffic_processor.cfg:command[check_dtp_status]=/usr/bin/catchsegv /opt/telexir/dtp/bin/dtp-status --format=nagios
+/etc/nrpe.d/check_diameter_traffic_processor.cfg:#command[check_dtp_status]=/bin/echo "OK"
+Binary file /etc/nrpe.d/.check_diameter_traffic_processor.cfg.swp matches
+[root@ds-mvno-dxa01p nrpe.d]#
+
+
+#
+#	There is no segfault for this check as it was before.
+#
+[root@vm-vol-nag4-tst ~]# /usr/local/nagios/libexec/check_nrpe -t 120 -H 10.250.105.2 -c check_dtp_status
+OK Queue tx_dtf_rx 0% full
+Queue tx_dtf_tx 0% full
+BlockStorage tx_basket 0% full
+Index tx_idx_session_id 0% full
+Index tx_idx_framed_ip 0% full
+Index tx_idx_subscriber_id 0% full
+BlockStorage tx_message_data 0% full
+MessageStorage tx_message 0% full
+[root@vm-vol-nag4-tst ~]#
+
+................................................................................
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

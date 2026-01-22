@@ -1,0 +1,105 @@
+
+................................................................................
+................................................................................
+
+Коллеги, добрый день.
+
+Просьба добавить новый алёрт Nagios (vm-dbamon).
+Название алёрта: PG – LCS Requests
+View для алёрта: pg2.tcs_mon_pg2_lcs
+Период опроса: раз в минуту
+Список рассылки:
+Paym_pg_front@tinkoff.ru
+servicedesk_duty_khutor_sms_critical
+servicedesk_duty_sms_critical
+cards_24x7_email
+processing_duty_sms
+n.yatsishena_sms
+
+
+................................................................................
+................................................................................
+
+[root@vm-dbamon01 ~]# vim /etc/nrpe.d/check_db_pg2.cfg
+...
+command[check_pg2_tcs_mon_pg2_lcs]=/opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_mon_pg2_lcs.sh
+
+[root@vm-dbamon01 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/pg2/{pg_bcs_pay_waiting,pg2_tcs_mon_pg2_lcs}.sql
+[root@vm-dbamon01 ~]# vim /opt/TCS/scripts/nagios/plugins/pg2/{pg_bcs_pay_waiting,pg2_tcs_mon_pg2_lcs}.sql
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_mon_pg2_lcs.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+SELECT * FROM PG2.TCS_MON_PG2_LCS;
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/pg2/{pg_bcs_pay_waiting,pg2_tcs_mon_pg2_lcs}.sh
+[root@vm-dbamon01 ~]# vim /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_mon_pg2_lcs.sh
+
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_mon_pg2_lcs.sh
+/opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_mon_pg2_lcs.sh: line 22: [: SELECT * FROM PG2.TCS_MON_PG2_LCS
+                  *
+ERROR at line 1:
+ORA-01031: insufficient privileges: integer expression expected
+SELECT * FROM PG2.TCS_MON_PG2_LCS
+                  *
+ERROR at line 1:
+ORA-01031: insufficient privileges
+[root@vm-dbamon01 ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst nagios]# pynag list contact_name email filename where email__contains="paym_pg_front"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst nagios]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst nagios]# addcontact
+Adding new contact to Nagios
+Full name: paym_pg_front
+Email: paym_pg_front@tinkoff.ru
+Mobile (10 numbers):
+[root@vm-vol-nag4-tst nagios]#
+
+[root@vm-vol-nag4-tst nagios]# pynag list contact_name email filename where email__contains="paym_pg_front"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+paym_pg_front_email  paym_pg_front@tinkoff.ru /usr/local/nagios/etc/objects/contacts/paym_pg_front.cfg
+paym_pg_front_sms    paym_pg_front@tinkoff.ru /usr/local/nagios/etc/objects/contacts/paym_pg_front.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst nagios]#
+
+[root@vm-vol-nag4-tst nagios]# cat /usr/local/nagios/etc/objects/contacts/paym_pg_front.cfg
+define contact{
+        contact_name            paym_pg_front_email
+        use                     generic-contact
+        alias                   paym_pg_front
+        email                   paym_pg_front@tinkoff.ru
+}
+
+[root@vm-vol-nag4-tst nagios]#
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#77610. Added one check." servers/vmware/vm-dbamon01.cfg                  Running configuration check...
+ OK.
+[master b959d6c] SD#77610. Added one check.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 14 insertions(+), 14 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+

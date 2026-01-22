@@ -1,0 +1,1511 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   779506
+Название    №779506
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  14.03.2016 16:09
+Дата регистрации    14.03.2016 16:09
+Тип запроса Инцидент
+Категория
+Критичность 2 - Средняя
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день!
+
+У нас на тестовом ГП не создаются core files при падениях ГП и прочих неприятностях.
+
+[root@m1-gp-tst-sdw4 gpadmin]# ulimit -a
+core file size (blocks, -c) 0
+
+при этом на проде:
+
+[root@ds-gp-prd-mdw perenos_bin]# ulimit -a
+core file size (blocks, -c) unlimited
+
+Просьба изменить параметры на всех серверах тестового контура ГП
+
+С уважением,
+
+Дмитрий Немчин
+Старший системный администратор
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Немчин Дмитрий
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Другие сервисы
+Контактное лицо Немчин Дмитрий
+Контактный e-mail   d.nemchin@tinkoff.ru
+Контактные телефоны 79264249974, 2758
+
+................................................................................
+
+[root@ds-gp-prd-smdw ~]# grep -ir -e "ulimit" /etc/
+/etc/rc6.d/K01hp-ams:        ulimit -c unlimited
+/etc/rc2.d/S90hp-ams:        ulimit -c unlimited
+/etc/init.d/hp-ams:        ulimit -c unlimited
+/etc/init.d/functions:  corelimit="ulimit -S -c ${DAEMON_COREFILE_LIMIT:-0}"
+grep: /etc/alternatives/jre_1.7.0/lib/audio/default.sf2: No such file or directory
+Binary file /etc/alternatives/jre_1.7.0/lib/amd64/server/libjvm.so matches
+grep: /etc/alternatives/jre_openjdk/lib/audio/default.sf2: No such file or directory
+Binary file /etc/alternatives/jre_openjdk/lib/amd64/server/libjvm.so matches
+grep: /etc/alternatives/jre/lib/audio/default.sf2: No such file or directory
+Binary file /etc/alternatives/jre/lib/amd64/server/libjvm.so matches
+Binary file /etc/alternatives/jre_1.6.0/lib/amd64/server/libjvm.so matches
+/etc/rc3.d/S90hp-ams:        ulimit -c unlimited
+/etc/rc5.d/S90hp-ams:        ulimit -c unlimited
+/etc/profile:ulimit -S -c unlimited > /dev/null 2>&1
+/etc/rc1.d/K01hp-ams:        ulimit -c unlimited
+/etc/rc4.d/S90hp-ams:        ulimit -c unlimited
+/etc/rc0.d/K01hp-ams:        ulimit -c unlimited
+/etc/rc.d/rc6.d/K01hp-ams:        ulimit -c unlimited
+/etc/rc.d/rc2.d/S90hp-ams:        ulimit -c unlimited
+/etc/rc.d/init.d/hp-ams:        ulimit -c unlimited
+/etc/rc.d/init.d/functions:     corelimit="ulimit -S -c ${DAEMON_COREFILE_LIMIT:-0}"
+/etc/rc.d/rc3.d/S90hp-ams:        ulimit -c unlimited
+/etc/rc.d/rc5.d/S90hp-ams:        ulimit -c unlimited
+/etc/rc.d/rc1.d/K01hp-ams:        ulimit -c unlimited
+/etc/rc.d/rc4.d/S90hp-ams:        ulimit -c unlimited
+/etc/rc.d/rc0.d/K01hp-ams:        ulimit -c unlimited
+[root@ds-gp-prd-smdw ~]#
+
+#
+#   Here is a place, where appropriate ulimit parameter for core size defined.
+#
+[root@ds-gp-prd-smdw ~]# tail /etc/profile
+            . "$i" >/dev/null 2>&1
+        fi
+    fi
+done
+
+unset i
+unset -f pathmunge
+
+ulimit -S -c unlimited > /dev/null 2>&1
+
+[root@ds-gp-prd-smdw ~]#
+
+#
+#   As we can see - here is absent string, that set appropriate ulimit parameter.
+#
+[root@m1-gp-tst-smdw ~]# tail /etc/profile
+        if [ "${-#*i}" != "$-" ]; then
+            . "$i"
+        else
+            . "$i" >/dev/null 2>&1
+        fi
+    fi
+done
+
+unset i
+unset -f pathmunge
+[root@m1-gp-tst-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-prd-smdw ~]# git --git-dir $(ls -A1d ~/.*.etc) log --pretty=format:"%h - %an, %ad : %s" --graph -- profile
+* 842a52f - root, Mon Dec 21 18:01:02 2015 +0300 : 20151221-1801 autocommit.
+[root@ds-gp-prd-smdw ~]#
+
+
+[root@ds-gp-prd-smdw ~]# git --git-dir $(ls -A1d ~/.*.etc) --no-pager log --pretty=format:"%h - %an, %ad : %s" --graph -p -- profile
+* 842a52f - root, Mon Dec 21 18:01:02 2015 +0300 : 20151221-1801 autocommit.
+diff --git a/profile b/profile
+new file mode 100644
+index 0000000..bb464f8
+--- /dev/null
++++ b/profile
+@@ -0,0 +1,81 @@
++# /etc/profile
+...
++
++unset i
++unset -f pathmunge
++
++ulimit -S -c unlimited > /dev/null 2>&1
++
+[root@ds-gp-prd-smdw ~]#
+
+#   Here is the first commit.
+[root@ds-gp-prd-smdw ~]# git --git-dir $(ls -A1d ~/.*.etc) --no-pager log --pretty=format:"%h - %an, %ad : %s" -5 --graph --name-status --date=iso 842a52f | head
+* 842a52f - root, 2015-12-21 18:01:02 +0300 : 20151221-1801 autocommit.
+A       .pwd.lock
+A       ConsoleKit/seats.d/00-primary.seat
+A       DIR_COLORS
+A       DIR_COLORS.256color
+A       DIR_COLORS.lightbgcolor
+A       GeoIP.conf
+A       GeoIP.conf.default
+A       NetworkManager/dispatcher.d/00-netreport
+A       NetworkManager/dispatcher.d/05-netfs
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@m1-gp-tst-smdw ~]# git --git-dir $(ls -A1d ~/.*.etc) log --pretty=format:"%h - %an, %ad : %s" --graph -- profile
+* ba16ed4 - root, Mon Nov 30 19:46:54 2015 +0300 : 20151130-1946 The first init commit.
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# git --git-dir $(ls -A1d ~/.*.etc) log --pretty=format:"%h - %an, %ad : %s" --graph -- profile
+* 168475f - root, Mon Dec 21 18:01:02 2015 +0300 : 20151221-1801 autocommit.
+[root@m1-gp-prd-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# git --git-dir $(ls -A1d ~/.*.etc) log --pretty=format:"%h - %an, %ad : %s" --graph -- profile
+* b7c97db - root, Fri Dec 4 15:01:02 2015 +0300 : 20151204-1501 autocommit.
+[root@ds-gp-dev-smdw ~]#
+
+................................................................................
+
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; tail /etc/profile | grep ulimit )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+ulimit -S -c unlimited > /dev/null 2>&1
+ds-gp-prd-smdw.tcsbank.ru
+ulimit -S -c unlimited > /dev/null 2>&1
+ds-gp-prd-sdw1
+ds-gp-prd-sdw2
+ds-gp-prd-sdw3
+ds-gp-prd-sdw4
+ds-gp-prd-sdw5
+ds-gp-prd-sdw6
+ds-gp-prd-sdw7
+ds-gp-prd-sdw8
+ds-gp-prd-sdw9
+ds-gp-prd-sdw10
+ds-gp-prd-sdw11
+ds-gp-prd-sdw12
+ds-gp-prd-sdw13
+ds-gp-prd-sdw14
+ds-gp-prd-sdw15
+ds-gp-prd-sdw16
+ds-gp-prd-sdw17
+ds-gp-prd-sdw18
+ds-gp-prd-sdw19
+ds-gp-prd-sdw20
+ds-gp-prd-sdw21
+ds-gp-prd-sdw22
+ds-gp-prd-sdw23
+ds-gp-prd-sdw24
+[root@ds-gp-prd-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh ${var1} "( hostname ; grep ulimit /etc/profile )" ; done
+ds-gp-dev-mdw
+ds-gp-dev-smdw
+ds-gp-dev-sdw1
+ds-gp-dev-sdw2
+ds-gp-dev-sdw3
+ds-gp-dev-sdw4
+ds-gp-dev-sdw5
+ds-gp-dev-sdw6
+ds-gp-dev-sdw7
+ds-gp-dev-sdw8
+[root@ds-gp-dev-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; grep ulimit /etc/profile )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+m1-gp-tst-smdw.tcsbank.ru
+m1-gp-tst-sdw1.tcsbank.ru
+m1-gp-tst-sdw2.tcsbank.ru
+m1-gp-tst-sdw3.tcsbank.ru
+m1-gp-tst-sdw4.tcsbank.ru
+m1-gp-tst-sdw5.tcsbank.ru
+m1-gp-tst-sdw6.tcsbank.ru
+m1-gp-tst-sdw7.tcsbank.ru
+m1-gp-tst-sdw8.tcsbank.ru
+m1-gp-tst-sdw9.tcsbank.ru
+m1-gp-tst-sdw10.tcsbank.ru
+m1-gp-tst-sdw11.tcsbank.ru
+m1-gp-tst-sdw12.tcsbank.ru
+m1-gp-tst-sdw13.tcsbank.ru
+m1-gp-tst-sdw14.tcsbank.ru
+m1-gp-tst-sdw15.tcsbank.ru
+m1-gp-tst-sdw16.tcsbank.ru
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; grep ulimit /etc/profile )" ; done
+m1-gp-prd-mdw
+m1-gp-prd-smdw
+m1-gp-prd-sdw1
+m1-gp-prd-sdw2
+m1-gp-prd-sdw3
+m1-gp-prd-sdw4
+m1-gp-prd-sdw5
+m1-gp-prd-sdw6
+m1-gp-prd-sdw7
+m1-gp-prd-sdw8
+m1-gp-prd-sdw9
+m1-gp-prd-sdw10
+m1-gp-prd-sdw11
+m1-gp-prd-sdw12
+m1-gp-prd-sdw13
+m1-gp-prd-sdw14
+m1-gp-prd-sdw15
+m1-gp-prd-sdw16
+m1-gp-prd-sdw17
+m1-gp-prd-sdw18
+m1-gp-prd-sdw19
+m1-gp-prd-sdw20
+m1-gp-prd-sdw21
+m1-gp-prd-sdw22
+m1-gp-prd-sdw23
+m1-gp-prd-sdw24
+[root@m1-gp-prd-smdw ~]#
+
+................................................................................
+
+#   Ooops! When I run test from script - I have received very unusual results.
+#   The explanation is below.
+#
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; ulimit -a | grep core  )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+core file size          (blocks, -c) 0
+ds-gp-prd-smdw.tcsbank.ru
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw1
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw2
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw3
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw4
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw5
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw6
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw7
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw8
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw9
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw10
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw11
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw12
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw13
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw14
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw15
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw16
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw17
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw18
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw19
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw20
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw21
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw22
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw23
+core file size          (blocks, -c) 0
+ds-gp-prd-sdw24
+core file size          (blocks, -c) 0
+[root@ds-gp-prd-smdw ~]#
+
+#   For interactive login we have applied unlimited core limit, because /etc/profile was executed.
+[root@ds-gp-prd-smdw ~]# ulimit -a | grep core
+core file size          (blocks, -c) unlimited
+[root@ds-gp-prd-smdw ~]#
+
+#   To be ensure - I've tested it manually on one server sergment.
+[root@ds-gp-prd-sdw1 ~]# ulimit -a | grep core
+core file size          (blocks, -c) 0
+[root@ds-gp-prd-sdw1 ~]#
+
+................................................................................
+................................................................................
+
+#
+#   Here we can see that all files /etc/profile is equal on all all GreenPlum servers, except two servers.
+#   That's good.
+#
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-gp-prd-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..24} ; do ssh \${var1} \" hostname ; md5sum /etc/profile \" ; done ' )" ; SSHPASS=''
+
+ds-gp-prd-mdw.tcsbank.ru
+9cf0bedbee5d3f7577c5c4298b35892e  /etc/profile
+ds-gp-prd-smdw.tcsbank.ru
+9cf0bedbee5d3f7577c5c4298b35892e  /etc/profile
+ds-gp-prd-sdw1
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw2
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw3
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw4
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw5
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw6
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw7
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw8
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw9
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw10
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw11
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw12
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw13
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw14
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw15
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw16
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw17
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw18
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw19
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw20
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw21
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw22
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw23
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-prd-sdw24
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+Connection to ds-gp-prd-ext-smdw closed.
+[support@centos00 ~]$
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-gp-dev-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..8} ; do ssh \${var1} \" hostname ; md5sum /etc/profile \" ; done ' )" ; SSHPASS=''
+
+ds-gp-dev-mdw
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-smdw
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw1
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw2
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw3
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw4
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw5
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw6
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw7
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+ds-gp-dev-sdw8
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+Connection to ds-gp-dev-ext-smdw closed.
+[support@centos00 ~]$
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-gp-tst-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..16} ; do ssh \${var1} \" hostname ; md5sum /etc/profile \" ; done ' )" ; SSHPASS=''
+
+m1-gp-tst-mdw.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-smdw.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw1.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw2.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw3.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw4.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw5.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw6.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw7.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw8.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw9.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw10.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw11.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw12.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw13.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw14.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw15.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-tst-sdw16.tcsbank.ru
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+Connection to m1-gp-tst-ext-smdw closed.
+[support@centos00 ~]$
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-gp-prd-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..24} ; do ssh \${var1} \" hostname ; md5sum /etc/profile \" ; done ' )" ; SSHPASS=''
+
+m1-gp-prd-mdw
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-smdw
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw1
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw2
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw3
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw4
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw5
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw6
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw7
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw8
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw9
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw10
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw11
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw12
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw13
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw14
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw15
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw16
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw17
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw18
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw19
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw20
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw21
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw22
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw23
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+m1-gp-prd-sdw24
+1153c583b1bf1dc7779c66af2e509a2b  /etc/profile
+Connection to m1-gp-prd-ext-smdw closed.
+[support@centos00 ~]$
+
+................................................................................
+
+#
+#   Well... I want to use puppet to configure limits.conf file, but it differ from one contour to other.
+#   It should be investigated before use puppet.
+#
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-gp-prd-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..24} ; do ssh \${var1} \" hostname ; md5sum /etc/security/limits.conf \" ; done ' )" ; SSHPASS=''
+
+m1-gp-prd-mdw
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-smdw
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw1
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw2
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw3
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw4
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw5
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw6
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw7
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw8
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw9
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw10
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw11
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw12
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw13
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw14
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw15
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw16
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw17
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw18
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw19
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw20
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw21
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw22
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw23
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+m1-gp-prd-sdw24
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+Connection to m1-gp-prd-ext-smdw closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-gp-tst-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..16} ; do ssh \${var1} \" hostname ; md5sum /etc/security/limits.conf \" ; done ' )" ; SSHPASS=''
+
+m1-gp-tst-mdw.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-smdw.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw1.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw2.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw3.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw4.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw5.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw6.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw7.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw8.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw9.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw10.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw11.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw12.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw13.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw14.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw15.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+m1-gp-tst-sdw16.tcsbank.ru
+83cbf2810031867054f85bcef3c8c29a  /etc/security/limits.conf
+Connection to m1-gp-tst-ext-smdw closed.
+[support@centos00 ~]$
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-gp-prd-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..24} ; do ssh \${var1} \" hostname ; md5sum /etc/security/limits.conf \" ; done ' )" ; SSHPASS=''
+
+ds-gp-prd-mdw.tcsbank.ru
+00261a191abb5d6bca447e424465538a  /etc/security/limits.conf
+ds-gp-prd-smdw.tcsbank.ru
+eec784fb1354ef04125fe391413cb2a1  /etc/security/limits.conf
+ds-gp-prd-sdw1
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw2
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw3
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw4
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw5
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw6
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw7
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw8
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw9
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw10
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw11
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw12
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw13
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw14
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw15
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw16
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw17
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw18
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw19
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw20
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw21
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw22
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw23
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+ds-gp-prd-sdw24
+e37f7fbae7a5d70d036ae19a322fd81c  /etc/security/limits.conf
+Connection to ds-gp-prd-ext-smdw closed.
+[support@centos00 ~]$
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-gp-dev-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..8} ; do ssh \${var1} \" hostname ; md5sum /etc/security/limits.conf \" ; done ' )" ; SSHPASS=''
+
+ds-gp-dev-mdw
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-smdw
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw1
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw2
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw3
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw4
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw5
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw6
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw7
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+ds-gp-dev-sdw8
+b8db404bc808517f49b2fb13242af403  /etc/security/limits.conf
+Connection to ds-gp-dev-ext-smdw closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 work]$ mkdir 20160315-1129
+[support@centos00 work]$ cd !$
+cd 20160315-1129
+[support@centos00 20160315-1129]$ SSHPASS="$(pass common/linux)" sshpass -e scp bsv@m1-gp-prd-ext-smdw:/etc/security/limits.conf ./m1-gp-prd-ext-smdw.limits.conf
+[support@centos00 20160315-1129]$ ll
+total 4
+-rw-r--r-- 1 support support 1919 Mar 15 11:31 m1-gp-prd-ext-smdw.limits.conf
+[support@centos00 20160315-1129]$ SSHPASS="$(pass common/linux)" sshpass -e scp bsv@m1-gp-tst-ext-smdw:/etc/security/limits.conf ./m1-gp-tst-ext-smdw.limits.conf
+[support@centos00 20160315-1129]$ ll
+total 8
+-rw-r--r-- 1 support support 1919 Mar 15 11:31 m1-gp-prd-ext-smdw.limits.conf
+-rw-r--r-- 1 support support 1916 Mar 15 11:32 m1-gp-tst-ext-smdw.limits.conf
+[support@centos00 20160315-1129]$ SSHPASS="$(pass common/linux)" sshpass -e scp bsv@ds-gp-prd-ext-smdw:/etc/security/limits.conf ./ds-gp-prd-ext-smdw.limits.conf
+[support@centos00 20160315-1129]$ ll
+total 12
+-rw-r--r-- 1 support support 1917 Mar 15 11:32 ds-gp-prd-ext-smdw.limits.conf
+-rw-r--r-- 1 support support 1919 Mar 15 11:31 m1-gp-prd-ext-smdw.limits.conf
+-rw-r--r-- 1 support support 1916 Mar 15 11:32 m1-gp-tst-ext-smdw.limits.conf
+[support@centos00 20160315-1129]$ SSHPASS="$(pass common/linux)" sshpass -e scp bsv@ds-gp-prd-ext-mdw:/etc/security/limits.conf ./ds-gp-prd-ext-mdw.limits.conf
+[support@centos00 20160315-1129]$ SSHPASS="$(pass common/linux)" sshpass -e scp bsv@ds-gp-prd-ext-sdw1:/etc/security/limits.conf ./ds-gp-prd-ext-sdw1.limits.conf
+ssh: Could not resolve hostname ds-gp-prd-ext-sdw1: Name or service not known
+[support@centos00 20160315-1129]$ SSHPASS="$(pass common/linux)" sshpass -e scp bsv@ds-gp-prd-sdw1:/etc/security/limits.conf ./ds-gp-prd-sdw1.limits.conf
+[support@centos00 20160315-1129]$
+
+
+[support@centos00 20160315-1129]$ ll
+total 20
+-rw-r--r-- 1 support support 1917 Mar 15 11:43 ds-gp-prd-ext-mdw.limits.conf
+-rw-r--r-- 1 support support 1917 Mar 15 11:32 ds-gp-prd-ext-smdw.limits.conf
+-rw-r--r-- 1 support support 1919 Mar 15 11:33 ds-gp-prd-sdw1.limits.conf
+-rw-r--r-- 1 support support 1919 Mar 15 11:31 m1-gp-prd-ext-smdw.limits.conf
+-rw-r--r-- 1 support support 1916 Mar 15 11:32 m1-gp-tst-ext-smdw.limits.conf
+[support@centos00 20160315-1129]$ diff -Nuar m1-gp-prd-ext-smdw.limits.conf m1-gp-tst-ext-smdw.limits.conf
+--- m1-gp-prd-ext-smdw.limits.conf      2016-03-15 11:31:21.838451298 +0300
++++ m1-gp-tst-ext-smdw.limits.conf      2016-03-15 11:32:04.670451286 +0300
+@@ -46,11 +46,8 @@
+ #@faculty        hard    nproc           50
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
+-
+-# End of file
+-
+-* soft nofile 130000
+-* hard nofile 130000
++* soft nofile 131000
++* hard nofile 131000
+ * soft nproc 131072
+ * hard nproc 131072
+-
++# End of file
+[support@centos00 20160315-1129]$
+
+
+[support@centos00 20160315-1129]$ diff -Nuar m1-gp-prd-ext-smdw.limits.conf ds-gp-prd-sdw1.limits.conf
+--- m1-gp-prd-ext-smdw.limits.conf      2016-03-15 11:31:21.838451298 +0300
++++ ds-gp-prd-sdw1.limits.conf  2016-03-15 11:33:55.344451281 +0300
+@@ -49,8 +49,8 @@
+
+ # End of file
+
+-* soft nofile 130000
+-* hard nofile 130000
++* soft nofile 131000
++* hard nofile 131000
+ * soft nproc 131072
+ * hard nproc 131072
+
+[support@centos00 20160315-1129]$
+
+
+[support@centos00 20160315-1129]$ diff -Nuar m1-gp-prd-ext-smdw.limits.conf ds-gp-prd-ext-mdw.limits.conf
+--- m1-gp-prd-ext-smdw.limits.conf      2016-03-15 11:31:21.838451298 +0300
++++ ds-gp-prd-ext-mdw.limits.conf       2016-03-15 11:43:27.733533075 +0300
+@@ -46,11 +46,9 @@
+ #@faculty        hard    nproc           50
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
+-
+-# End of file
+-
+-* soft nofile 130000
+-* hard nofile 130000
++* soft nofile 131000
++* hard nofile 131000
+ * soft nproc 131072
+ * hard nproc 131072
+
++# End of file
+[support@centos00 20160315-1129]$ diff -Nuar m1-gp-prd-ext-smdw.limits.conf ds-gp-prd-ext-smdw.limits.conf
+--- m1-gp-prd-ext-smdw.limits.conf      2016-03-15 11:31:21.838451298 +0300
++++ ds-gp-prd-ext-smdw.limits.conf      2016-03-15 11:32:53.356451271 +0300
+@@ -47,10 +47,8 @@
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
+
+-# End of file
+-
+-* soft nofile 130000
+-* hard nofile 130000
++* soft nofile 131000
++* hard nofile 131000
+ * soft nproc 131072
+ * hard nproc 131072
+-
++# End of file
+[support@centos00 20160315-1129]$
+
+[support@centos00 20160315-1129]$ diff -Nuar ds-gp-prd-ext-mdw.limits.conf ds-gp-prd-ext-smdw.limits.conf
+--- ds-gp-prd-ext-mdw.limits.conf       2016-03-15 11:43:27.733533075 +0300
++++ ds-gp-prd-ext-smdw.limits.conf      2016-03-15 11:32:53.356451271 +0300
+@@ -46,9 +46,9 @@
+ #@faculty        hard    nproc           50
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
++
+ * soft nofile 131000
+ * hard nofile 131000
+ * soft nproc 131072
+ * hard nproc 131072
+-
+ # End of file
+[support@centos00 20160315-1129]$ diff -Nuar ds-gp-prd-ext-mdw.limits.conf ds-gp-prd-sdw1.limits.conf
+--- ds-gp-prd-ext-mdw.limits.conf       2016-03-15 11:43:27.733533075 +0300
++++ ds-gp-prd-sdw1.limits.conf  2016-03-15 11:33:55.344451281 +0300
+@@ -46,9 +46,11 @@
+ #@faculty        hard    nproc           50
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
++
++# End of file
++
+ * soft nofile 131000
+ * hard nofile 131000
+ * soft nproc 131072
+ * hard nproc 131072
+
+-# End of file
+[support@centos00 20160315-1129]$
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-smdw ~]# puppet agent -t
+/usr/lib/ruby/site_ruby/1.8/puppet/defaults.rb:214: warning: Insecure world writable dir /usr/local in PATH, mode 040777
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for m1-gp-prd-smdw.tcsbank.ru
+Info: Applying configuration version '1458033007'
+Notice: Finished catalog run in 0.78 seconds
+[root@m1-gp-prd-smdw ~]# puppet agent -t
+/usr/lib/ruby/site_ruby/1.8/puppet/defaults.rb:214: warning: Insecure world writable dir /usr/local in PATH, mode 040777
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for m1-gp-prd-smdw.tcsbank.ru
+Info: Applying configuration version '1458032530'
+Notice: /Stage[main]/Limits::M1_gp_prd_limits_conf/File[/etc/security/limits.conf]/content:
+--- /etc/security/limits.conf   2015-10-07 06:25:06.651999958 +0300
++++ /tmp/puppet-file20160315-20055-2xlid3-0     2016-03-15 12:39:02.031660994 +0300
+@@ -1,3 +1,9 @@
++###################################
++#         !!! WARNING !!!         #
++#            Be aware!            #
++# This file is managing by Puppet #
++###################################
++#
+ # /etc/security/limits.conf
+ #
+ #Each line describes a limit for a user in the form:
+@@ -39,7 +45,7 @@
+ #<domain>      <type>  <item>         <value>
+ #
+
+-#*               soft    core            0
++*               soft    core            unlimited
+ #*               hard    rss             10000
+ #@student        hard    nproc           20
+ #@faculty        soft    nproc           20
+@@ -47,10 +53,9 @@
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
+
+-# End of file
+-
+ * soft nofile 130000
+ * hard nofile 130000
+ * soft nproc 131072
+ * hard nproc 131072
+
++# End of file
+
+Info: Computing checksum on file /etc/security/limits.conf
+Info: /Stage[main]/Limits::M1_gp_prd_limits_conf/File[/etc/security/limits.conf]: Filebucketed /etc/security/limits.conf to main with sum b8db404bc808517f49b2fb13242af403
+Notice: /Stage[main]/Limits::M1_gp_prd_limits_conf/File[/etc/security/limits.conf]/content: content changed '{md5}b8db404bc808517f49b2fb13242af403' to '{md5}77b638df580b4a5486b7b628e2c37c37'
+Notice: Finished catalog run in 1.66 seconds
+[root@m1-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+15.03.2016 14:52    Распространение настроек осуществляется средствами puppet.  Белогруд Сергей В
+15.03.2016 14:49    Настройки файла /etc/security/limits.conf со строкой:
+* soft core unlimited
+применены ко всем серверам GreenPlum.
+Остальные настройки оставлены прежними, какими они были для каждого из серверов каждого из контуров.
+Белогруд Сергей В
+15.03.2016 11:19
+
+From: Pavlov Dmitriy Stanislavovich
+Sent: Monday, March 14, 2016 9:59 PM
+To: Belogrud Sergey Vladimirovich; Nemchin Dmitriy Yuryevich
+Cc: greenplum_admins; unix-admins
+Subject: RE: Лимиты на тестовом гринпламе
+
+Добрый.
+Да, перефразировали вы верно.
+
+From: Belogrud Sergey Vladimirovich
+Sent: Monday, March 14, 2016 7:40 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: greenplum_admins; unix-admins
+Subject: RE: Лимиты на тестовом гринпламе
+
+Добрый вечер.
+
+Указанные настройки:
+[root@ds-gp-prd-smdw ~]# ulimit -c
+unlimited
+[root@ds-gp-prd-smdw ~]#
+обнаружены лишь на двух серверах GreenPlum из всех.
+А именно – на ds-gp-prd-mdw и ds-gp-prd-smdw.
+
+Эти настройки кем-то когда-то давным давно были добавлены в качестве последней строчки в файл /etc/profile:
+[root@ds-gp-prd-smdw ~]# tail /etc/profile
+. "$i" >/dev/null 2>&1
+fi
+fi
+done
+
+unset i
+unset -f pathmunge
+
+ulimit -S -c unlimited > /dev/null 2>&1
+
+[root@ds-gp-prd-smdw ~]#
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; tail /etc/profile | grep ulimit )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+ulimit -S -c unlimited > /dev/null 2>&1
+ds-gp-prd-smdw.tcsbank.ru
+ulimit -S -c unlimited > /dev/null 2>&1
+ds-gp-prd-sdw1
+ds-gp-prd-sdw2
+ds-gp-prd-sdw3
+ds-gp-prd-sdw4
+ds-gp-prd-sdw5
+ds-gp-prd-sdw6
+ds-gp-prd-sdw7
+ds-gp-prd-sdw8
+ds-gp-prd-sdw9
+ds-gp-prd-sdw10
+ds-gp-prd-sdw11
+ds-gp-prd-sdw12
+ds-gp-prd-sdw13
+ds-gp-prd-sdw14
+ds-gp-prd-sdw15
+ds-gp-prd-sdw16
+ds-gp-prd-sdw17
+ds-gp-prd-sdw18
+ds-gp-prd-sdw19
+ds-gp-prd-sdw20
+ds-gp-prd-sdw21
+ds-gp-prd-sdw22
+ds-gp-prd-sdw23
+ds-gp-prd-sdw24
+[root@ds-gp-prd-smdw ~]#
+
+Правильнее было бы сделать настройки в файле /etc/security/limits.conf в виде строчки:
+* - core unlimited
+
+Причина тому – не срабатывание настройки для не интерактивно запущенных процессов.
+Например:
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; ulimit -a | grep core )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+core file size (blocks, -c) 0
+ds-gp-prd-smdw.tcsbank.ru
+core file size (blocks, -c) 0
+ds-gp-prd-sdw1
+core file size (blocks, -c) 0
+ds-gp-prd-sdw2
+…
+
+В то же время для интерактивно запущенной команды настройка лимитов присутствует:
+[root@ds-gp-prd-smdw ~]# ulimit -a | grep core
+core file size (blocks, -c) unlimited
+[root@ds-gp-prd-smdw ~]#
+
+
+Поэтому правильнее было было бы переформулировать задачу, таким образом: установить настройки «maximum size of core files» (man ulimit) в «unlimited» на всех серверах GreenPlum.
+> Просьба изменить параметры на всех серверах тестового контура ГП
+>
+
+
+From: Nemchin Dmitriy Yuryevich
+Sent: Monday, March 14, 2016 4:08 PM
+To: unix-admins; helpdesk_in
+Cc: greenplum_admins
+Subject: Лимиты на тестовом гринпламе
+
+Коллеги, добрый день!
+
+У нас на тестовом ГП не создаются core files при падениях ГП и прочих неприятностях.
+
+[root@m1-gp-tst-sdw4 gpadmin]# ulimit -a
+core file size (blocks, -c) 0
+
+при этом на проде:
+
+[root@ds-gp-prd-mdw perenos_bin]# ulimit -a
+core file size (blocks, -c) unlimited
+
+Просьба изменить параметры на всех серверах тестового контура ГП
+
+С уважением,
+
+Дмитрий Немчин
+Старший системный администратор
+Белогруд Сергей В
+14.03.2016 16:26    На Проде М1 тоже плохо:
+
+[root@m1-gp-prd-sdw1 ~]# ulimit -a
+core file size (blocks, -c) 0
+Немчин Дмитрий
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-gp-dev-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..8} ; do ssh \${var1} \" hostname ; ulimit -c \" ; done ' )" ; SSHPASS=''
+
+ds-gp-dev-mdw
+unlimited
+ds-gp-dev-smdw
+unlimited
+ds-gp-dev-sdw1
+unlimited
+ds-gp-dev-sdw2
+unlimited
+ds-gp-dev-sdw3
+unlimited
+ds-gp-dev-sdw4
+unlimited
+ds-gp-dev-sdw5
+unlimited
+ds-gp-dev-sdw6
+unlimited
+ds-gp-dev-sdw7
+unlimited
+ds-gp-dev-sdw8
+unlimited
+Connection to ds-gp-dev-ext-smdw closed.
+[support@centos00 ~]$
+
+................................................................................
+
+#
+#   Unexpectedly opens, that two servers: master and secondary master - are absent in puppet group for ds-gp-prd contour!
+#   I've added it to that group.
+#
+[root@ds-gp-prd-smdw ~]# puppet agent -t
+/usr/lib/ruby/site_ruby/1.8/puppet/defaults.rb:214: warning: Insecure world writable dir /usr/local in PATH, mode 040777
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for ds-gp-prd-smdw.tcsbank.ru
+Info: Applying configuration version '1458043088'
+Notice: /Stage[main]/Limits::Ds_gp_prd_limits_conf/File[/etc/security/limits.conf]/content:
+--- /etc/security/limits.conf   2015-08-26 22:39:48.771561902 +0300
++++ /tmp/puppet-file20160315-21549-t0npli-0     2016-03-15 15:08:20.367175711 +0300
+@@ -1,3 +1,9 @@
++###################################
++#         !!! WARNING !!!         #
++#            Be aware!            #
++# This file is managing by Puppet #
++###################################
++#
+ # /etc/security/limits.conf
+ #
+ #Each line describes a limit for a user in the form:
+@@ -39,7 +45,7 @@
+ #<domain>      <type>  <item>         <value>
+ #
+
+-#*               soft    core            0
++*               soft    core            unlimited
+ #*               hard    rss             10000
+ #@student        hard    nproc           20
+ #@faculty        soft    nproc           20
+@@ -51,4 +57,5 @@
+ * hard nofile 131000
+ * soft nproc 131072
+ * hard nproc 131072
++
+ # End of file
+
+Info: Computing checksum on file /etc/security/limits.conf
+Info: /Stage[main]/Limits::Ds_gp_prd_limits_conf/File[/etc/security/limits.conf]: Filebucketed /etc/security/limits.conf to main with sum eec784fb1354ef04125fe391413cb2a1
+Notice: /Stage[main]/Limits::Ds_gp_prd_limits_conf/File[/etc/security/limits.conf]/content: content changed '{md5}eec784fb1354ef04125fe391413cb2a1' to '{md5}c288744fb75e2d3055c62c2ac16c7b9a'
+Notice: /Stage[main]/Accounts::Admins/User[a.leonov]/password: changed password
+Notice: /Stage[main]/Accounts::Admins/User[avk]/password: changed password
+Notice: /Stage[main]/Accounts::Admins/User[che]/password: changed password
+Notice: /Stage[main]/Nrpe_access/File[/etc/nrpe.d/access.cfg]/content:
+--- /etc/nrpe.d/access.cfg      2015-08-28 13:44:54.113985702 +0300
++++ /tmp/puppet-file20160315-21549-stjydo-0     2016-03-15 15:08:21.698178115 +0300
+@@ -1 +1 @@
+-allowed_hosts=127.0.0.1,172.16.1.11,172.16.1.115,172.16.1.117,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6,mon1.tcsbank.ru,mon2.tcsbank.ru,mon3.tcsbank.ru,mon4.tcsbank.ru,mon5.tcsbank.ru,mon6.tcsbank.ru,mon7.tcsbank.ru
++allowed_hosts=127.0.0.1,172.16.1.6,172.16.1.11,172.16.1.115,172.16.1.117,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6,mon1.tcsbank.ru,mon2.tcsbank.ru,mon3.tcsbank.ru,mon4.tcsbank.ru,mon5.tcsbank.ru,mon6.tcsbank.ru,mon7.tcsbank.ru
+
+Info: Computing checksum on file /etc/nrpe.d/access.cfg
+Info: /Stage[main]/Nrpe_access/File[/etc/nrpe.d/access.cfg]: Filebucketed /etc/nrpe.d/access.cfg to main with sum ded4acdcf4a73aa9e89740fd838a0e5e
+Notice: /Stage[main]/Nrpe_access/File[/etc/nrpe.d/access.cfg]/content: content changed '{md5}ded4acdcf4a73aa9e89740fd838a0e5e' to '{md5}9058d284f57a1ccfa1a47f9dc093fbd9'
+Info: /Stage[main]/Nrpe_access/File[/etc/nrpe.d/access.cfg]: Scheduling refresh of Exec[/etc/init.d/nrpe restart]
+Notice: /Stage[main]/Nrpe_access/Exec[/etc/init.d/nrpe restart]: Triggered 'refresh' from 1 events
+Notice: /Stage[main]/Accounts::Admins/User[bsv]/password: changed password
+Notice: /Stage[main]/Accounts::Admins/User[ash]/password: changed password
+Notice: /Stage[main]/Accounts::Admins/User[tan]/password: changed password
+Notice: Finished catalog run in 2.43 seconds
+[root@ds-gp-prd-smdw ~]#
+
+[root@ds-gp-prd-mdw ~]# puppet agent -t
+/usr/lib/ruby/site_ruby/1.8/puppet/defaults.rb:214: warning: Insecure world writable dir /usr/local in PATH, mode 040777
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for ds-gp-prd-mdw.tcsbank.ru
+Info: Applying configuration version '1458041894'
+Notice: /Stage[main]/Limits::Ds_gp_prd_limits_conf/File[/etc/security/limits.conf]/content:
+--- /etc/security/limits.conf   2015-08-26 22:51:12.051885248 +0300
++++ /tmp/puppet-file20160315-28437-16q6vdv-0    2016-03-15 15:12:35.627309346 +0300
+@@ -1,3 +1,9 @@
++###################################
++#         !!! WARNING !!!         #
++#            Be aware!            #
++# This file is managing by Puppet #
++###################################
++#
+ # /etc/security/limits.conf
+ #
+ #Each line describes a limit for a user in the form:
+@@ -39,13 +45,14 @@
+ #<domain>      <type>  <item>         <value>
+ #
+
+-#*               soft    core            0
++*               soft    core            unlimited
+ #*               hard    rss             10000
+ #@student        hard    nproc           20
+ #@faculty        soft    nproc           20
+ #@faculty        hard    nproc           50
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
++
+ * soft nofile 131000
+ * hard nofile 131000
+ * soft nproc 131072
+
+Info: Computing checksum on file /etc/security/limits.conf
+Info: /Stage[main]/Limits::Ds_gp_prd_limits_conf/File[/etc/security/limits.conf]: Filebucketed /etc/security/limits.conf to main with sum 00261a191abb5d6bca447e424465538a
+Notice: /Stage[main]/Limits::Ds_gp_prd_limits_conf/File[/etc/security/limits.conf]/content: content changed '{md5}00261a191abb5d6bca447e424465538a' to '{md5}c288744fb75e2d3055c62c2ac16c7b9a'
+Notice: /Stage[main]/Accounts::Admins/User[a.leonov]/password: changed password
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[zbir@tcs7308.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[avk]/password: changed password
+Notice: /Stage[main]/Accounts::Admins/User[che]/password: changed password
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]/content:
+--- /etc/ntp.conf       2015-08-26 17:16:57.158441178 +0300
++++ /tmp/puppet-file20160315-28437-1idvf2k-0    2016-03-15 15:12:36.498308383 +0300
+@@ -1,13 +1,54 @@
++# Permit time synchronization with our time source, but do not
++# permit the source to query or modify the service on this system.
+ restrict default kod nomodify notrap nopeer noquery
+ restrict -6 default kod nomodify notrap nopeer noquery
++
++# Permit all access over the loopback interface.  This could
++# be tightened as well, but to do so would effect some of
++# the administrative functions.
+ restrict 127.0.0.1
+ restrict -6 ::1
++
++# Hosts on local network are less restricted.
++#restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap
++
++# Use public servers from the pool.ntp.org project.
++# Please consider joining the pool (http://www.pool.ntp.org/join.html).
++
+ server ntp01.tcsbank.ru
+ server ntp02.tcsbank.ru
+ server ntp03.tcsbank.ru
+ server ntp04.tcsbank.ru
+ server ntp05.tcsbank.ru
+ server ntp06.tcsbank.ru
++
++#broadcast 192.168.1.255 key 42                # broadcast server
++#broadcastclient                       # broadcast client
++#broadcast 224.0.1.1 key 42            # multicast server
++#multicastclient 224.0.1.1             # multicast client
++#manycastserver 239.255.254.254                # manycast server
++#manycastclient 239.255.254.254 key 42 # manycast client
++
++# Undisciplined Local Clock. This is a fake driver intended for backup
++# and when no outside source of synchronized time is available.
++server 127.127.1.0     # local clock
++fudge  127.127.1.0 stratum 10
++
++# Drift file.  Put this in a directory which the daemon can write to.
++# No symbolic links allowed, either, since the daemon updates the file
++# by creating a temporary in the same directory and then rename()'ing
++# it to the file.
+ driftfile /var/lib/ntp/drift
++
++# Key file containing the keys and key identifiers used when operating
++# with symmetric key cryptography.
+ keys /etc/ntp/keys
+
++# Specify the key identifiers which are trusted.
++#trustedkey 4 8 42
++
++# Specify the key identifier to use with the ntpdc utility.
++#requestkey 8
++
++# Specify the key identifier to use with the ntpq utility.
++#controlkey 8
+
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]/content: content changed '{md5}39f672b8a075905d846cb39324e0b39b' to '{md5}4901b39d9fc735ea6f61fc9c13e0197b'
+Info: Class[Ntp::Config]: Scheduling refresh of Class[Ntp::Service]
+Info: Class[Ntp::Service]: Scheduling refresh of Service[ntp]
+Notice: /Stage[main]/Ntp::Service/Service[ntp]: Triggered 'refresh' from 1 events
+Notice: /Stage[main]/Nrpe_access/File[/etc/nrpe.d/access.cfg]/ensure: defined content as '{md5}9058d284f57a1ccfa1a47f9dc093fbd9'
+Info: /Stage[main]/Nrpe_access/File[/etc/nrpe.d/access.cfg]: Scheduling refresh of Exec[/etc/init.d/nrpe restart]
+Notice: /Stage[main]/Nrpe_access/Exec[/etc/init.d/nrpe restart]: Triggered 'refresh' from 1 events
+Notice: /Stage[main]/Accounts::Admins/User[bsv]/password: changed password
+Notice: /Stage[main]/Accounts::Admins/User[ash]/password: changed password
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[ash@m1-pds01.ti.local]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[tan]/password: changed password
+Notice: Finished catalog run in 1.99 seconds
+[root@ds-gp-prd-mdw ~]#
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-gp-prd-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..24} ; do ssh \${var1} \" hostname ; ulimit -c \" ; done ' )" ; SSHPASS=''
+
+ds-gp-prd-mdw.tcsbank.ru
+unlimited
+ds-gp-prd-smdw.tcsbank.ru
+unlimited
+ds-gp-prd-sdw1
+unlimited
+ds-gp-prd-sdw2
+unlimited
+ds-gp-prd-sdw3
+unlimited
+ds-gp-prd-sdw4
+unlimited
+ds-gp-prd-sdw5
+unlimited
+ds-gp-prd-sdw6
+unlimited
+ds-gp-prd-sdw7
+unlimited
+ds-gp-prd-sdw8
+unlimited
+ds-gp-prd-sdw9
+unlimited
+ds-gp-prd-sdw10
+unlimited
+ds-gp-prd-sdw11
+unlimited
+ds-gp-prd-sdw12
+unlimited
+ds-gp-prd-sdw13
+unlimited
+ds-gp-prd-sdw14
+unlimited
+ds-gp-prd-sdw15
+unlimited
+ds-gp-prd-sdw16
+unlimited
+ds-gp-prd-sdw17
+unlimited
+ds-gp-prd-sdw18
+unlimited
+ds-gp-prd-sdw19
+unlimited
+ds-gp-prd-sdw20
+unlimited
+ds-gp-prd-sdw21
+unlimited
+ds-gp-prd-sdw22
+unlimited
+ds-gp-prd-sdw23
+unlimited
+ds-gp-prd-sdw24
+unlimited
+Connection to ds-gp-prd-ext-smdw closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-gp-tst-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..16} ; do ssh \${var1} \" hostname ; ulimit -c \" ; done ' )" ; SSHPASS=''
+
+m1-gp-tst-mdw.tcsbank.ru
+unlimited
+m1-gp-tst-smdw.tcsbank.ru
+unlimited
+m1-gp-tst-sdw1.tcsbank.ru
+unlimited
+m1-gp-tst-sdw2.tcsbank.ru
+unlimited
+m1-gp-tst-sdw3.tcsbank.ru
+unlimited
+m1-gp-tst-sdw4.tcsbank.ru
+unlimited
+m1-gp-tst-sdw5.tcsbank.ru
+unlimited
+m1-gp-tst-sdw6.tcsbank.ru
+unlimited
+m1-gp-tst-sdw7.tcsbank.ru
+unlimited
+m1-gp-tst-sdw8.tcsbank.ru
+unlimited
+m1-gp-tst-sdw9.tcsbank.ru
+unlimited
+m1-gp-tst-sdw10.tcsbank.ru
+unlimited
+m1-gp-tst-sdw11.tcsbank.ru
+unlimited
+m1-gp-tst-sdw12.tcsbank.ru
+unlimited
+m1-gp-tst-sdw13.tcsbank.ru
+unlimited
+m1-gp-tst-sdw14.tcsbank.ru
+unlimited
+m1-gp-tst-sdw15.tcsbank.ru
+unlimited
+m1-gp-tst-sdw16.tcsbank.ru
+unlimited
+Connection to m1-gp-tst-ext-smdw closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-gp-prd-ext-smdw "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; for var1 in mdw smdw sdw{1..24} ; do ssh \${var1} \" hostname ; ulimit -c \" ; done ' )" ; SSHPASS=''
+
+m1-gp-prd-mdw
+unlimited
+m1-gp-prd-smdw
+unlimited
+m1-gp-prd-sdw1
+unlimited
+m1-gp-prd-sdw2
+unlimited
+m1-gp-prd-sdw3
+unlimited
+m1-gp-prd-sdw4
+unlimited
+m1-gp-prd-sdw5
+unlimited
+m1-gp-prd-sdw6
+unlimited
+m1-gp-prd-sdw7
+unlimited
+m1-gp-prd-sdw8
+unlimited
+m1-gp-prd-sdw9
+unlimited
+m1-gp-prd-sdw10
+unlimited
+m1-gp-prd-sdw11
+unlimited
+m1-gp-prd-sdw12
+unlimited
+m1-gp-prd-sdw13
+unlimited
+m1-gp-prd-sdw14
+unlimited
+m1-gp-prd-sdw15
+unlimited
+m1-gp-prd-sdw16
+unlimited
+m1-gp-prd-sdw17
+unlimited
+m1-gp-prd-sdw18
+unlimited
+m1-gp-prd-sdw19
+unlimited
+m1-gp-prd-sdw20
+unlimited
+m1-gp-prd-sdw21
+unlimited
+m1-gp-prd-sdw22
+unlimited
+m1-gp-prd-sdw23
+unlimited
+m1-gp-prd-sdw24
+unlimited
+Connection to m1-gp-prd-ext-smdw closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[root@puppet limits]# tree $(pwd)
+/etc/puppet/modules/limits
+├── files
+├── manifests
+│   ├── ds_gp_dev_limits_conf.pp
+│   ├── ds_gp_prd_limits_conf.pp
+│   ├── init.pp
+│   ├── m1_gp_prd_limits_conf.pp
+│   ├── m1_gp_tst_limits_conf.pp
+│   └── oracle.pp
+├── metadata.json
+└── templates
+    ├── ds_gp_dev_limits_conf.erb
+    ├── ds_gp_prd_limits_conf.erb
+    ├── m1_gp_prd_limits_conf.erb
+    ├── m1_gp_tst_limits_conf.erb
+    └── oracle.conf.erb
+
+3 directories, 12 files
+[root@puppet limits]#
+
+[root@puppet limits]# cat manifests/init.pp
+class limits { }
+[root@puppet limits]#
+
+[root@puppet limits]# cat manifests/ds_gp_prd_limits_conf.pp
+class limits::ds_gp_prd_limits_conf {
+        file {"/etc/security/limits.conf":
+                content => template('limits/ds_gp_prd_limits_conf.erb'),
+        }
+}
+[root@puppet limits]#
+
+[root@puppet limits]# cat templates/ds_gp_prd_limits_conf.erb
+###################################
+#         !!! WARNING !!!         #
+#            Be aware!            #
+# This file is managing by Puppet #
+###################################
+#
+# /etc/security/limits.conf
+#
+#Each line describes a limit for a user in the form:
+#
+#<domain>        <type>  <item>  <value>
+#
+#Where:
+#<domain> can be:
+#        - a user name
+#        - a group name, with @group syntax
+#        - the wildcard *, for default entry
+#        - the wildcard %, can be also used with %group syntax,
+#                 for maxlogin limit
+#
+#<type> can have the two values:
+#        - "soft" for enforcing the soft limits
+#        - "hard" for enforcing hard limits
+#
+#<item> can be one of the following:
+#        - core - limits the core file size (KB)
+#        - data - max data size (KB)
+#        - fsize - maximum filesize (KB)
+#        - memlock - max locked-in-memory address space (KB)
+#        - nofile - max number of open file descriptors
+#        - rss - max resident set size (KB)
+#        - stack - max stack size (KB)
+#        - cpu - max CPU time (MIN)
+#        - nproc - max number of processes
+#        - as - address space limit (KB)
+#        - maxlogins - max number of logins for this user
+#        - maxsyslogins - max number of logins on the system
+#        - priority - the priority to run user process with
+#        - locks - max number of file locks the user can hold
+#        - sigpending - max number of pending signals
+#        - msgqueue - max memory used by POSIX message queues (bytes)
+#        - nice - max nice priority allowed to raise to values: [-20, 19]
+#        - rtprio - max realtime priority
+#
+#<domain>      <type>  <item>         <value>
+#
+
+*               soft    core            unlimited
+#*               hard    rss             10000
+#@student        hard    nproc           20
+#@faculty        soft    nproc           20
+#@faculty        hard    nproc           50
+#ftp             hard    nproc           0
+#@student        -       maxlogins       4
+
+* soft nofile 131000
+* hard nofile 131000
+* soft nproc 131072
+* hard nproc 131072
+
+# End of file
+[root@puppet limits]#
+
+................................................................................
+
+
+
+

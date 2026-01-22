@@ -1,0 +1,128 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   984135
+Название    №984135
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  29.08.2016 12:30
+Дата регистрации    29.08.2016 12:30
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 2 - Средняя
+Срочность   Низкая
+Описание запроса
+Просьба убрать меня из рассылки алертов нагиоса по этому серверу
+Насколько мне известно, на нем теперь живет weboffice, уточнить актуальный список адресатов можно у А. Сидоренко или Д. Давыдова
+
+-----Original Message-----
+From: nagios@nagios.tinkoff.ru [mailto:nagios@nagios.tinkoff.ru]
+Sent: Monday, August 29, 2016 12:27 PM
+To: Sokolova Irina
+Subject: ** PROBLEM Service Alert: ScanDoc online/C:\ Drive Space is WARNING **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: C:\ Drive Space
+Host: ScanDoc online
+Address: 10.216.43.120
+State: WARNING
+
+Date/Time: Mon Aug 29 12:27:28 MSK 2016
+
+Additional Info:
+
+c:\ - total: 79.90 Gb - used: 78.26 Gb (98%) - free 1.64 Gb (2%)
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Соколова Ирина
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Соколова Ирина
+Контактный e-mail   i.s.sokolova@tinkoff.ru
+Контактные телефоны 79169183646, 2060
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# server_name="vm-hcc01t" ; pynag list host_name service_description contact_groups contacts where host_name="${server_name}" ; pynag list display_name address filename where object_type=host and host_name="${server_name}"
+
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+vm-hcc01t            null                 windows-admins, servicedesk-duty-critical-group i.s.sokolova_email, i.s.sokolova_sms
+vm-hcc01t            C:\ Drive Space      null                 i.s.sokolova_email, i.s.sokolova_sms
+vm-hcc01t            CPU Load             null                 i.s.sokolova_email, i.s.sokolova_sms
+vm-hcc01t            DNS_Client_Service   null                 i.s.sokolova_email, i.s.sokolova_sms
+vm-hcc01t            Memory Usage         null                 i.s.sokolova_email, i.s.sokolova_sms
+vm-hcc01t            Uptime               null                 i.s.sokolova_email, i.s.sokolova_sms
+vm-hcc01t            Windows Time         null                 i.s.sokolova_email, i.s.sokolova_sms
+----------7 objects matches search condition------------------------------------
+display_name         address              filename
+--------------------------------------------------------------------------------
+null                 10.216.43.120        /usr/local/nagios/etc/objects/servers/vmware/vm-hcc01t.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="a.m.sidorenko"                                                                                         contact_name         email                filename
+--------------------------------------------------------------------------------
+a.m.sidorenko_email  a.m.sidorenko@tinkoff.ru /usr/local/nagios/etc/objects/contacts/a.m.sidorenko.cfg
+a.m.sidorenko_sms    a.m.sidorenko@tinkoff.ru /usr/local/nagios/etc/objects/contacts/a.m.sidorenko.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="d.o.davydov"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+d.o.davydov_email    d.o.davydov@tinkoff.ru /usr/local/nagios/etc/objects/contacts/d.o.davydov.cfg
+d.o.davydov_sms      d.o.davydov@tinkoff.ru /usr/local/nagios/etc/objects/contacts/d.o.davydov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/servers/vmware/vm-hcc01t.cfg
+
+:%s/i.s.sokolova_email, i.s.sokolova_sms/a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms/gc
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#984135. Changed recipients of nagios notifications." servers/vmware/vm-hcc01t.cfg               [master dcd7d46] SD#984135. Changed recipients of nagios notifications.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 621 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   41976fd..dcd7d46  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# server_name="vm-hcc01t" ; pynag list host_name service_description contact_groups contacts where host_name="${server_name}" ; pynag list display_name address filename where object_type=host and host_name="${server_name}"
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+vm-hcc01t            null                 windows-admins, servicedesk-duty-critical-group a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms
+vm-hcc01t            C:\ Drive Space      null                 a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms
+vm-hcc01t            CPU Load             null                 a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms
+vm-hcc01t            DNS_Client_Service   null                 a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms
+vm-hcc01t            Memory Usage         null                 a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms
+vm-hcc01t            Uptime               null                 a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms
+vm-hcc01t            Windows Time         null                 a.m.sidorenko_email,a.m.sidorenko_sms,d.o.davydov_email,d.o.davydov_sms
+----------7 objects matches search condition------------------------------------
+display_name         address              filename
+--------------------------------------------------------------------------------
+null                 10.216.43.120        /usr/local/nagios/etc/objects/servers/vmware/vm-hcc01t.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+

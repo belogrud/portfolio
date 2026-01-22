@@ -1,0 +1,663 @@
+
+
+................................................................................
+
+From: Belogrud Sergey Vladimirovich
+Sent: Tuesday, October 06, 2015 2:28 PM
+To: helpdesk_in
+Cc: net-admins
+Subject: Запрос на предоставление доступа с серверов мониторинга до серверов GreenPlum нового контура M1 GP TEST
+
+Добрый день.
+
+Администраторам ЛВС.
+
+Серверы GreenPlum нового контура M1 GP TEST:
+m1-gp-tst-mdw    10.216.0.65    10.216.1.65
+m1-gp-tst-smdw   10.216.0.66    10.216.1.66
+
+m1-gp-tst-sdw1   10.216.0.1     10.216.1.1
+m1-gp-tst-sdw2   10.216.0.2     10.216.1.2
+m1-gp-tst-sdw3   10.216.0.3     10.216.1.3
+m1-gp-tst-sdw4   10.216.0.4     10.216.1.4
+m1-gp-tst-sdw5   10.216.0.5     10.216.1.5
+m1-gp-tst-sdw6   10.216.0.6     10.216.1.6
+m1-gp-tst-sdw7   10.216.0.7     10.216.1.7
+m1-gp-tst-sdw8   10.216.0.8     10.216.1.8
+m1-gp-tst-sdw9   10.216.0.9     10.216.1.9
+m1-gp-tst-sdw10  10.216.0.10    10.216.1.10
+m1-gp-tst-sdw11  10.216.0.11    10.216.1.11
+m1-gp-tst-sdw12  10.216.0.12    10.216.1.12
+m1-gp-tst-sdw13  10.216.0.13    10.216.1.13
+m1-gp-tst-sdw14  10.216.0.14    10.216.1.14
+m1-gp-tst-sdw15  10.216.0.15    10.216.1.15
+m1-gp-tst-sdw16  10.216.0.16    10.216.1.16
+
+(Внешние – не интерконнектовские, адреса серверов m1-gp-tst-mdw и m1-gp-tst-smdw).
+m1-gp-tst-mdw-ext  10.216.27.31
+m1-gp-tst-smdw-ext 10.216.27.32
+m1-gp-tst-ext      10.216.27.30
+
+
+Прошу предоставить доступ с сервера мониторинга zabbix-it (он же monitoring1.tcsbank.ru (10.216.41.211))
+к серверам GreenPlum нового контура M1 GP TEST:
+Порт: 10050
+Протокол: tcp;
+Протокол: icmp (ping);
+Назначение: Мониторинг состояния параметров серверов-сегментов hadoop с помощью zabbix.
+
+
+Прошу предоставить доступ с сервера мониторинга
+vm-dbamon02.tcsbank.ru (10.217.50.167)
+к GreenPlum нового контура M1 GP TEST
+Порт: 161
+Протокол: udp;
+и
+Протокол: icmp (утилита ping)
+Назначение: Связь с сервером мониторинга по протоколу snmp.
+
+
+Прошу предоставить доступ
+с серверов GreenPlum нового контура M1 GP TEST:
+к серверам мониторинга:
+vm-ossec01p (10.216.40.38);
+vm-ossec01t (10.216.43.48)
+Протокол: tcp.
+Порт: 1515.
+Назначение: Регистрация хоста на сервере мониторинга.
+Протокол: upd.
+Порт: 1514.
+Назначение: Обмен информацией о зарегистрированных событиях.
+
+
+С уважением,
+
+Сергей Белогруд
+Старший системный администратор
+................................................................................
+# Follow string
+# rocommunity tcspub 10.217.50.167
+# had been present in all appropriate files.
+# I think Chernykh Aleksand copied whole file from one of servers ds-gp-dev contour.
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; vim /etc/snmp/snmpd.conf )" ; done
+
+................................................................................
+[root@m1-gp-tst-smdw 20151005-1826]# ip route
+10.216.1.0/24 dev eth5  proto kernel  scope link  src 10.216.1.66
+10.216.0.0/24 dev eth4  proto kernel  scope link  src 10.216.0.66
+10.216.27.0/24 dev bond0.1627  proto kernel  scope link  src 10.216.27.32
+10.216.0.0/21 via 10.216.0.254 dev eth4
+169.254.0.0/16 dev eth4  scope link  metric 1006
+169.254.0.0/16 dev eth5  scope link  metric 1007
+169.254.0.0/16 dev bond0  scope link  metric 1010
+169.254.0.0/16 dev bond0.1627  scope link  metric 1012
+default via 10.216.27.254 dev bond0.1627
+[root@m1-gp-tst-smdw 20151005-1826]#
+................................................................................
+
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( echo ; hostname ; curl http://repo-linux.tcsbank.ru/tcs-zabbix-2.2-rhel-6-x86_64.repo.sh | sh ; yum -y install zabbix-agent )" ; done
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; sed -i -e 's/^Server=127.0.0.1/Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru/' /etc/zabbix/zabbix_agentd.conf ; grep Server=127.0.0.1 /etc/zabbix/zabbix_agentd.conf )" ; done
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; chkconfig zabbix-agent on ; service zabbix-agent start )" ; done
+................................................................................
+[root@m1-zabbix-it ~]# zabbix_get -k system.sw.os -s m1-gp-tst-sdw1.tcsbank.ru
+Linux version 2.6.32-504.el6.x86_64 (mockbuild@x86-023.build.eng.bos.redhat.com) (gcc version 4.4.7 20120313 (Red Hat 4.4.7-11) (GCC) ) #1 SMP Tue Sep 16 01:56:35 EDT 2014
+[root@m1-zabbix-it ~]# zabbix_get -k system.sw.os -s m1-gp-tst-mdw.tcsbank.ru
+^C[root@m1-zabbix-it ~]# zabbix_get -k system.sw.os -s 10.216.27.31
+Linux version 2.6.32-504.el6.x86_64 (mockbuild@x86-023.build.eng.bos.redhat.com) (gcc version 4.4.7 20120313 (Red Hat 4.4.7-11) (GCC) ) #1 SMP Tue Sep 16 01:56:35 EDT 2014
+[root@m1-zabbix-it ~]#
+................................................................................
+
+#   Wed Oct  7 17:46:57 MSK 2015
+
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; curl repo-linux/tcs-ossec-2.7-x86_64.repo.sh | sh )" ; done
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; yum -y install ossec-hids-client-2.7-31.1.el6.art.x86_64 ossec-hids-2.7-31.1.el6.art.x86_64 GeoIP-1.4.8-1.1.el6.art. x86_64 inotify-tools-3.14-1.el6.x86_64 ; service ossec-hids stop )" ; done
+
+
+[root@m1-gp-tst-smdw 20151005-1826]# cat > /var/ossec/etc/ossec.conf
+<!-- OSSEC vm-ossec01p agent config -->
+
+<ossec_config>
+
+  <client>
+    <server-ip>10.216.40.38</server-ip>
+  </client>
+
+</ossec_config>
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw sdw{1..16} ; do scp /var/ossec/etc/ossec.conf ${var1}:/var/ossec/etc/ossec.conf ; done
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+ossec.conf                                                                                                                                                                100%  137     0.1KB/s   00:00
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; /var/ossec/bin/agent-auth -m 10.216.40.38 )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+2015/10/07 18:16:27 ossec-authd: INFO: Started (pid: 8096).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-mdw.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-smdw.tcsbank.ru
+2015/10/07 18:16:28 ossec-authd: INFO: Started (pid: 22929).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-smdw.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw1.tcsbank.ru
+2015/10/07 18:16:29 ossec-authd: INFO: Started (pid: 25347).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw1.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw2.tcsbank.ru
+2015/10/07 18:16:31 ossec-authd: INFO: Started (pid: 31946).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw2.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw3.tcsbank.ru
+2015/10/07 18:16:32 ossec-authd: INFO: Started (pid: 2829).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw3.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw4.tcsbank.ru
+2015/10/07 18:16:33 ossec-authd: INFO: Started (pid: 10476).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw4.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw5.tcsbank.ru
+2015/10/07 18:16:34 ossec-authd: INFO: Started (pid: 13290).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw5.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw6.tcsbank.ru
+2015/10/07 18:16:35 ossec-authd: INFO: Started (pid: 9587).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw6.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw7.tcsbank.ru
+2015/10/07 18:16:37 ossec-authd: INFO: Started (pid: 8175).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw7.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw8.tcsbank.ru
+2015/10/07 18:16:38 ossec-authd: INFO: Started (pid: 15600).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw8.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw9.tcsbank.ru
+2015/10/07 18:16:39 ossec-authd: INFO: Started (pid: 25086).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw9.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw10.tcsbank.ru
+2015/10/07 18:16:40 ossec-authd: INFO: Started (pid: 4310).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw10.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw11.tcsbank.ru
+2015/10/07 18:16:41 ossec-authd: INFO: Started (pid: 16903).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw11.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw12.tcsbank.ru
+2015/10/07 18:16:43 ossec-authd: INFO: Started (pid: 18634).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw12.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw13.tcsbank.ru
+2015/10/07 18:16:44 ossec-authd: INFO: Started (pid: 6331).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw13.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw14.tcsbank.ru
+2015/10/07 18:16:45 ossec-authd: INFO: Started (pid: 16496).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw14.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw15.tcsbank.ru
+2015/10/07 18:16:46 ossec-authd: INFO: Started (pid: 6906).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw15.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+m1-gp-tst-sdw16.tcsbank.ru
+2015/10/07 18:16:47 ossec-authd: INFO: Started (pid: 8086).
+INFO: Connected to 10.216.40.38:1515
+INFO: Using agent name as: m1-gp-tst-sdw16.tcsbank.ru
+INFO: Send request to manager. Waiting for reply.
+INFO: Received response with agent key
+INFO: Valid key created. Finished.
+INFO: Connection closed.
+[root@m1-gp-tst-smdw 20151005-1826]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; service ossec-hids start )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:18 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-smdw.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:21 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw1.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:23 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw2.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:25 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw3.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:27 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw4.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:29 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw5.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:31 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw6.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:33 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw7.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:36 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw8.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:38 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw9.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:40 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw10.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:42 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw11.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:44 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw12.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:46 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw13.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:48 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw14.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:50 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw15.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:52 DEBUG: I am creating the SQLite table.
+[  OK  ]
+m1-gp-tst-sdw16.tcsbank.ru
+Starting ossec-hids: 2015/10/07 18:18:55 DEBUG: I am creating the SQLite table.
+[  OK  ]
+[root@m1-gp-tst-smdw 20151005-1826]#
+................................................................................
+[root@vm-ossec01p ~]# /var/ossec/bin/ossec-authd -p 1515 >/dev/null 2>&1 &
+[1] 28027
+[root@vm-ossec01p ~]# /var/ossec/bin/agent_control -l
+
+OSSEC HIDS agent_control. List of available agents:
+   ID: 000, Name: vm-ossec01p.tcsbank.ru (server), IP: 127.0.0.1, Active/Local
+   ID: 001, Name: tcs039.tcsbank.ru, IP: 172.16.28.64, Disconnected
+   ID: 1024, Name: m1-hadoop-cs01t.tcsbank.ru, IP: any, Disconnected
+   ID: 1025, Name: m1-hadoop-wk01t.tcsbank.ru, IP: any, Disconnected
+   ID: 1026, Name: m1-hadoop-wk02t.tcsbank.ru, IP: any, Disconnected
+   ID: 1027, Name: m1-hadoop-wk03t.tcsbank.ru, IP: any, Disconnected
+   ID: 1028, Name: m1-hadoop-wk04t.tcsbank.ru, IP: any, Disconnected
+   ID: 003, Name: nag2.tcsbank.ru, IP: 172.16.1.11, Active
+   ID: 1029, Name: vm-sasmon01p, IP: any, Active
+   ID: 004, Name: puppet.tcsbank.ru, IP: 10.216.40.122, Active
+   ID: 005, Name: ds-db01-stb.tcsbank.ru, IP: 10.217.50.23, Active
+   ID: 006, Name: ds-db02-stb.tcsbank.ru, IP: 10.217.50.14, Active
+   ID: 1030, Name: ds-sasetl01x.tcsbank.ru, IP: any, Active
+   ID: 1031, Name: m1-sasetl01t.tcsbank.ru, IP: any, Active
+   ID: 1033, Name: ds-sasetl01p.tcsbank.ru, IP: any, Active
+   ID: 1032, Name: m1-sasetl01p.tcsbank.ru2, IP: any, Disconnected
+   ID: 1034, Name: m1-sasetl01p.tcsbank.ru, IP: any, Never connected
+   ID: 1035, Name: m1-sasetl01p.tcsbank.ru3, IP: any, Active
+   ID: 1036, Name: vm-mail56p.tcsbank.ru, IP: any, Active
+   ID: 1037, Name: ds-sas-ods01t, IP: any, Disconnected
+   ID: 1038, Name: ds-gp-prd-smdw.tcsbank.ru, IP: any, Active
+   ID: 1039, Name: ds-gp-prd-mdw.tcsbank.ru, IP: any, Active
+   ID: 1040, Name: ds-gp-prd-sdw1, IP: any, Active
+   ID: 1041, Name: ds-gp-prd-sdw2, IP: any, Active
+   ID: 1042, Name: ds-gp-prd-sdw3, IP: any, Active
+   ID: 1043, Name: ds-gp-prd-sdw4, IP: any, Active
+   ID: 1044, Name: ds-gp-prd-sdw5, IP: any, Active
+   ID: 1045, Name: ds-gp-prd-sdw6, IP: any, Active
+   ID: 1046, Name: ds-gp-prd-sdw7, IP: any, Active
+   ID: 1047, Name: ds-gp-prd-sdw8, IP: any, Active
+   ID: 1048, Name: ds-gp-prd-sdw9, IP: any, Active
+   ID: 1049, Name: ds-gp-prd-sdw10, IP: any, Active
+   ID: 1050, Name: ds-gp-prd-sdw11, IP: any, Active
+   ID: 1051, Name: ds-gp-prd-sdw12, IP: any, Active
+   ID: 1052, Name: ds-gp-prd-sdw13, IP: any, Active
+   ID: 1053, Name: ds-gp-prd-sdw14, IP: any, Active
+   ID: 1054, Name: ds-gp-prd-sdw15, IP: any, Active
+   ID: 1055, Name: ds-gp-prd-sdw16, IP: any, Active
+   ID: 1056, Name: ds-gp-prd-sdw17, IP: any, Active
+   ID: 1057, Name: ds-gp-prd-sdw18, IP: any, Active
+   ID: 1058, Name: ds-gp-prd-sdw19, IP: any, Active
+   ID: 1059, Name: ds-gp-prd-sdw20, IP: any, Active
+   ID: 1060, Name: ds-gp-prd-sdw21, IP: any, Active
+   ID: 1061, Name: ds-gp-prd-sdw22, IP: any, Active
+   ID: 1062, Name: ds-gp-prd-sdw23, IP: any, Active
+   ID: 1063, Name: ds-gp-prd-sdw24, IP: any, Active
+   ID: 1064, Name: ds-gp-dev-mdw, IP: any, Active
+   ID: 1065, Name: ds-gp-dev-smdw, IP: any, Active
+   ID: 1066, Name: ds-gp-dev-sdw1, IP: any, Active
+   ID: 1067, Name: ds-gp-dev-sdw2, IP: any, Active
+   ID: 1068, Name: ds-gp-dev-sdw3, IP: any, Active
+   ID: 1069, Name: ds-gp-dev-sdw4, IP: any, Active
+   ID: 1070, Name: ds-gp-dev-sdw5, IP: any, Active
+   ID: 1071, Name: ds-gp-dev-sdw6, IP: any, Active
+   ID: 1072, Name: ds-gp-dev-sdw7, IP: any, Active
+   ID: 1073, Name: ds-gp-dev-sdw8, IP: any, Active
+
+List of agentless devices:
+
+[root@vm-ossec01p ~]# /var/ossec/bin/agent_control -l
+
+OSSEC HIDS agent_control. List of available agents:
+   ID: 000, Name: vm-ossec01p.tcsbank.ru (server), IP: 127.0.0.1, Active/Local
+   ID: 001, Name: tcs039.tcsbank.ru, IP: 172.16.28.64, Disconnected
+   ID: 1024, Name: m1-hadoop-cs01t.tcsbank.ru, IP: any, Disconnected
+   ID: 1025, Name: m1-hadoop-wk01t.tcsbank.ru, IP: any, Disconnected
+   ID: 1026, Name: m1-hadoop-wk02t.tcsbank.ru, IP: any, Disconnected
+   ID: 1027, Name: m1-hadoop-wk03t.tcsbank.ru, IP: any, Disconnected
+   ID: 1028, Name: m1-hadoop-wk04t.tcsbank.ru, IP: any, Disconnected
+   ID: 003, Name: nag2.tcsbank.ru, IP: 172.16.1.11, Active
+   ID: 1029, Name: vm-sasmon01p, IP: any, Active
+   ID: 004, Name: puppet.tcsbank.ru, IP: 10.216.40.122, Active
+   ID: 005, Name: ds-db01-stb.tcsbank.ru, IP: 10.217.50.23, Active
+   ID: 006, Name: ds-db02-stb.tcsbank.ru, IP: 10.217.50.14, Active
+   ID: 1030, Name: ds-sasetl01x.tcsbank.ru, IP: any, Active
+   ID: 1031, Name: m1-sasetl01t.tcsbank.ru, IP: any, Active
+   ID: 1033, Name: ds-sasetl01p.tcsbank.ru, IP: any, Active
+   ID: 1032, Name: m1-sasetl01p.tcsbank.ru2, IP: any, Disconnected
+   ID: 1034, Name: m1-sasetl01p.tcsbank.ru, IP: any, Never connected
+   ID: 1035, Name: m1-sasetl01p.tcsbank.ru3, IP: any, Active
+   ID: 1036, Name: vm-mail56p.tcsbank.ru, IP: any, Active
+   ID: 1037, Name: ds-sas-ods01t, IP: any, Disconnected
+   ID: 1038, Name: ds-gp-prd-smdw.tcsbank.ru, IP: any, Active
+   ID: 1039, Name: ds-gp-prd-mdw.tcsbank.ru, IP: any, Active
+   ID: 1040, Name: ds-gp-prd-sdw1, IP: any, Active
+   ID: 1041, Name: ds-gp-prd-sdw2, IP: any, Active
+   ID: 1042, Name: ds-gp-prd-sdw3, IP: any, Active
+   ID: 1043, Name: ds-gp-prd-sdw4, IP: any, Active
+   ID: 1044, Name: ds-gp-prd-sdw5, IP: any, Active
+   ID: 1045, Name: ds-gp-prd-sdw6, IP: any, Active
+   ID: 1046, Name: ds-gp-prd-sdw7, IP: any, Active
+   ID: 1047, Name: ds-gp-prd-sdw8, IP: any, Active
+   ID: 1048, Name: ds-gp-prd-sdw9, IP: any, Active
+   ID: 1049, Name: ds-gp-prd-sdw10, IP: any, Active
+   ID: 1050, Name: ds-gp-prd-sdw11, IP: any, Active
+   ID: 1051, Name: ds-gp-prd-sdw12, IP: any, Active
+   ID: 1052, Name: ds-gp-prd-sdw13, IP: any, Active
+   ID: 1053, Name: ds-gp-prd-sdw14, IP: any, Active
+   ID: 1054, Name: ds-gp-prd-sdw15, IP: any, Active
+   ID: 1055, Name: ds-gp-prd-sdw16, IP: any, Active
+   ID: 1056, Name: ds-gp-prd-sdw17, IP: any, Active
+   ID: 1057, Name: ds-gp-prd-sdw18, IP: any, Active
+   ID: 1058, Name: ds-gp-prd-sdw19, IP: any, Active
+   ID: 1059, Name: ds-gp-prd-sdw20, IP: any, Active
+   ID: 1060, Name: ds-gp-prd-sdw21, IP: any, Active
+   ID: 1061, Name: ds-gp-prd-sdw22, IP: any, Active
+   ID: 1062, Name: ds-gp-prd-sdw23, IP: any, Active
+   ID: 1063, Name: ds-gp-prd-sdw24, IP: any, Active
+   ID: 1064, Name: ds-gp-dev-mdw, IP: any, Active
+   ID: 1065, Name: ds-gp-dev-smdw, IP: any, Active
+   ID: 1066, Name: ds-gp-dev-sdw1, IP: any, Active
+   ID: 1067, Name: ds-gp-dev-sdw2, IP: any, Active
+   ID: 1068, Name: ds-gp-dev-sdw3, IP: any, Active
+   ID: 1069, Name: ds-gp-dev-sdw4, IP: any, Active
+   ID: 1070, Name: ds-gp-dev-sdw5, IP: any, Active
+   ID: 1071, Name: ds-gp-dev-sdw6, IP: any, Active
+   ID: 1072, Name: ds-gp-dev-sdw7, IP: any, Active
+   ID: 1073, Name: ds-gp-dev-sdw8, IP: any, Active
+   ID: 1074, Name: m1-gp-tst-mdw.tcsbank.ru, IP: any, Never connected
+   ID: 1075, Name: m1-gp-tst-smdw.tcsbank.ru, IP: any, Never connected
+   ID: 1076, Name: m1-gp-tst-sdw1.tcsbank.ru, IP: any, Never connected
+   ID: 1077, Name: m1-gp-tst-sdw2.tcsbank.ru, IP: any, Never connected
+   ID: 1078, Name: m1-gp-tst-sdw3.tcsbank.ru, IP: any, Never connected
+   ID: 1079, Name: m1-gp-tst-sdw4.tcsbank.ru, IP: any, Never connected
+   ID: 1080, Name: m1-gp-tst-sdw5.tcsbank.ru, IP: any, Never connected
+   ID: 1081, Name: m1-gp-tst-sdw6.tcsbank.ru, IP: any, Never connected
+   ID: 1082, Name: m1-gp-tst-sdw7.tcsbank.ru, IP: any, Never connected
+   ID: 1083, Name: m1-gp-tst-sdw8.tcsbank.ru, IP: any, Never connected
+   ID: 1084, Name: m1-gp-tst-sdw9.tcsbank.ru, IP: any, Never connected
+   ID: 1085, Name: m1-gp-tst-sdw10.tcsbank.ru, IP: any, Never connected
+   ID: 1086, Name: m1-gp-tst-sdw11.tcsbank.ru, IP: any, Never connected
+   ID: 1087, Name: m1-gp-tst-sdw12.tcsbank.ru, IP: any, Never connected
+   ID: 1088, Name: m1-gp-tst-sdw13.tcsbank.ru, IP: any, Never connected
+   ID: 1089, Name: m1-gp-tst-sdw14.tcsbank.ru, IP: any, Never connected
+   ID: 1090, Name: m1-gp-tst-sdw15.tcsbank.ru, IP: any, Never connected
+   ID: 1091, Name: m1-gp-tst-sdw16.tcsbank.ru, IP: any, Never connected
+
+List of agentless devices:
+
+[root@vm-ossec01p ~]#
+[root@vm-ossec01p ~]# /var/ossec/bin/agent_control -l
+
+OSSEC HIDS agent_control. List of available agents:
+   ID: 000, Name: vm-ossec01p.tcsbank.ru (server), IP: 127.0.0.1, Active/Local
+   ID: 001, Name: tcs039.tcsbank.ru, IP: 172.16.28.64, Disconnected
+   ID: 1024, Name: m1-hadoop-cs01t.tcsbank.ru, IP: any, Disconnected
+   ID: 1025, Name: m1-hadoop-wk01t.tcsbank.ru, IP: any, Disconnected
+   ID: 1026, Name: m1-hadoop-wk02t.tcsbank.ru, IP: any, Disconnected
+   ID: 1027, Name: m1-hadoop-wk03t.tcsbank.ru, IP: any, Disconnected
+   ID: 1028, Name: m1-hadoop-wk04t.tcsbank.ru, IP: any, Disconnected
+   ID: 003, Name: nag2.tcsbank.ru, IP: 172.16.1.11, Active
+   ID: 1029, Name: vm-sasmon01p, IP: any, Active
+   ID: 004, Name: puppet.tcsbank.ru, IP: 10.216.40.122, Active
+   ID: 005, Name: ds-db01-stb.tcsbank.ru, IP: 10.217.50.23, Active
+   ID: 006, Name: ds-db02-stb.tcsbank.ru, IP: 10.217.50.14, Active
+   ID: 1030, Name: ds-sasetl01x.tcsbank.ru, IP: any, Active
+   ID: 1031, Name: m1-sasetl01t.tcsbank.ru, IP: any, Active
+   ID: 1033, Name: ds-sasetl01p.tcsbank.ru, IP: any, Active
+   ID: 1032, Name: m1-sasetl01p.tcsbank.ru2, IP: any, Disconnected
+   ID: 1034, Name: m1-sasetl01p.tcsbank.ru, IP: any, Never connected
+   ID: 1035, Name: m1-sasetl01p.tcsbank.ru3, IP: any, Active
+   ID: 1036, Name: vm-mail56p.tcsbank.ru, IP: any, Active
+   ID: 1037, Name: ds-sas-ods01t, IP: any, Disconnected
+   ID: 1038, Name: ds-gp-prd-smdw.tcsbank.ru, IP: any, Active
+   ID: 1039, Name: ds-gp-prd-mdw.tcsbank.ru, IP: any, Active
+   ID: 1040, Name: ds-gp-prd-sdw1, IP: any, Active
+   ID: 1041, Name: ds-gp-prd-sdw2, IP: any, Active
+   ID: 1042, Name: ds-gp-prd-sdw3, IP: any, Active
+   ID: 1043, Name: ds-gp-prd-sdw4, IP: any, Active
+   ID: 1044, Name: ds-gp-prd-sdw5, IP: any, Active
+   ID: 1045, Name: ds-gp-prd-sdw6, IP: any, Active
+   ID: 1046, Name: ds-gp-prd-sdw7, IP: any, Active
+   ID: 1047, Name: ds-gp-prd-sdw8, IP: any, Active
+   ID: 1048, Name: ds-gp-prd-sdw9, IP: any, Active
+   ID: 1049, Name: ds-gp-prd-sdw10, IP: any, Active
+   ID: 1050, Name: ds-gp-prd-sdw11, IP: any, Active
+   ID: 1051, Name: ds-gp-prd-sdw12, IP: any, Active
+   ID: 1052, Name: ds-gp-prd-sdw13, IP: any, Active
+   ID: 1053, Name: ds-gp-prd-sdw14, IP: any, Active
+   ID: 1054, Name: ds-gp-prd-sdw15, IP: any, Active
+   ID: 1055, Name: ds-gp-prd-sdw16, IP: any, Active
+   ID: 1056, Name: ds-gp-prd-sdw17, IP: any, Active
+   ID: 1057, Name: ds-gp-prd-sdw18, IP: any, Active
+   ID: 1058, Name: ds-gp-prd-sdw19, IP: any, Active
+   ID: 1059, Name: ds-gp-prd-sdw20, IP: any, Active
+   ID: 1060, Name: ds-gp-prd-sdw21, IP: any, Active
+   ID: 1061, Name: ds-gp-prd-sdw22, IP: any, Active
+   ID: 1062, Name: ds-gp-prd-sdw23, IP: any, Active
+   ID: 1063, Name: ds-gp-prd-sdw24, IP: any, Active
+   ID: 1064, Name: ds-gp-dev-mdw, IP: any, Active
+   ID: 1065, Name: ds-gp-dev-smdw, IP: any, Active
+   ID: 1066, Name: ds-gp-dev-sdw1, IP: any, Active
+   ID: 1067, Name: ds-gp-dev-sdw2, IP: any, Active
+   ID: 1068, Name: ds-gp-dev-sdw3, IP: any, Active
+   ID: 1069, Name: ds-gp-dev-sdw4, IP: any, Active
+   ID: 1070, Name: ds-gp-dev-sdw5, IP: any, Active
+   ID: 1071, Name: ds-gp-dev-sdw6, IP: any, Active
+   ID: 1072, Name: ds-gp-dev-sdw7, IP: any, Active
+   ID: 1073, Name: ds-gp-dev-sdw8, IP: any, Active
+   ID: 1074, Name: m1-gp-tst-mdw.tcsbank.ru, IP: any, Active
+   ID: 1075, Name: m1-gp-tst-smdw.tcsbank.ru, IP: any, Active
+   ID: 1076, Name: m1-gp-tst-sdw1.tcsbank.ru, IP: any, Active
+   ID: 1077, Name: m1-gp-tst-sdw2.tcsbank.ru, IP: any, Active
+   ID: 1078, Name: m1-gp-tst-sdw3.tcsbank.ru, IP: any, Active
+   ID: 1079, Name: m1-gp-tst-sdw4.tcsbank.ru, IP: any, Active
+   ID: 1080, Name: m1-gp-tst-sdw5.tcsbank.ru, IP: any, Active
+   ID: 1081, Name: m1-gp-tst-sdw6.tcsbank.ru, IP: any, Active
+   ID: 1082, Name: m1-gp-tst-sdw7.tcsbank.ru, IP: any, Active
+   ID: 1083, Name: m1-gp-tst-sdw8.tcsbank.ru, IP: any, Active
+   ID: 1084, Name: m1-gp-tst-sdw9.tcsbank.ru, IP: any, Active
+   ID: 1085, Name: m1-gp-tst-sdw10.tcsbank.ru, IP: any, Active
+   ID: 1086, Name: m1-gp-tst-sdw11.tcsbank.ru, IP: any, Active
+   ID: 1087, Name: m1-gp-tst-sdw12.tcsbank.ru, IP: any, Active
+   ID: 1088, Name: m1-gp-tst-sdw13.tcsbank.ru, IP: any, Active
+   ID: 1089, Name: m1-gp-tst-sdw14.tcsbank.ru, IP: any, Active
+   ID: 1090, Name: m1-gp-tst-sdw15.tcsbank.ru, IP: any, Active
+   ID: 1091, Name: m1-gp-tst-sdw16.tcsbank.ru, IP: any, Active
+
+List of agentless devices:
+
+[root@vm-ossec01p ~]# ps aux | grep ossec-auth[d]
+root     28027  0.0  0.0  39564  2752 pts/0    S    18:14   0:00 /var/ossec/bin/ossec-authd -p 1515
+[root@vm-ossec01p ~]# kill -i 28027
+-bash: kill: i: invalid signal specification
+[root@vm-ossec01p ~]# kill -9 28027
+[root@vm-ossec01p ~]#
+................................................................................
+[root@m1-gp-tst-smdw 20151005-1826]# cat /var/ossec/etc/shared/agent.conf                                                                                                                                   <!-- OSSEC vm-ossec01p agent config -->
+
+<agent_config os="Linux">
+  <syscheck>
+    <!-- Frequency that syscheck is executed -- default every 2 hours -->
+    <frequency>7200</frequency>
+    <scan_on_start>no</scan_on_start>
+    <auto_ignore>no</auto_ignore>
+
+    <!-- Directories to check  (perform all possible verifications) -->
+    <directories report_changes="yes" check_all="yes" realtime="yes">/etc</directories>
+    <directories report_changes="yes" check_all="yes" realtime="yes">/var/spool/cron</directories>
+
+    <!-- Files/directories to ignore -->
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/mnttab</ignore>
+    <ignore>/etc/hosts.deny</ignore>
+    <ignore>/etc/mail/statistics</ignore>
+    <ignore>/etc/random-seed</ignore>
+    <ignore>/etc/adjtime</ignore>
+    <ignore>/etc/httpd/logs</ignore>
+    <ignore>/etc/utmpx</ignore>
+    <ignore>/etc/wtmpx</ignore>
+    <ignore>/etc/cups/certs</ignore>
+    <ignore>/etc/dumpdates</ignore>
+    <ignore>/etc/svc/volatile</ignore>
+    <ignore>/etc/ld.so.cache</ignore>
+    <ignore>/etc/prelink.cache</ignore>
+    <ignore>/etc/CommVaultRegistry</ignore>
+    <ignore>/etc/gxsetup_guid</ignore>
+    <ignore>/etc/blkid</ignore>
+    <ignore>/etc/aliases.db</ignore>
+    <ignore>/etc/yum.repos.d/redhat.repo</ignore>
+    <ignore>/etc/passwd-</ignore>
+    <ignore>/etc/shadow-</ignore>
+  </syscheck>
+
+  <!-- Files to monitor (localfiles) -->
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/messages</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/maillog</location>
+  </localfile>
+
+</agent_config>
+
+<agent_config os="Windows">
+  <syscheck>
+    <!-- Frequency that syscheck is executed - default to every 22 hours -->
+    <frequency>79200</frequency>
+
+    <!-- Windows files to ignore -->
+    <ignore>C:\WINDOWS/System32/LogFiles</ignore>
+    <ignore>C:\WINDOWS/Debug</ignore>
+    <ignore>C:\WINDOWS/WindowsUpdate.log</ignore>
+    <ignore>C:\WINDOWS/iis6.log</ignore>
+    <ignore>C:\WINDOWS/system32/wbem/Logs</ignore>
+    <ignore>C:\WINDOWS/system32/wbem/Repository</ignore>
+    <ignore>C:\WINDOWS/Prefetch</ignore>
+    <ignore>C:\WINDOWS/PCHEALTH/HELPCTR/DataColl</ignore>
+    <ignore>C:\WINDOWS/SoftwareDistribution</ignore>
+    <ignore>C:\WINDOWS/Temp</ignore>
+    <ignore>C:\WINDOWS/system32/config</ignore>
+    <ignore>C:\WINDOWS/system32/spool</ignore>
+    <ignore>C:\WINDOWS/system32/CatRoot</ignore>
+  </syscheck>
+</agent_config>
+
+<agent_config>
+  <rootcheck>
+    <rootkit_files>/var/ossec/etc/shared/rootkit_files.txt</rootkit_files>
+    <rootkit_trojans>/var/ossec/etc/shared/rootkit_trojans.txt</rootkit_trojans>
+    <system_audit>/var/ossec/etc/shared/system_audit_rcl.txt</system_audit>
+    <system_audit>/var/ossec/etc/shared/cis_debian_linux_rcl.txt</system_audit>
+    <system_audit>/var/ossec/etc/shared/cis_rhel_linux_rcl.txt</system_audit>
+    <system_audit>/var/ossec/etc/shared/cis_rhel5_linux_rcl.txt</system_audit>
+  </rootcheck>
+
+</agent_config>
+[root@m1-gp-tst-smdw 20151005-1826]#
+................................................................................
+

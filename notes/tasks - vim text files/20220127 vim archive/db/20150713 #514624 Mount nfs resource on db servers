@@ -1,0 +1,267 @@
+
+Параметры запроса
+[редактировать критичность]
+Номер	514624
+Название	№514624
+Приоритет	Средний
+Класс обслуживания	9x5
+Дата и время обращения	13.07.2015 15:03
+Дата регистрации	13.07.2015 15:03
+Тип запроса	Запрос на обслуживание
+Категория	
+Критичность	1 - 1-10 клиентов
+Срочность	Низкая
+Описание запроса
+Прошу создать общий раздел50Gb для серверов продуктовых и стендбай БД с целью хранения на нём дистрибутивов ПО Oracle и скриптов мониторинга баз данных. 
+
+ds-db01-prod 
+ds-db01-stb 
+m1-db01-prod 
+
+ds-db02-prod 
+ds-db02-stb 
+m1-db02-prod 
+
+ds-db05-prod 
+m1-db05-prod 
+m1-db05-stb 
+
+ds-db06-prod 
+m1-db06-prod 
+m1-db06-stb 
+
+ds-db07-prod 
+ds-db07-stb 
+m1-db07-prod 
+
+ds-db08-prod 
+m1-db08-prod 
+m1-db08-stb 
+
+
+
+С уважением, 
+
+Матвей Новиков 
+Администратор баз данных 
+
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО	Новиков Матвей
+Соглашение	Базовое соглашение
+Сервис	Другое
+Контактное лицо	Новиков Матвей
+Контактный e-mail	m.novikov@tinkoff.ru
+Контактные телефоны	+7-906-719-65-54, 2150
+
+................................................................................
+................................................................................
+
+[root@ds-db01-stb ~]# showmount -e v6250-ds | grep -e "/vol/common/distr_oradb"
+/vol/common/distr_oradb                        m1-db08-stb,m1-db08-prod,ds-db08-prod,m1-db07-prod,ds-db07-stb,ds-db07-prod,m1-db06-stb,m1-db06-prod,ds-db06-prod,m1-db05-stb,m1-db05-prod,ds-db05-prod,m1-db02-prod,ds-db02-stb,ds-db02-prod,m1-db01-prod,ds-db01-stb,ds-db01-prod
+[root@ds-db01-stb ~]#
+
+
+[root@ds-db01-stb ~]# vim /etc/fstab
+...
+
+# SD#514624
+v6250-ds:/vol/common/distr_oradb        /mnt/distr_oradb        nfs     rw,bg,hard,rsize=65536,wsize=65536,nfsvers=3,timeo=600,tcp      0       0
+
+"/etc/fstab" 30L, 2425C written
+[root@ds-db01-stb ~]# mount /mnt/distr_oradb
+[root@ds-db01-stb ~]#
+
+[root@ds-db01-stb ~]# df -h /mnt/distr_oradb
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G     0   50G   0% /mnt/distr_oradb
+[root@ds-db01-stb ~]# findmnt /mnt/distr_oradb
+TARGET           SOURCE                           FSTYPE OPTIONS
+/mnt/distr_oradb v6250-ds:/vol/common/distr_oradb nfs    rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.67.9,mountvers=3,mountport=4046,m
+[root@ds-db01-stb ~]#
+
+[root@ds-db01-stb ~]# mount -t nfs | grep -e "/mnt/distr_oradb"
+v6250-ds:/vol/common/distr_oradb on /mnt/distr_oradb type nfs (rw,bg,hard,rsize=65536,wsize=65536,nfsvers=3,timeo=600,tcp,addr=10.217.67.9)
+[root@ds-db01-stb ~]# grep -e "/mnt/distr_oradb" /proc/mounts
+v6250-ds:/vol/common/distr_oradb /mnt/distr_oradb nfs rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.67.9,mountvers=3,mountport=4046,mountproto=tcp,local_lock=none,addr=10.217.67.9 0 0
+[root@ds-db01-stb ~]#
+
+................................................................................
+................................................................................
+
+
+Tue Jul 14 11:47:24 MSK 2015
+[support@centos00 .vim]$ for var1 in $(cat) ; do echo -e "\n${var1}" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( sudo -i sh -c ' df -h /mnt/distr_oradb ' )" ; done                       ds-db01-prod
+ds-db01-stb
+m1-db01-prod
+ds-db02-prod
+ds-db02-stb
+m1-db02-prod
+ds-db05-prod
+m1-db05-prod
+m1-db05-stb
+ds-db06-prod
+m1-db06-prod
+m1-db06-stb
+ds-db07-prod
+ds-db07-stb
+m1-db07-prod
+ds-db08-prod
+m1-db08-prod
+m1-db08-stb
+
+ds-db01-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db01-prod closed.
+
+ds-db01-stb
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db01-stb closed.
+
+m1-db01-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db01-prod closed.
+
+ds-db02-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db02-prod closed.
+
+ds-db02-stb
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db02-stb closed.
+
+m1-db02-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db02-prod closed.
+
+ds-db05-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db05-prod closed.
+
+m1-db05-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db05-prod closed.
+
+m1-db05-stb
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db05-stb closed.
+
+ds-db06-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db06-prod closed.
+
+m1-db06-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db06-prod closed.
+
+m1-db06-stb
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db06-stb closed.
+
+ds-db07-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db07-prod closed.
+
+ds-db07-stb
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db07-stb closed.
+
+m1-db07-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db07-prod closed.
+
+ds-db08-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to ds-db08-prod closed.
+
+m1-db08-prod
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db08-prod closed.
+
+m1-db08-stb
+[sudo] password for bsv:
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/distr_oradb
+                       50G  108M   50G   1% /mnt/distr_oradb
+Connection to m1-db08-stb closed.
+[support@centos00 .vim]$
+
+................................................................................
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

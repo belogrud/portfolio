@@ -1,0 +1,138 @@
+
+
+
+................................................................................
+
+#
+#	https://serverfault.com/questions/716982/how-to-raise-max-no-of-file-descriptors-for-daemons-running-on-debian-jessie
+#
+
+
+
+................................................................................
+
+
+[root@vm-pgbouncer01p ~]# vim /usr/lib/systemd/system/pgbouncer.service
+
+[root@vm-pgbouncer01p ~]# grep -e "LimitNOFILE" -A 2 -B 2 /usr/lib/systemd/system/pgbouncer.service
+
+[Service]
+LimitNOFILE=16384
+Type=forking
+
+[root@vm-pgbouncer01p ~]#
+
+................................................................................
+
+
+[root@vm-pgbouncer01p ~]# systemctl start pgbouncer.service
+[root@vm-pgbouncer01p ~]# systemctl status pgbouncer.service
+● pgbouncer.service - A lightweight connection pooler for PostgreSQL
+   Loaded: loaded (/usr/lib/systemd/system/pgbouncer.service; disabled; vendor preset: disabled)
+   Active: active (running) since Fri 2017-10-20 19:47:34 MSK; 5s ago
+  Process: 17502 ExecStart=/usr/bin/pgbouncer -d -q ${BOUNCERCONF} (code=exited, status=0/SUCCESS)
+ Main PID: 17504 (pgbouncer)
+   CGroup: /system.slice/pgbouncer.service
+           └─17504 /usr/bin/pgbouncer -d -q /etc/pgbouncer/pgbouncer.ini
+
+Oct 20 19:47:34 vm-pgbouncer01p.tcsbank.ru systemd[1]: Starting A lightweight connection pooler for PostgreSQL...
+Oct 20 19:47:34 vm-pgbouncer01p.tcsbank.ru systemd[1]: PID file /var/run/pgbouncer/pgbouncer.pid not readable...art.
+Oct 20 19:47:34 vm-pgbouncer01p.tcsbank.ru systemd[1]: Started A lightweight connection pooler for PostgreSQL.
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@vm-pgbouncer01p ~]#
+
+[root@vm-pgbouncer01p ~]# ps aux | grep pgbouncer
+root      8028  0.0  0.0 193392  2792 pts/2    S    Sep25   0:00 sudo -i -u pgbouncer bash
+pgbounc+ 17504  6.3  0.0  43328  2320 ?        R    19:47   0:01 /usr/bin/pgbouncer -d -q /etc/pgbouncer/pgbouncer.ini
+root     17509  0.0  0.0 112648   960 pts/1    S+   19:47   0:00 grep --color=auto pgbouncer
+[root@vm-pgbouncer01p ~]#
+
+[root@vm-pgbouncer01p ~]# cat /proc/17504/limits
+Limit                     Soft Limit           Hard Limit           Units
+Max cpu time              unlimited            unlimited            seconds
+Max file size             unlimited            unlimited            bytes
+Max data size             unlimited            unlimited            bytes
+Max stack size            8388608              unlimited            bytes
+Max core file size        0                    unlimited            bytes
+Max resident set          unlimited            unlimited            bytes
+Max processes             15078                15078                processes
+Max open files            16384                16384                files
+Max locked memory         65536                65536                bytes
+Max address space         unlimited            unlimited            bytes
+Max file locks            unlimited            unlimited            locks
+Max pending signals       15078                15078                signals
+Max msgqueue size         819200               819200               bytes
+Max nice priority         0                    0
+Max realtime priority     0                    0
+Max realtime timeout      unlimited            unlimited            us
+[root@vm-pgbouncer01p ~]# 
+
+
+
+[root@vm-pgbouncer01p ~]# less /var/log/pgbouncer/pgbouncer.log
+
+
+
+
+................................................................................
+
+
+[root@vm-pgbouncer01p ~]# systemctl enable pgbouncer.service
+Created symlink from /etc/systemd/system/multi-user.target.wants/pgbouncer.service to /usr/lib/systemd/system/pgbouncer.service.
+[root@vm-pgbouncer01p ~]# systemctl status pgbouncer.service
+● pgbouncer.service - A lightweight connection pooler for PostgreSQL
+   Loaded: loaded (/usr/lib/systemd/system/pgbouncer.service; enabled; vendor preset: disabled)
+   Active: active (running) since Fri 2017-10-20 19:47:34 MSK; 13min ago
+ Main PID: 17504 (pgbouncer)
+   CGroup: /system.slice/pgbouncer.service
+           └─17504 /usr/bin/pgbouncer -d -q /etc/pgbouncer/pgbouncer.ini
+
+Oct 20 19:47:34 vm-pgbouncer01p.tcsbank.ru systemd[1]: Starting A lightweight connection pooler for PostgreSQL...
+Oct 20 19:47:34 vm-pgbouncer01p.tcsbank.ru systemd[1]: PID file /var/run/pgbouncer/pgbouncer.pid not readable...art.
+Oct 20 19:47:34 vm-pgbouncer01p.tcsbank.ru systemd[1]: Started A lightweight connection pooler for PostgreSQL.
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@vm-pgbouncer01p ~]#
+
+................................................................................
+
+
+[root@vm-pgbouncer01p ~]# less /var/log/pgbouncer/pgbouncer.log
+
+#
+#	How it was at the begining.
+#
+...
+2017-10-20 19:46:04.038 14544 LOG C-0x7f693d74f968: genius/genius@10.216.48.16:39134 login attempt: db=genius user=g
+enius tls=no
+2017-10-20 19:46:05.658 17482 LOG File descriptor limit: 1024 (H:4096), max_client_conn: 1600, max fds possible: 4250
+2017-10-20 19:46:05.660 17482 LOG takeover_init: launching connection
+2017-10-20 19:46:05.660 17482 LOG S-0x1920a40: pgbouncer/pgbouncer@unix:5432 new connection to server
+2017-10-20 19:46:09.037 14544 ERROR accept() failed: Too many open files
+2017-10-20 19:46:09.038 14544 WARNING lookup failed: ds-postgresql02p: result=0
+2017-10-20 19:46:09.038 14544 LOG S-0x107e918: sub1/sub01ds@(bad-af):0 closing because: server dns lookup failed (ag...
+
+
+#
+#	How it was.
+...
+2017-10-17 16:13:14.436 5606 LOG File descriptor limit: 1024 (H:4096), max_client_conn: 1600, max fds possible: 4250
+2017-10-17 16:13:14.438 5606 LOG takeover_init: launching connection
+...
+
+#
+#	How it became.
+#
+...
+2017-10-20 19:47:34.154 17502 LOG File descriptor limit: 16384 (H:16384), max_client_conn: 1600, max fds possible: 4
+250
+2017-10-20 19:47:34.156 17502 LOG Stale pidfile, removing
+2017-10-20 19:47:34.158 17504 LOG listening on 10.217.50.21:5432
+2017-10-20 19:47:34.158 17504 LOG listening on unix:/tmp/.s.PGSQL.5432
+2017-10-20 19:47:34.158 17504 LOG process up: pgbouncer 1.7.2, libevent 2.0.21-stable (epoll), adns: c-ares 1.10.0,
+tls: OpenSSL 1.0.1e-fips 11 Feb 2013
+2017-10-20 19:47:34.636 17504 LOG S-0x1f1f320: tcb/pgbouncer@10.217.50.190:5432 new connection to server (from 10.21
+7.50.21:39640)
+...
+
+
+

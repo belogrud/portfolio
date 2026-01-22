@@ -1,0 +1,133 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   896835(главный)
+Название    №896835(главный)
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  08.06.2016 09:51
+Дата регистрации    08.06.2016 09:51
+Тип запроса Управление доступами
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый.
+Просьба настроить sftp для обмена файлами с CommFactor.
+
+Спасибо.
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Исупов Евгений В
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Другие сервисы
+Контактное лицо Исупов Евгений В
+Контактный e-mail   e.isupov@tinkoff.ru
+Контактные телефоны 2701
+
+................................................................................
+................................................................................
+
+
+[support@centos00 ~]$ pwgen -c -n -s -C 10 28
+jtllGpXir3 zmevR6DaEL 6tEOW5J8oy GU3Eyc6cb0 Kmro0DGkiA OdyP6yT9Cw 7B7hPimOXi
+f1B3nx3Y7G cqsES6FACA 9R9NGXxwOm Zvd7dxHaqo zL2QLkQewj ZSA4TqaNMA OU3YVfDfAx
+GltpW5QuSF ChDo0lWr0u kTZTAdWII0 9d6L5REljf w4tqbX5xaU kQ3mcH95uz p34PfY5VRv
+Mx3DTSOrxt Jyc9HTNcpA oSu0N0dR3R 4lKsfSCxBB vMeCnUE6Mj wMLcilfAb0 a7a3wQi1jm
+[support@centos00 ~]$
+
+ZSA4TqaNMA
+
+[support@centos00 ~]$ grub-crypt
+Password:
+Retype password:
+$6$R4fUuUzBYsrTZcWz$PM11/kdN7b7AODl7mImei2t0oIHUcFBp6GjIeVrSznHzbKZGW4Rbx2JOSidXwZGegf9sQ1ntGviNYtfb5.8mR.
+[support@centos00 ~]$
+
+[root@vm-dmz-app112 ~]# useradd -g sftpusers -u 1011 -d /home/sftp/commfactor -s /sbin/nologin -p '$6$R4fUuUzBYsrTZcWz$PM11/kdN7b7AODl7mImei2t0oIHUcFBp6GjIeVrSznHzbKZGW4Rbx2JOSidXwZGegf9sQ1ntGviNYtfb5.8mR.' commfactor
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# id !$
+id commfactor
+uid=1011(commfactor) gid=496(sftpusers) groups=496(sftpusers)
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# rm ~commfactor/{.bash_logout,.bash_profile,.bashrc,.zshrc}
+rm: remove regular file `/home/sftp/commfactor/.bash_logout'? y
+rm: remove regular file `/home/sftp/commfactor/.bash_profile'? y
+rm: remove regular file `/home/sftp/commfactor/.bashrc'? y
+rm: remove regular file `/home/sftp/commfactor/.zshrc'? y
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# mkdir ~commfactor/upload && mkdir ~commfactor/download
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# chown commfactor:sftpusers ~commfactor/{upload,download}
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# ls -Alhd ~commfactor/{upload,download}
+drwxr-xr-x. 2 commfactor sftpusers 4.0K Jun  9 14:39 /home/sftp/commfactor/download
+drwxr-xr-x. 2 commfactor sftpusers 4.0K Jun  9 14:39 /home/sftp/commfactor/upload
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# chown root:root ~commfactor/
+[root@vm-dmz-app112 ~]# chmod 0755 ~commfactor/
+[root@vm-dmz-app112 ~]# ls -Alhd ~commfactor/
+drwxr-xr-x. 4 root root 4.0K Jun  9 14:39 /home/sftp/commfactor/
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# service sshd restart
+Stopping sshd:                                             [  OK  ]
+Starting sshd:                                             [  OK  ]
+[root@vm-dmz-app112 ~]#
+
+
+[support@centos00 ~]$ sftp commfactor@ftp03.tcsbank.ru
+Connecting to ftp03.tcsbank.ru...
+commfactor@ftp03.tcsbank.ru's password:
+sftp> ls -l
+drwxr-xr-x    2 1011     496          4096 Jun  9 11:39 download
+drwxr-xr-x    2 1011     496          4096 Jun  9 11:39 upload
+sftp> !echo "test1" > testfile.tmp
+sftp> cd upload
+sftp> put testfile.tmp
+Uploading testfile.tmp to /upload/testfile.tmp
+testfile.tmp                                                                                                                                                       100%    6     0.0KB/s   00:00
+sftp> ls -l
+-rw-r--r--    1 1011     496             6 Jun  9 11:45 testfile.tmp
+sftp> !rm testfile.tmp
+sftp> !ls testfile.tmp
+ls: cannot access testfile.tmp: No such file or directory
+Shell exited with status 2
+sftp> get testfile.tmp
+Fetching /upload/testfile.tmp to testfile.tmp
+/upload/testfile.tmp                                                                                                                                               100%    6     0.0KB/s   00:00
+sftp> !ls testfile.tmp
+testfile.tmp
+sftp> rm testfile.tmp
+Removing /upload/testfile.tmp
+sftp> ls -l
+sftp> !rm testfile.tmp
+sftp> quit
+[support@centos00 ~]$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

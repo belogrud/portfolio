@@ -1,0 +1,250 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   719659
+Название    №719659
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  03.02.2016 09:58
+Дата регистрации    03.02.2016 09:58
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, просьба изменить список оповещаемых лиц при сбоях для хоста vm-dbamon01. На данный момент оповещения получают r.tedeev, d.mikheev, d.nikolaenko, a.kireiko .
+
+Необходимо убрать d.mikheev и r.tedeev (не работают больше в банке) и добавить m.meluzov (смс оповещение)
+
+Возможно, этот список ответственных используется и у других ВМ, тогда на них тоже нужно заменить этот список.
+
+
+
+С уважением,
+
+Михаил Мелузов
+Специалист по сопровождению
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Мелузов Михаил Ю
+Соглашение  Базовое соглашение
+Сервис  Другое
+Контактное лицо Мелузов Михаил Ю
+Контактный e-mail   m.meluzov@tinkoff.ru
+Контактные телефоны 79164185183, 2507
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description filename contacts where contacts__contains="d.mikheev" or contacts_contains="r.tedeev"
+host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+vm-dbamon01          BPM Pkg Check Fail   /etc/nagios/objects/servers/vmware/vm-dbamon01.cfg a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, d.mikheev_email, d.mikheev_sms, r.tedeev_email, r.tedeev_sms,Naumen_nag_request_email
+vm-dbamon01          BPM Pkg Check Fail 2 /etc/nagios/objects/servers/vmware/vm-dbamon01.cfg a.kireiko_email,a.kireiko_sms,d.nikolaenko_email,d.nikolaenko_sms,d.mikheev_email,d.mikheev_sms,Naumen_nag_request_email,r.tedeev_email,r.tedeev_sms
+vm-dbamon01          BPM-DEV db health    /etc/nagios/objects/servers/vmware/vm-dbamon01.cfg a.kireiko_email,a.kireiko_sms,d.nikolaenko_email,d.nikolaenko_sms,d.mikheev_email,d.mikheev_sms,r.tedeev_email,r.tedeev_sms
+----------3 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description filename contacts where contacts__contains="m.meluzov"
+host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# vim +view /etc/nagios/objects/contacts/m.efremov.cfg -o /etc/nagios/objects/contacts/m.meluzov.cfg
+[root@vm-vol-nag01t nagios]# /usr/sbin/nagios -v /etc/nagios/nagios.cfg
+
+#   Not works...
+#[root@vm-vol-nag01t nagios]# pynag list contacts where object_type=service and service_description="BPM Pkg Check Fail" and host_name=vm-dbamon01 --quiet | egrep -v -E -e "d.mikheev_.*,"
+#[root@vm-vol-nag01t nagios]# echo "a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, d.mikheev_email, d.mikheev_sms, r.tedeev_email, r.tedeev_sms,Naumen_nag_request_email" | sed 's/d.mikheev_(sms|email),//;s/r.tedeev_(sms|email),//'
+#[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do var2="$(pynag list contacts where object_type=service and service_description="${var1}" and host_name=vm-dbamon01 --quiet)" ; echo ; echo -e "${var1}\nBefore: ${var2}" ; pynag update set contacts="$(pynag list contacts where object_type=service and service_description="${var1}" --quiet),m.meluzov_sms" where object_type=service and service_description="${var1}" ; var3="$(pynag list contacts where object_type=service and service_description="${var1}" and host_name=vm-dbamon01 --quiet)" ; echo -e "After : ${var3}" ; done
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# pynag list contacts where object_type=service and service_description="BPM Pkg Check Fail" and host_name=vm-dbamon01                                                          contacts
+--------------------------------------------------------------------------------
+a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, d.mikheev_email, d.mikheev_sms, r.tedeev_email, r.tedeev_sms,Naumen_nag_request_email
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]# pynag update set contacts="a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email" where object_type=service and service_description="BPM Pkg Check Fail" and host_name=vm-dbamon01
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+service              vm-dbamon01/BPM Pkg Check Fail /etc/nagios/objects/servers/vmware/vm-dbamon01.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/BPM Pkg Check Fail): changed contacts to a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email
+Updated 1 objects
+[root@vm-vol-nag01t nagios]# pynag list contacts where object_type=service and service_description="BPM Pkg Check Fail" and host_name=vm-dbamon01                                                          contacts
+--------------------------------------------------------------------------------
+a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+
+[root@vm-vol-nag01t nagios]# pynag list contacts where object_type=service and service_description="BPM Pkg Check Fail 2" and host_name=vm-dbamon01                                                        contacts
+--------------------------------------------------------------------------------
+a.kireiko_email,a.kireiko_sms,d.nikolaenko_email,d.nikolaenko_sms,d.mikheev_email,d.mikheev_sms,Naumen_nag_request_email,r.tedeev_email,r.tedeev_sms
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]# pynag update set contacts="a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email" where object_type=service and service_description="BPM Pkg Check Fail 2" and host_name=vm-dbamon01
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+service              vm-dbamon01/BPM Pkg Check Fail 2 /etc/nagios/objects/servers/vmware/vm-dbamon01.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/BPM Pkg Check Fail 2): changed contacts to a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email
+Updated 1 objects
+[root@vm-vol-nag01t nagios]# pynag list contacts where object_type=service and service_description="BPM Pkg Check Fail 2" and host_name=vm-dbamon01                                                        contacts
+--------------------------------------------------------------------------------
+a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+
+[root@vm-vol-nag01t nagios]# pynag list contacts where object_type=service and service_description="BPM-DEV db health" and host_name=vm-dbamon01
+contacts
+--------------------------------------------------------------------------------
+a.kireiko_email,a.kireiko_sms,d.nikolaenko_email,d.nikolaenko_sms,d.mikheev_email,d.mikheev_sms,r.tedeev_email,r.tedeev_sms
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]# pynag update set contacts="a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms" where object_type=service and service_description="BPM-DEV db health" and host_name=vm-dbamon01
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+service              vm-dbamon01/BPM-DEV db health /etc/nagios/objects/servers/vmware/vm-dbamon01.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/BPM-DEV db health): changed contacts to a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms
+Updated 1 objects
+[root@vm-vol-nag01t nagios]# pynag list contacts where object_type=service and service_description="BPM-DEV db health" and host_name=vm-dbamon01                                                           contacts
+--------------------------------------------------------------------------------
+a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# /usr/sbin/nagios -v /etc/nagios/nagios.cfg | tail
+Checking for circular paths between hosts...
+Checking for circular host and service dependencies...
+Checking global event handlers...
+Checking obsessive compulsive processor commands...
+Checking misc settings...
+
+Total Warnings: 133
+Total Errors:   0
+
+Things look okay - No serious problems were detected during the pre-flight check
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# git commit --author=author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#719659. Change contact information in three services for host vm-dbamon01. Removed d.mikheev and r.tedeev. Added m.meluzov sms only. Changed three services \"BPM Pkg Check Fail\", \"BPM Pkg Check Fail 2\", \"BPM-DEV db health\"." objects/servers/vmware/vm-dbamon01.cfg objects/contacts/m.meluzov.cfg
+[master c055490] SD#719659. Change contact information in three services for host vm-dbamon01. Removed d.mikheev and r.tedeev. Added m.meluzov sms only. Changed three services "BPM Pkg Check Fail", "BPM Pkg Check Fail 2", "BPM-DEV db health".
+ Author: author=Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+ create mode 100644 objects/contacts/m.meluzov.cfg
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# service nagios restart
+Running configuration check...done.
+Stopping nagios: ...done.
+Starting nagios: done.
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description contacts where host_name=vm-dbamon01 object_type=service and contacts__contains="m.meluzov"
+host_name            service_description  contacts
+--------------------------------------------------------------------------------
+vm-dbamon01          BPM Pkg Check Fail   a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email
+vm-dbamon01          BPM Pkg Check Fail 2 a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms, Naumen_nag_request_email
+vm-dbamon01          BPM-DEV db health    a.kireiko_email, a.kireiko_sms, d.nikolaenko_email, d.nikolaenko_sms, m.meluzov_sms
+----------3 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description filename contacts where contacts__contains="d.mikheev" or contacts__contains="r.tedeev"
+host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+hq-msk-var-sps       SharePoint Server Search 14 Service /etc/nagios/objects/servers/dc-var-windows/hq-msk-var-sps.cfg d.nikolaenko_sms, r.tedeev_sms, a.kireiko_sms1
+m1-db06-prod         CreditHistorySASScoringModuleApp /etc/nagios/objects/servers/dc-m1/linux/db06/m1-db06-prod.cfg Naumen_nag_request_email,a.alekseev_email,a.golovin_email,a.kireiko_email,y.litvin_email,d.nikolaenko_email,r.tedeev_email
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description filename contacts where contacts__contains="d.mikheev" or contacts__contains="r.tedeev"
+host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+hq-msk-var-sps       SharePoint Server Search 14 Service /etc/nagios/objects/servers/dc-var-windows/hq-msk-var-sps.cfg d.nikolaenko_sms, r.tedeev_sms, a.kireiko_sms1
+m1-db06-prod         CreditHistorySASScoringModuleApp /etc/nagios/objects/servers/dc-m1/linux/db06/m1-db06-prod.cfg Naumen_nag_request_email,a.alekseev_email,a.golovin_email,a.kireiko_email,y.litvin_email,d.nikolaenko_email,r.tedeev_email
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]# pynag update set contacts="d.nikolaenko_sms, a.kireiko_sms1" where object_type=service and service_description="SharePoint Server Search 14 Service" and host_name=hq-msk-var-sps
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+service              hq-msk-var-sps/SharePoint Server Search 14 Service /etc/nagios/objects/servers/dc-var-windows/hq-msk-var-sps.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/dc-var-windows/hq-msk-var-sps.cfg (hq-msk-var-sps/SharePoint Server Search 14 Service): changed contacts to d.nikolaenko_sms, a.kireiko_sms1
+Updated 1 objects
+[root@vm-vol-nag01t nagios]# pynag update set contacts="Naumen_nag_request_email,a.alekseev_email,a.golovin_email,a.kireiko_email,y.litvin_email,d.nikolaenko_email" where object_type=service and service_description="CreditHistorySASScoringModuleApp" and host_name=m1-db06-prod
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+service              m1-db06-prod/CreditHistorySASScoringModuleApp /etc/nagios/objects/servers/dc-m1/linux/db06/m1-db06-prod.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/dc-m1/linux/db06/m1-db06-prod.cfg (m1-db06-prod/CreditHistorySASScoringModuleApp): changed contacts to Naumen_nag_request_email,a.alekseev_email,a.golovin_email,a.kireiko_email,y.litvin_email,d.nikolaenko_email
+Updated 1 objects
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description filename contacts where contacts__contains="d.mikheev" or contacts__contains="r.tedeev"                                              host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git commit --author=author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#719659. Change contact information. Removed r.tedeev." objects/servers/dc-var-windows/hq-msk-var-sps.cfg objects/servers/dc-m1/linux/db06/m1-db06-prod.cfg
+[master 890ee6f] SD#719659. Change contact information. Removed r.tedeev.
+ Author: author=Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# /usr/sbin/nagios -v /etc/nagios/nagios.cfg | tail                                                                                                                             Checking for circular paths between hosts...
+Checking for circular host and service dependencies...
+Checking global event handlers...
+Checking obsessive compulsive processor commands...
+Checking misc settings...
+
+Total Warnings: 133
+Total Errors:   0
+
+Things look okay - No serious problems were detected during the pre-flight check
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git --no-pager log --pretty=oneline -n 2
+890ee6fc9bcb9b3c8b61a40d7355171b21b5b3bb SD#719659. Change contact information. Removed r.tedeev.
+c055490bb82c7d727bac11abca9fb275eaf366b1 SD#719659. Change contact information in three services for host vm-dbamon01. Removed d.mikheev and r.tedeev. Added m.meluzov sms only. Changed three services "BPM Pkg Check Fail", "BPM Pkg Check Fail 2", "BPM-DEV db health".
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git push
+Counting objects: 30, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (18/18), done.
+Writing objects: 100% (18/18), 1.77 KiB, done.
+Total 18 (delta 14), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios/vm-vol-nag01t.git
+   6186281..890ee6f  master -> master
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+
+
+

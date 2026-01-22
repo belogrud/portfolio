@@ -1,0 +1,190 @@
+
+
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; dmidecode -t system | grep -e 'Product Name' )" ; done
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; dmidecode -t processor | grep -e 'Socket' -e 'Version' )" ; done
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; grep 'MemTotal:' /proc/meminfo )" ; done
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; hpssacli controller all show config | grep -e 'physicaldrive' )" ; done
+
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw ; do echo ; ssh ${var1_hostname} "( hostname ; hpssacli controller slot=0 physicaldrive 1I:1:1 show detail | grep -e 'Interface Type' -e 'Rotational Speed' )" ; done
+[root@m1-gp-prd-smdw ~]# for var1_hostname in sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; hpssacli controller slot=0 physicaldrive 1I:2:1 show detail | grep -e 'Interface Type' -e 'Rotational Speed' )" ; done
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; hpssacli controller all show detail | grep -e 'Total Cache Size' )" ; done
+
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; ip -f inet addr | grep -e 'eth' )" ; done
+
+[root@ds-hadoop-cs01p ~]# for var1_interfaces in $(ip -s link | grep -o -e 'eth[0-9]*') ; do ethtool ${var1_interfaces} | grep -e 'Speed' ; done
+#[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw ; do echo ; ssh ${var1_hostname} "( hostname ; ethtool eth6 | grep -e 'Speed' )" ; done
+#[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw ; do echo ; ssh ${var1_hostname} "( hostname ; ethtool eth7 | grep -e 'Speed' )" ; done
+#
+#[root@m1-gp-prd-smdw ~]# for var1_hostname in sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; ethtool eth0 | grep -e 'Speed' )" ; done
+#[root@m1-gp-prd-smdw ~]# for var1_hostname in sdw{1..24} ; do echo ; ssh ${var1_hostname} "( hostname ; ethtool eth1 | grep -e 'Speed' )" ; done
+
+................................................................................
+................................................................................
+
+
+[root@ds-gp-dev-smdw ~]# for var1_hostname in mdw smdw sdw{1..8} ; do echo ; ssh ${var1_hostname} "( hostname ; dmidecode -t system | grep -e 'Product Name' )" ; done
+[root@ds-gp-dev-smdw ~]# for var1_hostname in mdw smdw ; do echo ; ssh ${var1_hostname} "( hostname ; dmidecode -t processor | grep -e 'Socket' -e 'Version' )" ; done
+[root@ds-gp-dev-smdw ~]# for var1_hostname in mdw smdw ; do echo ; ssh ${var1_hostname} "( hostname ; grep 'MemTotal:' /proc/meminfo )" ; done
+
+
+................................................................................
+................................................................................
+
+#   Hewlett Packard
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk0{1..8}p ; do echo ; ssh ${var1_hostname} '( hostname ; yum -y --disablerepo="*" --enablerepo="tcs-hp-spp" install hpssacli )' ; done
+
+[root@ds-hadoop-cs01p ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk0{1..8}p ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | grep -e "Product Name" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; grep "MemTotal:" /proc/meminfo ; hpssacli controller all show config | grep -e "physicaldrive" ; hpssacli controller all show ; hpssacli controller slot=2 physicaldrive all show detail | grep -e "Interface Type" -e "Rotational Speed" ;  hpssacli controller all show detail | grep -e "Total Cache Size" )' ; done
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk0{1..8}p ; do echo ; ssh ${var1_hostname} '( hostname ; for var1_interfaces in $(ip -s link | grep -o -e "eth[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+
+
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | egrep -e "Product Name|UUID" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; grep "MemTotal:" /proc/meminfo ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l ; hpssacli controller all show config | grep -e "physicaldrive" ; hpssacli controller all show ; hpssacli controller all show detail | grep -e "Total Cache Size" ; hpssacli controller slot=0 physicaldrive all show detail | grep -e "Interface Type" -e "Rotational Speed" ; hpssacli controller slot=1 physicaldrive all show detail | grep -e "Interface Type" -e "Rotational Speed" ; for var1_interfaces in $(ip -s link | grep -o -e "eth[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+
+
+................................................................................
+................................................................................
+
+
+#   Dell
+dmidecode -t system | grep -e 'Product Name'
+dmidecode -t processor | grep -e 'Socket Designation' -e 'Version'
+
+grep 'MemTotal:' /proc/meminfo
+# or
+omreport chassis memory | grep -e '^Installed Capacity'
+
+racadm storage get pdisks -o -p size,BusProtocol,RaidNominalMediumRotationRate,NegotiatedSpeed,MaxCapableSpeed
+
+racadm storage get controllers -o -p CacheMemorySize
+
+for var1_interfaces in $(ip -s link | grep -o -e 'em[0-9]*') ; do ethtool ${var1_interfaces} | grep -e 'Speed' ; done
+
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk09p ds-hadoop-wk{10..20}p ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | grep -e "Product Name" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; omreport chassis memory | grep -e "^Installed Capacity" ; racadm storage get pdisks -o -p size,BusProtocol,RaidNominalMediumRotationRate,NegotiatedSpeed,MaxCapableSpeed ; racadm storage get controllers -o -p CacheMemorySize ; for var1_interfaces in $(ip -s link | grep -o -e "em[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk{21..30}p ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | grep -e "Product Name" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; omreport chassis memory | grep -e "^Installed Capacity" ; racadm storage get pdisks -o -p size,BusProtocol,RaidNominalMediumRotationRate,NegotiatedSpeed,MaxCapableSpeed ; racadm storage get controllers -o -p CacheMemorySize ; for var1_interfaces in $(ip -s link | grep -o -e "em[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+
+[root@ds-gp-prd-smdw ~]# for var1_hostname in sdw1 ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | egrep -e "Product Name|UUID" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; grep "MemTotal:" /proc/meminfo ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l ; racadm storage get pdisks -o -p size,BusProtocol,RaidNominalMediumRotationRate,NegotiatedSpeed,MaxCapableSpeed ; racadm storage get controllers -o -p CacheMemorySize ; for var1_interfaces in $(ip -s link | grep -o -e "em[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+................................................................................
+................................................................................
+
+#
+#   Hadoop, tst, M1.
+#
+[root@m1-hadoop-cs01t ~]# for var1_hostname in m1-hadoop-wk0{3..6}t ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | grep -e "Product Name" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; grep "MemTotal:" /proc/meminfo ; hpssacli controller all show config | grep -e "physicaldrive" ; hpssacli controller all show ; hpssacli controller slot=2 physicaldrive all show detail | grep -e "Interface Type" -e "Rotational Speed" ;  hpssacli controller all show detail | grep -e "Total Cache Size" ; for var1_interfaces in $(ip -s link | grep -o -e "eth[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+[root@m1-hadoop-cs01t ~]# for var1_hostname in m1-hadoop-wk0{1..2}t m1-hadoop-wk0{7..9}t m1-hadoop-wk10t ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | grep -e "Product Name" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; omreport chassis memory | grep -e "^Installed Capacity" ; racadm storage get pdisks -o -p size,BusProtocol,RaidNominalMediumRotationRate,NegotiatedSpeed,MaxCapableSpeed ; racadm storage get controllers -o -p CacheMemorySize ; for var1_interfaces in $(ip -s link | grep -o -e "em[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+
+
+[root@m1-hadoop-cs01t ~]# dmidecode -t memory | grep -e "Size:"
+[root@m1-hadoop-cs01t ~]# dmidecode -t memory | grep -e "Size:" | wc -l
+24
+[root@m1-hadoop-cs01t ~]# expr 24 \* 8
+192
+[root@m1-hadoop-cs01t ~]#
+
+[root@m1-hadoop-cs01t ~]# for var1_hostname in m1-hadoop-wk0{1..2}t m1-hadoop-wk0{7..9}t m1-hadoop-wk10t ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | wc -l ; )' ; done
+[root@m1-hadoop-cs01t ~]# expr 16 \* 16                                                                                                                                                              256
+[root@m1-hadoop-cs01t ~]#
+
+[root@m1-hadoop-cs01t ~]# for var1_hostname in m1-hadoop-wk0{3..6}t ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | wc -l ; )' ; done
+[root@m1-hadoop-cs01t ~]# expr 12 \* 16                                                                                                                                                              192
+[root@m1-hadoop-cs01t ~]#
+
+................................................................................
+
+#
+#   Hadoop, DS, Production
+#
+
+[root@ds-hadoop-cs01p ~]# dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | wc -l
+[root@ds-hadoop-cs01p ~]# expr 24 \* 8
+192
+[root@ds-hadoop-cs01p ~]#
+
+[root@ds-hadoop-cs02p ~]# dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | wc -l
+[root@ds-hadoop-cs02p ~]# expr 12 \* 16
+192
+[root@ds-hadoop-cs02p ~]#
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk0{1..8}p ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | wc -l )' ; done
+[root@ds-hadoop-cs01p ~]# expr 12 \* 16                                                                                                                                                              192
+[root@ds-hadoop-cs01p ~]#
+
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk09p ds-hadoop-wk{10..20}p ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | wc -l )' ; done
+[root@ds-hadoop-cs01p ~]# expr 16 \* 16
+256
+[root@ds-hadoop-cs01p ~]#
+
+[root@ds-hadoop-cs01p ~]# for var1_hostname in ds-hadoop-wk{21..30}p ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | wc -l )' ; done
+
+................................................................................
+................................................................................
+
+#
+#   m1-gp-prd
+#
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in sdw{1..24} ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l )' ; done
+[root@m1-gp-prd-smdw ~]# expr 16 \* 8
+128
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1_hostname in mdw smdw ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l )' ; done
+[root@m1-gp-prd-smdw ~]# expr 16 \* 8                                                                                                                                                                128
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-sasetl01p ~]# dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l
+[root@m1-sasetl01p ~]# expr 64 \* 8
+512
+[root@m1-sasetl01p ~]#
+
+................................................................................
+................................................................................
+
+#
+#   ds-gp-dev
+#
+
+[root@ds-gp-dev-smdw ~]# for var1_hostname in sdw{1..8} ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l )' ; done
+[root@ds-gp-dev-smdw ~]# expr 8 \* 16                                                                                                                                                                128
+[root@ds-gp-dev-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# for var1_hostname in mdw smdw ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l )' ; done
+[root@ds-gp-dev-smdw ~]# expr 16 \* 8                                                                                                                                                                128
+[root@ds-gp-dev-smdw ~]#
+
+[root@ds-sasetl01x ~]# dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l
+[root@ds-sasetl01x ~]# expr 64 \* 8
+512
+[root@ds-sasetl01x ~]#
+
+................................................................................
+
+#
+#   m1-gp-tst
+#
+
+[root@m1-gp-tst-smdw ~]# for var1_hostname in mdw smdw sdw{1..24} ; do echo ; ssh ${var1_hostname} '( hostname ; dmidecode -t system | grep -e "Product Name" ; dmidecode -t processor | grep -e "Socket Designation" -e "Version" ; grep "MemTotal:" /proc/meminfo ; dmidecode -t memory | grep -e "Size:" ; dmidecode -t memory | grep -e "Size:" | grep -v -e "No Module" | wc -l ; hpssacli controller all show config | grep -e "physicaldrive" ; hpssacli controller all show ; hpssacli controller all show detail | grep -e "Total Cache Size" ; hpssacli controller slot=0 physicaldrive all show detail | grep -e "Interface Type" -e "Rotational Speed" ; hpssacli controller slot=1 physicaldrive all show detail | grep -e "Interface Type" -e "Rotational Speed" ; for var1_interfaces in $(ip -s link | grep -o -e "eth[0-9]") ; do ethtool ${var1_interfaces} | grep -e "Speed" ; done )' ; done
+
+................................................................................
+
+
+

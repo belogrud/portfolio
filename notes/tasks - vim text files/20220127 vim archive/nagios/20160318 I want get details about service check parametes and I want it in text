@@ -1,0 +1,78 @@
+
+
+#   It should similar information that I get via nagios web-GUI at Configuration option.
+
+http://mathias-kettner.de/checkmk_livestatus.html
+
+
+Max. Check Attempts
+max_check_attempts  int The maximum number of check attempts
+Normal Check Interval
+check_interval  float   Number of basic interval lengths between two scheduled checks of the service
+Retry Check Interal
+retry_interval  float   Number of basic interval lengths between checks when retrying after a soft error
+Check Command
+check_command   string  Naemon command used for active checks
+Check Period
+check_period    string  The name of the check period of the service. It this is empty, the service is always checked.
+
+Enable Active Checks
+active_checks_enabled   int Whether active checks are enabled for the service (0/1)
+checks_enabled  int Whether active checks are enabled for the service (0/1)
+
+Enable Passive Checks
+accept_passive_checks   int Whether the service accepts passive checks (0/1)
+
+Default Contacts/Groups
+contact_groups  list    A list of all contact groups this service is in
+contacts    list    A list of all contacts of the service, either direct or via a contact group
+
+Enable Notifications
+notifications_enabled   int Whether notifications are enabled for the service (0/1)
+
+Notification Interval
+notification_interval   float   Interval of periodic notification or 0 if its off
+
+First Notification Delay
+first_notification_delay    float   Delay before the first notification
+
+Notification Period
+notification_period string  The name of the notification period of the service. It this is empty, service problems are always notified.
+
+Enable Flap Detection
+flap_detection_enabled  int Whether flap detection is enabled for the service (0/1)
+
+
+
+
+[root@vm-vol-nag01t nagios]# pynag livestatus --get services --filter "host_name = m1-gp-prd-mdw" --filter "description = HP System Health Application" --columns "host_name description max_check_attempts"
+host_name            description          max_check_attempts
+--------------------------------------------------------------------------------
+m1-gp-prd-mdw        HP System Health Application 3
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name = m1-gp-prd-mdw\nFilter: description = HP System Health Application\nColumns: host_name description" | unixcat /var/spool/nagios/cmd/live
+m1-gp-prd-mdw;HP System Health Application
+[root@vm-vol-nag01t nagios]#
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name = m1-gp-prd-mdw\nFilter: description = HP System Health Application\nColumns: host_name description\nOutputFormat: json" | unixcat /var/spool/nagios/cmd/live
+[["m1-gp-prd-mdw","HP System Health Application"]]
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name = m1-gp-prd-mdw\nFilter: description = HP System Health Application\nColumns: host_name description\nOutputFormat: python" | unixcat /var/spool/nagios/cmd/live
+[[u"m1-gp-prd-mdw",u"HP System Health Application"]]
+
+
+
+
+
+
+[root@vm-vol-nag01t nagios]# pynag livestatus --get services --filter "host_name = m1-gp-prd-mdw" --filter "description = HP System Health Application" --columns "host_name description max_check_attempts check_interval retry_interval"
+host_name            description          max_check_attempts   check_interval       retry_interval
+--------------------------------------------------------------------------------
+m1-gp-prd-mdw        HP System Health Application 3                    60.0                 2.0
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+
+
+

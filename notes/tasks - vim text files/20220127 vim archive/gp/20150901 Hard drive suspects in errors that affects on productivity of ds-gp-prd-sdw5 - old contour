@@ -1,0 +1,382 @@
+
+
+................................................................................
+
+
+
+From: Pavlov Dmitriy Stanislavovich
+Sent: Tuesday, September 01, 2015 2:03 PM
+To: unix-admins
+Cc: dwh-adm
+Subject: sdw5 GP DS Prod
+
+Коллеги, а всё ли нормально с массивом sda в sdw5 в DS Greenplum Prod? Страдает производительность:
+
+
+С уважением,
+Дмитрий Павлов
+Руководитель группы администрирования DWH
+
+
+
+................................................................................
+
+[root@ds-gp-prd-smdw ~]# ssh sdw5
+Last login: Tue Sep  1 14:19:04 2015 from smdw
+[root@ds-gp-prd-sdw5 ~]# dmidecode -t system
+# dmidecode 2.11
+SMBIOS 2.8 present.
+# SMBIOS implementations newer than version 2.7 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BNC
+        UUID: 32333536-3030-5A43-3233-323930424E43
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-gp-prd-sdw5 ~]#
+
+[root@ds-gp-prd-sdw5 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.2 (Santiago)
+[root@ds-gp-prd-sdw5 ~]#
+
+
+[root@ds-gp-prd-sdw5 ~]# hpssacli controller slot=0 show config
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 001438028AA5020)
+
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 5001438028AA502F)
+
+[root@ds-gp-prd-sdw5 ~]#
+
+[root@ds-gp-prd-sdw5 ~]# hpacucli controller slot=0 physicaldrive all show detail | grep -e physicaldrive -e Serial\ Number
+      physicaldrive 1I:2:1
+         Serial Number:         KNHAB7GF
+      physicaldrive 1I:2:2
+         Serial Number:         KNHBX59F
+      physicaldrive 1I:2:3
+         Serial Number: S0M1ERH50000B418FHWT
+      physicaldrive 1I:2:4
+         Serial Number: S0M2S3XN0000B444B5EW
+      physicaldrive 2I:2:5
+         Serial Number:         KNHBWVLF
+      physicaldrive 2I:2:6
+         Serial Number:         KNHBX8DF
+      physicaldrive 2I:2:7
+         Serial Number:         KNHBH1BF
+      physicaldrive 2I:2:8
+         Serial Number:         KNHAA8ZF
+[root@ds-gp-prd-sdw5 ~]# hpacucli controller slot=0 physicaldrive 2I:2:5 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 2I:2:5
+         Port: 2I
+         Box: 2
+         Bay: 5
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number:         KNHBWVLF
+         Model: HP      EG0600FBVFP
+         Current Temperature (C): 32
+         Maximum Temperature (C): 38
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Drive Authentication Status: OK
+         Carrier Application Version: 11
+         Carrier Bootloader Version: 6
+
+
+[root@ds-gp-prd-sdw5 ~]#
+
+................................................................................
+
+[root@ds-gp-prd-sdw5 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg0 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:                KNHAB7GF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0     942949.638           0
+write:         0        0         0         0          0     626330.342           0
+Non-medium error count:      966
+
+Count: 1
+Serial number:                KNHBX59F
+Elements in grown defect list: 1
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    80724         0        34          0     959171.648           1
+write:         0      973         0       973          0     658042.890           0
+Non-medium error count:     1006
+
+Count: 2
+Serial number:        S0M1ERH50000B418FHWT
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 4008153518
+  Number of read and write commands whose size > segment size = 16803389
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     820566.937           0
+write:         0        0         0         0          0     635557.720           0
+Non-medium error count:      101
+
+Count: 3
+Serial number:        S0M2S3XN0000B444B5EW
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1081408241
+  Number of read and write commands whose size > segment size = 4318835
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     197157.116           0
+write:         0        0         0         0          0     161633.096           0
+Non-medium error count:       29
+
+Count: 4
+Serial number:                KNHBWVLF
+Elements in grown defect list: 22
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0  2062730         0       107          0     913123.992          22
+write:         0        0         0         0          0     640016.552           0
+Non-medium error count:     1084
+
+Count: 5
+Serial number:                KNHBX8DF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     921774.045           0
+write:         0        0         0         0          0     634966.138           0
+Non-medium error count:      967
+
+Count: 6
+Serial number:                KNHBH1BF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        3         0         0          0     937503.736           0
+write:         0        0         0         0          0     633321.879           0
+Non-medium error count:      966
+
+Count: 7
+Serial number:                KNHAA8ZF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    41561         0         0          0     974736.377           0
+write:         0        0         0         0          0     651676.594           0
+Non-medium error count:      982
+[root@ds-gp-prd-sdw5 ~]#
+
+................................................................................
+................................................................................
+
+Your case was successfully submitted. Please note your Case ID: 4652268655 for future reference.
+An email confirmation will be sent to the case contact. HP will contact you to begin work on your problem based on your contract or warranty coverage.    Clicking image will open a new window displaying help information.
+Add attachments to case:    Clicking image will open a new window displaying help information.
+Click this link to send attachment to hpsupport_global@hp.com(Maximum size is 5 MB)
+Case information
+Case ID:    4652268655
+Case title:
+Hard disk drive have errors and affect on productivity
+Severity    2-Critical Degraded
+Service Agreement ID:   107857825291
+Product serial number:  CZ23290BNC
+Product number: 653200-B21
+Submitted:  9/1/2015 12:51:04 PM
+Last updated:   9/1/2015 12:51:04 PM
+Source: Web
+Case status:    Received by HP
+Case details
+Operating system/version:   Red Hat Enterprise Linux Server release 6.2 (Santiago)
+Product:    HP ProLiant DL Servers
+Product vendor:
+Problem description:
+Здравствуйте.
+Наблюдается критичное ухудшение производительности прикладного ПО, работающего на сервере по причине ошибок на одном из HDD сервера.
+Необходимо заменить неисправный HDD на новый.
+При необходимости выгрузки дополнительных данных, пожалуйста сообщите реквизиты доступа к Вашему ftp-порталу.
+
+Присутствие инженера HP для замены детали не требуется.
+
+Доставить новую деталь можно по адресу:
+123060, г. Москва, ул. 1-й Волоколамский проезд, д.10, стр.1. (бизнес-центр Диапазон).
+Troubleshooting steps taken:
+[root@ds-gp-prd-sdw5 ~]# dmidecode -t system
+# dmidecode 2.11
+SMBIOS 2.8 present.
+# SMBIOS implementations newer than version 2.7 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+Manufacturer: HP
+Product Name: ProLiant DL380p Gen8
+Version: Not Specified
+Serial Number: CZ23290BNC
+UUID: 32333536-3030-5A43-3233-323930424E43
+Wake-up Type: Power Switch
+SKU Number: 653200-B21
+Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+Status: No errors detected
+
+[root@ds-gp-prd-sdw5 ~]#
+
+Предположительно неисправен следующий HDD.
+[root@ds-gp-prd-sdw5 ~]# hpacucli controller slot=0 physicaldrive 2I:2:5 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+array A
+
+physicaldrive 2I:2:5
+Port: 2I
+Box: 2
+Bay: 5
+Status: OK
+Drive Type: Data Drive
+Interface Type: SAS
+Size: 600 GB
+Rotational Speed: 10000
+Firmware Revision: HPDC
+Serial Number: KNHBWVLF
+Model: HP EG0600FBVFP
+Current Temperature (C): 32
+Maximum Temperature (C): 38
+PHY Count: 2
+PHY Transfer Rate: 6.0Gbps, Unknown
+Drive Authentication Status: OK
+Carrier Application Version: 11
+Carrier Bootloader Version: 6
+
+[root@ds-gp-prd-sdw5 ~]#
+Contact & equipment location information
+Contact
+Equipment
+First name: Sergey
+Last name:  Belogrud
+Phone number:   +74956481000 2173   Company name:   TCS Bank
+Alternate Phone:
++79150464278    Address line 1: 1-ый Волоколамский пр-д, д.10, к.1
+Email address:  s.belogrud@tinkoff.ru
+City/Town:  Москва
+Zip/Postal code:    123040
+Country/Region: RUSSIA
+
+Contact (2)
+First name: Alexey
+Last name:  Leonov
+Phone number:   +74956481000 2536
+Alternate Phone:
++79096319617
+Email address:  a.leonov@tinkoff.ru
+
+
+................................................................................
+................................................................................
+
+[root@ds-gp-prd-sdw5 ~]# hpssacli ctrl all diag file=/tmp/20150901-1455.hpssacli.diag.zip
+
+   Generating diagnostic report...done
+
+[root@ds-gp-prd-sdw5 ~]#
+
+[root@ds-gp-prd-smdw ~]# scp sdw5:/tmp/20150901-1455.hpssacli.diag.zip /tmp/
+20150901-1455.hpssacli.diag.zip                                                                                                                                       100%  283KB 283.0KB/s   00:00
+[root@ds-gp-prd-smdw ~]# chown bsv /tmp/20150901-1455.hpssacli.diag.zip
+[root@ds-gp-prd-smdw ~]#
+
+[root@ds-gp-prd-smdw ~]# mv !$ /tmp/20150901-1455.ds-gp-prd-sdw5.hpssacli.diag.zip
+mv /tmp/20150901-1455.hpssacli.diag.zip /tmp/20150901-1455.ds-gp-prd-sdw5.hpssacli.diag.zip
+[root@ds-gp-prd-smdw ~]#
+
+[support@centos00 20150828-1912]# mkdir /media/sf_share/greenplum/ds-gp-prod/20150901-1458.ds-gp-prd-sdw5
+p-prd-sdw5/ntos00 20150828-1912]# sshpass -e scp bsv@ds-gp-prod-sm:/tmp/20150901-1455.ds-gp-prd-sdw5.hpssacli.diag.zip /media/sf_share/greenplum/ds-gp-prod/20150901-1458.ds-g
+[support@centos00 20150828-1912]#
+[support@centos00 20150828-1912]#
+[support@centos00 20150828-1912]# ls -Alh !$
+ls -Alh /media/sf_share/greenplum/ds-gp-prod/20150901-1458.ds-gp-prd-sdw5/
+total 284K
+-rwxrwx--- 1 root vboxsf 284K Sep  1 14:59 20150901-1455.ds-gp-prd-sdw5.hpssacli.diag.zip
+[support@centos00 20150828-1912]#
+
+................................................................................
+
+
+#   Wed Sep  2 12:51:05 MSK 2015
+
+[root@ds-gp-prd-sdw5 ~]# at 14:00 today <<< 'hpuid -e'
+job 4 at 2015-09-02 14:00
+[root@ds-gp-prd-sdw5 ~]# at 14:00 today <<< 'hpacucli controller slot=0 physicaldrive 2I:2:5 modify led=on duration=7200'
+job 5 at 2015-09-02 14:00
+[root@ds-gp-prd-sdw5 ~]# at 16:00 today <<< 'hpuid -d'
+job 6 at 2015-09-02 16:00
+[root@ds-gp-prd-sdw5 ~]#
+
+
+................................................................................
+
+
+[root@ds-gp-tst-sdw7 ~]# hpssacli ctrl all diag file=/tmp/20150903-1701.hpssacli.diag.ds-gp-tst-sdw7.zip
+
+   Generating diagnostic report...done
+
+[root@ds-gp-tst-sdw7 ~]#
+
+
+[root@ds-gp-tst-mdw ~]# scp sdw7:/tmp/20150903-1701.hpssacli.diag.ds-gp-tst-sdw7.zip /tmp/
+20150903-1701.hpssacli.diag.ds-gp-tst-sdw7.zip                                                                                                                        100%  283KB 282.5KB/s   00:00
+[root@ds-gp-tst-mdw ~]# chown bsv /tmp/20150903-1701.hpssacli.diag.ds-gp-tst-sdw7.zip
+[root@ds-gp-tst-mdw ~]#
+
+[support@centos00 20150901-1853]$ mkdir /media/sf_share/greenplum/ds-gp-tst/20150903-1703.ds-gp-tst-sdw7
+[support@centos00 20150901-1853]$ sshpass -e scp bsv@ds-gp-tst-m:/tmp/20150903-1701.hpssacli.diag.ds-gp-tst-sdw7.zip /media/sf_share/greenplum/ds-gp-tst/20150903-1703.ds-gp-tst-sdw7/
+[support@centos00 20150901-1853]$
+
+................................................................................
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

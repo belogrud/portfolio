@@ -1,0 +1,62 @@
+
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@db-mfm-prod
+Warning: Permanently added 'db-mfm-prod' (RSA) to the list of known hosts.
+bsv@db-mfm-prod's password:
+Last login: Thu Nov 23 17:46:54 2017 from tcs4500.tcsbank.ru
+[bsv@m1-db08-prod ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-db08-prod ~]#
+[root@m1-db08-prod ~]# grep -ire "check_disk" /etc/nrpe.d/
+/etc/nrpe.d/check_disks.cfg:command[check_disk]=/usr/lib64/nagios/plugins/check_disk -w $ARG1$ -c $ARG2$ -W $ARG1$-K $ARG2$ -p $ARG3$
+/etc/nrpe.d/check_all_linux.cfg:command[check_root_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /
+/etc/nrpe.d/check_all_linux.cfg:command[check_opt_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 5% -c 2% -p /opt
+/etc/nrpe.d/check_all_linux.cfg:command[check_tmp_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c10% -p /tmp
+/etc/nrpe.d/check_all_linux.cfg:command[check_var_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c10% -p /var
+[root@m1-db08-prod ~]# grep -ire "check_disk" /etc/nagios/
+
+[root@m1-db08-prod ~]# /usr/lib64/nagios/plugins/check_disk -w 10% -c 5% -W 10% -K 5% -p /oramnt/MFM_prod_di
+DISK WARNING - free space: /oramnt/MFM_prod_di 362724 MB (6% inode=99%);| /oramnt/MFM_prod_di=5215699MB;5020581;5299502;0;5578424
+[root@m1-db08-prod ~]# 
+
+[root@m1-db08-prod ~]# /usr/lib64/nagios/plugins/check_disk --help | egrep -e '-w|-c|-W|-K' -A 1
+ check_disk -w limit -c limit [-W limit] [-K limit] {-p path | -x device}
+[-C] [-E] [-e] [-f] [-g group ] [-k] [-l] [-M] [-m] [-R path ] [-r path ]
+--
+ -w, --warning=INTEGER
+    Exit with WARNING status if less than INTEGER units of disk are free
+ -w, --warning=PERCENT%
+    Exit with WARNING status if less than PERCENT of disk space is free
+ -c, --critical=INTEGER
+    Exit with CRITICAL status if less than INTEGER units of disk are free
+ -c, --critical=PERCENT%
+    Exit with CRITICAL status if less than PERCENT of disk space is free
+ -W, --iwarning=PERCENT%
+    Exit with WARNING status if less than PERCENT of inode space is free
+ -K, --icritical=PERCENT%
+    Exit with CRITICAL status if less than PERCENT of inode space is free
+...
+
+
+[root@m1-db08-prod ~]# /usr/lib64/nagios/plugins/check_disk -w 6% -c 4% -W 10% -K 5% -p /oramnt/MFM_prod_di
+DISK WARNING - free space: /oramnt/MFM_prod_di 361568 MB (6% inode=99%);| /oramnt/MFM_prod_di=5216855MB;5243718;5355287;0;5578424
+[root@m1-db08-prod ~]# /usr/lib64/nagios/plugins/check_disk -w 5% -c 4% -W 10% -K 5% -p /oramnt/MFM_prod_di
+DISK OK - free space: /oramnt/MFM_prod_di 361546 MB (6% inode=99%);| /oramnt/MFM_prod_di=5216877MB;5299502;5355287;0;5578424
+[root@m1-db08-prod ~]# df -hT /oramnt/MFM_prod_di
+Filesystem    Type    Size  Used Avail Use% Mounted on
+db-mfm-prod-nfs:/MFM_prod_di_m1
+               nfs    5.4T  5.0T  353G  94% /oramnt/MFM_prod_di
+[root@m1-db08-prod ~]# df -mT /oramnt/MFM_prod_di
+Filesystem    Type   1M-blocks      Used Available Use% Mounted on
+db-mfm-prod-nfs:/MFM_prod_di_m1
+               nfs     5578425   5217345    361080  94% /oramnt/MFM_prod_di
+[root@m1-db08-prod ~]#
+
+
+
+
+
+................................................................................
+

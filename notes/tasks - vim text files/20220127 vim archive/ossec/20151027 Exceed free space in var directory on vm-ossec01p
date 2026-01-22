@@ -1,0 +1,2937 @@
+
+
+
+
+
+[root@vm-ossec01p ossec]# du -sh /var/lib/mysql/*
+32G     /var/lib/mysql/ibdata1
+5.0M    /var/lib/mysql/ib_logfile0
+5.0M    /var/lib/mysql/ib_logfile1
+1.1M    /var/lib/mysql/mysql
+0       /var/lib/mysql/mysql.sock
+104K    /var/lib/mysql/ossec
+212K    /var/lib/mysql/performance_schema
+[root@vm-ossec01p ossec]#
+
+................................................................................
+
+[root@vm-ossec01p ossec]# ls -Alh /var/log/audit/
+total 104M
+-rw-------  1 root root 3.4M Oct 21 20:50 audit.log
+-r--------. 1 root root 101M Oct  4 00:30 audit.log.1
+[root@vm-ossec01p ossec]# gzip /var/log/audit/audit.log.1
+[root@vm-ossec01p ossec]# ls -Alh /var/log/audit/
+total 9.8M
+-rw------- 1 root root 3.4M Oct 21 20:50 audit.log
+-r-------- 1 root root 6.4M Oct  4 00:30 audit.log.1.gz
+[root@vm-ossec01p ossec]# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda1              50G  4.1G   43G   9% /
+tmpfs                 1.9G     0  1.9G   0% /dev/shm
+/dev/sda3              60G  5.1G   52G   9% /opt
+/dev/sda2              40G   36G  2.3G  95% /var
+[root@vm-ossec01p ossec]#
+
+................................................................................
+
+[root@vm-ossec01p ossec]# cat /etc/my.cnf
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+
+# Settings user and group are ignored when systemd is used (fedora >= 15).
+# If you need to run mysqld under a different user or group,
+# customize your systemd unit file for mysqld according to the
+# instructions in http://fedoraproject.org/wiki/Systemd
+user=mysql
+
+# Semisynchronous Replication
+# http://dev.mysql.com/doc/refman/5.5/en/replication-semisync.html
+# uncomment next line on MASTER
+;plugin-load=rpl_semi_sync_master=semisync_master.so
+# uncomment next line on SLAVE
+;plugin-load=rpl_semi_sync_slave=semisync_slave.so
+
+# Others options for Semisynchronous Replication
+;rpl_semi_sync_master_enabled=1
+;rpl_semi_sync_master_timeout=10
+;rpl_semi_sync_slave_enabled=1
+
+# http://dev.mysql.com/doc/refman/5.5/en/performance-schema.html
+;performance_schema
+
+
+[mysqld_safe]
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+
+[root@vm-ossec01p ossec]#
+
+........................................
+
+[root@vm-ossec01p ossec]# cat /var/ossec/etc/ossec.conf
+<!-- OSSEC vm-ossec01p server config -->
+
+<ossec_config>
+
+  <database_output>
+     <hostname>127.0.0.1</hostname>
+     <username>ossec</username>
+     <password>pVseFyP3</password>
+     <database>ossec</database>
+     <type>mysql</type>
+  </database_output>
+
+  <syslog_output>
+     <!-- vm-syslog01.tcsbank.ru has address 10.216.41.101 -->
+     <server>10.216.41.101</server>
+     <format>splunk</format>
+  </syslog_output>
+
+  <rules>
+    <include>rules_config.xml</include>
+    <include>pam_rules.xml</include>
+    <include>sshd_rules.xml</include>
+    <include>telnetd_rules.xml</include>
+    <include>syslog_rules.xml</include>
+    <include>arpwatch_rules.xml</include>
+    <include>symantec-av_rules.xml</include>
+    <include>symantec-ws_rules.xml</include>
+    <include>pix_rules.xml</include>
+    <include>named_rules.xml</include>
+    <include>smbd_rules.xml</include>
+    <include>vsftpd_rules.xml</include>
+    <include>pure-ftpd_rules.xml</include>
+    <include>proftpd_rules.xml</include>
+    <include>ms_ftpd_rules.xml</include>
+    <include>ftpd_rules.xml</include>
+    <include>hordeimp_rules.xml</include>
+    <include>roundcube_rules.xml</include>
+    <include>wordpress_rules.xml</include>
+    <include>cimserver_rules.xml</include>
+    <include>vpopmail_rules.xml</include>
+    <include>vmpop3d_rules.xml</include>
+    <include>courier_rules.xml</include>
+    <include>web_rules.xml</include>
+    <include>web_appsec_rules.xml</include>
+    <include>apache_rules.xml</include>
+    <include>nginx_rules.xml</include>
+    <include>php_rules.xml</include>
+    <include>mysql_rules.xml</include>
+    <include>postgresql_rules.xml</include>
+    <include>ids_rules.xml</include>
+    <include>squid_rules.xml</include>
+    <include>firewall_rules.xml</include>
+    <include>cisco-ios_rules.xml</include>
+    <include>netscreenfw_rules.xml</include>
+    <include>sonicwall_rules.xml</include>
+    <include>postfix_rules.xml</include>
+    <include>sendmail_rules.xml</include>
+    <include>imapd_rules.xml</include>
+    <include>mailscanner_rules.xml</include>
+    <include>dovecot_rules.xml</include>
+    <include>ms-exchange_rules.xml</include>
+    <include>racoon_rules.xml</include>
+    <include>vpn_concentrator_rules.xml</include>
+    <include>spamd_rules.xml</include>
+    <include>msauth_rules.xml</include>
+    <include>mcafee_av_rules.xml</include>
+    <include>trend-osce_rules.xml</include>
+    <include>ms-se_rules.xml</include>
+    <!-- <include>policy_rules.xml</include> -->
+    <include>zeus_rules.xml</include>
+    <include>solaris_bsm_rules.xml</include>
+    <include>vmware_rules.xml</include>
+    <include>ms_dhcp_rules.xml</include>
+    <include>asterisk_rules.xml</include>
+    <include>ossec_rules.xml</include>
+    <include>attack_rules.xml</include>
+    <include>local_rules.xml</include>
+  </rules>
+
+
+  <syscheck>
+    <!-- Frequency that syscheck is executed -- default every 2 hours -->
+    <frequency>7200</frequency>
+    <scan_on_start>no</scan_on_start>
+    <auto_ignore>no</auto_ignore>
+
+    <!-- Directories to check  (perform all possible verifications) -->
+    <directories report_changes="yes" check_all="yes" realtime="yes">/etc</directories>
+    <directories report_changes="yes" check_all="yes" realtime="yes">/var/spool/cron</directories>
+
+    <!-- Files/directories to ignore -->
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/hosts.deny</ignore>
+    <ignore>/etc/mail/statistics</ignore>
+    <ignore>/etc/random-seed</ignore>
+    <ignore>/etc/adjtime</ignore>
+    <ignore>/etc/httpd/logs</ignore>
+    <ignore>/etc/ld.so.cache</ignore>
+    <ignore>/etc/prelink.cache</ignore>
+  </syscheck>
+
+  <rootcheck>
+    <disabled>yes</disabled>
+    <rootkit_files>/var/ossec/etc/shared/rootkit_files.txt</rootkit_files>
+    <rootkit_trojans>/var/ossec/etc/shared/rootkit_trojans.txt</rootkit_trojans>
+  </rootcheck>
+
+  <global>
+    <email_notification>yes</email_notification>
+    <email_to>ossec@localhost</email_to>
+    <smtp_server>localhost</smtp_server>
+    <email_from>ossec@vm-ossec01p</email_from>
+  </global>
+
+  <global>
+    <white_list>127.0.0.1</white_list>
+  </global>
+
+  <remote>
+    <connection>secure</connection>
+    <allowed-ips>10.0.0.0/8</allowed-ips>
+    <allowed-ips>172.16.0.0/20</allowed-ips>
+    <allowed-ips>192.168.0.0/16</allowed-ips>
+  </remote>
+
+  <alerts>
+    <log_alert_level>1</log_alert_level>
+    <email_alert_level>7</email_alert_level>
+  </alerts>
+
+
+  <!-- Active Response Config -->
+  <!-- By default Active Responce is enabled -->
+
+  <!-- Files to monitor (localfiles) -->
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/messages</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/maillog</location>
+  </localfile>
+
+</ossec_config>
+[root@vm-ossec01p ossec]#
+
+................................................................................
+
+[root@vm-ossec01p ossec]# du -sh /opt/ossec_logs_backup/2015/*
+1.6M    /opt/ossec_logs_backup/2015/Aug
+1.7M    /opt/ossec_logs_backup/2015/Feb
+2.2M    /opt/ossec_logs_backup/2015/Jan
+1.4M    /opt/ossec_logs_backup/2015/Jul
+1.4M    /opt/ossec_logs_backup/2015/Mar
+3.5G    /opt/ossec_logs_backup/2015/Oct
+1.4G    /opt/ossec_logs_backup/2015/Sep
+[root@vm-ossec01p ossec]#
+
+[root@vm-ossec01p ossec]# du -sh /var/ossec/logs/*
+3.2G    /var/ossec/logs/alerts
+2.3M    /var/ossec/logs/archives
+52M     /var/ossec/logs/firewall
+4.0K    /var/ossec/logs/ossec.log
+12K     /var/ossec/logs/ossec.log-20151004
+28K     /var/ossec/logs/ossec.log-20151011
+12K     /var/ossec/logs/ossec.log-20151018
+12K     /var/ossec/logs/ossec.log-20151025
+[root@vm-ossec01p ossec]#
+
+................................................................................
+
+[root@vm-ossec01p ~]# mysql -u ossec -ppVseFyP3 ossec -e " show global variables like 'storage_engine' ; "
++----------------+--------+
+| Variable_name  | Value  |
++----------------+--------+
+| storage_engine | InnoDB |
++----------------+--------+
+[root@vm-ossec01p ~]#
+
+
+
+[root@vm-ossec01p ~]# mysql -u ossec -ppVseFyP3 ossec -e " show table status\G ; "
+*************************** 1. row ***************************
+           Name: agent
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 3145728
+ Auto_increment: 1
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 2. row ***************************
+           Name: alert
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 84203010
+ Avg_row_length: 73
+    Data_length: 6156189696
+Max_data_length: 0
+   Index_length: 4075814912
+      Data_free: 3145728
+ Auto_increment: NULL
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 3. row ***************************
+           Name: category
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 131
+ Avg_row_length: 125
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 3145728
+ Auto_increment: 132
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 4. row ***************************
+           Name: data
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 17155109
+ Avg_row_length: 1273
+    Data_length: 21852323840
+Max_data_length: 0
+   Index_length: 1315962880
+      Data_free: 3145728
+ Auto_increment: NULL
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 5. row ***************************
+           Name: location
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 689
+ Avg_row_length: 95
+    Data_length: 65536
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 3145728
+ Auto_increment: 535
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 6. row ***************************
+           Name: server
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 1
+ Avg_row_length: 16384
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 3145728
+ Auto_increment: 2
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 7. row ***************************
+           Name: signature
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 993
+ Avg_row_length: 98
+    Data_length: 98304
+Max_data_length: 0
+   Index_length: 49152
+      Data_free: 3145728
+ Auto_increment: 943
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 8. row ***************************
+           Name: signature_category_mapping
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 2736
+ Avg_row_length: 35
+    Data_length: 98304
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 3145728
+ Auto_increment: 2116
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+[root@vm-ossec01p ~]#
+
+................................................................................
+
+[root@vm-ossec01p cgi-bin]# mysqldump -u ossec -ppVseFyP3 ossec | gzip -9 > /opt/$(date +%Y%m%d-%H%M).backup.mysql.ossec.gz
+
+[root@vm-ossec01p ~]# watch -n 5 ls -Alh /opt/*gz
+
+[root@vm-ossec01p ossec]# ls -Alh /opt/*gz
+-rw-r--r-- 1 root root 1.5G Oct 27 19:07 /opt/20151027-1828.backup.mysql.ossec.gz
+[root@vm-ossec01p ossec]#
+
+................................................................................
+
+[support@centos00 en]$ scp /media/sf_share/mysql/mysql_quota.tar.gz bsv@vm-ossec01p:/tmp
+bsv@vm-ossec01p's password:
+mysql_quota.tar.gz                                                                                                                                                                                       100% 5450     5.3KB/s   00:00
+[support@centos00 en]$
+
+[root@vm-ossec01p ossec]# mkdir ~/work/20151027-1911
+[root@vm-ossec01p ossec]# cd !$
+cd ~/work/20151027-1911
+[root@vm-ossec01p 20151027-1911]# mv /tmp/mysql_quota.tar.gz .
+[root@vm-ossec01p 20151027-1911]#
+
+
+
+
+[root@vm-ossec01p 20151027-1911]# ll
+total 8
+-rwxrwx--- 1 bsv bsv 5450 Oct 27 19:10 mysql_quota.tar.gz
+[root@vm-ossec01p 20151027-1911]# tar -xvzf mysql_quota.tar.gz
+mysql_quota/
+mysql_quota/files/
+mysql_quota/files/conf
+mysql_quota/files/edit.tpl
+mysql_quota/files/mysqlquota.cgi
+mysql_quota/files/apply.tpl
+mysql_quota/files/frontend.tpl
+mysql_quota/files/mysqlquotad
+mysql_quota/README
+mysql_quota/install.pl
+[root@vm-ossec01p 20151027-1911]#
+
+[root@vm-ossec01p ossec]# mkdir ~/work/20151027-1911
+[root@vm-ossec01p ossec]# cd !$
+cd ~/work/20151027-1911
+[root@vm-ossec01p 20151027-1911]# mv /tmp/mysql_quota.tar.gz .
+[root@vm-ossec01p 20151027-1911]#
+
+................................................................................
+
+[root@vm-ossec01p mysql_quota]# ./install.pl
+                MySQL Qouta Daemon installer
+
+This simple installer will lead you through installation and configuration
+of the MySQL Qouta Daemon. It will copy the files into chosen destinations,
+make any necessary changes to them, create the config file and create the
+quota database. If you accept any default (in brackets) then enter a blank
+line. Copying is made by simple cp, so you can specify both paths and file
+names. Look out for the configuration files - PASSWORDS ARE KEPT IN PLAIN
+TEXT. Make sure those files aren't readable by random users.
+
+Base daemon setup:
+Where the daemon executable should be placed? (/usr/local/bin/)
+
+Where the configuration file should be placed? (/etc/mysqlquota.conf)
+
+Hostname of the MySQL server to control? (localhost)
+
+MySQL root password for that host?
+ltajknjdsq
+Database for internal use? (quotadb)
+
+Should the UPDATE privillege be taken when limit exceeded? [1/0] (0)
+
+CGI frontend for setting up individual quotas:
+Install the CGI frontend? [1/0] (1)
+0
+
+Collected data:
+Daemon path:            /usr/local/bin/
+Config path:            /etc/mysql_quota.conf
+Host:                   localhost
+Password:               ltajknjdsq
+Quota database:         quotadb
+Take UPDATE priv:
+Install frontend:       0
+Proceed with installation? [1/0] (1)
+
+sed: couldn't edit /usr/local/bin/: not a regular file
+[root@vm-ossec01p mysql_quota]#
+
+
+
+[root@vm-ossec01p mysql_quota]# ls -Alh /usr/local/bin/
+total 4.0K
+-rwxr-xr-x 1 root root 3.7K Oct 27 19:35 mysqlquotad
+[root@vm-ossec01p mysql_quota]#
+
+
+[root@vm-ossec01p mysql_quota]# cat /etc/mysql_quota.conf
+# MySQL Quota Daemon by lRem (http://lrem.net/) sample config file
+#
+# Any lines beginning with a # are comments
+# Between each option name and value there NEEDS TO BE A TAB.
+# Therefore better don't use "smart" editors...
+
+# These are self explaining. Remember you need administrative privilleges
+# for this daemon to make any sense.
+host    localhost
+user            root
+pass    ltajknjdsq
+
+# Name of the database for internal use of this daemon.
+# It has to be already set up, preferably by the included setup script.
+db      quotadb
+
+# Time between each checks of the quota limits in seconds.
+interval        30
+
+# Whether to take the UPDATE privillege from user over his limits.
+# It can be used to further fill up the disk, although it can also
+# be used to gracefully trim it down.
+take_update
+
+# If you want to restrict the daemon to one instance using a locked
+# pid file, then uncomment this option and set it to its full path.
+#pidfile                /var/run/mysqlquotad.pid
+
+# These are positions of Data_length and Index_length in
+# SHOW TABLE STATUS.
+data_column     6
+index_column    8
+
+# Full path to the template files for the frontend.
+front_templ     /home/lrem/mysqlquota/frontend.tpl
+edit_templ      /home/lrem/mysqlquota/edit.tpl
+apply_templ     /home/lrem/mysqlquota/apply.tpl
+
+# Charset used by the frontend
+charset         ISO-8859-1
+[root@vm-ossec01p mysql_quota]#
+
+
+................................................................................
+
+
+[root@vm-ossec01p mysql_quota]# ./install.pl
+                MySQL Qouta Daemon installer
+
+This simple installer will lead you through installation and configuration
+of the MySQL Qouta Daemon. It will copy the files into chosen destinations,
+make any necessary changes to them, create the config file and create the
+quota database. If you accept any default (in brackets) then enter a blank
+line. Copying is made by simple cp, so you can specify both paths and file
+names. Look out for the configuration files - PASSWORDS ARE KEPT IN PLAIN
+TEXT. Make sure those files aren't readable by random users.
+
+Base daemon setup:
+Where the daemon executable should be placed? (/usr/local/bin/)
+mysqlquotad
+Where the configuration file should be placed? (/etc/mysqlquota.conf)
+
+Hostname of the MySQL server to control? (localhost)
+
+MySQL root password for that host?
+ltajknjdsq
+Database for internal use? (quotadb)
+
+Should the UPDATE privillege be taken when limit exceeded? [1/0] (0)
+
+CGI frontend for setting up individual quotas:
+Install the CGI frontend? [1/0] (1)
+
+Where should the CGI script be located? (/var/www/cgi-bin/)
+
+Basically using the same configuration file for both daemon and frontend
+        is reasonable. Yet if you want the frontend connect as a different user, you
+        can do this by maintaining a separate config.
+Where should the frontend configuration file be placed? (/etc/mysql_quota.conf)
+
+The template files don't need to reside under web root, but they need
+        to be accessible by the httpd.
+Where should the list template file be placed? (/var/www/htdocs/)
+/var/www/html/mysqlquotad/
+Where should the edit template file be placed? (/var/www/htdocs/)
+/var/www/html/mysqlquotad/
+Where should the apply template file be placed? (/var/www/htdocs/)
+/var/www/html/mysqlquotad/
+What charset should be used by the frontend? (ISO-8859-1)
+
+
+Collected data:
+Daemon path:            mysqlquotad
+Config path:            /etc/mysql_quota.conf
+Host:                   localhost
+Password:               ltajknjdsq
+Quota database:         quotadb
+Take UPDATE priv:
+Install frontend:       1
+Frontend path:          /var/www/cgi-bin/
+Frontend config:        /etc/mysql_quota.conf
+List template:          /var/www/html/mysqlquotad/
+Edit template:          /var/www/html/mysqlquotad/
+Apply template:         /var/www/html/mysqlquotad/
+Frontend charset:       ISO-8859-1
+
+Proceed with installation? [1/0] (1)
+
+sed: couldn't edit /var/www/cgi-bin/: not a regular file
+cp: cannot create regular file `/var/www/html/mysqlquotad/': Is a directory
+cp: cannot create regular file `/var/www/html/mysqlquotad/': Is a directory
+cp: cannot create regular file `/var/www/html/mysqlquotad/': Is a directory
+[root@vm-ossec01p mysql_quota]#
+
+
+[root@vm-ossec01p ~]# mkdir /var/www/html/mysqlquotad/
+[root@vm-ossec01p ~]# ls -Alh /var/www
+total 160K
+drwxr-xr-x 2 root   root   4.0K Oct 27 19:49 cgi-bin
+drwxr-xr-x 3 root   root   4.0K May 12  2014 error
+drwxr-xr-x 3 root   root   4.0K Oct 27 19:50 html
+drwxr-xr-x 3 root   root   4.0K May 12  2014 icons
+-rw-r--r-- 1 root   root   137K May 12  2014 master.zip
+drwxr-xr-x 5 apache apache 4.0K Jun 11  2014 ossecui
+[root@vm-ossec01p ~]# ls -Alh /var/www/html/
+total 4.0K
+drwxr-xr-x 2 root root 4.0K Oct 27 19:50 mysqlquotad
+[root@vm-ossec01p ~]#
+
+................................................................................
+
+[root@vm-ossec01p mysql_quota]# ./install.pl
+                MySQL Qouta Daemon installer
+
+This simple installer will lead you through installation and configuration
+of the MySQL Qouta Daemon. It will copy the files into chosen destinations,
+make any necessary changes to them, create the config file and create the
+quota database. If you accept any default (in brackets) then enter a blank
+line. Copying is made by simple cp, so you can specify both paths and file
+names. Look out for the configuration files - PASSWORDS ARE KEPT IN PLAIN
+TEXT. Make sure those files aren't readable by random users.
+
+Base daemon setup:
+Where the daemon executable should be placed? (/usr/local/bin/)
+mysqlquotad
+Where the configuration file should be placed? (/etc/mysqlquota.conf)
+
+Hostname of the MySQL server to control? (localhost)
+
+MySQL root password for that host?
+ltajknjdsq
+Database for internal use? (quotadb)
+
+Should the UPDATE privillege be taken when limit exceeded? [1/0] (0)
+
+CGI frontend for setting up individual quotas:
+Install the CGI frontend? [1/0] (1)
+
+Where should the CGI script be located? (/var/www/cgi-bin/)
+
+Basically using the same configuration file for both daemon and frontend
+        is reasonable. Yet if you want the frontend connect as a different user, you
+        can do this by maintaining a separate config.
+Where should the frontend configuration file be placed? (/etc/mysql_quota.conf)
+
+The template files don't need to reside under web root, but they need
+        to be accessible by the httpd.
+Where should the list template file be placed? (/var/www/htdocs/)
+/var/www/html/mysqlquotad/
+Where should the edit template file be placed? (/var/www/htdocs/)
+/var/www/html/mysqlquotad/
+Where should the apply template file be placed? (/var/www/htdocs/)
+/var/www/html/mysqlquotad/
+What charset should be used by the frontend? (ISO-8859-1)
+
+
+Collected data:
+Daemon path:            mysqlquotad
+Config path:            /etc/mysql_quota.conf
+Host:                   localhost
+Password:               ltajknjdsq
+Quota database:         quotadb
+Take UPDATE priv:
+Install frontend:       1
+Frontend path:          /var/www/cgi-bin/
+Frontend config:        /etc/mysql_quota.conf
+List template:          /var/www/html/mysqlquotad/
+Edit template:          /var/www/html/mysqlquotad/
+Apply template:         /var/www/html/mysqlquotad/
+Frontend charset:       ISO-8859-1
+
+Proceed with installation? [1/0] (1)
+
+sed: couldn't edit /var/www/cgi-bin/: not a regular file
+[root@vm-ossec01p mysql_quota]# ls -Alh /var/www/cgi-bin/
+total 4.0K
+-rwxr-xr-x 1 root root 3.1K Oct 27 19:59 mysqlquota.cgi
+[root@vm-ossec01p mysql_quota]# ls -Alh /var/www/html/mysqlquotad/
+total 12K
+-rw-r--r-- 1 root root 559 Oct 27 19:59 apply.tpl
+-rw-r--r-- 1 root root 722 Oct 27 19:59 edit.tpl
+-rw-r--r-- 1 root root 817 Oct 27 19:59 frontend.tpl
+[root@vm-ossec01p mysql_quota]#
+
+................................................................................
+
+http://vm-ossec01p/cgi-bin/mysqlquota.cgi
+
+Internal Server Error
+
+The server encountered an internal error or misconfiguration and was unable to complete your request.
+
+Please contact the server administrator, unix-admins@tcsbank.ru and inform them of the time the error occurred, and anything you might have done that may have caused the error.
+
+More information about this error may be available in the server error log.
+
+Apache/2.2.15 (CentOS) Server at vm-ossec01p Port 80
+
+................................................................................
+
+
+[root@vm-ossec01p mysql_quota]# netstat -nlptu | grep 80
+tcp        0      0 0.0.0.0:80                  0.0.0.0:*                   LISTEN      2051/httpd
+[root@vm-ossec01p mysql_quota]# service apache status
+apache: unrecognized service
+[root@vm-ossec01p mysql_quota]# service http status
+http: unrecognized service
+[root@vm-ossec01p mysql_quota]# service httpd status
+httpd (pid  2051) is running...
+[root@vm-ossec01p mysql_quota]# service httpd restart
+Stopping httpd:                                            [  OK  ]
+Starting httpd:                                            [  OK  ]
+[root@vm-ossec01p mysql_quota]# netstat -nlptu | grep 80
+tcp        0      0 0.0.0.0:80                  0.0.0.0:*                   LISTEN      31591/httpd
+[root@vm-ossec01p mysql_quota]# netstat -nlptu | grep 81
+[root@vm-ossec01p mysql_quota]# netstat -nlptu | grep 8
+tcp        0      0 0.0.0.0:80                  0.0.0.0:*                   LISTEN      31591/httpd
+tcp        0      0 0.0.0.0:45984               0.0.0.0:*                   LISTEN      1359/rpc.statd
+tcp        0      0 0.0.0.0:3306                0.0.0.0:*                   LISTEN      1899/mysqld
+udp        0      0 10.216.40.38:123            0.0.0.0:*                               1653/ntpd
+udp        0      0 0.0.0.0:48527               0.0.0.0:*                               1629/snmpd
+udp        0      0 0.0.0.0:687                 0.0.0.0:*                               1359/rpc.statd
+[root@vm-ossec01p mysql_quota]#
+
+
+# Change this to Listen on specific IP addresses as shown below to
+# prevent Apache from glomming onto all bound IP addresses (0.0.0.0)
+#
+#Listen 12.34.56.78:80
+Listen 80
+Listen 81
+
+#
+
+[root@vm-ossec01p mysql_quota]# service httpd configtest
+Syntax OK
+[root@vm-ossec01p mysql_quota]# service httpd restart
+Stopping httpd:                                            [  OK  ]
+Starting httpd:                                            [  OK  ]
+[root@vm-ossec01p mysql_quota]# netstat -nlptu | grep 8
+tcp        0      0 0.0.0.0:80                  0.0.0.0:*                   LISTEN      31704/httpd
+tcp        0      0 0.0.0.0:81                  0.0.0.0:*                   LISTEN      31704/httpd
+tcp        0      0 0.0.0.0:45984               0.0.0.0:*                   LISTEN      1359/rpc.statd
+tcp        0      0 0.0.0.0:3306                0.0.0.0:*                   LISTEN      1899/mysqld
+udp        0      0 10.216.40.38:123            0.0.0.0:*                               1653/ntpd
+udp        0      0 0.0.0.0:48527               0.0.0.0:*                               1629/snmpd
+udp        0      0 0.0.0.0:687                 0.0.0.0:*                               1359/rpc.statd
+[root@vm-ossec01p mysql_quota]#
+
+................................................................................
+
+[root@vm-ossec01p mysql_quota]# cat /var/log/httpd/mysqlquota-err-error_log
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] Can't locate HTML/Template.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /var/www/cgi-bin/mysqlquota.cgi line 27.
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] BEGIN failed--compilation aborted at /var/www/cgi-bin/mysqlquota.cgi line 27.
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] Premature end of script headers: mysqlquota.cgi
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] File does not exist: /var/www/favicon.ico, referer: http://vm-ossec01p:81/cgi-bin/mysqlquota.cgi
+[Tue Oct 27 20:19:39 2015] [error] [client 172.16.28.74] Directory index forbidden by Options directive: /var/www/
+[Tue Oct 27 20:19:54 2015] [error] [client 172.16.28.74] File does not exist: /var/www/mysqlquotad
+[root@vm-ossec01p mysql_quota]#
+
+[root@vm-ossec01p mysql_quota]# cat /var/log/httpd/mysqlquota-access-access_log
+172.16.28.74 - - [27/Oct/2015:20:19:07 +0300] "GET /cgi-bin/mysqlquota.cgi HTTP/1.1" 500 619
+172.16.28.74 - - [27/Oct/2015:20:19:07 +0300] "GET /favicon.ico HTTP/1.1" 404 286
+172.16.28.74 - - [27/Oct/2015:20:19:39 +0300] "GET / HTTP/1.1" 403 5039
+172.16.28.74 - - [27/Oct/2015:20:19:39 +0300] "GET /icons/apache_pb.gif HTTP/1.1" 200 2326
+172.16.28.74 - - [27/Oct/2015:20:19:39 +0300] "GET /icons/poweredby.png HTTP/1.1" 200 3956
+172.16.28.74 - - [27/Oct/2015:20:19:54 +0300] "GET /mysqlquotad/ HTTP/1.1" 404 287
+172.16.28.74 - - [27/Oct/2015:20:22:01 +0300] "GET /mysqlquotad/apply.tpl HTTP/1.1" 404 296
+[root@vm-ossec01p mysql_quota]#
+
+
+
+[root@vm-ossec01p mysql_quota]# vim /var/www/cgi-bin/mysqlquota.cgi
+...
+ 19 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ 20
+ 21 use strict;
+ 22 use DBI;
+ 23 use CGI;
+ 24 # DoS prevention.
+ 25 $CGI::POST_MAX = 5*1024;
+ 26 $CGI::DISABLE_UPLOADS = 1;
+ 27 use HTML::Template;
+ 28
+ 29 my $conf =
+ 30 {
+ 31         host => 'localhost',
+ 32         user => 'root',
+ 33         pass => '',
+ 34         db => 'quotadb'
+ 35 };
+
+
+
+[root@vm-ossec01p mysql_quota]# yum search perl | grep -i html
+perl-HTML-CalendarMonthSimple.noarch : Perl Module for Generating HTML Calendars
+perl-HTML-Lint.noarch : HTML::Lint Perl module
+perl-HTML-Mason.noarch : Powerful Perl-based web site development and delivery
+perl-HTML-Parser.x86_64 : Perl module for parsing HTML
+perl-HTML-TableExtract.noarch : A Perl module for extracting content in HTML
+perl-HTML-Template.noarch : Perl module to use HTML Templates
+perl-HTML-Template-Pro.x86_64 : Perl/XS module to use HTML Templates from CGI
+perl-HTML-Tidy.x86_64 : (X)HTML cleanup in a Perl object
+perl-HTML-Tree.noarch : HTML tree handling modules for Perl
+perl-PPI-HTML.noarch : Generate syntax-highlighted HTML for Perl using PPI
+perl-clearsilver.x86_64 : Perl interface to the ClearSilver HTML templating
+mhonarc.noarch : Perl mail-to-HTML converter
+perl-Class-DBI-AsForm.noarch : Produce HTML form elements for database columns
+perl-HTML-Encoding.noarch : Determine the encoding of HTML/XML/XHTML documents
+perl-HTML-Entities-Numbered.noarch : Conversion of numbered HTML entities
+perl-HTML-Format.noarch : HTML formatter modules
+perl-HTML-FormatText-WithLinks.noarch : HTML to text conversion with links as
+perl-HTML-FromText.noarch : Convert plain text to HTML
+perl-HTML-PrettyPrinter.noarch : Generate nice HTML files from HTML syntax trees
+perl-HTML-RewriteAttributes.noarch : Concise attribute rewriting
+perl-HTML-Scrubber.noarch : Library for scrubbing/sanitizing html
+perl-HTML-StripScripts.noarch : Strip scripting constructs out of HTML
+perl-HTML-StripScripts-Parser.noarch : XSS filter using HTML::Parser
+perl-HTML-Table.noarch : Create HTML tables using simple interface
+perl-HTML-Tagset.noarch : HTML::Tagset - data tables useful in parsing HTML
+perl-HTML-Tiny.noarch : Lightweight, dependency free HTML/XML generation
+perl-HTML-TokeParser-Simple.noarch : Easy to use HTML::TokeParser interface
+perl-MIME-Lite-HTML.noarch : Provide routine to transform a HTML page in a
+perl-Text-Markdown.noarch : Convert Markdown syntax to (X)HTML
+perl-XML-Grove.noarch : Simple access to infoset of parsed XML, HTML, or SGML
+[root@vm-ossec01p mysql_quota]#
+
+
+
+[root@vm-ossec01p mysql_quota]# yum install perl-HTML-Parser.x86_64
+Loaded plugins: fastestmirror, security
+Loading mirror speeds from cached hostfile
+Setting up Install Process
+Package perl-HTML-Parser-3.64-2.el6.x86_64 already installed and latest version
+Nothing to do
+[root@vm-ossec01p mysql_quota]# yum install perl-HTML-Template.noarch
+Loaded plugins: fastestmirror, security
+Loading mirror speeds from cached hostfile
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package perl-HTML-Template.noarch 0:2.9-10.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=============================================================================================================================================================================================================================================================================
+ Package                                                               Arch                                                      Version                                                          Repository                                                            Size
+=============================================================================================================================================================================================================================================================================
+Installing:
+ perl-HTML-Template                                                    noarch                                                    2.9-10.el6                                                       tcs-epel-6-x86_64                                                     70 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 70 k
+Installed size: 184 k
+Is this ok [y/N]: y
+Downloading Packages:
+perl-HTML-Template-2.9-10.el6.noarch.rpm                                                                                                                                                                                                              |  70 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : perl-HTML-Template-2.9-10.el6.noarch                                                                                                                                                                                                                      1/1
+  Verifying  : perl-HTML-Template-2.9-10.el6.noarch                                                                                                                                                                                                                      1/1
+
+Installed:
+  perl-HTML-Template.noarch 0:2.9-10.el6
+
+Complete!
+[root@vm-ossec01p mysql_quota]#
+
+
+
+[root@vm-ossec01p mysql_quota]# tail -n 15 /var/log/httpd/mysqlquota-err-error_log
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] Can't locate HTML/Template.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /var/www/cgi-bin/mysqlquota.cgi line 27.
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] BEGIN failed--compilation aborted at /var/www/cgi-bin/mysqlquota.cgi line 27.
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] Premature end of script headers: mysqlquota.cgi
+[Tue Oct 27 20:19:07 2015] [error] [client 172.16.28.74] File does not exist: /var/www/favicon.ico, referer: http://vm-ossec01p:81/cgi-bin/mysqlquota.cgi
+[Tue Oct 27 20:19:39 2015] [error] [client 172.16.28.74] Directory index forbidden by Options directive: /var/www/
+[Tue Oct 27 20:19:54 2015] [error] [client 172.16.28.74] File does not exist: /var/www/mysqlquotad
+[Tue Oct 27 20:22:01 2015] [error] [client 172.16.28.74] File does not exist: /var/www/mysqlquotad
+[Wed Oct 28 11:53:07 2015] [error] [client 172.16.28.74] syntax error at /var/www/cgi-bin/mysqlquota.cgi line 56, near "elsif"
+[Wed Oct 28 11:53:07 2015] [error] [client 172.16.28.74] Illegal declaration of subroutine main::list_screen at /var/www/cgi-bin/mysqlquota.cgi line 74.
+[Wed Oct 28 11:53:07 2015] [error] [client 172.16.28.74] Premature end of script headers: mysqlquota.cgi
+[root@vm-ossec01p mysql_quota]#
+
+
+ 56 elsif(-e '/etc/mysql_quota')
+ 57 {
+ 58         &readconf('/etc/mysql_quota');
+ 59 }
+ 60 else
+ 61 {
+ 62         die "Couldn't read config.\n";
+ 63 }
+ 64
+ 65 my $dbh = DBI->connect(
+ 66         'DBI:mysql:'.$conf->{'db'}.':'.$conf->{'host'},
+ 67         $conf->{'user'},
+ 68         $conf->{'pass'},
+ 69         {AutoCommit => 1}
+ 70 ) or die("Could not connect to database.\n");
+ 71
+ 72 my $template;
+ 73
+ 74 sub list_screen
+ 75 {
+ 76         $template = HTML::Template->new(filename => $conf->{'front_templ'}) or die "Couldn't open template";
+ 77         my @rows;
+ 78         my $ref = $dbh->selectall_arrayref('SELECT `db`, `limit`, `exceeded` FROM quota');
+ 79
+
+
+[root@vm-ossec01p mysql_quota]# cd /var/www/cgi-bin/
+[root@vm-ossec01p cgi-bin]# ll
+total 4
+-rwxr-xr-x 1 root root 3133 Oct 27 19:59 mysqlquota.cgi
+[root@vm-ossec01p cgi-bin]# ./mysqlquota.cgi
+syntax error at ./mysqlquota.cgi line 56, near "elsif"
+Illegal declaration of subroutine main::list_screen at ./mysqlquota.cgi line 74.
+[root@vm-ossec01p cgi-bin]#
+
+
+................................................................................
+
+http://vm-ossec01p:81/cgi-bin/mysqlquota.cgi
+Internal Server Error
+The server encountered an internal error or misconfiguration and was unable to complete your request.
+Please contact the server administrator, unix-admins@tcsbank.ru and inform them of the time the error occurred, and anything you might have done that may have caused the error.
+More information about this error may be available in the server error log.
+Apache/2.2.15 (CentOS) Server at vm-ossec01p Port 81
+
+http://vm-ossec01p:81/mysqlquotad/apply.tpl
+Not Found
+The requested URL /mysqlquotad/apply.tpl was not found on this server.
+Apache/2.2.15 (CentOS) Server at vm-ossec01p Port 81
+
+................................................................................
+................................................................................
+
+[root@vm-ossec01p ~]# mysql -u ossec -ppVseFyP3 ossec
+
+mysql> select * from information_schema.tables ;
+
+mysql> select TABLE_SCHEMA , TABLE_NAME , TABLE_ROWS , DATA_LENGTH , INDEX_LENGTH  from information_schema.tables ;
++--------------------+---------------------------------------+------------+-------------+--------------+
+| TABLE_SCHEMA       | TABLE_NAME                            | TABLE_ROWS | DATA_LENGTH | INDEX_LENGTH |
++--------------------+---------------------------------------+------------+-------------+--------------+
+| information_schema | CHARACTER_SETS                        |       NULL |           0 |            0 |
+| information_schema | CLIENT_STATISTICS                     |       NULL |           0 |            0 |
+| information_schema | COLLATIONS                            |       NULL |           0 |            0 |
+| information_schema | COLLATION_CHARACTER_SET_APPLICABILITY |       NULL |           0 |            0 |
+| information_schema | COLUMNS                               |       NULL |           0 |         1024 |
+| information_schema | COLUMN_PRIVILEGES                     |       NULL |           0 |            0 |
+| information_schema | INDEX_STATISTICS                      |       NULL |           0 |            0 |
+| information_schema | ENGINES                               |       NULL |           0 |            0 |
+| information_schema | EVENTS                                |       NULL |           0 |         1024 |
+| information_schema | FILES                                 |       NULL |           0 |            0 |
+| information_schema | GLOBAL_STATUS                         |       NULL |           0 |            0 |
+| information_schema | GLOBAL_VARIABLES                      |       NULL |           0 |            0 |
+| information_schema | KEY_COLUMN_USAGE                      |       NULL |           0 |            0 |
+| information_schema | PARAMETERS                            |       NULL |           0 |         1024 |
+| information_schema | PARTITIONS                            |       NULL |           0 |         1024 |
+| information_schema | PLUGINS                               |       NULL |           0 |         1024 |
+| information_schema | PROCESSLIST                           |       NULL |           0 |         1024 |
+| information_schema | PROFILING                             |       NULL |           0 |            0 |
+| information_schema | REFERENTIAL_CONSTRAINTS               |       NULL |           0 |            0 |
+| information_schema | ROUTINES                              |       NULL |           0 |         1024 |
+| information_schema | SCHEMATA                              |       NULL |           0 |            0 |
+| information_schema | SCHEMA_PRIVILEGES                     |       NULL |           0 |            0 |
+| information_schema | SESSION_STATUS                        |       NULL |           0 |            0 |
+| information_schema | SESSION_VARIABLES                     |       NULL |           0 |            0 |
+| information_schema | STATISTICS                            |       NULL |           0 |            0 |
+| information_schema | TABLES                                |       NULL |           0 |            0 |
+| information_schema | TABLESPACES                           |       NULL |           0 |            0 |
+| information_schema | TABLE_CONSTRAINTS                     |       NULL |           0 |            0 |
+| information_schema | TABLE_PRIVILEGES                      |       NULL |           0 |            0 |
+| information_schema | TABLE_STATISTICS                      |       NULL |           0 |            0 |
+| information_schema | THREAD_STATISTICS                     |       NULL |           0 |            0 |
+| information_schema | TRIGGERS                              |       NULL |           0 |         1024 |
+| information_schema | USER_PRIVILEGES                       |       NULL |           0 |            0 |
+| information_schema | USER_STATISTICS                       |       NULL |           0 |            0 |
+| information_schema | VIEWS                                 |       NULL |           0 |         1024 |
+| information_schema | INNODB_BUFFER_PAGE                    |       NULL |           0 |            0 |
+| information_schema | INNODB_TRX                            |       NULL |           0 |            0 |
+| information_schema | INNODB_BUFFER_POOL_STATS              |       NULL |           0 |            0 |
+| information_schema | INNODB_LOCK_WAITS                     |       NULL |           0 |            0 |
+| information_schema | INNODB_CMPMEM                         |       NULL |           0 |            0 |
+| information_schema | INNODB_CMP                            |       NULL |           0 |            0 |
+| information_schema | INNODB_LOCKS                          |       NULL |           0 |            0 |
+| information_schema | INNODB_CMPMEM_RESET                   |       NULL |           0 |            0 |
+| information_schema | INNODB_CMP_RESET                      |       NULL |           0 |            0 |
+| information_schema | INNODB_BUFFER_PAGE_LRU                |       NULL |           0 |            0 |
+| ossec              | agent                                 |          0 |       16384 |            0 |
+| ossec              | alert                                 |   84203010 |  6156189696 |   4075814912 |
+| ossec              | category                              |        131 |       16384 |        16384 |
+| ossec              | data                                  |  134742498 | 21852323840 |   1315962880 |
+| ossec              | location                              |        560 |       65536 |            0 |
+| ossec              | server                                |          1 |       16384 |        16384 |
+| ossec              | signature                             |       1229 |       98304 |        49152 |
+| ossec              | signature_category_mapping            |       2261 |       98304 |            0 |
++--------------------+---------------------------------------+------------+-------------+--------------+
+53 rows in set (0.32 sec)
+
+mysql> Bye
+[root@vm-ossec01p ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+#   Wed Oct 28 11:58:08 MSK 2015
+
+[root@vm-ossec01p cgi-bin]# read -s MYSQL_ROOT_PASSWORD ; export MYSQL_ROOT_PASSWORD
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "create database ossec_$(date +%Y%m%d);"
+[root@vm-ossec01p cgi-bin]#
+#   This is wrong password. This password is using on vm-ossec01t server.
+#   [root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "grant all privileges on ossec_$(date +%Y%m%d).* to ossec@'localhost' identified by 'RSNrr33a';"
+#
+#   If ossec cannot connect to database, it write follow messages into it log file.
+[root@vm-ossec01p cgi-bin]# tail -f /var/ossec/logs/ossec.log
+...
+2015/10/28 12:48:19 ossec-syscheckd: INFO: Directory set for real time monitoring: '/etc'.
+2015/10/28 12:48:19 ossec-syscheckd: INFO: Directory set for real time monitoring: '/var/spool/cron'.
+2015/10/28 12:49:12 ossec-dbd(5202): ERROR: Error connecting to database '127.0.0.1'(ossec_20151028): ERROR: Access denied for user 'ossec'@'localhost' (using password: YES).
+2015/10/28 12:51:12 ossec-dbd(5202): ERROR: Error connecting to database '127.0.0.1'(ossec_20151028): ERROR: Access denied for user 'ossec'@'localhost' (using password: YES).
+2015/10/28 12:54:12 ossec-dbd(5202): ERROR: Error connecting to database '127.0.0.1'(ossec_20151028): ERROR: Access denied for user 'ossec'@'localhost' (using password: YES).
+2015/10/28 12:58:12 ossec-dbd(5202): ERROR: Error connecting to database '127.0.0.1'(ossec_20151028): ERROR: Access denied for user 'ossec'@'localhost' (using password: YES).
+2015/10/28 13:03:12 ossec-dbd(5202): ERROR: Error connecting to database '127.0.0.1'(ossec_20151028): ERROR: Access denied for user 'ossec'@'localhost' (using password: YES).
+...
+
+#   And here we have 0 rows in tables....
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec_$(date +%Y%m%d); show table status;"
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| Name                       | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment | Create_time         | Update_time | Check_time | Collation         | Checksum | Create_options | Comment |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| agent                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| alert                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        49152 |   3145728 |           NULL | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| category                   | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        16384 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| data                       | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        16384 |   3145728 |           NULL | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| location                   | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| server                     | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        16384 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature                  | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        49152 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature_category_mapping | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+[root@vm-ossec01p cgi-bin]#
+
+
+
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "grant all privileges on ossec_$(date +%Y%m%d).* to ossec@'localhost' identified by 'pVseFyP3';"
+[root@vm-ossec01p cgi-bin]#
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} ossec_$(date +%Y%m%d) < /var/ossec/etc/mysql/mysql.schema
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec_$(date +%Y%m%d); show tables ;"
++----------------------------+
+| Tables_in_ossec_20151028   |
++----------------------------+
+| agent                      |
+| alert                      |
+| category                   |
+| data                       |
+| location                   |
+| server                     |
+| signature                  |
+| signature_category_mapping |
++----------------------------+
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec_$(date +%Y%m%d); show table status;"
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| Name                       | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment | Create_time         | Update_time | Check_time | Collation         | Checksum | Create_options | Comment |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| agent                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| alert                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        49152 |   3145728 |           NULL | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| category                   | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        16384 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| data                       | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        16384 |   3145728 |           NULL | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| location                   | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| server                     | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        16384 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature                  | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        49152 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature_category_mapping | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |   3145728 |              1 | 2015-10-28 12:22:23 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec_$(date +%Y%m%d); show table status\G;"
+*************************** 1. row ***************************
+           Name: agent
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 3145728
+ Auto_increment: 1
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 2. row ***************************
+           Name: alert
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 49152
+      Data_free: 3145728
+ Auto_increment: NULL
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 3. row ***************************
+           Name: category
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 3145728
+ Auto_increment: 1
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 4. row ***************************
+           Name: data
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 3145728
+ Auto_increment: NULL
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 5. row ***************************
+           Name: location
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 3145728
+ Auto_increment: 1
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 6. row ***************************
+           Name: server
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 3145728
+ Auto_increment: 1
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 7. row ***************************
+           Name: signature
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 49152
+      Data_free: 3145728
+ Auto_increment: 1
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 8. row ***************************
+           Name: signature_category_mapping
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 3145728
+ Auto_increment: 1
+    Create_time: 2015-10-28 12:22:23
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# cp /etc/my.cnf{,.backup.20151028}
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# service mysqld stop
+Stopping mysqld:                                           [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# vim /etc/my.cnf
+...
+# Follow four rows creates for each table stand alone file.
+innodb_file_per_table
+innodb_flush_method=O_DIRECT
+innodb_log_file_size=1G
+innodb_buffer_pool_size=4G
+
+[root@vm-ossec01p cgi-bin]# service mysqld start
+MySQL Daemon failed to start.
+Starting mysqld:                                           [FAILED]
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# less /var/log/mysqld.log
+...
+151028 12:33:09 [Note] /usr/libexec/mysqld: Normal shutdown
+
+151028 12:33:09 [Note] Event Scheduler: Purging the queue. 0 events
+151028 12:33:09  InnoDB: Starting shutdown...
+151028 12:33:11  InnoDB: Shutdown completed; log sequence number 53029309359
+151028 12:33:11 [Note] /usr/libexec/mysqld: Shutdown complete
+
+151028 12:33:11 mysqld_safe mysqld from pid file /var/run/mysqld/mysqld.pid ended
+151028 12:35:06 mysqld_safe Starting mysqld daemon with databases from /var/lib/mysql
+151028 12:35:06 [Note] libgovernor.so not found
+151028 12:35:06 [Note] Plugin 'FEDERATED' is disabled.
+151028 12:35:06 InnoDB: The InnoDB memory heap is disabled
+151028 12:35:06 InnoDB: Mutexes and rw_locks use GCC atomic builtins
+151028 12:35:06 InnoDB: Compressed tables use zlib 1.2.3
+151028 12:35:06 InnoDB: Using Linux native AIO
+151028 12:35:06 InnoDB: Initializing buffer pool, size = 4.0G
+151028 12:35:06 InnoDB: Completed initialization of buffer pool
+InnoDB: Error: log file ./ib_logfile0 is of different size 0 5242880 bytes
+InnoDB: than specified in the .cnf file 0 1073741824 bytes!
+151028 12:35:06 [ERROR] Plugin 'InnoDB' init function returned error.
+151028 12:35:06 [ERROR] Plugin 'InnoDB' registration as a STORAGE ENGINE failed.
+151028 12:35:06 [ERROR] Unknown/unsupported storage engine: InnoDB
+151028 12:35:06 [ERROR] Aborting
+
+151028 12:35:06 [Note] /usr/libexec/mysqld: Shutdown complete
+
+151028 12:35:06 mysqld_safe mysqld from pid file /var/run/mysqld/mysqld.pid ended
+
+
+
+
+
+................................................................................
+
+[root@vm-ossec01p cgi-bin]# vim /etc/my.cnf
+...
+# Follow four rows creates for each table stand alone file.
+innodb_file_per_table
+innodb_flush_method=O_DIRECT
+#innodb_log_file_size=1G
+innodb_buffer_pool_size=4G
+
+
+[root@vm-ossec01p cgi-bin]# service mysqld start
+Starting mysqld:                                           [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# less /var/log/mysqld.log
+...
+151028 12:40:53 mysqld_safe Starting mysqld daemon with databases from /var/lib/mysql
+151028 12:40:53 [Note] libgovernor.so not found
+151028 12:40:53 [Note] Plugin 'FEDERATED' is disabled.
+151028 12:40:53 InnoDB: The InnoDB memory heap is disabled
+151028 12:40:53 InnoDB: Mutexes and rw_locks use GCC atomic builtins
+151028 12:40:53 InnoDB: Compressed tables use zlib 1.2.3
+151028 12:40:53 InnoDB: Using Linux native AIO
+151028 12:40:53 InnoDB: Initializing buffer pool, size = 4.0G
+151028 12:40:53 InnoDB: Completed initialization of buffer pool
+151028 12:40:53 InnoDB: highest supported file format is Barracuda.
+151028 12:40:55  InnoDB: Waiting for the background threads to start
+151028 12:40:56 InnoDB: 5.5.37 started; log sequence number 53029309359
+151028 12:40:56 [Note] Server hostname (bind-address): '0.0.0.0'; port: 3306
+151028 12:40:56 [Note]   - '0.0.0.0' resolves to '0.0.0.0';
+151028 12:40:56 [Note] Server socket created on IP: '0.0.0.0'.
+151028 12:40:56 [Note] Event Scheduler: Loaded 0 events
+151028 12:40:56 [Note] /usr/libexec/mysqld: ready for connections.
+Version: '5.5.37-cll-lve'  socket: '/var/lib/mysql/mysql.sock'  port: 3306  MySQL Community Server (GPL) by Atomicorp
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 32G
+-rw-rw---- 1 mysql mysql  32G Oct 28 12:33 ibdata1
+-rw-rw---- 1 mysql mysql 5.0M Oct 28 12:40 ib_logfile0
+-rw-rw---- 1 mysql mysql 5.0M Oct 27 17:32 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 12:40 mysql.sock
+drwx------ 2 mysql mysql 4.0K May 12  2014 ossec
+drwx------ 2 mysql mysql 4.0K Oct 28 12:22 ossec_20151028
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/ossec/
+total 100K
+-rw-rw---- 1 mysql mysql 8.6K May 12  2014 agent.frm
+-rw-rw---- 1 mysql mysql 8.7K May 12  2014 alert.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 category.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 data.frm
+-rw-rw---- 1 mysql mysql   65 May 12  2014 db.opt
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 location.frm
+-rw-rw---- 1 mysql mysql 8.6K May 12  2014 server.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 signature_category_mapping.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 signature.frm
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/ossec_20151028/
+total 100K
+-rw-rw---- 1 mysql mysql 8.6K Oct 28 12:22 agent.frm
+-rw-rw---- 1 mysql mysql 8.7K Oct 28 12:22 alert.frm
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 12:22 category.frm
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 12:22 data.frm
+-rw-rw---- 1 mysql mysql   65 Oct 28 12:18 db.opt
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 12:22 location.frm
+-rw-rw---- 1 mysql mysql 8.6K Oct 28 12:22 server.frm
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 12:22 signature_category_mapping.frm
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 12:22 signature.frm
+[root@vm-ossec01p cgi-bin]#
+
+
+................................................................................
+
+[root@vm-ossec01p cgi-bin]# service ossec-hids stop
+Shutting down ossec-hids:                                  [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# vim /var/ossec/etc/ossec.conf
+...
+<!-- OSSEC vm-ossec01p server config -->
+
+<ossec_config>
+
+  <database_output>
+     <hostname>127.0.0.1</hostname>
+     <username>ossec</username>
+     <password>pVseFyP3</password>
+     <database>ossec_20151028</database>
+     <type>mysql</type>
+  </database_output>
+
+
+[root@vm-ossec01p cgi-bin]# service ossec-hids start
+Starting ossec-hids:                                       [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+
+................................................................................
+
+
+[root@vm-ossec01p ~]# cp /var/www/ossecui/db_ossec.php{,.backup.$(date +%Y%m%d-%H%M)}
+[root@vm-ossec01p ~]# ls -Alh /var/www/ossecui/db_ossec.php*
+-rw-r--r-- 1 root   root   830 May 12  2014 /var/www/ossecui/db_ossec.php
+-rw-r--r-- 1 root   root   830 Oct 28 15:13 /var/www/ossecui/db_ossec.php.backup.20151028-1513
+-rw-r--r-- 1 apache apache 831 Jun 10  2013 /var/www/ossecui/db_ossec.php.new
+[root@vm-ossec01p ~]#
+
+
+[root@vm-ossec01p ~]# vim /var/www/ossecui/db_ossec.php
+<?php
+/*
+ * Copyright (c) 2012 Andy 'Rimmer' Shepherd <andrew.shepherd@ecsc.co.uk> (ECSC Ltd).
+ * This program is free software; Distributed under the terms of the GNU GPL v3.
+ */
+
+define ('DB_USER_O', 'ossec');
+define ('DB_PASSWORD_O', 'pVseFyP3');
+define ('DB_HOST_O', '127.0.0.1');
+define ('DB_NAME_O', 'ossec_20151028');
+...
+
+................................................................................
+................................................................................
+
+http://nolabnoparty.com/en/setup-ossec-with-mysql-and-analogi-in-centos-6/
+
+Troubleshooting
+During the time data stored in the database make the DB itself quite huge. Two files become quite big: data.MYD and alerts.MYD.
+
+Check the files size with command:
+
+# cd /var/lib/mysql/ossec/
+# du * -h
+
+If the size is too big, there are to steps to perform:
+
+database backup
+tables truncate
+Once performed the backup, from the console type the command:
+
+# mysql -u root -p
+
+mysql> show databases;
+mysql> use ossec;
+mysql> truncate table data;
+mysql> truncate table alert;
+mysql> quit;
+
+Files size is now smaller.
+
+
+
+Delete the integrity history and the alerts.
+
+Stop OSSEC service:
+
+# service ossec stop
+
+Clear the file integrity history:
+
+# /var/ossec/bin/syscheck_update -a
+
+Delete all alerts removing the whole /var/ossec/logs/alerts/* directory:
+
+# rm -rf /var/ossec/logs/alerts/*
+
+Start OSSEC service:
+
+# service ossec start
+
+................................................................................
+................................................................................
+
+[root@vm-ossec01p ~]# mysql -V
+mysql  Ver 14.14 Distrib 5.5.37, for Linux (x86_64) using readline 5.1
+[root@vm-ossec01p ~]#
+
+................................................................................
+
+
+[root@vm-ossec01p cgi-bin]# mysqldump -u ossec -ppVseFyP3 ossec | gzip -9 > /opt/$(date +%Y%m%d-%H%M).backup.mysql.ossec.gz
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "show databases; use ossec; truncate table data; truncate table alert;"
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| ossec              |
+| ossec_20151028     |
+| performance_schema |
+| quotadb            |
++--------------------+
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 32G
+-rw-rw---- 1 mysql mysql  32G Oct 28 16:44 ibdata1
+-rw-rw---- 1 mysql mysql 5.0M Oct 28 16:44 ib_logfile0
+-rw-rw---- 1 mysql mysql 5.0M Oct 28 16:44 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 12:40 mysql.sock
+drwx------ 2 mysql mysql 4.0K May 12  2014 ossec
+drwx------ 2 mysql mysql 4.0K Oct 28 12:22 ossec_20151028
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/ossec/
+total 100K
+-rw-rw---- 1 mysql mysql 8.6K May 12  2014 agent.frm
+-rw-rw---- 1 mysql mysql 8.7K May 12  2014 alert.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 category.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 data.frm
+-rw-rw---- 1 mysql mysql   65 May 12  2014 db.opt
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 location.frm
+-rw-rw---- 1 mysql mysql 8.6K May 12  2014 server.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 signature_category_mapping.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 signature.frm
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec ; show table status;"
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-------------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| Name                       | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free   | Auto_increment | Create_time         | Update_time | Check_time | Collation         | Checksum | Create_options | Comment |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-------------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| agent                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 | 33404485632 |              1 | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| alert                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        49152 | 33404485632 |           NULL | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| category                   | InnoDB |      10 | Compact    |  131 |            125 |       16384 |               0 |        16384 | 33404485632 |            132 | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| data                       | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |        16384 | 33404485632 |           NULL | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| location                   | InnoDB |      10 | Compact    |  689 |             95 |       65536 |               0 |            0 | 33404485632 |            535 | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| server                     | InnoDB |      10 | Compact    |    1 |          16384 |       16384 |               0 |        16384 | 33404485632 |              2 | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature                  | InnoDB |      10 | Compact    |  821 |            119 |       98304 |               0 |        49152 | 33404485632 |            943 | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature_category_mapping | InnoDB |      10 | Compact    | 1785 |             55 |       98304 |               0 |            0 | 33404485632 |           2116 | 2014-05-12 12:37:27 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-------------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec ; show table status\G;"
+*************************** 1. row ***************************
+           Name: agent
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 33404485632
+ Auto_increment: 1
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 2. row ***************************
+           Name: alert
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 49152
+      Data_free: 33404485632
+ Auto_increment: NULL
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 3. row ***************************
+           Name: category
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 131
+ Avg_row_length: 125
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 33404485632
+ Auto_increment: 132
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 4. row ***************************
+           Name: data
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 0
+ Avg_row_length: 0
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 33404485632
+ Auto_increment: NULL
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 5. row ***************************
+           Name: location
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 460
+ Avg_row_length: 142
+    Data_length: 65536
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 33404485632
+ Auto_increment: 535
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 6. row ***************************
+           Name: server
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 1
+ Avg_row_length: 16384
+    Data_length: 16384
+Max_data_length: 0
+   Index_length: 16384
+      Data_free: 33404485632
+ Auto_increment: 2
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 7. row ***************************
+           Name: signature
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 848
+ Avg_row_length: 115
+    Data_length: 98304
+Max_data_length: 0
+   Index_length: 49152
+      Data_free: 33404485632
+ Auto_increment: 943
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+*************************** 8. row ***************************
+           Name: signature_category_mapping
+         Engine: InnoDB
+        Version: 10
+     Row_format: Compact
+           Rows: 2736
+ Avg_row_length: 35
+    Data_length: 98304
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 33404485632
+ Auto_increment: 2116
+    Create_time: 2014-05-12 12:37:27
+    Update_time: NULL
+     Check_time: NULL
+      Collation: latin1_swedish_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# service mysqld restart
+Stopping mysqld:                                           [  OK  ]
+Starting mysqld:                                           [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 32G
+-rw-rw---- 1 mysql mysql  32G Oct 28 16:49 ibdata1
+-rw-rw---- 1 mysql mysql 5.0M Oct 28 16:49 ib_logfile0
+-rw-rw---- 1 mysql mysql 5.0M Oct 28 16:49 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 16:48 mysql.sock
+drwx------ 2 mysql mysql 4.0K May 12  2014 ossec
+drwx------ 2 mysql mysql 4.0K Oct 28 12:22 ossec_20151028
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/ossec/
+total 100K
+-rw-rw---- 1 mysql mysql 8.6K May 12  2014 agent.frm
+-rw-rw---- 1 mysql mysql 8.7K May 12  2014 alert.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 category.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 data.frm
+-rw-rw---- 1 mysql mysql   65 May 12  2014 db.opt
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 location.frm
+-rw-rw---- 1 mysql mysql 8.6K May 12  2014 server.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 signature_category_mapping.frm
+-rw-rw---- 1 mysql mysql 8.5K May 12  2014 signature.frm
+[root@vm-ossec01p cgi-bin]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-ossec01p cgi-bin]# mysqldump -u ossec -ppVseFyP3 ossec > /opt/$(date +%Y%m%d-%H%M).backup.mysql.ossec
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /opt/
+total 2.9G
+-rw-r--r--  1 root root 1.5G Oct 27 19:07 20151027-1828.backup.mysql.ossec.gz
+-rw-r--r--  1 root root 1.5G Oct 28 16:43 20151028-1501.backup.mysql.ossec.gz
+-rw-r--r--  1 root root 114K Oct 28 16:53 20151028-1653.backup.mysql.ossec
+drwx------. 2 root root  16K Nov 20  2013 lost+found
+drwxr-xr-x  3 root root 4.0K Oct 21 21:16 ossec_logs_backup
+drwxr-xr-x. 2 root root 4.0K Feb 22  2013 rh
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# mysqldump -u ossec -ppVseFyP3 ossec_20151028 > /opt/$(date +%Y%m%d-%H%M).backup.mysql.ossec_20151028
+[root@vm-ossec01p cgi-bin]# ls -Alh /opt/
+total 2.9G
+-rw-r--r--  1 root root 1.5G Oct 27 19:07 20151027-1828.backup.mysql.ossec.gz
+-rw-r--r--  1 root root 1.5G Oct 28 16:43 20151028-1501.backup.mysql.ossec.gz
+-rw-r--r--  1 root root 114K Oct 28 16:53 20151028-1653.backup.mysql.ossec
+-rw-r--r--  1 root root  45M Oct 28 16:54 20151028-1654.backup.mysql.ossec_20151028
+drwx------. 2 root root  16K Nov 20  2013 lost+found
+drwxr-xr-x  3 root root 4.0K Oct 21 21:16 ossec_logs_backup
+drwxr-xr-x. 2 root root 4.0K Feb 22  2013 rh
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# mysql -u ossec -ppVseFyP3 ossec -e "drop database ossec;"
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "show databases;"
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| ossec_20151028     |
+| performance_schema |
+| quotadb            |
++--------------------+
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# mysql -u ossec -ppVseFyP3 ossec_20151028 -e "drop database ossec_20151028;"
+[root@vm-ossec01p cgi-bin]#
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "show databases;"
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| quotadb            |
++--------------------+
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# service mysqld stop
+Stopping mysqld:                                           [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+#   Here is how it looks in web browser.
+http://vm-ossec01p/detail.php?from=1528%20280915
+Could not select the database : Unknown database 'ossec_20151028'
+Click HERE to select your main OSSEC DB
+
+
+
+[root@vm-ossec01p cgi-bin]# vim /etc/my.cnf
+...
+# Follow four rows creates for each table stand alone file.
+innodb_file_per_table
+innodb_flush_method=O_DIRECT
+innodb_log_file_size=1G
+innodb_buffer_pool_size=4G
+
+[root@vm-ossec01p cgi-bin]# rm -f /var/lib/mysql/{ibdata1,ib_logfile0,ib_logfile1}
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 12K
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# service mysqld start
+Starting mysqld:                                           [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 2.1G
+-rw-rw---- 1 mysql mysql  18M Oct 28 17:02 ibdata1
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:02 ib_logfile0
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:02 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 17:02 mysql.sock
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} < /opt/20151028-1654.backup.mysql.ossec_20151028
+ERROR 1046 (3D000) at line 22: No database selected
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} ossec_20151028 < /opt/20151028-1654.backup.mysql.ossec_20151028
+ERROR 1049 (42000): Unknown database 'ossec_20151028'
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "create database ossec_20151028;"
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} ossec_20151028 < /opt/20151028-1654.backup.mysql.ossec_20151028
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 2.1G
+-rw-rw---- 1 mysql mysql  18M Oct 28 17:10 ibdata1
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:10 ib_logfile0
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:02 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 17:02 mysql.sock
+drwx------ 2 mysql mysql 4.0K Oct 28 17:09 ossec_20151028
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/ossec_20151028/
+total 85M
+-rw-rw---- 1 mysql mysql 8.6K Oct 28 17:09 agent.frm
+-rw-rw---- 1 mysql mysql  96K Oct 28 17:09 agent.ibd
+-rw-rw---- 1 mysql mysql 8.7K Oct 28 17:09 alert.frm
+-rw-rw---- 1 mysql mysql  40M Oct 28 17:10 alert.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:09 category.frm
+-rw-rw---- 1 mysql mysql 112K Oct 28 17:10 category.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:09 data.frm
+-rw-rw---- 1 mysql mysql  44M Oct 28 17:10 data.ibd
+-rw-rw---- 1 mysql mysql   65 Oct 28 17:09 db.opt
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:09 location.frm
+-rw-rw---- 1 mysql mysql  96K Oct 28 17:10 location.ibd
+-rw-rw---- 1 mysql mysql 8.6K Oct 28 17:09 server.frm
+-rw-rw---- 1 mysql mysql 112K Oct 28 17:10 server.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:09 signature_category_mapping.frm
+-rw-rw---- 1 mysql mysql 160K Oct 28 17:10 signature_category_mapping.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:09 signature.frm
+-rw-rw---- 1 mysql mysql 208K Oct 28 17:10 signature.ibd
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "create database ossec;"
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} ossec < /opt/20151028-1653.backup.mysql.ossec
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 2.1G
+-rw-rw---- 1 mysql mysql  18M Oct 28 17:14 ibdata1
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:14 ib_logfile0
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:02 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 17:02 mysql.sock
+drwx------ 2 mysql mysql 4.0K Oct 28 17:14 ossec
+drwx------ 2 mysql mysql 4.0K Oct 28 17:09 ossec_20151028
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/ossec/
+total 1.2M
+-rw-rw---- 1 mysql mysql 8.6K Oct 28 17:14 agent.frm
+-rw-rw---- 1 mysql mysql  96K Oct 28 17:14 agent.ibd
+-rw-rw---- 1 mysql mysql 8.7K Oct 28 17:14 alert.frm
+-rw-rw---- 1 mysql mysql 144K Oct 28 17:14 alert.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:14 category.frm
+-rw-rw---- 1 mysql mysql 112K Oct 28 17:14 category.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:14 data.frm
+-rw-rw---- 1 mysql mysql 112K Oct 28 17:14 data.ibd
+-rw-rw---- 1 mysql mysql   65 Oct 28 17:13 db.opt
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:14 location.frm
+-rw-rw---- 1 mysql mysql 128K Oct 28 17:14 location.ibd
+-rw-rw---- 1 mysql mysql 8.6K Oct 28 17:14 server.frm
+-rw-rw---- 1 mysql mysql 112K Oct 28 17:14 server.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:14 signature_category_mapping.frm
+-rw-rw---- 1 mysql mysql 160K Oct 28 17:14 signature_category_mapping.ibd
+-rw-rw---- 1 mysql mysql 8.5K Oct 28 17:14 signature.frm
+-rw-rw---- 1 mysql mysql 208K Oct 28 17:14 signature.ibd
+[root@vm-ossec01p cgi-bin]#
+
+
+................................................................................
+
+#   Now I return to use old name of database.
+[root@vm-ossec01p cgi-bin]# vim /var/ossec/etc/ossec.conf
+
+<!-- OSSEC vm-ossec01p server config -->
+
+<ossec_config>
+
+  <database_output>
+     <hostname>127.0.0.1</hostname>
+     <username>ossec</username>
+     <password>pVseFyP3</password>
+     <database>ossec</database>
+     <type>mysql</type>
+  </database_output>
+
+[root@vm-ossec01p cgi-bin]# service ossec-hids restart
+Shutting down ossec-hids:                                  [  OK  ]
+Starting ossec-hids:                                       [  OK  ]
+[root@vm-ossec01p cgi-bin]#
+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec ; show table status;"
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| Name                       | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment | Create_time         | Update_time | Check_time | Collation         | Checksum | Create_options | Comment |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| agent                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |         0 |              1 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| alert                      | InnoDB |      10 | Compact    | 4772 |             92 |      442368 |               0 |       458752 |         0 |           NULL | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| category                   | InnoDB |      10 | Compact    |  131 |            125 |       16384 |               0 |        16384 |         0 |            132 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| data                       | InnoDB |      10 | Compact    | 5351 |            297 |     1589248 |               0 |       114688 |   4194304 |           NULL | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| location                   | InnoDB |      10 | Compact    |  525 |            124 |       65536 |               0 |            0 |         0 |            535 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| server                     | InnoDB |      10 | Compact    |    1 |          16384 |       16384 |               0 |        16384 |         0 |              2 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature                  | InnoDB |      10 | Compact    |  886 |            110 |       98304 |               0 |        49152 |         0 |            943 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature_category_mapping | InnoDB |      10 | Compact    | 2487 |             39 |       98304 |               0 |            0 |         0 |           2116 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+[root@vm-ossec01p cgi-bin]# mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "use ossec ; show table status;"
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| Name                       | Engine | Version | Row_format | Rows | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment | Create_time         | Update_time | Check_time | Collation         | Checksum | Create_options | Comment |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| agent                      | InnoDB |      10 | Compact    |    0 |              0 |       16384 |               0 |            0 |         0 |              1 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| alert                      | InnoDB |      10 | Compact    | 5449 |             90 |      491520 |               0 |       491520 |         0 |           NULL | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| category                   | InnoDB |      10 | Compact    |  131 |            125 |       16384 |               0 |        16384 |         0 |            132 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| data                       | InnoDB |      10 | Compact    | 6288 |            252 |     1589248 |               0 |       131072 |   4194304 |           NULL | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| location                   | InnoDB |      10 | Compact    |  525 |            124 |       65536 |               0 |            0 |         0 |            535 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| server                     | InnoDB |      10 | Compact    |    1 |          16384 |       16384 |               0 |        16384 |         0 |              2 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature                  | InnoDB |      10 | Compact    |  891 |            110 |       98304 |               0 |        49152 |         0 |            943 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| signature_category_mapping | InnoDB |      10 | Compact    | 2986 |             32 |       98304 |               0 |            0 |         0 |           2116 | 2015-10-28 17:14:35 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
++----------------------------+--------+---------+------------+------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# ls -Alh  /var/www/ossecui/db_ossec*
+-rw-r--r-- 1 apache apache 834 Jun 10  2013 /var/www/ossecui/db_ossec2.php
+-rw-r--r-- 1 root   root   839 Oct 28 15:15 /var/www/ossecui/db_ossec.php
+-rw-r--r-- 1 root   root   830 Oct 28 15:13 /var/www/ossecui/db_ossec.php.backup.20151028-1513
+-rw-r--r-- 1 apache apache 831 Jun 10  2013 /var/www/ossecui/db_ossec.php.new
+[root@vm-ossec01p cgi-bin]# cp /var/www/ossecui/db_ossec.php{,.backup.20151028-1753}
+[root@vm-ossec01p cgi-bin]# ls -Alh  /var/www/ossecui/db_ossec*
+-rw-r--r-- 1 apache apache 834 Jun 10  2013 /var/www/ossecui/db_ossec2.php
+-rw-r--r-- 1 root   root   839 Oct 28 15:15 /var/www/ossecui/db_ossec.php
+-rw-r--r-- 1 root   root   830 Oct 28 15:13 /var/www/ossecui/db_ossec.php.backup.20151028-1513
+-rw-r--r-- 1 root   root   839 Oct 28 17:53 /var/www/ossecui/db_ossec.php.backup.20151028-1753
+-rw-r--r-- 1 apache apache 831 Jun 10  2013 /var/www/ossecui/db_ossec.php.new
+[root@vm-ossec01p cgi-bin]# cp /var/www/ossecui/db_ossec.php.backup.20151028-1513 /var/www/ossecui/db_ossec.php
+cp: overwrite `/var/www/ossecui/db_ossec.php'? y
+[root@vm-ossec01p cgi-bin]#
+
+
+
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 2.1G
+-rw-rw---- 1 mysql mysql  18M Oct 28 17:56 ibdata1
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:56 ib_logfile0
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:02 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 17:02 mysql.sock
+drwx------ 2 mysql mysql 4.0K Oct 28 17:14 ossec
+drwx------ 2 mysql mysql 4.0K Oct 28 17:09 ossec_20151028
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]# du -sh /var/lib/mysql/*
+18M     /var/lib/mysql/ibdata1
+1.1G    /var/lib/mysql/ib_logfile0
+1.1G    /var/lib/mysql/ib_logfile1
+1.1M    /var/lib/mysql/mysql
+0       /var/lib/mysql/mysql.sock
+23M     /var/lib/mysql/ossec
+133M    /var/lib/mysql/ossec_20151028
+212K    /var/lib/mysql/performance_schema
+20K     /var/lib/mysql/quotadb
+[root@vm-ossec01p cgi-bin]#
+
+................................................................................
+
+# Here is sequence of steps, that help reduce database size.
+mysqldump -u ossec -ppVseFyP3 ossec | gzip -9 > /opt/$(date +%Y%m%d-%H%M).backup.mysql.ossec.gz
+mysql -u ossec -ppVseFyP3 ossec -e "drop database ossec;"
+mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "create database ossec;"
+mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "grant all privileges on ossec.* to ossec@'localhost' identified by 'pVseFyP3';"
+mysql -u root -p${MYSQL_ROOT_PASSWORD} ossec < /var/ossec/etc/mysql/mysql.schema
+
+................................................................................
+
+#   Here I can see that operation "drop database database_name" destroys files of that database.
+#   This behavior is exactly what I need.
+#   There is needn't restart mysqld service.
+[root@vm-ossec01p cgi-bin]# ls -Alh /var/lib/mysql/
+total 2.1G
+-rw-rw---- 1 mysql mysql  18M Oct 28 17:56 ibdata1
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:56 ib_logfile0
+-rw-rw---- 1 mysql mysql 1.0G Oct 28 17:02 ib_logfile1
+drwx------ 2 mysql mysql 4.0K May 12  2014 mysql
+srwxrwxrwx 1 mysql mysql    0 Oct 28 17:02 mysql.sock
+drwx------ 2 mysql mysql 4.0K Oct 28 17:14 ossec
+drwx------ 2 mysql mysql 4.0K Oct 28 17:09 ossec_20151028
+drwx------ 2 mysql mysql 4.0K May 12  2014 performance_schema
+drwx------ 2 mysql mysql 4.0K Oct 27 19:35 quotadb
+[root@vm-ossec01p cgi-bin]# du -sh /var/lib/mysql/*
+18M     /var/lib/mysql/ibdata1
+1.1G    /var/lib/mysql/ib_logfile0
+1.1G    /var/lib/mysql/ib_logfile1
+1.1M    /var/lib/mysql/mysql
+0       /var/lib/mysql/mysql.sock
+23M     /var/lib/mysql/ossec
+133M    /var/lib/mysql/ossec_20151028
+212K    /var/lib/mysql/performance_schema
+20K     /var/lib/mysql/quotadb
+[root@vm-ossec01p cgi-bin]# mysql -u ossec -ppVseFyP3 ossec_20151028 -e "drop database ossec_20151028;"
+[root@vm-ossec01p cgi-bin]# du -sh /var/lib/mysql/*
+18M     /var/lib/mysql/ibdata1
+1.1G    /var/lib/mysql/ib_logfile0
+1.1G    /var/lib/mysql/ib_logfile1
+1.1M    /var/lib/mysql/mysql
+0       /var/lib/mysql/mysql.sock
+44M     /var/lib/mysql/ossec
+212K    /var/lib/mysql/performance_schema
+20K     /var/lib/mysql/quotadb
+[root@vm-ossec01p cgi-bin]#
+
+................................................................................
+
+[root@vm-ossec01p cgi-bin]# if [[ $(du -s /var/lib/mysql/ossec | cut -f 1) -ge $(expr 1024 \* 1024 \* 10) ]] ; then echo yes ; fi
+[root@vm-ossec01p cgi-bin]# if [[ $(du -s /var/lib/mysql/ossec | cut -f 1) -ge $(expr 1 \* 1 \* 10) ]] ; then echo yes ; fi
+yes
+[root@vm-ossec01p cgi-bin]#
+
+
+[root@vm-ossec01p cgi-bin]# mkdir -p /opt/TCS/scripts/
+[root@vm-ossec01p cgi-bin]# vim /opt/TCS/scripts/reduce_size_ossec_mysql_database.sh
+
+
+[root@vm-ossec01p scripts]# cat reduce_size_ossec_mysql_database.sh
+#!/bin/bash
+
+MYSQL_ROOT_PASSWORD="ltajknjdsq"
+MYSQL_OSSEC_PASSWORD="pVseFyP3"
+
+# If database files size greate or equal than 10 GB - do reduction this database.
+if [[ $(du -s /var/lib/mysql/ossec | cut -f 1) -ge $(expr 1024 \* 1024 \* 10) ]] ;
+        then
+                echo "Yes!"
+                #mysqldump -u ossec -p${MYSQL_OSSEC_PASSWORD} ossec | gzip -9 > /opt/$(date +%Y%m%d-%H%M).backup.mysql.ossec.gz
+                #mysql -u ossec -p${MYSQL_OSSEC_PASSWORD} ossec -e "drop database ossec;"
+                #mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "create database ossec;"
+                #mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "grant all privileges on ossec.* to ossec@'localhost' identified by 'pVseFyP3';"
+                #mysql -u root -p${MYSQL_ROOT_PASSWORD} ossec < /var/ossec/etc/mysql/mysql.schema
+        fi
+
+
+[root@vm-ossec01p scripts]#
+
+
+#   This file contains passwords therefore I remove permission of non authorised users.
+[root@vm-ossec01p scripts]# ll
+total 4
+-rwxrwx--- 1 root root 658 Oct 28 18:45 reduce_size_ossec_mysql_database.sh
+[root@vm-ossec01p scripts]#
+
+................................................................................
+................................................................................
+
+#   Thu Oct 29 11:46:52 MSK 2015
+
+#   Here I try to remove huge amount of spam from greenplum servers.
+
+
+[root@vm-ossec01p ossec]# less logs/alerts/alerts.log
+...
+
+** Alert 1446109708.1423632563: - syslog,sshd,authentication_success,
+2015 Oct 29 12:08:28 (ds-gp-prd-sdw4) any->/var/log/secure
+Rule: 5715 (level 3) -> 'SSHD authentication success.'
+Src IP: 10.216.2.111
+User: gpadmin
+Oct 29 12:08:27 sdw4 sshd[103303]: Accepted publickey for gpadmin from 10.216.2.111 port 5205 ssh2
+
+** Alert 1446109708.1423632882: - pam,syslog,authentication_success,
+2015 Oct 29 12:08:28 (ds-gp-prd-sdw4) any->/var/log/secure
+Rule: 5501 (level 3) -> 'Login session opened.'
+Oct 29 12:08:27 sdw4 sshd[103303]: pam_unix(sshd:session): session opened for user gpadmin by (uid=0)
+
+** Alert 1446109708.1423633161: - pam,syslog,
+2015 Oct 29 12:08:28 (ds-gp-prd-sdw4) any->/var/log/secure
+Rule: 5502 (level 3) -> 'Login session closed.'
+Oct 29 12:08:27 sdw4 sshd[103303]: pam_unix(sshd:session): session closed for user gpadmin
+
+...
+
+#   Here is how this lines looks on ds-gp-prd-sdw4 server
+
+[root@ds-gp-prd-sdw4 ~]# less /var/log/secure
+...
+Oct 29 12:08:28 sdw4 sshd[103333]: Accepted publickey for gpadmin from 10.216.2.111 port 5251 ssh2
+Oct 29 12:08:28 sdw4 sshd[103333]: pam_unix(sshd:session): session opened for user gpadmin by (uid=0)
+Oct 29 12:08:28 sdw4 sshd[103336]: Received disconnect from 10.216.2.111: 11: disconnected by user
+Oct 29 12:08:28 sdw4 sshd[103333]: pam_unix(sshd:session): session closed for user gpadmin
+...
+
+
+#   This is how ossec recognize this events.
+#   We can see defference between first time login and other logins.
+[root@vm-ossec01p ossec]# /var/ossec/bin/ossec-logtest
+2015/10/29 12:15:26 ossec-testrule: INFO: Reading local decoder file.
+2015/10/29 12:15:26 ossec-testrule: INFO: Started (pid: 19002).
+ossec-testrule: Type one log per line.
+
+Oct 29 12:08:28 sdw4 sshd[103333]: Accepted publickey for gpadmin from 10.216.2.111 port 5251 ssh2
+
+
+**Phase 1: Completed pre-decoding.
+       full event: 'Oct 29 12:08:28 sdw4 sshd[103333]: Accepted publickey for gpadmin from 10.216.2.111 port 5251 ssh2'
+       hostname: 'sdw4'
+       program_name: 'sshd'
+       log: 'Accepted publickey for gpadmin from 10.216.2.111 port 5251 ssh2'
+
+**Phase 2: Completed decoding.
+       decoder: 'sshd'
+       dstuser: 'gpadmin'
+       srcip: '10.216.2.111'
+
+**Phase 3: Completed filtering (rules).
+       Rule id: '10100'
+       Level: '4'
+       Description: 'First time user logged in.'
+**Alert to be generated.
+
+
+Oct 29 12:08:28 sdw4 sshd[103333]: Accepted publickey for gpadmin from 10.216.2.111 port 5251 ssh2
+
+
+**Phase 1: Completed pre-decoding.
+       full event: 'Oct 29 12:08:28 sdw4 sshd[103333]: Accepted publickey for gpadmin from 10.216.2.111 port 5251 ssh2'
+       hostname: 'sdw4'
+       program_name: 'sshd'
+       log: 'Accepted publickey for gpadmin from 10.216.2.111 port 5251 ssh2'
+
+**Phase 2: Completed decoding.
+       decoder: 'sshd'
+       dstuser: 'gpadmin'
+       srcip: '10.216.2.111'
+
+**Phase 3: Completed filtering (rules).
+       Rule id: '5715'
+       Level: '3'
+       Description: 'SSHD authentication success.'
+**Alert to be generated.
+
+
+Oct 29 12:08:28 sdw4 sshd[103333]: pam_unix(sshd:session): session opened for user gpadmin by (uid=0)
+
+
+**Phase 1: Completed pre-decoding.
+       full event: 'Oct 29 12:08:28 sdw4 sshd[103333]: pam_unix(sshd:session): session opened for user gpadmin by (uid=0)'
+       hostname: 'sdw4'
+       program_name: 'sshd'
+       log: 'pam_unix(sshd:session): session opened for user gpadmin by (uid=0)'
+
+**Phase 2: Completed decoding.
+       decoder: 'pam'
+
+**Phase 3: Completed filtering (rules).
+       Rule id: '5501'
+       Level: '3'
+       Description: 'Login session opened.'
+**Alert to be generated.
+
+Oct 29 12:08:28 sdw4 sshd[103336]: Received disconnect from 10.216.2.111: 11: disconnected by user
+
+
+**Phase 1: Completed pre-decoding.
+       full event: 'Oct 29 12:08:28 sdw4 sshd[103336]: Received disconnect from 10.216.2.111: 11: disconnected by user'
+       hostname: 'sdw4'
+       program_name: 'sshd'
+       log: 'Received disconnect from 10.216.2.111: 11: disconnected by user'
+
+**Phase 2: Completed decoding.
+       decoder: 'sshd'
+       srcip: '10.216.2.111'
+
+**Phase 3: Completed filtering (rules).
+       Rule id: '5721'
+       Level: '0'
+       Description: 'System disconnected from sshd.'
+
+Oct 29 12:08:28 sdw4 sshd[103333]: pam_unix(sshd:session): session closed for user gpadmin
+
+
+**Phase 1: Completed pre-decoding.
+       full event: 'Oct 29 12:08:28 sdw4 sshd[103333]: pam_unix(sshd:session): session closed for user gpadmin'
+       hostname: 'sdw4'
+       program_name: 'sshd'
+       log: 'pam_unix(sshd:session): session closed for user gpadmin'
+
+**Phase 2: Completed decoding.
+       decoder: 'pam'
+
+**Phase 3: Completed filtering (rules).
+       Rule id: '5502'
+       Level: '3'
+       Description: 'Login session closed.'
+**Alert to be generated.
+
+................................................................................
+
+<!-- SSHD messages -->
+<group name="syslog,sshd,">
+  <rule id="5700" level="0" noalert="1">
+    <decoded_as>sshd</decoded_as>
+    <description>SSHD messages grouped.</description>
+  </rule>
+
+  <rule id="5701" level="8">
+    <if_sid>5700</if_sid>
+    <match>Bad protocol version identification</match>
+    <description>Possible attack on the ssh server </description>
+    <description>(or version gathering).</description>
+  </rule>
+
+  <rule id="5702" level="5">
+    <if_sid>5700</if_sid>
+    <match>^reverse mapping</match>
+    <regex>failed - POSSIBLE BREAK</regex>
+    <description>Reverse lookup error (bad ISP or attack).</description>
+  </rule>
+
+  <rule id="5703" level="10" frequency="4" timeframe="360">
+    <if_matched_sid>5702</if_matched_sid>
+    <description>Possible breakin attempt </description>
+    <description>(high number of reverse lookup errors).</description>
+  </rule>
+
+  <rule id="5704" level="4">
+    <if_sid>5700</if_sid>
+    <match>fatal: Timeout before authentication for</match>
+    <description>Timeout while logging in (sshd).</description>
+  </rule>
+
+  <rule id="5709" level="0">
+    <if_sid>5700</if_sid>
+    <match>error: Could not get shadow information for NOUSER|</match>
+    <match>fatal: Read from socket failed: |error: ssh_msg_send: write|</match>
+    <match>^syslogin_perform_logout: |^pam_succeed_if(sshd:auth): error retrieving information about user|can't verify hostname: getaddrinfo</match>
+    <description>Useless SSHD message without an user/ip and context.</description>
+  </rule>
+
+  <rule id="5714" level="14" timeframe="120" frequency="1">
+    <if_matched_sid>5713</if_matched_sid>
+    <match>Local: crc32 compensation attack</match>
+    <description>SSH CRC-32 Compensation attack</description>
+    <info type="cve">2001-0144</info>
+    <info type="link">http://www.securityfocus.com/bid/2347/info/</info>
+    <group>exploit_attempt,</group>
+  </rule>
+
+
+................................................................................
+................................................................................
+
+
+<!-- SSHD messages -->
+<group name="syslog,sshd,">
+
+  <rule id="5715" level="0" overwrite="yes">
+    <if_sid>5700</if_sid>
+    <match>^Accepted|authenticated.$</match>
+    <description>SSHD authentication success.</description>
+    <group>authentication_success,</group>
+  </rule>
+
+</group> <!-- SYSLOG, SSHD -->
+
+group name="pam,syslog,">
+
+  <rule id="5501" level="0" overwrite="yes">
+    <if_sid>5500</if_sid>
+    <match>session opened for user </match>
+    <description>Login session opened.</description>
+    <group>authentication_success,</group>
+  </rule>
+
+  <rule id="5502" level="0" overwrite="yes">
+    <if_sid>5500</if_sid>
+    <match>session closed for user </match>
+    <description>Login session closed.</description>
+  </rule>
+
+</group> <!-- SYSLOG,pam -->
+
+................................................................................
+................................................................................
+
+#   I have found this error messages.
+#   And I have found method of how to fix this errors.
+#   http://blog.dberg.org/2011/11/ubuntu-error-keyfromblob.html
+#
+[root@ds-gp-prd-mdw ~]# less /var/log/secure
+...
+Oct 29 15:29:33 ds-gp-prd-mdw sshd[19854]: Accepted publickey for gpadmin from 10.216.4.111 port 63106 ssh2
+Oct 29 15:29:33 ds-gp-prd-mdw sshd[19854]: pam_unix(sshd:session): session opened for user gpadmin by (uid=0)
+Oct 29 15:29:35 ds-gp-prd-mdw sshd[19920]: Received disconnect from 10.216.4.111: 11: disconnected by user
+Oct 29 15:29:35 ds-gp-prd-mdw sshd[19854]: pam_unix(sshd:session): session closed for user gpadmin
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: buffer_get_ret: trying to get more bytes 257 than in buffer 118
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: buffer_get_string_ret: buffer_get failed
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: buffer_get_bignum2_ret: invalid bignum
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: key_from_blob: can't read rsa key
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: key_read: key_from_blob AAAAB3NzaC1yc2EAAAABIwAAAQEAloP6iJgkRM8LuLHvvpaR2fHgIbHTEWOEcR7eteymdidOsPDzXaSxP+VyvV+X/WWgYwFufc6m6wBHUNqQD0r/mrQJ7HyUKO61OxW6/29joQNUDkohLdyxaewPid3SHmgvguQkBADvFC2Jp7V3dOJgsY25lrR4\n failed
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: buffer_get_ret: trying to get more bytes 257 than in buffer 118
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: buffer_get_string_ret: buffer_get failed
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: buffer_get_bignum2_ret: invalid bignum
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: key_from_blob: can't read rsa key
+Oct 29 15:29:36 ds-gp-prd-mdw sshd[21935]: error: key_read: key_from_blob AAAAB3NzaC1yc2EAAAABIwAAAQEAloP6iJgkRM8LuLHvvpaR2fHgIbHTEWOEcR7eteymdidOsPDzXaSxP+VyvV+X/WWgYwFufc6m6wBHUNqQD0r/mrQJ7HyUKO61OxW6/29joQNUDkohLdyxaewPid3SHmgvguQkBADvFC2Jp7V3dOJgsY25lrR4\n failed
+...
+
+#   I have edited this file. In this file there is one line was "\n" symbol into key string.
+[root@ds-gp-prd-mdw ~]# vim -b /home/gpadmin/.ssh/authorized_keys
+...
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEArjnppaiicosJyEIg9d8E6qaZK0n7lEvR6w9fbmQpo5a9f82xxDkZ57prrDwECPIHC2fZ5Vb1UbyWK2NRlkn/klv0RWVoVf8QqF2Xus1S6qYLao9KU9bcuhxS/Y4WLcnDu3lQjcAR+8N8WVwYnE67VskLlRt1W/VscN+LXwEtXgbsnTZPVkJ5lpoWiSCK4Q/+1bkyX2tn/COE+7BIQ5pX2NYc0PdpBazFpix43PtrJssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAwfy0VMNttKNObOYmY6LT2ejBZhiwG8yQT4A308NTNDJ406UvdtKfZGn3EFF/WUuF2HlhcjuHNxG7Q11PPtUglpNw0oFNPfI9Bd/0y9N+djkf+k7dKQjL3JzHvouCo3ULvp8RZlcKQY+tihV5/FR06umDVm3Wtmb1C2u7/cmjsHtkvQivW6PF2mVhYSlt4nz1z9OaBmkqsrBVxcP8RMkuOHwvAWXkMgFG5pzjfj1m+
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAloP6iJgkRM8LuLHvvpaR2fHgIbHTEWOEcR7eteymdidOsPDzXaSxP+VyvV+X/WWgYwFufc6m6wBHUNqQD0r/mrQJ7HyUKO61OxW6/29joQNUDkohLdyxaewPid3SHmgvguQkBADvFC2Jp7V3dOJgsY25lrR4                                                                             godgunuDzyIyMDileGr+WyhiYalJYTrmdrh7+QBWDavctdADpVpB4EAfgjTbwVNUXB0cE5iEBtdpdulGJSspjZCY2S2WKwukhyEZ/rpwJYzYaIzauQ1c0valFGc/S7sf0+8LypfI3ZOJSnZsIxfD+K7iq7FdXKYFgdu+bNdLT/i/CjzXKMHETO1NjQ==
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAloP6iJgkRM8LuLHvvpaR2fHgIbHTEWOEcR7eteymdidOsPDzXaSxP+VyvV+X/WWgYwFufc6m6wBHUNqQD0r/mrQJ7HyUKO61OxW6/29joQNUDkohLdyxaewPid3SHmgvguQkBADvFC2Jp7V3dOJgsY25lrR4godgunuDzyIyMDileGr+WyhiYalJYTrmdrh7+QBWDavctdADpVpB4EAfgjTbwVNUXB0cE5iEBtdpdssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0vTlJOfEoFFIhXpf5cB/NA7sRGfsenTnmZddDXM+uYNgOIdF72zrjCHGGVK5u7qpPTVBbxOHnAKwfWgzjGu4TM9/R0LFrwTqCs0O5x6KeHdjni8FkKo3uijGvn4uZiUznOgl210HMNlaEfJH/OXWkfgC9+XrQF5Rxlvyg7+OIvvS+7jEBnP8LQ4ZbG08vBlNIBtgRNCBQdeEGImLM7UWcHBcJBUIc0d+fIUt5oaFv
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAr7sA4phVfpWHe8LHq4xBqdsfyG3Ls0V+2gs3QVjymgFQz0MS4BkX8qrGDlA7RB2jsnmhw85Mr1cKmnxPcwTcWAF3oBdJrfasOhQw4s7rBulZhJSkAhtyvpBipsSE8GxLDMzrC/iOq2QcfPNRV6+BBDHsf3CchLJl2FIn9SlUFWfd9QA/irXZVJ0zD9doyLLHJb7+2pLrc1h8i1V1IkKkEzA1c0urBa2UfCcJpPIVa~
+~                                                                                                                                                                                                                                                                            ~
+
+................................................................................
+................................................................................
+
+#   Next shit in ossec logs.
+
+** Alert 1446122541.1618670250: mail  - syslog,errors,
+2015 Oct 29 15:42:21 (puppet.tcsbank.ru) 10.216.40.122->/var/log/messages
+Rule: 1002 (level 2) -> 'Unknown problem somewhere in the system.'
+Oct 29 15:42:20 puppet puppet-master[32161]: Report processor failed: Environment is nil, unable to submit report. This may be due a bug with Puppet. Ensure you are running the latest revision, see PUP-2508 for more details.
+
+** Alert 1446122559.1618670672: - syslog,sudo
+2015 Oct 29 15:42:39 (puppet.tcsbank.ru) 10.216.40.122->/var/log/secure
+Rule: 5402 (level 3) -> 'Successful sudo to ROOT executed'
+User: nrpe
+Oct 29 15:42:37 puppet sudo:     nrpe : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/lib64/nagios/plugins/passenger_memory_stats.rb
+
+** Alert 1446122619.1618670995: - syslog,sudo
+2015 Oct 29 15:43:39 (puppet.tcsbank.ru) 10.216.40.122->/var/log/secure
+Rule: 5402 (level 3) -> 'Successful sudo to ROOT executed'
+User: nrpe
+Oct 29 15:43:37 puppet sudo:     nrpe : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/lib64/nagios/plugins/passenger_memory_stats.rb
+
+
+<!-- Syslog errors. -->
+<group name="syslog,errors,">
+
+  <rule id="5402" level="3">
+    <if_sid>5400</if_sid>
+    <match> ; USER=root ; COMMAND=</match>
+    <description>Successful sudo to ROOT executed</description>
+  </rule>
+
+</group>
+
+
+
+[root@vm-ossec01p ossec]# /var/ossec/bin/ossec-logtest
+2015/10/29 16:16:14 ossec-testrule: INFO: Reading local decoder file.
+2015/10/29 16:16:14 ossec-testrule: INFO: Started (pid: 24206).
+ossec-testrule: Type one log per line.
+
+Oct 29 16:13:37 puppet sudo:     nrpe : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/lib64/nagios/plugins/passenger_memory_stats.rb
+#   Follow are two lines for test usage.
+Oct 29 16:13:37 puppet sudo:     testnrpe : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/lib64/nagios/plugins/passenger_memory_stats.rb
+Oct 29 16:13:37 testpuppet sudo:     testnrpe : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/lib64/nagios/plugins/passenger_memory_stats.rb
+
+
+**Phase 1: Completed pre-decoding.
+       full event: 'Oct 29 16:13:37 puppet sudo:     nrpe : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/lib64/nagios/plugins/passenger_memory_stats.rb'
+       hostname: 'puppet'
+       program_name: 'sudo'
+       log: '    nrpe : TTY=unknown ; PWD=/ ; USER=root ; COMMAND=/usr/lib64/nagios/plugins/passenger_memory_stats.rb'
+
+**Phase 2: Completed decoding.
+       decoder: 'sudo'
+       dstuser: 'nrpe'
+
+**Phase 3: Completed filtering (rules).
+       Rule id: '5403'
+       Level: '4'
+       Description: 'First time user executed sudo.'
+**Alert to be generated.
+
+................................................................................
+................................................................................
+
+#   Next garbage message.
+
+** Alert 1446127369.1618702061: mail  - ossec,
+2015 Oct 29 17:02:49 (ds-db01-stb.tcsbank.ru) 10.217.50.23->netstat -tan |grep LISTEN |grep -v 127.0.0.1 | sort
+Rule: 533 (level 7) -> 'Listened ports status (netstat) changed (new port opened or closed).'
+ossec: output: 'netstat -tan |grep LISTEN |grep -v 127.0.0.1 | sort':
+tcp        0      0 0.0.0.0:10000               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:111                 0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:22                  0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:26122               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:31082               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:32806               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:40995               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:41309               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:49176               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:50961               0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:5666                0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:8400                0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:8402                0.0.0.0:*                   LISTEN
+tcp        0      0 0.0.0.0:8
+...
+
+
+
+<group name="ossec,">
+  <rule id="500" level="0">
+    <category>ossec</category>
+    <decoded_as>ossec</decoded_as>
+    <description>Grouping of ossec rules.</description>
+  </rule>
+
+  <!-- Process monitoring rules -->
+  <rule id="530" level="0">
+    <if_sid>500</if_sid>
+    <match>^ossec: output: </match>
+    <description>OSSEC process monitoring rules.</description>
+    <group>process_monitor,</group>
+  </rule>
+
+  <rule id="533" level="7">
+    <if_sid>530</if_sid>
+    <match>ossec: output: 'netstat -tan</match>
+    <check_diff />
+    <description>Listened ports status (netstat) changed (new port opened or closed).</description>
+  </rule>
+
+
+[root@ds-db01-stb ~]# vim +view /var/ossec/etc/ossec.conf
+...
+  <ulocalfile>
+    <log_format>full_command</log_format>
+    <command>netstat -tan |grep LISTEN |grep -v 127.0.0.1 | sort</command>
+  </localfile>
+...
+
+................................................................................
+................................................................................
+
+#   Here is config file for my rules at this moment.
+#   Follow link contain info about rules options.
+#   http://ossec-docs.readthedocs.org/en/latest/syntax/head_rules.html
+
+[root@vm-ossec01p ossec]# cat rules/local_rules.xml
+<!-- @(#) $Id: ./etc/rules/local_rules.xml, 2011/09/08 dcid Exp $
+
+  -  Example of local rules for OSSEC.
+  -
+  -  Copyright (C) 2009 Trend Micro Inc.
+  -  All rights reserved.
+  -
+  -  This program is a free software; you can redistribute it
+  -  and/or modify it under the terms of the GNU General Public
+  -  License (version 2) as published by the FSF - Free Software
+  -  Foundation.
+  -
+  -  License details: http://www.ossec.net/en/licensing.html
+  -->
+
+
+<!-- Modify it at your will. -->
+
+<group name="local,syslog,">
+
+  <!-- Note that rule id 5711 is defined at the ssh_rules file
+    -  as a ssh failed login. This is just an example
+    -  since ip 1.1.1.1 shouldn't be used anywhere.
+    -  Level 0 means ignore.
+    -->
+  <rule id="100001" level="0">
+    <if_sid>5711</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>Example of rule that will ignore sshd </description>
+    <description>failed logins from IP 1.1.1.1.</description>
+  </rule>
+
+  <!-- This example will ignore ssh failed logins for the user name XYZABC.
+    -->
+  <!--
+  <rule id="100020" level="0">
+    <if_sid>5711</if_sid>
+    <user>XYZABC</user>
+    <description>Example of rule that will ignore sshd </description>
+    <description>failed logins for user XYZABC.</description>
+  </rule>
+  -->
+
+  <!-- Specify here a list of rules to ignore. -->
+  <!--
+  <rule id="100030" level="0">
+    <if_sid>12345, 23456, xyz, abc</if_sid>
+    <description>List of rules to be ignored.</description>
+  </rule>
+  -->
+
+ <rule id="100003" level="0">
+    <if_sid>1002</if_sid>
+    <program_name>rrdcached</program_name>
+    <description>These messages were receiving infinitely from server vm-vol-nag3.</description>
+  </rule>
+
+ <!-- Disable all spam messages, that generate by puppet -->
+ <rule id="100004" level="0">
+    <if_sid>1002</if_sid>
+    <program_name>puppet</program_name>
+    <description>These messages were receiving infinitely from server puppet.tcsbank.ru.</description>
+  </rule>
+
+</group> <!-- SYSLOG,LOCAL -->
+
+<!-- As I understand, here I have rewrited rules and set option no_email_alert -->
+<group name="ms-change1">
+    <rule id="18105" level="4" overwrite="yes">
+        <if_sid>18100</if_sid>
+        <id>5152</id>
+        <match>Windows Filtering Platform blocked a packet</match>
+        <description>IGNORED The Windows Filtering Platform blocked a packet.</description>
+        <options>no_email_alert</options>
+    </rule>
+</group>
+
+<!-- Disabling spam from GreenPlum servers about login gpadmin user -->
+<!-- SSHD messages -->
+<group name="syslog,sshd,">
+  <rule id="5715" level="0" overwrite="yes">
+    <if_sid>5700</if_sid>
+    <match>^Accepted|authenticated.$</match>
+    <description>SSHD authentication success.</description>
+    <group>authentication_success,</group>
+  </rule>
+</group> <!-- SYSLOG, SSHD -->
+
+<!-- Disabling spam from GreenPlum servers about login gpadmin user -->
+<group name="pam,syslog,">
+  <rule id="5501" level="0" overwrite="yes">
+    <if_sid>5500</if_sid>
+    <match>session opened for user </match>
+    <description>Login session opened.</description>
+    <group>authentication_success,</group>
+  </rule>
+
+  <rule id="5502" level="0" overwrite="yes">
+    <if_sid>5500</if_sid>
+    <match>session closed for user </match>
+    <description>Login session closed.</description>
+  </rule>
+</group> <!-- SYSLOG,pam -->
+
+<!-- This block rewrite original rule. And make it do nothing.-->
+<!-- Syslog errors. -->
+<group name="syslog,errors,">
+  <rule id="5402" level="0" overwrite="yes">
+    <if_sid>5400</if_sid>
+    <match>Never existing string</match>
+    <description>Successful sudo to ROOT executed</description>
+  </rule>
+  <!-- This section should block spam belonged puppet and not block messages from other sources -->
+  <rule id="100005" level="0">
+    <if_sid>5400</if_sid>
+    <!-- <hostname>^puppet$</hostname> -->
+    <user>^nrpe$</user>
+    <description>Puppet spam that run nrpe.</description>
+  </rule>
+  <rule id="100006" level="3">
+    <if_sid>5400</if_sid>
+    <match> ; USER=root ; COMMAND=</match>
+    <description>Successful sudo to ROOT executed</description>
+  </rule>
+</group>
+
+<!-- Output of this command at ossec web-interface "AnaLogi" looks unreadable, so this message is useless -->
+<group name="ossec,">
+  <rule id="533" level="1" overwrite="yes">
+    <if_sid>530</if_sid>
+    <match>ossec: output: 'netstat -tan</match>
+    <check_diff />
+    <description>Listened ports status (netstat) changed (new port opened or closed).</description>
+    <!-- <option>no_log</option> -->
+  </rule>
+</group>
+
+<!-- EOF -->
+[root@vm-ossec01p ossec]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-ossec01p ossec]# tail -f /var/log/maillog
+Oct 29 19:17:12 vm-ossec01p postfix/smtpd[30845]: disconnect from localhost[127.0.0.1]
+Oct 29 19:17:27 vm-ossec01p postfix/smtpd[30845]: connect from localhost[127.0.0.1]
+Oct 29 19:17:27 vm-ossec01p postfix/smtpd[30845]: lost connection after MAIL from localhost[127.0.0.1]
+Oct 29 19:17:27 vm-ossec01p postfix/smtpd[30845]: disconnect from localhost[127.0.0.1]
+Oct 29 19:17:42 vm-ossec01p postfix/smtpd[30845]: connect from localhost[127.0.0.1]
+Oct 29 19:17:42 vm-ossec01p postfix/smtpd[30845]: lost connection after MAIL from localhost[127.0.0.1]
+Oct 29 19:17:42 vm-ossec01p postfix/smtpd[30845]: disconnect from localhost[127.0.0.1]
+Oct 29 19:17:57 vm-ossec01p postfix/smtpd[30845]: connect from localhost[127.0.0.1]
+Oct 29 19:17:57 vm-ossec01p postfix/smtpd[30845]: lost connection after MAIL from localhost[127.0.0.1]
+Oct 29 19:17:57 vm-ossec01p postfix/smtpd[30845]: disconnect from localhost[127.0.0.1]
+Oct 29 19:22:27 vm-ossec01p postfix/smtpd[31153]: connect from localhost[127.0.0.1]
+Oct 29 19:22:27 vm-ossec01p postfix/smtpd[31153]: lost connection after MAIL from localhost[127.0.0.1]
+Oct 29 19:22:27 vm-ossec01p postfix/smtpd[31153]: disconnect from localhost[127.0.0.1]
+Oct 29 19:22:42 vm-ossec01p postfix/smtpd[31153]: connect from localhost[127.0.0.1]
+Oct 29 19:22:42 vm-ossec01p postfix/smtpd[31153]: lost connection after MAIL from localhost[127.0.0.1]
+Oct 29 19:22:42 vm-ossec01p postfix/smtpd[31153]: disconnect from localhost[127.0.0.1]
+^C
+[root@vm-ossec01p ossec]#
+
+
+  <email_alerts>
+    <email_to>ossec_belogrud@localhost</email_to>
+    <rule_id>100005, 100006</rule_id>
+    <smtp_server>localhost</smtp_server>
+    <email_from>ossec@vm-ossec01p</email_from>
+    <do_not_delay />
+    <do_not_group />
+  </email_alerts>
+
+
+ossec_belogrud: s.belogrud@tcsbank.ru
+
+
+................................................................................
+................................................................................
+
+#   Fri Oct 30 11:53:03 MSK 2015
+#   Below is what we have at this moment.
+
+[root@vm-ossec01p ossec]# cat /etc/my.cnf
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+
+# Settings user and group are ignored when systemd is used (fedora >= 15).
+# If you need to run mysqld under a different user or group,
+# customize your systemd unit file for mysqld according to the
+# instructions in http://fedoraproject.org/wiki/Systemd
+user=mysql
+
+# Semisynchronous Replication
+# http://dev.mysql.com/doc/refman/5.5/en/replication-semisync.html
+# uncomment next line on MASTER
+;plugin-load=rpl_semi_sync_master=semisync_master.so
+# uncomment next line on SLAVE
+;plugin-load=rpl_semi_sync_slave=semisync_slave.so
+
+# Others options for Semisynchronous Replication
+;rpl_semi_sync_master_enabled=1
+;rpl_semi_sync_master_timeout=10
+;rpl_semi_sync_slave_enabled=1
+
+# http://dev.mysql.com/doc/refman/5.5/en/performance-schema.html
+;performance_schema
+
+# Follow four rows creates for each table stand alone file.
+innodb_file_per_table
+innodb_flush_method=O_DIRECT
+innodb_log_file_size=1G
+innodb_buffer_pool_size=4G
+
+[mysqld_safe]
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+
+[root@vm-ossec01p ossec]#
+
+
+
+[root@vm-ossec01p ossec]# cat /var/spool/cron/root
+# For details see man 4 crontabs
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  *  command to be executed
+
+01 01 * * * /opt/TCS/scripts/reduce_size_ossec_mysql_database.sh
+
+[root@vm-ossec01p ossec]#
+
+
+
+[root@vm-ossec01p ossec]# cat /opt/TCS/scripts/reduce_size_ossec_mysql_database.sh
+#!/bin/bash
+
+MYSQL_ROOT_PASSWORD="ltajknjdsq"
+MYSQL_OSSEC_PASSWORD="pVseFyP3"
+
+# If database files size greate or equal than 10 GB - do reduction this database.
+if [[ $(du -s /var/lib/mysql/ossec | cut -f 1) -ge $(expr 1024 \* 1024 \* 10) ]] ;
+        then
+                #echo "Yes! It works!"
+                mysqldump -u ossec -p${MYSQL_OSSEC_PASSWORD} ossec | gzip -9 > /opt/$(date +%Y%m%d-%H%M).backup.mysql.ossec.gz
+                mysql -u ossec -p${MYSQL_OSSEC_PASSWORD} ossec -e "drop database ossec;"
+                mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "create database ossec;"
+                mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "grant all privileges on ossec.* to ossec@'localhost' identified by 'pVseFyP3';"
+                mysql -u root -p${MYSQL_ROOT_PASSWORD} ossec < /var/ossec/etc/mysql/mysql.schema
+                /sbin/service ossec-hids restart
+        fi
+
+[root@vm-ossec01p ossec]#
+
+
+[root@vm-ossec01p ossec]# cat /var/ossec/etc/ossec.conf
+<!-- OSSEC vm-ossec01p server config -->
+
+<ossec_config>
+
+  <database_output>
+     <hostname>127.0.0.1</hostname>
+     <username>ossec</username>
+     <password>pVseFyP3</password>
+     <database>ossec</database>
+     <type>mysql</type>
+  </database_output>
+
+  <syslog_output>
+     <!-- vm-syslog01.tcsbank.ru has address 10.216.41.101 -->
+     <server>10.216.41.101</server>
+     <format>splunk</format>
+  </syslog_output>
+
+  <rules>
+    <include>rules_config.xml</include>
+    <include>pam_rules.xml</include>
+    <include>sshd_rules.xml</include>
+    <include>telnetd_rules.xml</include>
+    <include>syslog_rules.xml</include>
+    <include>arpwatch_rules.xml</include>
+    <include>symantec-av_rules.xml</include>
+    <include>symantec-ws_rules.xml</include>
+    <include>pix_rules.xml</include>
+    <include>named_rules.xml</include>
+    <include>smbd_rules.xml</include>
+    <include>vsftpd_rules.xml</include>
+    <include>pure-ftpd_rules.xml</include>
+    <include>proftpd_rules.xml</include>
+    <include>ms_ftpd_rules.xml</include>
+    <include>ftpd_rules.xml</include>
+    <include>hordeimp_rules.xml</include>
+    <include>roundcube_rules.xml</include>
+    <include>wordpress_rules.xml</include>
+    <include>cimserver_rules.xml</include>
+    <include>vpopmail_rules.xml</include>
+    <include>vmpop3d_rules.xml</include>
+    <include>courier_rules.xml</include>
+    <include>web_rules.xml</include>
+    <include>web_appsec_rules.xml</include>
+    <include>apache_rules.xml</include>
+    <include>nginx_rules.xml</include>
+    <include>php_rules.xml</include>
+    <include>mysql_rules.xml</include>
+    <include>postgresql_rules.xml</include>
+    <include>ids_rules.xml</include>
+    <include>squid_rules.xml</include>
+    <include>firewall_rules.xml</include>
+    <include>cisco-ios_rules.xml</include>
+    <include>netscreenfw_rules.xml</include>
+    <include>sonicwall_rules.xml</include>
+    <include>postfix_rules.xml</include>
+    <include>sendmail_rules.xml</include>
+    <include>imapd_rules.xml</include>
+    <include>mailscanner_rules.xml</include>
+    <include>dovecot_rules.xml</include>
+    <include>ms-exchange_rules.xml</include>
+    <include>racoon_rules.xml</include>
+    <include>vpn_concentrator_rules.xml</include>
+    <include>spamd_rules.xml</include>
+    <include>msauth_rules.xml</include>
+    <include>mcafee_av_rules.xml</include>
+    <include>trend-osce_rules.xml</include>
+    <include>ms-se_rules.xml</include>
+    <!-- <include>policy_rules.xml</include> -->
+    <include>zeus_rules.xml</include>
+    <include>solaris_bsm_rules.xml</include>
+    <include>vmware_rules.xml</include>
+    <include>ms_dhcp_rules.xml</include>
+    <include>asterisk_rules.xml</include>
+    <include>ossec_rules.xml</include>
+    <include>attack_rules.xml</include>
+    <include>local_rules.xml</include>
+  </rules>
+
+
+  <syscheck>
+    <!-- Frequency that syscheck is executed -- default every 2 hours -->
+    <frequency>7200</frequency>
+    <scan_on_start>no</scan_on_start>
+    <auto_ignore>no</auto_ignore>
+
+    <!-- Directories to check  (perform all possible verifications) -->
+    <directories report_changes="yes" check_all="yes" realtime="yes">/etc</directories>
+    <directories report_changes="yes" check_all="yes" realtime="yes">/var/spool/cron</directories>
+
+    <!-- Files/directories to ignore -->
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/hosts.deny</ignore>
+    <ignore>/etc/mail/statistics</ignore>
+    <ignore>/etc/random-seed</ignore>
+    <ignore>/etc/adjtime</ignore>
+    <ignore>/etc/httpd/logs</ignore>
+    <ignore>/etc/ld.so.cache</ignore>
+    <ignore>/etc/prelink.cache</ignore>
+    <ignore>/etc/CommVaultRegistry</ignore>
+    <ignore>/etc/gxsetup_guid</ignore>
+    <ignore>/etc/blkid</ignore>
+    <ignore>/etc/blkid/blkid.tab</ignore>
+    <ignore>/etc/blkid/blkid.tab.old</ignore>
+    <ignore>/etc/aliases.db</ignore>
+    <ignore>/etc/yum.repos.d/redhat.repo</ignore>
+    <ignore>/etc/passwd-</ignore>
+    <ignore>/etc/shadow-</ignore>
+  </syscheck>
+
+  <rootcheck>
+    <disabled>yes</disabled>
+    <rootkit_files>/var/ossec/etc/shared/rootkit_files.txt</rootkit_files>
+    <rootkit_trojans>/var/ossec/etc/shared/rootkit_trojans.txt</rootkit_trojans>
+  </rootcheck>
+
+  <global>
+    <email_notification>yes</email_notification>
+    <email_to>ossec@localhost</email_to>
+    <smtp_server>localhost</smtp_server>
+    <email_from>ossec@vm-ossec01p</email_from>
+  </global>
+
+  <global>
+    <white_list>127.0.0.1</white_list>
+  </global>
+
+  <remote>
+    <connection>secure</connection>
+    <allowed-ips>10.0.0.0/8</allowed-ips>
+    <allowed-ips>172.16.0.0/20</allowed-ips>
+    <allowed-ips>192.168.0.0/16</allowed-ips>
+  </remote>
+
+  <alerts>
+    <log_alert_level>1</log_alert_level>
+    <email_alert_level>7</email_alert_level>
+  </alerts>
+
+
+  <!-- Active Response Config -->
+  <!-- By default Active Responce is enabled -->
+
+  <!-- Files to monitor (localfiles) -->
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/messages</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/maillog</location>
+  </localfile>
+
+</ossec_config>
+[root@vm-ossec01p ossec]#
+
+
+................................................................................
+................................................................................
+
+
+

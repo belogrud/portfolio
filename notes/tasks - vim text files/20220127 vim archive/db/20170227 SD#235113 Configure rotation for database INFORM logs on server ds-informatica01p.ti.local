@@ -1,0 +1,590 @@
+
+................................................................................
+
+Необходимо настроить ротацию логов БД INFORM на сервере ds-informatica01p.ti.local
+
+
+С уважением,
+
+Матвей Новиков
+Администратор баз данны
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@ds-informatica01p.ti.local
+Last login: Wed Jun 15 19:15:20 2016 from tcs4500.tcsbank.ru
+
+
+██████╗ ██████╗  ██████╗ ██████╗
+██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+██████╔╝██████╔╝██║   ██║██║  ██║
+██╔═══╝ ██╔══██╗██║   ██║██║  ██║
+██║     ██║  ██║╚██████╔╝██████╔╝
+╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+
+
+!!!!!!!!!!!!!!!!!!!!
+!!! Don't Forget !!!
+!!!!!!!!!!!!!!!!!!!!
+
+
+[16:49:00 bsv@ds-informatica01p.ti.local ~] $
+[16:49:27 bsv@ds-informatica01p.ti.local ~] $ sudo -i
+[16:49:49 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+
+[16:49:49 root@ds-informatica01p.ti.local ~] # cat /etc/system-release
+Red Hat Enterprise Linux Server release 6.4 (Santiago)
+[16:52:09 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+
+[16:52:09 root@ds-informatica01p.ti.local ~] # cat /etc/motd
+
+
+██████╗ ██████╗  ██████╗ ██████╗
+██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+██████╔╝██████╔╝██║   ██║██║  ██║
+██╔═══╝ ██╔══██╗██║   ██║██║  ██║
+██║     ██║  ██║╚██████╔╝██████╔╝
+╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+
+
+!!!!!!!!!!!!!!!!!!!!
+!!! Don't Forget !!!
+!!!!!!!!!!!!!!!!!!!!
+
+
+[16:52:35 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+
+[16:54:02 root@ds-informatica01p.ti.local ~] # cat /etc/bashrc
+# /etc/bashrc
+
+# System wide functions and aliases
+# Environment stuff goes in /etc/profile
+
+# It's NOT a good idea to change this file unless you know what you
+# are doing. It's much better to create a custom.sh shell script in
+# /etc/profile.d/ to make custom changes to your environment, as this
+# will prevent the need for merging in future updates.
+
+# are we an interactive shell?
+if [ "$PS1" ]; then
+  if [ -z "$PROMPT_COMMAND" ]; then
+    case $TERM in
+    xterm*)
+        if [ -e /etc/sysconfig/bash-prompt-xterm ]; then
+            PROMPT_COMMAND=/etc/sysconfig/bash-prompt-xterm
+        else
+            PROMPT_COMMAND='printf "\033]0;%s@%s:%s\007" "${USER}" "${HOSTNAME%%.*}" "${PWD/#$HOME/~}"'
+        fi
+        ;;
+    screen)
+        if [ -e /etc/sysconfig/bash-prompt-screen ]; then
+            PROMPT_COMMAND=/etc/sysconfig/bash-prompt-screen
+        else
+            PROMPT_COMMAND='printf "\033]0;%s@%s:%s\033\\" "${USER}" "${HOSTNAME%%.*}" "${PWD/#$HOME/~}"'
+        fi
+        ;;
+    *)
+        [ -e /etc/sysconfig/bash-prompt-default ] && PROMPT_COMMAND=/etc/sysconfig/bash-prompt-default
+        ;;
+      esac
+  fi
+  # Turn on checkwinsize
+  shopt -s checkwinsize
+  #[ "$PS1" = "\\s-\\v\\\$ " ] && PS1="[\u@\h \W]\\$ "
+  if [ "$PS1" = "\\s-\\v\\\$ " ]; then
+        if [ "$(whoami)" == "root" ]; then
+                user_style='\[\e[01;91m\]'
+        else
+                user_style='\[\e[01;96m\]'
+        fi
+        if [[ $(hostname -s) =~ [0-9]{1,}p$ ]]; then
+                dirs_style='01;91'
+                host_style='\[\e[01;91m\]'
+        else
+                dirs_style="01;95"
+                host_style='\[\e[01;95m\]'
+        fi
+        PS1="[\t $user_style\u\[\e[01;97m\]@$host_style\H \[\e[01;33m\]\W] \[\e[01;97m\]\\$ \[\e[00m\]"
+        LS_COLORS="$LS_COLORS:di=$dirs_style:" ; export LS_COLORS
+  fi
+  # You might want to have e.g. tty in prompt (e.g. more virtual machines)
+  # and console windows
+  # If you want to do so, just add e.g.
+  # if [ "$PS1" ]; then
+  #   PS1="[\u@\h:\l \W]\\$ "
+  # fi
+  # to your custom modification shell script in /etc/profile.d/ directory
+fi
+
+if ! shopt -q login_shell ; then # We're not a login shell
+    # Need to redefine pathmunge, it get's undefined at the end of /etc/profile
+    pathmunge () {
+        case ":${PATH}:" in
+            *:"$1":*)
+                ;;
+            *)
+                if [ "$2" = "after" ] ; then
+                    PATH=$PATH:$1
+                else
+                    PATH=$1:$PATH
+                fi
+        esac
+    }
+
+    # By default, we want umask to get set. This sets it for non-login shell.
+    # Current threshold for system reserved uid/gids is 200
+    # You could check uidgid reservation validity in
+    # /usr/share/doc/setup-*/uidgid file
+    if [ $UID -gt 199 ] && [ "`id -gn`" = "`id -un`" ]; then
+       umask 002
+    else
+       umask 022
+    fi
+
+    # Only display echos from profile.d scripts if we are no login shell
+    # and interactive - otherwise just process them to set envvars
+    for i in /etc/profile.d/*.sh; do
+        if [ -r "$i" ]; then
+            if [ "$PS1" ]; then
+                . "$i"
+            else
+                . "$i" >/dev/null 2>&1
+            fi
+        fi
+    done
+
+    unset i
+    unset pathmunge
+fi
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[16:54:06 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+
+[16:54:06 root@ds-informatica01p.ti.local ~] # df -hT
+Ф. система    Тип     Разм  Исп  Дост  Исп% смонтирована на
+/dev/sda2     ext4     16G  5,7G  9,4G  38% /
+tmpfs        tmpfs     32G     0   32G   0% /dev/shm
+/dev/sda3     ext4     16G  4,0G   11G  27% /var
+v6250-ds-ti.ti.local:/vol/vfiler_ti_vol0/ti-e-mailer
+               nfs    4,3T  3,4T  912G  80% /mnt/ti-e-mailer
+v6250-ds-ti.ti.local:/vol/vfiler_ti_vol0/1c_obmen
+               nfs    4,3T  3,4T  912G  80% /mnt/1c_obmen
+//m1-insite02d.ti.local/www$
+              cifs    120G   62G   58G  52% /mnt/insite
+/dev/sda5     ext4    503G  424G   54G  89% /opt
+/dev/sdb1     ext4    275G  191M  261G   1% /srv
+10.217.64.246:/INFORM_prod_di_ds
+               nfs     51G   20G   31G  40% /oramnt/INFORM_prod_di
+10.217.64.246:/INFORM_prod_arch_ds
+               nfs     51G  583M   50G   2% /oramnt/INFORM_prod_arch
+10.217.64.246:/INFORM_prod_ru_ds
+               nfs     20G  6,9G   14G  35% /oramnt/INFORM_prod_ru
+v6250-ds-ti.ti.local:/vol/vfiler_ti_vol0/infa_shared_src
+               nfs    4,3T  3,4T  912G  80% /mnt/infa_shared_src
+[16:54:41 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+
+[root@ds-db01-prod ~]# cat /var/spool/cron/root
+0 0 * * * /opt/oracle/scripts/rotate_logs.sh
+5 0 * * 1 /opt/oracle/scripts/archive_old_files.sh
+01 * * * * /usr/sbin/logrotate /etc/logrotate.d/oracle-by-size
+[root@ds-db01-prod ~]#
+
+[root@ds-db01-prod ~]# ls -Alh /opt/oracle/scripts/rotate_logs.sh
+-rwxr-xr-x 1 oracle dba 187 Jun 23  2015 /opt/oracle/scripts/rotate_logs.sh
+[root@ds-db01-prod ~]#
+[root@ds-db01-prod ~]# cat /opt/oracle/scripts/rotate_logs.sh
+#!/bin/sh
+
+/usr/sbin/logrotate /etc/logrotate-oracle.conf
+EXITVALUE=$?
+if [ $EXITVALUE != 0 ]; then
+    /usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
+fi
+exit 0
+[root@ds-db01-prod ~]#
+
+[root@ds-db01-prod ~]# ls -Alh /etc/logrotate-oracle.conf
+-rw-r--r-- 1 root root 609 Jun 21  2013 /etc/logrotate-oracle.conf
+[root@ds-db01-prod ~]#
+[root@ds-db01-prod ~]# cat /etc/logrotate-oracle.conf
+/opt/oracle/diag/rdbms/bb_dta_p/BB_DTA/trace/alert_BB_DTA.log
+/opt/oracle/diag/rdbms/loyalty_p/LOYALTY/trace/alert_LOYALTY.log
+/opt/oracle/diag/rdbms/ida_p/IDA/trace/alert_IDA.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+
+/opt/oracle/diag/tnslsnr/ds-db01-prod/bb_dta_prod_1522/trace/bb_dta_prod_1522.log
+/opt/oracle/diag/tnslsnr/ds-db01-prod/loyalty_prod_1522/trace/loyalty_prod_1522.log
+/opt/oracle/diag/tnslsnr/ds-db01-prod/ida_prod_1522/trace/ida_prod_1522.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+[root@ds-db01-prod ~]#
+
+
+[root@ds-db01-prod ~]# ls -Alh !$
+ls -Alh /opt/oracle/scripts/archive_old_files.sh
+-rwxr-xr-x 1 oracle dba 1.3K Jun 23  2015 /opt/oracle/scripts/archive_old_files.sh
+[root@ds-db01-prod ~]#
+[root@ds-db01-prod ~]# cat /opt/oracle/scripts/archive_old_files.sh
+FILE_LIST=/tmp/files_to_archive.txt
+BACKUP_FILE=`date +/opt/oracle/backup/%Y-%m-%d_%H-%M.tar`
+
+# DELETE OLDER THAN MONTH
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 1 -mtime +30 -type f -name "alert_*.log.*" > $FILE_LIST
+find /opt/oracle/diag/tnslsnr/*/*/trace/ -maxdepth 1 -mtime +30 -type f -name "*1522.log.*" >> $FILE_LIST
+
+# DELETE OLDER THAN 10 DAYS
+find /opt/oracle/diag/rdbms/*/*/alert/ -maxdepth 1 -mtime +10 -type f -name "log_*.xml" >> $FILE_LIST
+find /opt/oracle/diag/tnslsnr/*/*/alert/ -maxdepth 1 -mtime +10 -type f -name "log_*.xml" >> $FILE_LIST
+find /opt/oracle/admin/*/adump/ -maxdepth 1 -type f -mtime +10 -type f -name "*.aud" >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/incident/incdir_* -maxdepth 1 -mtime +10 -type f >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/stage/ -maxdepth 1 -mtime +10 -type f -name "*.stg"  >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 2 -mtime +10 -type f -name "*_ora_*.tr?" >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 2 -mtime +10 -type f -name "*_j???_*.tr?" >> $FILE_LIST
+
+# DELETE OLDER THAN 7 DAYS
+# find /opt/oracle/admin/*/bdump/ -maxdepth 1 -type f -mtime +7 -type f -name "*_ora_*.tr?" >> $FILE_LIST
+
+tar -cf $BACKUP_FILE -T $FILE_LIST --remove-files
+gzip $BACKUP_FILE
+rm -f $FILE_LIST
+[root@ds-db01-prod ~]#
+
+[root@ds-db01-prod ~]# ls -Alhd /opt/oracle/backup/
+drwxr-xr-x 3 oracle oinstall 12K Feb 27 00:05 /opt/oracle/backup/
+[root@ds-db01-prod ~]#
+
+[root@ds-db01-prod ~]# cat /etc/logrotate.d/oracle-by-size
+/var/log/oracle.log
+{
+    rotate 140
+    size 1G
+    compress
+    sharedscripts
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
+[root@ds-db01-prod ~]#
+
+
+[root@ds-db01-prod ~]# df -hT /opt/oracle/backup/
+Filesystem    Type    Size  Used Avail Use% Mounted on
+/dev/sda6     ext4    220G  102G  107G  49% /opt
+[root@ds-db01-prod ~]#
+
+................................................................................
+................................................................................
+
+[17:04:04 root@ds-informatica01p.ti.local ~] # ls /opt/oracle/scripts/
+cron_hour.dat  free_space.dat  oracle_init.sh
+[17:05:46 root@ds-informatica01p.ti.local ~] # cat > /opt/oracle/scripts/rotate_logs.sh
+#!/bin/sh
+
+/usr/sbin/logrotate /etc/logrotate-oracle.conf
+EXITVALUE=$?
+if [ $EXITVALUE != 0 ]; then
+    /usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
+fi
+exit 0
+[17:06:55 root@ds-informatica01p.ti.local ~] #
+
+[17:08:02 root@ds-informatica01p.ti.local ~] # chown oracle:dba /opt/oracle/scripts/rotate_logs.sh
+[17:41:16 root@ds-informatica01p.ti.local ~] # chmod a+x /opt/oracle/scripts/rotate_logs.sh
+[17:42:10 root@ds-informatica01p.ti.local ~] # ls -Alh !$
+ls -Alh /opt/oracle/scripts/rotate_logs.sh
+-rwxr-xr-x 1 oracle dba 187 Фев 27 17:06 /opt/oracle/scripts/rotate_logs.sh
+[17:42:22 root@ds-informatica01p.ti.local ~] #
+
+[17:49:07 root@ds-informatica01p.ti.local ~] # cat > /etc/logrotate-oracle.conf
+/opt/oracle/diag/rdbms/bb_dta_p/BB_DTA/trace/alert_BB_DTA.log
+/opt/oracle/diag/rdbms/loyalty_p/LOYALTY/trace/alert_LOYALTY.log
+/opt/oracle/diag/rdbms/ida_p/IDA/trace/alert_IDA.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+
+/opt/oracle/diag/tnslsnr/ds-db01-prod/bb_dta_prod_1522/trace/bb_dta_prod_1522.log
+/opt/oracle/diag/tnslsnr/ds-db01-prod/loyalty_prod_1522/trace/loyalty_prod_1522.log
+/opt/oracle/diag/tnslsnr/ds-db01-prod/ida_prod_1522/trace/ida_prod_1522.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+[17:49:33 root@ds-informatica01p.ti.local ~]
+
+
+
+................................................................................
+
+[18:02:28 root@ds-informatica01p.ti.local ~] # cat > /opt/oracle/scripts/archive_old_files.sh
+FILE_LIST=/tmp/files_to_archive.txt
+BACKUP_FILE=`date +/opt/oracle/backup/%Y-%m-%d_%H-%M.tar`
+
+# DELETE OLDER THAN MONTH
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 1 -mtime +30 -type f -name "alert_*.log.*" > $FILE_LIST
+find /opt/oracle/diag/tnslsnr/*/*/trace/ -maxdepth 1 -mtime +30 -type f -name "*1522.log.*" >> $FILE_LIST
+
+# DELETE OLDER THAN 10 DAYS
+find /opt/oracle/diag/rdbms/*/*/alert/ -maxdepth 1 -mtime +10 -type f -name "log_*.xml" >> $FILE_LIST
+find /opt/oracle/diag/tnslsnr/*/*/alert/ -maxdepth 1 -mtime +10 -type f -name "log_*.xml" >> $FILE_LIST
+find /opt/oracle/admin/*/adump/ -maxdepth 1 -type f -mtime +10 -type f -name "*.aud" >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/incident/incdir_* -maxdepth 1 -mtime +10 -type f >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/stage/ -maxdepth 1 -mtime +10 -type f -name "*.stg"  >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 2 -mtime +10 -type f -name "*_ora_*.tr?" >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 2 -mtime +10 -type f -name "*_j???_*.tr?" >> $FILE_LIST
+
+# DELETE OLDER THAN 7 DAYS
+# find /opt/oracle/admin/*/bdump/ -maxdepth 1 -type f -mtime +7 -type f -name "*_ora_*.tr?" >> $FILE_LIST
+
+tar -cf $BACKUP_FILE -T $FILE_LIST --remove-files
+gzip $BACKUP_FILE
+rm -f $FILE_LIST
+[18:02:51 root@ds-informatica01p.ti.local ~] #
+
+[18:02:51 root@ds-informatica01p.ti.local ~] # chown oracle:dba /opt/oracle/scripts/archive_old_files.sh
+[18:04:37 root@ds-informatica01p.ti.local ~] # chmod a+x /opt/oracle/scripts/archive_old_files.sh
+
+[18:04:47 root@ds-informatica01p.ti.local ~] # ls -Alh /opt/oracle/scripts/
+итого 16K
+-rwxr-xr-x  1 oracle dba 1,3K Фев 27 18:02 archive_old_files.sh
+-rwxr-xr-x. 1 oracle dba   27 Ноя 18  2014 cron_hour.dat
+-rwxr-xr-x. 1 oracle dba    0 Ноя 18  2014 free_space.dat
+-rwxr-xr-x. 1 oracle dba  640 Янв 26  2015 oracle_init.sh
+-rwxr-xr-x  1 oracle dba  187 Фев 27 17:06 rotate_logs.sh
+[18:05:38 root@ds-informatica01p.ti.local ~] #
+
+[18:08:14 root@ds-informatica01p.ti.local ~] # mkdir -p /opt/oracle/backup
+[18:08:29 root@ds-informatica01p.ti.local ~] # chown oracle:oinstall /opt/oracle/backup
+
+
+
+
+................................................................................
+
+[17:44:00 root@ds-informatica01p.ti.local ~] # cat > /etc/logrotate.d/oracle-by-size
+/var/log/oracle.log
+{
+    rotate 140
+    size 1G
+    compress
+    sharedscripts
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
+[17:44:32 root@ds-informatica01p.ti.local ~] # ls -Alh !$
+ls -Alh /etc/logrotate.d/oracle-by-size
+-rw-r--r-- 1 root root 195 Фев 27 17:44 /etc/logrotate.d/oracle-by-size
+[17:44:48 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+................................................................................
+
+[18:11:54 root@ds-informatica01p.ti.local ~] # crontab -e -u root
+
+[18:11:54 root@ds-informatica01p.ti.local ~] # cat /var/spool/cron/root
+# Cleaning infa logs
+*       1       *       *       *       find /opt/informatica/tomcat/bin -type f -iname "*.log" -mtime +60 | xargs rm -vf &> /tmp/infa_clean_logs.log
+5 0 * * 1 /opt/oracle/scripts/archive_old_files.sh
+[18:12:25 root@ds-informatica01p.ti.local ~] #
+
+
+[18:14:08 root@ds-informatica01p.ti.local ~] # cat /var/spool/cron/root
+# For details see man 4 crontabs
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  *  command to be executed
+#
+
+# Cleaning infa logs
+*       1       *       *       *       find /opt/informatica/tomcat/bin -type f -iname "*.log" -mtime +60 | xargs rm -vf &> /tmp/infa_clean_logs.log
+5 0 * * 1 /opt/oracle/scripts/archive_old_files.sh
+[18:14:13 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+
+[11:10:14 root@ds-informatica01p.ti.local ~] # ls -1 /opt/oracle/diag/rdbms/inform_p/INFORM/trace/alert_INFORM.log
+/opt/oracle/diag/rdbms/inform_p/INFORM/trace/alert_INFORM.log
+[11:12:19 root@ds-informatica01p.ti.local ~]
+
+[11:12:29 root@ds-informatica01p.ti.local ~] # ls -Alh /opt/oracle/diag/tnslsnr/ds-informatica01p/inform_prod_1522//trace/inform_prod_1522.log
+-rw-r----- 1 oracle dba 79K Фев 28 11:13 /opt/oracle/diag/tnslsnr/ds-informatica01p/inform_prod_1522//trace/inform_prod_1522.log
+[11:14:11 root@ds-informatica01p.ti.local ~] #
+
+
+[11:25:13 root@ds-informatica01p.ti.local ~] # cat /etc/logrotate-oracle.conf
+/opt/oracle/diag/rdbms/inform_p/INFORM/trace/alert_INFORM.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+
+/opt/oracle/diag/tnslsnr/ds-informatica01p/inform_prod_1522//trace/inform_prod_1522.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+[11:25:30 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+................................................................................
+
+[11:27:47 root@ds-informatica01p.ti.local ~] # cat /etc/logrotate.d/oracle-by-size
+/var/log/oracle.log
+{
+    missingok
+    notifempty
+    rotate 140
+    size 1G
+    compress
+    sharedscripts
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
+[11:27:51 root@ds-informatica01p.ti.local ~] #
+
+................................................................................
+
+[11:27:51 root@ds-informatica01p.ti.local ~] # ls -alh /opt/oracle/scripts/rotate_logs.sh /opt/oracle/scripts/archive_old_files.sh /etc/logrotate.d/oracle-by-size
+-rw-r--r-- 1 root   root  224 Фев 28 11:27 /etc/logrotate.d/oracle-by-size
+-rwxr-xr-x 1 oracle dba  1,3K Фев 27 18:02 /opt/oracle/scripts/archive_old_files.sh
+-rwxr-xr-x 1 oracle dba   187 Фев 27 17:06 /opt/oracle/scripts/rotate_logs.sh
+[11:31:26 root@ds-informatica01p.ti.local ~] #
+
+
+[11:32:11 root@ds-informatica01p.ti.local ~] # crontab -e -u root
+
+
+[11:32:11 root@ds-informatica01p.ti.local ~] # cat /var/spool/cron/root
+# For details see man 4 crontabs
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  *  command to be executed
+#
+
+# Cleaning infa logs
+*       1       *       *       *       find /opt/informatica/tomcat/bin -type f -iname "*.log" -mtime +60 | xargs rm -vf &> /tmp/infa_clean_logs.log
+0 0 * * * /opt/oracle/scripts/rotate_logs.sh
+5 0 * * 1 /opt/oracle/scripts/archive_old_files.sh
+01 * * * * /usr/sbin/logrotate /etc/logrotate.d/oracle-by-size
+[11:34:20 root@ds-informatica01p.ti.local ~] #
+
+
+................................................................................
+................................................................................
+
+Белогруд Сергей Владимирович
+Описанные ниже настройки сделаны.
+Нужно проверить корректность работы ротации логов.
+И затем, как я понял, направить задачу на storage-admins для настройки резервного копирования данных oracle.
+Сегодня в 11:46
+Белогруд Сергей Владимирович
+В crontab выполнены следующие настройки запуска задач, связанных с ротацией логов oracle.
+[11:34:20 root@ds-informatica01p.ti.local ~] # tail -n 3 /var/spool/cron/root
+0 0 * * * /opt/oracle/scripts/rotate_logs.sh
+5 0 * * 1 /opt/oracle/scripts/archive_old_files.sh
+01 * * * * /usr/sbin/logrotate /etc/logrotate.d/oracle-by-size
+[11:36:02 root@ds-informatica01p.ti.local ~] #
+Текущее содержимое конфигурационных файлов и файлов-скриптов, учавствующих в ротации логов, нижеследующее.
+[11:36:02 root@ds-informatica01p.ti.local ~] # cat /opt/oracle/scripts/rotate_logs.sh
+#!/bin/sh
+/usr/sbin/logrotate /etc/logrotate-oracle.conf
+EXITVALUE=$?
+if [ $EXITVALUE != 0 ]; then
+    /usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
+fi
+exit 0
+[11:42:48 root@ds-informatica01p.ti.local ~] #
+[11:42:48 root@ds-informatica01p.ti.local ~] # cat /etc/logrotate-oracle.conf
+/opt/oracle/diag/rdbms/inform_p/INFORM/trace/alert_INFORM.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+/opt/oracle/diag/tnslsnr/ds-informatica01p/inform_prod_1522//trace/inform_prod_1522.log {
+        rotate 60
+        daily
+        create 0640 oracle oinstall
+        copytruncate
+}
+[11:43:04 root@ds-informatica01p.ti.local ~] #
+[11:43:04 root@ds-informatica01p.ti.local ~] # cat /opt/oracle/scripts/archive_old_files.sh
+FILE_LIST=/tmp/files_to_archive.txt
+BACKUP_FILE=`date +/opt/oracle/backup/%Y-%m-%d_%H-%M.tar`
+# DELETE OLDER THAN MONTH
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 1 -mtime +30 -type f -name "alert_*.log.*" > $FILE_LIST
+find /opt/oracle/diag/tnslsnr/*/*/trace/ -maxdepth 1 -mtime +30 -type f -name "*1522.log.*" >> $FILE_LIST
+# DELETE OLDER THAN 10 DAYS
+find /opt/oracle/diag/rdbms/*/*/alert/ -maxdepth 1 -mtime +10 -type f -name "log_*.xml" >> $FILE_LIST
+find /opt/oracle/diag/tnslsnr/*/*/alert/ -maxdepth 1 -mtime +10 -type f -name "log_*.xml" >> $FILE_LIST
+find /opt/oracle/admin/*/adump/ -maxdepth 1 -type f -mtime +10 -type f -name "*.aud" >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/incident/incdir_* -maxdepth 1 -mtime +10 -type f >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/stage/ -maxdepth 1 -mtime +10 -type f -name "*.stg"  >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 2 -mtime +10 -type f -name "*_ora_*.tr?" >> $FILE_LIST
+find /opt/oracle/diag/rdbms/*/*/trace/ -maxdepth 2 -mtime +10 -type f -name "*_j???_*.tr?" >> $FILE_LIST
+# DELETE OLDER THAN 7 DAYS
+# find /opt/oracle/admin/*/bdump/ -maxdepth 1 -type f -mtime +7 -type f -name "*_ora_*.tr?" >> $FILE_LIST
+tar -cf $BACKUP_FILE -T $FILE_LIST --remove-files
+gzip $BACKUP_FILE
+rm -f $FILE_LIST
+[11:43:19 root@ds-informatica01p.ti.local ~] #
+[11:43:19 root@ds-informatica01p.ti.local ~] # cat /etc/logrotate.d/oracle-by-size
+/var/log/oracle.log
+{
+    missingok
+    notifempty
+    rotate 140
+    size 1G
+    compress
+    sharedscripts
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
+[11:43:36 root@ds-informatica01p.ti.local ~] #
+Сегодня в 11:44
+Новиков Матвей Сергеевич
+inform_p - ты мог сам догадаться
+наверно - у вас в инструкции по настройке ратирования логов это должно быть
+наверно - у вас в инструкции по настройке ратирования логов это должно быть
+Сегодня в 9:03
+
+................................................................................
+................................................................................
+

@@ -1,0 +1,792 @@
+
+#
+#   There are several articles, that I've found, about Cassandra installation process.
+#
+
+http://docs.datastax.com/en/cassandra/3.0/cassandra/install/installRHEL.html
+
+https://www.liquidweb.com/kb/how-to-install-cassandra-on-centos-7/
+https://www.xwebhosting.org/halo/knowledgebase.php?action=displayarticle&id=67
+
+http://cassandra.apache.org/download/
+
+
+................................................................................
+................................................................................
+
+Тема
+
+Cassandra на тестовый сервер
+Номер
+
+62623
+Описание
+Добрый вечер.
+
+Просьба поднять Apache Cassandra на тестовом сервере 10.216.43.229
+Просьба открыть порты внутри корпоративной сети:
+8888 The opscenterd daemon listens on this port for HTTP requests coming directly from the browser.
+9042 Cassandra client port.
+9160 Cassandra client port (Thrift).
+
+61620 OpsCenter monitoring port.
+
+61621 OpsCenter agent port.
+С уважением,
+
+Данил Филатов
+Младший разработчик
+
+................................................................................
+................................................................................
+
+
+[support@centos00 ~]$ ssh root@10.216.43.229
+root@10.216.43.229's password:
+Permission denied, please try again.
+root@10.216.43.229's password:
+Last failed login: Thu Oct 27 11:47:57 MSK 2016 from tcs4500.tcsbank.ru on ssh:notty
+There was 1 failed login attempt since the last successful login.
+Last login: Tue Oct 25 13:41:01 2016
+[root@vm-hr-harvester01t ~]# id bsv
+uid=525(bsv) gid=525(bsv) groups=525(bsv),0(root),10(wheel)
+[root@vm-hr-harvester01t ~]#
+
+
+[root@vm-hr-harvester01t ~]# cat /etc/redhat-release
+CentOS Linux release 7.2.1511 (Core)
+[root@vm-hr-harvester01t ~]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-hr-harvester01t ~]# curl -x http://repo-linux:80 http://rpm.datastax.com/community/ | head
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  2939  100  2939    0     0  80007      0 --:--:-- --:--:-- --:--:-- 81638
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<!-- FileName: index.html
+     Language: [en]
+-->
+<!--Head-->
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta http-equiv="X-UA-Compatible" content="IE=7" />
+  <title>McAfee Web Gateway - Notification</title>
+[root@vm-hr-harvester01t ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-hr-harvester01t ~]# yum install w3m
+base                                                                                                                                                                          | 3.6 kB  00:00:00
+epel                                                                                                                                                                          | 4.3 kB  00:00:00
+extras                                                                                                                                                                        | 3.4 kB  00:00:00
+kibana-4.6                                                                                                                                                                    | 2.9 kB  00:00:00
+logstash-2.4                                                                                                                                                                  |  951 B  00:00:00
+puppetlabs-deps                                                                                                                                                               | 2.5 kB  00:00:00
+puppetlabs-products                                                                                                                                                           | 2.5 kB  00:00:00
+updates                                                                                                                                                                       | 3.4 kB  00:00:00
+(1/3): epel/x86_64/updateinfo                                                                                                                                                 | 670 kB  00:00:00
+(2/3): epel/x86_64/primary_db                                                                                                                                                 | 4.3 MB  00:00:00
+(3/3): updates/7/x86_64/primary_db                                                                                                                                            | 9.1 MB  00:00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package w3m.x86_64 0:0.5.3-20.el7 will be installed
+--> Processing Dependency: perl(NKF) for package: w3m-0.5.3-20.el7.x86_64
+--> Processing Dependency: libgc.so.1()(64bit) for package: w3m-0.5.3-20.el7.x86_64
+--> Running transaction check
+---> Package gc.x86_64 0:7.2d-7.el7 will be installed
+---> Package perl-NKF.x86_64 1:2.1.3-5.el7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                        Arch                                         Version                                                Repository                                  Size
+=====================================================================================================================================================================================================
+Installing:
+ w3m                                            x86_64                                       0.5.3-20.el7                                           epel                                       906 k
+Installing for dependencies:
+ gc                                             x86_64                                       7.2d-7.el7                                             base                                       158 k
+ perl-NKF                                       x86_64                                       1:2.1.3-5.el7                                          epel                                       131 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package (+2 Dependent packages)
+
+Total download size: 1.2 M
+Installed size: 2.7 M
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/3): gc-7.2d-7.el7.x86_64.rpm                                                                                                                                               | 158 kB  00:00:00
+(2/3): perl-NKF-2.1.3-5.el7.x86_64.rpm                                                                                                                                        | 131 kB  00:00:00
+(3/3): w3m-0.5.3-20.el7.x86_64.rpm                                                                                                                                            | 906 kB  00:00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                4.5 MB/s | 1.2 MB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : gc-7.2d-7.el7.x86_64                                                                                                                                                              1/3
+  Installing : 1:perl-NKF-2.1.3-5.el7.x86_64                                                                                                                                                     2/3
+  Installing : w3m-0.5.3-20.el7.x86_64                                                                                                                                                           3/3
+  Verifying  : 1:perl-NKF-2.1.3-5.el7.x86_64                                                                                                                                                     1/3
+  Verifying  : w3m-0.5.3-20.el7.x86_64                                                                                                                                                           2/3
+  Verifying  : gc-7.2d-7.el7.x86_64                                                                                                                                                              3/3
+
+Installed:
+  w3m.x86_64 0:0.5.3-20.el7
+
+Dependency Installed:
+  gc.x86_64 0:7.2d-7.el7                                                                        perl-NKF.x86_64 1:2.1.3-5.el7
+
+Complete!
+[root@vm-hr-harvester01t ~]#
+
+
+[root@vm-hr-harvester01t ~]# curl -x http://repo-linux:80 http://rpm.datastax.com/community/ | w3m -dump -T text/html
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  2939  100  2939    0     0  32560      0 --:--:-- --:--:-- --:--:-- 33022
+[logo_mwg]
+
+Blocked by URL Filter Database
+
+Your requested URL has been blocked by the URL Filter database module of McAfee
+Web Gateway. The URL is listed in categories that are not allowed by your
+administrator at this time.
+
+URL:
+
+Reputation: Minimal Risk
+Media Type: application/x-empty
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Company Acceptable Use Policy
+This is an optional acceptable use disclaimer that appears on every page. You
+may change the wording or remove this section entirely in index.html.
+
+For assistance, please contact your system administrator.
+generated 2016-10-27 11:56:15 by McAfee Web Gateway
+curl/7.29.0
+
+[root@vm-hr-harvester01t ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-hr-harvester01t ~]# yum install java
+Package 1:java-1.8.0-openjdk-1.8.0.111-1.b15.el7_2.x86_64 already installed and latest version
+Nothing to do
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# java -version
+openjdk version "1.8.0_111"
+OpenJDK Runtime Environment (build 1.8.0_111-b15)
+OpenJDK 64-Bit Server VM (build 25.111-b15, mixed mode)
+[root@vm-hr-harvester01t ~]#
+
+................................................................................
+................................................................................
+
+#
+#   20161031
+#
+[root@vm-hr-harvester01t ~]# curl -x http://repo-linux:80 http://rpm.datastax.com/community/ | w3m -dump -T text/html
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1450  100  1450    0     0   2659      0 --:--:-- --:--:-- --:--:--  2665
+Index of /community
+
+   [ICO]          Name        Last modified   Size Description
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[PARENTDIR] Parent Directory                     -
+[DIR]       i386/            2015-04-16 18:40    -
+[DIR]       noarch/          2016-09-30 17:29    -
+[DIR]       repodata/        2016-09-30 17:29    -
+[DIR]       x86_64/          2015-04-16 18:40    -
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# cat > /etc/yum.repos.d/datastax.repo
+[datastax]
+name = DataStax Repo for Apache Cassandra
+baseurl = http://rpm.datastax.com/community
+enabled = 1
+gpgcheck = 0
+[root@vm-hr-harvester01t ~]#
+
+#
+#   Added proxy server.
+#
+[root@vm-hr-harvester01t ~]# vim /etc/yum.conf
+
+[main]
+cachedir=/var/cache/yum/$basearch/$releasever
+keepcache=0
+debuglevel=2
+logfile=/var/log/yum.log
+exactarch=1
+obsoletes=1
+gpgcheck=1
+plugins=1
+installonly_limit=5
+bugtracker_url=http://bugs.centos.org/set_project.php?project_id=23&ref=http://bugs.centos.org/bug_report_page.php?category=yum
+distroverpkg=centos-release
+
+
+#  This is the default, if you make this bigger yum won't see if the metadata
+# is newer on the remote and so you'll "gain" the bandwidth of not having to
+# download the new metadata and "pay" for it by yum not having correct
+# information.
+#  It is esp. important, to have correct metadata, for distributions like
+# Fedora which don't keep old packages around. If you don't like this checking
+# interupting your command line usage, it's much better to have something
+# manually check the metadata once an hour (yum-updatesd will do this).
+# metadata_expire=90m
+
+# PUT YOUR REPOS HERE OR IN separate files named file.repo
+# in /etc/yum.repos.d
+proxy=http://repo-linux.tcsbank.ru:80
+
+
+[root@vm-hr-harvester01t ~]# yum repolist
+base                                                                                                                                                                          | 3.6 kB  00:00:00
+datastax                                                                                                                                                                      | 2.5 kB  00:00:00
+epel                                                                                                                                                                          | 4.3 kB  00:00:00
+extras                                                                                                                                                                        | 3.4 kB  00:00:00
+kibana-4.6                                                                                                                                                                    | 2.9 kB  00:00:00
+logstash-2.4                                                                                                                                                                  |  951 B  00:00:00
+puppetlabs-deps                                                                                                                                                               | 2.5 kB  00:00:00
+puppetlabs-products                                                                                                                                                           | 2.5 kB  00:00:00
+updates                                                                                                                                                                       | 3.4 kB  00:00:00
+datastax/primary_db                                                                                                                                                           | 131 kB  00:00:01
+repo id                                                                              repo name                                                                                                 status
+base/7/x86_64                                                                        CentOS-7 - Base                                                                                            9,007
+datastax                                                                             DataStax Repo for Apache Cassandra                                                                           250
+epel/x86_64                                                                          Extra Packages for Enterprise Linux 7 - x86_64                                                            10,763
+extras/7/x86_64                                                                      CentOS-7 - Extras                                                                                            393
+kibana-4.6                                                                           Kibana repository for 4.6.x packages                                                                           6
+logstash-2.4                                                                         Logstash repository for 2.4.x packages                                                                         1
+puppetlabs-deps/x86_64                                                               Puppet Labs Dependencies El 7 - x86_64                                                                        17
+puppetlabs-products/x86_64                                                           Puppet Labs Products El 7 - x86_64                                                                           225
+updates/7/x86_64                                                                     CentOS-7 - Updates                                                                                         2,560
+repolist: 23,222
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# yum -y install dsc20
+Resolving Dependencies
+--> Running transaction check
+---> Package dsc20.noarch 0:2.0.17-1 will be installed
+--> Processing Dependency: cassandra20 = 2.0.17 for package: dsc20-2.0.17-1.noarch
+--> Running transaction check
+---> Package cassandra20.noarch 0:2.0.17-1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                           Arch                                         Version                                         Repository                                      Size
+=====================================================================================================================================================================================================
+Installing:
+ dsc20                                             noarch                                       2.0.17-1                                        datastax                                       1.9 k
+Installing for dependencies:
+ cassandra20                                       noarch                                       2.0.17-1                                        datastax                                        17 M
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package (+1 Dependent package)
+
+Total download size: 17 M
+Installed size: 20 M
+Downloading packages:
+(1/2): dsc20-2.0.17-1.noarch.rpm                                                                                                                                              | 1.9 kB  00:00:00
+cassandra20-2.0.17-1.noarch.rp FAILED
+http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: [Errno 12] Timeout on http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: (28, 'Operation too slow. Less than 1000 bytes/sec transferred the last 30 seconds')
+Trying other mirror.
+cassandra20-2.0.17-1.noarch.rp FAILED
+http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: [Errno 12] Timeout on http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: (28, 'Operation too slow. Less than 1000 bytes/sec transferred the last 30 seconds')
+Trying other mirror.
+cassandra20-2.0.17-1.noarch.rp FAILED
+http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: [Errno 12] Timeout on http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: (28, 'Operation too slow. Less than 1000 bytes/sec transferred the last 30 seconds')
+Trying other mirror.
+cassandra20-2.0.17-1.noarch.rp FAILED
+http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: [Errno 12] Timeout on http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm: (28, 'Operation too slow. Less than 1000 bytes/sec transferred the last 30 seconds')
+Trying other mirror.
+^C
+
+Exiting on user cancel
+[root@vm-hr-harvester01t ~]#
+
+
+................................................................................
+[root@vm-hr-harvester01t ~]# mkdir -p ~/work/20161031-1147
+[root@vm-hr-harvester01t ~]# cd !$
+cd ~/work/20161031-1147
+[root@vm-hr-harvester01t 20161031-1147]#
+
+[root@vm-hr-harvester01t 20161031-1147]# curl -O -x http://repo-linux:80 http://rpm.datastax.com/community/noarch/cassandra20-2.0.17-1.noarch.rpm
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   537  100   537    0     0      8      0  0:01:07  0:01:00  0:00:07   134
+[root@vm-hr-harvester01t 20161031-1147]#
+
+[root@vm-hr-harvester01t 20161031-1147]# ls -Alh
+total 4.0K
+-rw-r--r--. 1 root root 537 Oct 31 11:48 cassandra20-2.0.17-1.noarch.rpm
+[root@vm-hr-harvester01t 20161031-1147]#
+
+[root@vm-hr-harvester01t 20161031-1147]# cp cassandra20-2.0.17-1.noarch.rpm /var/cache/yum/x86_64/7/datastax/packages/
+cp: overwrite ‘/var/cache/yum/x86_64/7/datastax/packages/cassandra20-2.0.17-1.noarch.rpm’? y
+[root@vm-hr-harvester01t 20161031-1147]#
+
+[root@vm-hr-harvester01t 20161031-1147]# ls -Alh /var/cache/yum/x86_64/7/datastax/packages/
+total 12K
+-rw-r--r--. 1 root root  537 Oct 31 11:51 cassandra20-2.0.17-1.noarch.rpm
+-rw-r--r--. 1 root root 1.9K Oct  7 02:40 dsc20-2.0.17-1.noarch.rpm
+[root@vm-hr-harvester01t 20161031-1147]#
+
+[root@vm-hr-harvester01t 20161031-1147]# rpm -qpi cassandra20-2.0.17-1.noarch.rpm
+error: open of <!DOCTYPE failed: No such file or directory
+error: open of html> failed: No such file or directory
+error: open of <html> failed: No such file or directory
+error: open of <head> failed: No such file or directory
+error: open of <title>Error</title> failed: No such file or directory
+...
+
+
+[root@vm-hr-harvester01t 20161031-1147]# vim +view cassandra20-2.0.17-1.noarch.rpm
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Error</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>An error occurred.</h1>
+<p>Sorry, the page you are looking for is currently unavailable.<br/>
+Please try again later.</p>
+<p>If you are the system administrator of this resource then you should check
+the <a href="http://nginx.org/r/error_log">error log</a> for details.</p>
+<p><em>Faithfully yours, nginx.</em></p>
+</body>
+</html>
+
+................................................................................
+
+
+[root@vm-hr-harvester01t 20161031-1147]# yum list --disablerepo="*" --enablerepo="datastax" available
+Available Packages
+apache-cassandra11.noarch                                                                                 1.1.12-1                                                                           datastax
+cassandra12.noarch                                                                                        1.2.19-1                                                                           datastax
+cassandra20.noarch                                                                                        2.0.17-1                                                                           datastax
+cassandra21.noarch                                                                                        2.1.15-1                                                                           datastax
+cassandra21-tools.noarch                                                                                  2.1.15-1                                                                           datastax
+cassandra22.noarch                                                                                        2.2.8-1                                                                            datastax
+cassandra22-tools.noarch                                                                                  2.2.8-1                                                                            datastax
+cassandra30.noarch                                                                                        3.0.9-1                                                                            datastax
+cassandra30-tools.noarch                                                                                  3.0.9-1                                                                            datastax
+datastax-agent.noarch                                                                                     5.2.4-1                                                                            datastax
+dsc1.1.noarch                                                                                             1.1.12-1                                                                           datastax
+dsc12.noarch                                                                                              1.2.19-1                                                                           datastax
+dsc20.noarch                                                                                              2.0.17-1                                                                           datastax
+dsc21.noarch                                                                                              2.1.15-1                                                                           datastax
+dsc22.noarch                                                                                              2.2.8-1                                                                            datastax
+dsc30.noarch                                                                                              3.0.9-1                                                                            datastax
+opscenter.noarch                                                                                          5.2.4-1                                                                            datastax
+python26-cql.noarch                                                                                       1.4.0-2                                                                            datastax
+python26-thrift.i386                                                                                      0.7.0-2                                                                            datastax
+python26-thrift.x86_64                                                                                    0.7.0-2                                                                            datastax
+python26-thrift-debuginfo.i386                                                                            0.7.0-2                                                                            datastax
+python26-thrift-debuginfo.x86_64                                                                          0.7.0-2                                                                            datastax
+[root@vm-hr-harvester01t 20161031-1147]#
+
+[root@vm-hr-harvester01t 20161031-1147]# yum info dsc20
+Available Packages
+Name        : dsc20
+Arch        : noarch
+Version     : 2.0.17
+Release     : 1
+Size        : 1.9 k
+Repo        : datastax
+Summary     : Meta RPM for installation of the DataStax DSC platform
+URL         : http://www.datastax.com/products/community
+License     : ASL 2.0
+Description : DataStax Community Edition is a free packaged distribution of the Apache
+            : Cassandra database.
+            :
+            : This package depends on the other components of DSC.
+
+[root@vm-hr-harvester01t 20161031-1147]# yum info dsc22
+Available Packages
+Name        : dsc22
+Arch        : noarch
+Version     : 2.2.8
+Release     : 1
+Size        : 1.9 k
+Repo        : datastax
+Summary     : Meta RPM for installation of the DataStax DSC platform
+URL         : http://www.datastax.com/products/community
+License     : ASL 2.0
+Description : DataStax Community Edition is a free packaged distribution of the Apache
+            : Cassandra database.
+            :
+            : This package depends on the other components of DSC.
+
+[root@vm-hr-harvester01t 20161031-1147]# yum info dsc30
+Available Packages
+Name        : dsc30
+Arch        : noarch
+Version     : 3.0.9
+Release     : 1
+Size        : 1.9 k
+Repo        : datastax
+Summary     : Meta RPM for installation of the DataStax DSC platform
+URL         : http://www.datastax.com/products/community
+License     : ASL 2.0
+Description : DataStax Community Edition is a free packaged distribution of the Apache
+            : Cassandra database.
+            :
+            : This package depends on the other components of DSC.
+
+[root@vm-hr-harvester01t 20161031-1147]#
+
+
+[root@vm-hr-harvester01t 20161031-1147]# yum -y install dsc30
+Resolving Dependencies
+--> Running transaction check
+---> Package dsc30.noarch 0:3.0.9-1 will be installed
+--> Processing Dependency: cassandra30 = 3.0.9 for package: dsc30-3.0.9-1.noarch
+--> Running transaction check
+---> Package cassandra30.noarch 0:3.0.9-1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                           Arch                                         Version                                         Repository                                      Size
+=====================================================================================================================================================================================================
+Installing:
+ dsc30                                             noarch                                       3.0.9-1                                         datastax                                       1.9 k
+Installing for dependencies:
+ cassandra30                                       noarch                                       3.0.9-1                                         datastax                                        24 M
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package (+1 Dependent package)
+
+Total download size: 24 M
+Installed size: 31 M
+Downloading packages:
+(1/2): dsc30-3.0.9-1.noarch.rpm                                                                                                                                               | 1.9 kB  00:00:00
+cassandra30-3.0.9-1.noarch.rpm FAILED
+http://rpm.datastax.com/community/noarch/cassandra30-3.0.9-1.noarch.rpm: [Errno 12] Timeout on http://rpm.datastax.com/community/noarch/cassandra30-3.0.9-1.noarch.rpm: (28, 'Operation too slow. Less than 1000 bytes/sec transferred the last 30 seconds')
+Trying other mirror.
+cassandra30-3.0.9-1.noarch.rpm FAILED
+http://rpm.datastax.com/community/noarch/cassandra30-3.0.9-1.noarch.rpm: [Errno 12] Timeout on http://rpm.datastax.com/community/noarch/cassandra30-3.0.9-1.noarch.rpm: (28, 'Operation too slow. Less than 1000 bytes/sec transferred the last 30 seconds')
+Trying other mirror.
+^C
+
+Exiting on user cancel
+[root@vm-hr-harvester01t 20161031-1147]#
+
+
+[root@vm-hr-harvester01t 20161031-1147]# rpm -qpi /var/cache/yum/x86_64/7/datastax/packages/dsc30-3.0.9-1.noarch.rpm
+warning: /var/cache/yum/x86_64/7/datastax/packages/dsc30-3.0.9-1.noarch.rpm: Header V3 RSA/SHA256 Signature, key ID 10782bd9: NOKEY
+Name        : dsc30
+Version     : 3.0.9
+Release     : 1
+Architecture: noarch
+Install Date: (not installed)
+Group       : Development/Libraries
+Size        : 0
+License     : ASL 2.0
+Signature   : RSA/SHA256, Fri 30 Sep 2016 08:19:40 PM MSK, Key ID 0ff0d86010782bd9
+Source RPM  : dsc30-3.0.9-1.src.rpm
+Build Date  : Fri 30 Sep 2016 05:42:27 PM MSK
+Build Host  : host-10-200-175-79
+Relocations : (not relocatable)
+URL         : http://www.datastax.com/products/community
+Summary     : Meta RPM for installation of the DataStax DSC platform
+Description :
+DataStax Community Edition is a free packaged distribution of the Apache
+Cassandra database.
+
+This package depends on the other components of DSC.
+[root@vm-hr-harvester01t 20161031-1147]#
+
+................................................................................
+................................................................................
+
+
+#
+#   I've downloaded two packages of cassandra from my workstation directly.
+#   Connection was very slow. I was waiting for couple or more minutes until it finish.
+#
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no ~/mnt/share/distributives/cassandra/*  bsv@vm-hr-harvester01t:/tmp/         [support@centos00 ~]$
+
+[root@vm-hr-harvester01t 20161031-1147]# ls /tmp/cassandra*
+/tmp/cassandra20-2.0.17-1.noarch.rpm  /tmp/cassandra30-3.0.9-1.noarch.rpm
+[root@vm-hr-harvester01t 20161031-1147]#
+
+[root@vm-hr-harvester01t 20161031-1147]# cp /tmp/cassandra* /var/cache/yum/x86_64/7/datastax/packages/
+cp: overwrite ‘/var/cache/yum/x86_64/7/datastax/packages/cassandra20-2.0.17-1.noarch.rpm’? y
+cp: overwrite ‘/var/cache/yum/x86_64/7/datastax/packages/cassandra30-3.0.9-1.noarch.rpm’? y
+[root@vm-hr-harvester01t 20161031-1147]#
+
+
+[root@vm-hr-harvester01t 20161031-1147]# yum -y install dsc30
+Resolving Dependencies
+--> Running transaction check
+---> Package dsc30.noarch 0:3.0.9-1 will be installed
+--> Processing Dependency: cassandra30 = 3.0.9 for package: dsc30-3.0.9-1.noarch
+--> Running transaction check
+---> Package cassandra30.noarch 0:3.0.9-1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                           Arch                                         Version                                         Repository                                      Size
+=====================================================================================================================================================================================================
+Installing:
+ dsc30                                             noarch                                       3.0.9-1                                         datastax                                       1.9 k
+Installing for dependencies:
+ cassandra30                                       noarch                                       3.0.9-1                                         datastax                                        24 M
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package (+1 Dependent package)
+
+Total size: 24 M
+Installed size: 31 M
+Downloading packages:
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : cassandra30-3.0.9-1.noarch                                                                                                                                                        1/2
+  Installing : dsc30-3.0.9-1.noarch                                                                                                                                                              2/2
+  Verifying  : cassandra30-3.0.9-1.noarch                                                                                                                                                        1/2
+  Verifying  : dsc30-3.0.9-1.noarch                                                                                                                                                              2/2
+
+Installed:
+  dsc30.noarch 0:3.0.9-1
+
+Dependency Installed:
+  cassandra30.noarch 0:3.0.9-1
+
+Complete!
+[root@vm-hr-harvester01t 20161031-1147]#
+
+
+[root@vm-hr-harvester01t 20161031-1147]# systemctl start cassandra
+Failed to start cassandra.service: Unit cassandra.service failed to load: No such file or directory.
+[root@vm-hr-harvester01t 20161031-1147]#
+
+
+[root@vm-hr-harvester01t 20161031-1147]# systemctl list-unit-files | grep -i cass
+[root@vm-hr-harvester01t 20161031-1147]#
+
+................................................................................
+
+[root@vm-hr-harvester01t 20161031-1147]# yum install cassandra30-tools
+Resolving Dependencies
+--> Running transaction check
+---> Package cassandra30-tools.noarch 0:3.0.9-1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                                Arch                                        Version                                      Repository                                     Size
+=====================================================================================================================================================================================================
+Installing:
+ cassandra30-tools                                      noarch                                      3.0.9-1                                      datastax                                      5.1 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package
+
+Total download size: 5.1 k
+Installed size: 12 k
+Is this ok [y/d/N]: y
+Downloading packages:
+cassandra30-tools-3.0.9-1.noarch.rpm                                                                                                                                          | 5.1 kB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : cassandra30-tools-3.0.9-1.noarch                                                                                                                                                  1/1
+  Verifying  : cassandra30-tools-3.0.9-1.noarch                                                                                                                                                  1/1
+
+Installed:
+  cassandra30-tools.noarch 0:3.0.9-1
+
+Complete!
+[root@vm-hr-harvester01t 20161031-1147]#
+
+................................................................................
+
+[root@vm-hr-harvester01t 20161031-1147]# service cassandra start
+Reloading systemd:                                         [  OK  ]
+Starting cassandra (via systemctl):  Timeout, server not responding.
+[support@centos00 ~]$
+
+#
+#   Here I've been disconnected...
+#
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@vm-hr-harvester01t
+Last login: Wed Aug 31 12:40:56 2016 from tcs4500.tcsbank.ru
+[bsv@vm-hr-harvester01t ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-hr-harvester01t ~]#
+
+
+[root@vm-hr-harvester01t ~]# nodetool status
+error: No such attribute: EndpointToHostId
+-- StackTrace --
+javax.management.AttributeNotFoundException: No such attribute: EndpointToHostId
+        at com.sun.jmx.mbeanserver.PerInterface.getAttribute(PerInterface.java:81)
+        at com.sun.jmx.mbeanserver.MBeanSupport.getAttribute(MBeanSupport.java:206)
+        at com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.getAttribute(DefaultMBeanServerInterceptor.java:647)
+        at com.sun.jmx.mbeanserver.JmxMBeanServer.getAttribute(JmxMBeanServer.java:678)
+        at javax.management.remote.rmi.RMIConnectionImpl.doOperation(RMIConnectionImpl.java:1445)
+        at javax.management.remote.rmi.RMIConnectionImpl.access$300(RMIConnectionImpl.java:76)
+        at javax.management.remote.rmi.RMIConnectionImpl$PrivilegedOperation.run(RMIConnectionImpl.java:1309)
+        at javax.management.remote.rmi.RMIConnectionImpl.doPrivilegedOperation(RMIConnectionImpl.java:1401)
+        at javax.management.remote.rmi.RMIConnectionImpl.getAttribute(RMIConnectionImpl.java:639)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:324)
+        at sun.rmi.transport.Transport$1.run(Transport.java:200)
+        at sun.rmi.transport.Transport$1.run(Transport.java:197)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at sun.rmi.transport.Transport.serviceCall(Transport.java:196)
+        at sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:568)
+        at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:826)
+        at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(TCPTransport.java:683)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:682)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+        at java.lang.Thread.run(Thread.java:745)
+        at sun.rmi.transport.StreamRemoteCall.exceptionReceivedFromServer(StreamRemoteCall.java:276)
+        at sun.rmi.transport.StreamRemoteCall.executeCall(StreamRemoteCall.java:253)
+        at sun.rmi.server.UnicastRef.invoke(UnicastRef.java:162)
+        at com.sun.jmx.remote.internal.PRef.invoke(Unknown Source)
+        at javax.management.remote.rmi.RMIConnectionImpl_Stub.getAttribute(Unknown Source)
+        at javax.management.remote.rmi.RMIConnector$RemoteMBeanServerConnection.getAttribute(RMIConnector.java:903)
+        at javax.management.MBeanServerInvocationHandler.invoke(MBeanServerInvocationHandler.java:273)
+        at com.sun.proxy.$Proxy7.getEndpointToHostId(Unknown Source)
+        at org.apache.cassandra.tools.NodeProbe.getHostIdMap(NodeProbe.java:489)
+        at org.apache.cassandra.tools.nodetool.Status.execute(Status.java:65)
+        at org.apache.cassandra.tools.NodeTool$NodeToolCmd.run(NodeTool.java:247)
+        at org.apache.cassandra.tools.NodeTool.main(NodeTool.java:161)
+
+[root@vm-hr-harvester01t ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-hr-harvester01t ~]# yum list installed cassandra*
+Installed Packages
+cassandra30.noarch                                                                                    3.0.9-1                                                                               @datastax
+cassandra30-tools.noarch                                                                              3.0.9-1                                                                               @datastax
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# service cassandra status
+● cassandra.service - SYSV: Starts and stops Cassandra
+   Loaded: loaded (/etc/rc.d/init.d/cassandra)
+   Active: active (exited) since Mon 2016-10-31 12:17:20 MSK; 8min ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 24647 ExecStart=/etc/rc.d/init.d/cassandra start (code=exited, status=0/SUCCESS)
+
+Oct 31 12:16:42 vm-hr-harvester01t.tcsbank.ru systemd[1]: Starting SYSV: Starts and stops Cassandra...
+Oct 31 12:16:43 vm-hr-harvester01t.tcsbank.ru su[24654]: (to cassandra) root on none
+Oct 31 12:17:20 vm-hr-harvester01t.tcsbank.ru cassandra[24647]: Starting Cassandra: OK
+Oct 31 12:17:20 vm-hr-harvester01t.tcsbank.ru systemd[1]: Started SYSV: Starts and stops Cassandra.
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# netstat -ntpl
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:6379            0.0.0.0:*               LISTEN      28005/redis-server
+tcp        0      0 0.0.0.0:35052           0.0.0.0:*               LISTEN      29169/java
+tcp        0      0 127.0.0.1:9165          0.0.0.0:*               LISTEN      20163/java
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      26254/nginx: master
+tcp        0      0 0.0.0.0:9200            0.0.0.0:*               LISTEN      21293/java
+tcp        0      0 127.0.0.1:9201          0.0.0.0:*               LISTEN      8005/java
+tcp        0      0 127.0.0.1:9202          0.0.0.0:*               LISTEN      11900/java
+tcp        0      0 127.0.0.1:9203          0.0.0.0:*               LISTEN      20485/java
+tcp        0      0 127.0.0.1:9204          0.0.0.0:*               LISTEN      23492/java
+tcp        0      0 0.0.0.0:9300            0.0.0.0:*               LISTEN      21293/java
+tcp        0      0 127.0.0.1:9301          0.0.0.0:*               LISTEN      8005/java
+tcp        0      0 127.0.0.1:8182          0.0.0.0:*               LISTEN      20517/java
+tcp        0      0 127.0.0.1:9302          0.0.0.0:*               LISTEN      11900/java
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      827/sshd
+tcp        0      0 127.0.0.1:9303          0.0.0.0:*               LISTEN      20485/java
+tcp        0      0 127.0.0.1:9304          0.0.0.0:*               LISTEN      23492/java
+tcp        0      0 127.0.0.1:7199          0.0.0.0:*               LISTEN      20163/java
+tcp        0      0 0.0.0.0:5601            0.0.0.0:*               LISTEN      1756/node
+tcp        0      0 127.0.0.1:7010          0.0.0.0:*               LISTEN      20163/java
+tcp        0      0 0.0.0.0:45282           0.0.0.0:*               LISTEN      28674/java
+tcp        0      0 0.0.0.0:9092            0.0.0.0:*               LISTEN      29169/java
+tcp        0      0 0.0.0.0:2181            0.0.0.0:*               LISTEN      28674/java
+tcp        0      0 127.0.0.1:38887         0.0.0.0:*               LISTEN      20163/java
+tcp6       0      0 :::80                   :::*                    LISTEN      26254/nginx: master
+tcp6       0      0 127.0.0.1:9045          :::*                    LISTEN      20163/java
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:           7823        5171        1871         432         780        2002
+Swap:             0           0           0
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# rpm -qi cassandra30
+Name        : cassandra30
+Version     : 3.0.9
+Release     : 1
+Architecture: noarch
+Install Date: Mon 31 Oct 2016 12:09:52 PM MSK
+Group       : Development/Libraries
+Size        : 32877867
+License     : Apache Software License
+Signature   : RSA/SHA256, Fri 30 Sep 2016 08:19:40 PM MSK, Key ID 0ff0d86010782bd9
+Source RPM  : cassandra30-3.0.9-1.src.rpm
+Build Date  : Fri 30 Sep 2016 05:42:20 PM MSK
+Build Host  : host-10-200-175-79
+Relocations : (not relocatable)
+URL         : http://cassandra.apache.org/
+Summary     : Cassandra is a highly scalable, eventually consistent, distributed, structured key-value store.
+Description :
+Cassandra brings together the distributed systems technologies from Dynamo
+and the data model from Google's BigTable. Like Dynamo, Cassandra is
+eventually consistent. Like BigTable, Cassandra provides a ColumnFamily-based
+data model richer than typical key/value systems.
+
+For more information see http://cassandra.apache.org/
+[root@vm-hr-harvester01t ~]#
+
+[root@vm-hr-harvester01t ~]# systemctl status firewalld.service
+● firewalld.service - firewalld - dynamic firewall daemon
+   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; disabled; vendor preset: enabled)
+   Active: inactive (dead)
+[root@vm-hr-harvester01t ~]#
+
+

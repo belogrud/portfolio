@@ -1,0 +1,2049 @@
+
+................................................................................
+
+
+
+................................................................................
+#
+#	The first one is m1-itpm-01p, and I already installed cashing DNS server on it.
+#	But this server still generate DNS requests.
+#
+
+#	From: Chernyh Aleksandr Vladimirovich <a.chernyh@tinkoff.ru> 
+#	Sent: Tuesday, January 14, 2020 2:15 PM
+#	To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>
+#	Cc: Gnitiev Viktor <v.gnitiev@tinkoff.ru>
+#	Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#	
+#	Добрый день, Сергей.
+#	Какой процесс обращается к DNS с данными запросами ?
+#	
+#	From: Belogrud Sergey Vladimirovich 
+#	Sent: Tuesday, January 14, 2020 12:39 PM
+#	To: Chernyh Aleksandr Vladimirovich <a.chernyh@tinkoff.ru>
+#	Cc: Gnitiev Viktor <v.gnitiev@tinkoff.ru>
+#	Subject: SD#3597918 - повышенная нагрузка на DNS сервер
+#	
+#	Добрый день.
+#	
+#	Саша, привет.
+#	SD#3597918 - повышенная нагрузка на DNS сервер.
+#	Сервер m1-itpm-01p генерирует значительный объём DNS запросов, несмотря на установленный локальный кэширующий DNS сервер bind.
+#	Перезапусти пожалуйста прикладное ПО, что используется на этом сервере или, наверное, лучше даже весь сервер целиком - у него uptime 264 days. О чём вчера и разговаривали.
+#	Пока есть предположение, что где-то в прикладном ПО сохранилась информация об DNS 10.219.50.4.
+#	
+#	root@m1-itpm-01p:~# time timeout 5s tcpdump -nn -c 15 -i any dst host 10.219.50.4 and port 53
+#	tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+#	listening on any, link-type LINUX_SLL (Linux cooked), capture size 262144 bytes
+#	12:03:04.430940 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+#	12:03:04.430954 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+#	12:03:04.430956 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+#	12:03:04.430961 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+#	12:03:04.430964 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+#	12:03:04.430971 IP 10.216.41.242.43174 > 10.219.50.4.53: 19520+ AAAA? m1-kafka03p.tcsbank.ru. (40)
+#	12:03:04.430974 IP 10.216.41.242.43174 > 10.219.50.4.53: 19520+ AAAA? m1-kafka03p.tcsbank.ru. (40)
+#	12:03:04.557150 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+#	12:03:04.557161 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+#	12:03:04.557163 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+#	12:03:04.557167 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+#	12:03:04.557171 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+#	12:03:04.557178 IP 10.216.41.242.57530 > 10.219.50.4.53: 27772+ AAAA? ds-kafka02p.tcsbank.ru. (40)
+#	12:03:04.557181 IP 10.216.41.242.57530 > 10.219.50.4.53: 27772+ AAAA? ds-kafka02p.tcsbank.ru. (40)
+#	12:03:04.684416 IP 10.216.41.242.58130 > 10.219.50.4.53: 8400+ A? ds-kafka01p.tcsbank.ru. (40)
+#	15 packets captured
+#	30 packets received by filter
+#	9 packets dropped by kernel
+#	
+#	real    0m0.362s
+#	user    0m0.002s
+#	sys     0m0.008s
+#	root@m1-itpm-01p:~#
+#	
+#	root@m1-itpm-01p:~# dig @127.0.0.1 m1-kafka03p.tcsbank.ru.
+#	
+#	; <<>> DiG 9.10.3-P4-Debian <<>> @127.0.0.1 m1-kafka03p.tcsbank.ru.
+#	; (1 server found)
+#	;; global options: +cmd
+#	;; Got answer:
+#	;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31339
+#	;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 13, ADDITIONAL: 1
+#	
+#	;; OPT PSEUDOSECTION:
+#	; EDNS: version: 0, flags:; udp: 4096
+#	;; QUESTION SECTION:
+#	;m1-kafka03p.tcsbank.ru.                IN      A
+#	
+#	;; ANSWER SECTION:
+#	m1-kafka03p.tcsbank.ru. 2905    IN      A       10.216.37.8
+#	
+#	;; AUTHORITY SECTION:
+#	.                       6842    IN      NS      l.root-servers.net.
+#	.                       6842    IN      NS      d.root-servers.net.
+#	.                       6842    IN      NS      e.root-servers.net.
+#	.                       6842    IN      NS      g.root-servers.net.
+#	.                       6842    IN      NS      j.root-servers.net.
+#	.                       6842    IN      NS      k.root-servers.net.
+#	.                       6842    IN      NS      m.root-servers.net.
+#	.                       6842    IN      NS      a.root-servers.net.
+#	.                       6842    IN      NS      i.root-servers.net.
+#	.                       6842    IN      NS      h.root-servers.net.
+#	.                       6842    IN      NS      b.root-servers.net.
+#	.                       6842    IN      NS      c.root-servers.net.
+#	.                       6842    IN      NS      f.root-servers.net.
+#	
+#	;; Query time: 1 msec
+#	;; SERVER: 127.0.0.1#53(127.0.0.1)
+#	;; WHEN: Tue Jan 14 12:02:03 MSK 2020
+#	;; MSG SIZE  rcvd: 278
+#	
+#	root@m1-itpm-01p:~#
+#	
+#	root@m1-itpm-01p:~# cat /etc/resolv.conf
+#	nameserver 127.0.0.1
+#	nameserver 10.219.50.4
+#	nameserver 10.219.50.5
+#	search tcsbank.ru
+#	root@m1-itpm-01p:~#
+#	
+#	root@m1-itpm-01p:~# cat /etc/hosts
+#	127.0.0.1 localhost.localdomain localhost
+#	10.216.41.200 m1-itpm-01p.tcsbank.ru m1-itpm-01p
+#	
+#	# The following lines are desirable for IPv6 capable hosts
+#	
+#	::1     ip6-localhost ip6-loopback
+#	fe00::0 ip6-localnet
+#	ff00::0 ip6-mcastprefix
+#	ff02::1 ip6-allnodes
+#	ff02::2 ip6-allrouters
+#	ff02::3 ip6-allhosts
+#	root@m1-itpm-01p:~#
+#	
+#	
+#	С уважением,
+#	
+#	Сергей Белогруд
+#	Старший системный администратор
+
+
+#
+#	20200121
+#	Doesn't work resolving in-addr.arpa addresses.
+#
+root@m1-itpm-01p:~# dig @127.0.0.1 -t a repo-linux.tcsbank.ru
+
+; <<>> DiG 9.10.3-P4-Debian <<>> @127.0.0.1 -t a repo-linux.tcsbank.ru
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 27051
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 13, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;repo-linux.tcsbank.ru.         IN      A
+
+;; ANSWER SECTION:
+repo-linux.tcsbank.ru.  1306    IN      CNAME   ds-repo01.tcsbank.ru.
+ds-repo01.tcsbank.ru.   2016    IN      A       10.216.42.6
+
+;; AUTHORITY SECTION:
+.                       4136    IN      NS      e.root-servers.net.
+.                       4136    IN      NS      a.root-servers.net.
+.                       4136    IN      NS      h.root-servers.net.
+.                       4136    IN      NS      i.root-servers.net.
+.                       4136    IN      NS      k.root-servers.net.
+.                       4136    IN      NS      b.root-servers.net.
+.                       4136    IN      NS      d.root-servers.net.
+.                       4136    IN      NS      g.root-servers.net.
+.                       4136    IN      NS      c.root-servers.net.
+.                       4136    IN      NS      l.root-servers.net.
+.                       4136    IN      NS      j.root-servers.net.
+.                       4136    IN      NS      f.root-servers.net.
+.                       4136    IN      NS      m.root-servers.net.
+
+;; Query time: 2 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Tue Jan 21 16:21:51 MSK 2020
+;; MSG SIZE  rcvd: 301
+
+root@m1-itpm-01p:~# dig @127.0.0.1 -x 10.216.26.19
+
+; <<>> DiG 9.10.3-P4-Debian <<>> @127.0.0.1 -x 10.216.26.19
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 23979
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;19.26.216.10.in-addr.arpa.     IN      PTR
+
+;; AUTHORITY SECTION:
+10.IN-ADDR.ARPA.        86400   IN      SOA     10.IN-ADDR.ARPA. . 0 28800 7200 604800 86400
+
+;; Query time: 8 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Tue Jan 21 16:22:10 MSK 2020
+;; MSG SIZE  rcvd: 104
+
+root@m1-itpm-01p:~#
+
+
+
+
+
+
+root@m1-itpm-01p:/etc/bind# cat named.conf.local
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "10.in-addr.arpa" {
+        type forward;
+        forwarders {
+                10.219.50.4;
+                10.219.50.5;
+        };
+        file "/etc/bind/db.10";
+};
+
+root@m1-itpm-01p:/etc/bind#
+
+root@m1-itpm-01p:/etc/bind# cat db.10
+;
+; BIND reverse data file for broadcast zone
+;
+$TTL    604800
+@       IN      SOA     tcsbank.ru. root.tcsbank.ru. (
+                              1         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      dns1.tcsbank.ru.
+@       IN      NS      dns2.tcsbank.ru.
+root@m1-itpm-01p:/etc/bind#
+
+
+root@m1-itpm-01p:/etc/bind# named-checkzone 10.in-addr.arpa /etc/bind/db.10
+zone 10.in-addr.arpa/IN: loaded serial 1
+OK
+root@m1-itpm-01p:/etc/bind#
+
+root@m1-itpm-01p:/etc/bind# systemctl start bind9
+root@m1-itpm-01p:/etc/bind# systemctl status bind9
+● bind9.service - BIND Domain Name Server
+   Loaded: loaded (/lib/systemd/system/bind9.service; enabled; vendor preset: enabled)
+   Active: failed (Result: exit-code) since Wed 2020-01-22 18:32:29 MSK; 4s ago
+     Docs: man:named(8)
+  Process: 328 ExecStop=/usr/sbin/rndc stop (code=exited, status=1/FAILURE)
+  Process: 32758 ExecStart=/usr/sbin/named -f $OPTIONS (code=exited, status=1/FAILURE)
+ Main PID: 32758 (code=exited, status=1/FAILURE)
+      CPU: 27ms
+
+Jan 22 18:32:29 m1-itpm-01p named[32758]: adjusted limit on open files from 4096 to 1048576
+Jan 22 18:32:29 m1-itpm-01p named[32758]: found 24 CPUs, using 24 worker threads
+Jan 22 18:32:29 m1-itpm-01p named[32758]: using 12 UDP listeners per interface
+Jan 22 18:32:29 m1-itpm-01p named[32758]: using up to 4096 sockets
+Jan 22 18:32:29 m1-itpm-01p named[32758]: loading configuration from '/etc/bind/named.conf'
+Jan 22 18:32:29 m1-itpm-01p systemd[1]: bind9.service: Main process exited, code=exited, status=1/FAILURE
+Jan 22 18:32:29 m1-itpm-01p rndc[328]: rndc: connect failed: 127.0.0.1#953: connection refused
+Jan 22 18:32:29 m1-itpm-01p systemd[1]: bind9.service: Control process exited, code=exited status=1
+Jan 22 18:32:29 m1-itpm-01p systemd[1]: bind9.service: Unit entered failed state.
+Jan 22 18:32:29 m1-itpm-01p systemd[1]: bind9.service: Failed with result 'exit-code'.
+root@m1-itpm-01p:/etc/bind#
+
+root@m1-itpm-01p:/etc/bind# journalctl -xe
+...
+-- Subject: Unit bind9.service has finished start-up
+-- Defined-By: systemd
+-- Support: https://www.debian.org/support
+--
+-- Unit bind9.service has finished starting up.
+--
+-- The start-up result is done.
+Jan 22 18:32:29 m1-itpm-01p named[32758]: starting BIND 9.10.3-P4-Debian <id:ebd72b3> -f -u bind -4
+Jan 22 18:32:29 m1-itpm-01p named[32758]: built with '--prefix=/usr' '--mandir=/usr/share/man' '--libdir=/usr/lib/x86_64-linux-gnu' '--infodir=/usr/share/info' '--sysconfdir=/etc/bind' '--with-python=python3
+Jan 22 18:32:29 m1-itpm-01p named[32758]: ----------------------------------------------------
+Jan 22 18:32:29 m1-itpm-01p named[32758]: BIND 9 is maintained by Internet Systems Consortium,
+Jan 22 18:32:29 m1-itpm-01p named[32758]: Inc. (ISC), a non-profit 501(c)(3) public-benefit
+Jan 22 18:32:29 m1-itpm-01p named[32758]: corporation.  Support and training for BIND 9 are
+Jan 22 18:32:29 m1-itpm-01p named[32758]: available at https://www.isc.org/support
+Jan 22 18:32:29 m1-itpm-01p named[32758]: ----------------------------------------------------
+Jan 22 18:32:29 m1-itpm-01p named[32758]: adjusted limit on open files from 4096 to 1048576
+Jan 22 18:32:29 m1-itpm-01p named[32758]: found 24 CPUs, using 24 worker threads
+Jan 22 18:32:29 m1-itpm-01p named[32758]: using 12 UDP listeners per interface
+Jan 22 18:32:29 m1-itpm-01p named[32758]: using up to 4096 sockets
+Jan 22 18:32:29 m1-itpm-01p named[32758]: loading configuration from '/etc/bind/named.conf'
+Jan 22 18:32:29 m1-itpm-01p named[32758]: /etc/bind/named.conf.local:15: option 'file' is not allowed in 'forward' zone '10.in-addr.arpa'
+Jan 22 18:32:29 m1-itpm-01p named[32758]: loading configuration: failure
+Jan 22 18:32:29 m1-itpm-01p named[32758]: exiting (due to fatal error)
+...
+
+
+root@m1-itpm-01p:/etc/bind# cat /etc/bind/named.conf.local
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "10.in-addr.arpa" {
+        type forward;
+        forwarders {
+                10.219.50.4;
+                10.219.50.5;
+        };
+        // file "/etc/bind/db.10";
+};
+
+root@m1-itpm-01p:/etc/bind#
+
+
+root@m1-itpm-01p:/etc/bind# dig @127.0.0.1 -t a repo-linux.tcsbank.ru.
+
+; <<>> DiG 9.10.3-P4-Debian <<>> @127.0.0.1 -t a repo-linux.tcsbank.ru.
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 19587
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 13, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;repo-linux.tcsbank.ru.         IN      A
+
+;; ANSWER SECTION:
+repo-linux.tcsbank.ru.  1275    IN      CNAME   ds-repo01.tcsbank.ru.
+ds-repo01.tcsbank.ru.   1351    IN      A       10.216.42.6
+
+;; AUTHORITY SECTION:
+.                       3791    IN      NS      i.root-servers.net.
+.                       3791    IN      NS      c.root-servers.net.
+.                       3791    IN      NS      d.root-servers.net.
+.                       3791    IN      NS      f.root-servers.net.
+.                       3791    IN      NS      m.root-servers.net.
+.                       3791    IN      NS      a.root-servers.net.
+.                       3791    IN      NS      h.root-servers.net.
+.                       3791    IN      NS      k.root-servers.net.
+.                       3791    IN      NS      g.root-servers.net.
+.                       3791    IN      NS      e.root-servers.net.
+.                       3791    IN      NS      b.root-servers.net.
+.                       3791    IN      NS      j.root-servers.net.
+.                       3791    IN      NS      l.root-servers.net.
+
+;; Query time: 2 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Wed Jan 22 18:35:42 MSK 2020
+;; MSG SIZE  rcvd: 301
+
+root@m1-itpm-01p:/etc/bind# dig @127.0.0.1 -x 10.216.26.19
+
+; <<>> DiG 9.10.3-P4-Debian <<>> @127.0.0.1 -x 10.216.26.19
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 29667
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;19.26.216.10.in-addr.arpa.     IN      PTR
+
+;; AUTHORITY SECTION:
+10.IN-ADDR.ARPA.        86400   IN      SOA     10.IN-ADDR.ARPA. . 0 28800 7200 604800 86400
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Wed Jan 22 18:35:59 MSK 2020
+;; MSG SIZE  rcvd: 104
+
+root@m1-itpm-01p:/etc/bind#
+
+
+
+
+
+
+................................................................................
+#
+#	This is the second server to install cashing DNS server.
+#
+
+[s.belogrud@TCS4357]# ssh bsv@10.216.26.26
+Warning: Permanently added '10.216.26.26' (RSA) to the list of known hosts.
+Last login: Wed Apr  3 16:41:24 2019 from tcs4357.tcsbank.ru
+[bsv@m1-zeppelin01p ~]$ sudo -i
+ABRT has detected 1 problem(s). For more info run: abrt-cli list --since 1578899290
+[root@m1-zeppelin01p ~]#
+[root@m1-zeppelin01p ~]# cat /etc/os-release
+NAME="CentOS Linux"
+VERSION="7 (Core)"
+ID="centos"
+ID_LIKE="rhel fedora"
+VERSION_ID="7"
+PRETTY_NAME="CentOS Linux 7 (Core)"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:centos:centos:7"
+HOME_URL="https://www.centos.org/"
+BUG_REPORT_URL="https://bugs.centos.org/"
+
+CENTOS_MANTISBT_PROJECT="CentOS-7"
+CENTOS_MANTISBT_PROJECT_VERSION="7"
+REDHAT_SUPPORT_PRODUCT="centos"
+REDHAT_SUPPORT_PRODUCT_VERSION="7"
+
+[root@m1-zeppelin01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+nameserver 10.219.50.5
+nameserver 10.219.50.4
+search tcsbank.ru
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# yum install bind
+...
+Total                                                                                                                                                                            15 MB/s | 5.8 MB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : 12:dhcp-libs-4.2.5-77.el7.centos.x86_64                                                                                                                                                     1/20
+  Updating   : 32:bind-license-9.11.4-9.P2.el7.noarch                                                                                                                                                      2/20
+  Updating   : 32:bind-libs-lite-9.11.4-9.P2.el7.x86_64                                                                                                                                                    3/20
+  Updating   : 32:bind-libs-9.11.4-9.P2.el7.x86_64                                                                                                                                                         4/20
+  Updating   : 12:dhcp-common-4.2.5-77.el7.centos.x86_64                                                                                                                                                   5/20
+  Installing : 32:bind-export-libs-9.11.4-9.P2.el7.x86_64                                                                                                                                                  6/20
+  Installing : python-ply-3.4-11.el7.noarch                                                                                                                                                                7/20
+  Updating   : 32:bind-9.11.4-9.P2.el7.x86_64                                                                                                                                                              8/20
+  Updating   : 32:bind-chroot-9.11.4-9.P2.el7.x86_64                                                                                                                                                       9/20
+  Updating   : 12:dhclient-4.2.5-77.el7.centos.x86_64                                                                                                                                                     10/20
+  Updating   : 32:bind-utils-9.11.4-9.P2.el7.x86_64                                                                                                                                                       11/20
+  Cleanup    : 12:dhclient-4.2.5-47.el7.centos.x86_64                                                                                                                                                     12/20
+  Cleanup    : 12:dhcp-common-4.2.5-47.el7.centos.x86_64                                                                                                                                                  13/20
+  Cleanup    : 32:bind-chroot-9.9.4-37.el7.x86_64                                                                                                                                                         14/20
+  Cleanup    : 32:bind-9.9.4-37.el7.x86_64                                                                                                                                                                15/20
+  Cleanup    : 32:bind-libs-lite-9.9.4-37.el7.x86_64                                                                                                                                                      16/20
+  Cleanup    : 32:bind-utils-9.9.4-37.el7.x86_64                                                                                                                                                          17/20
+  Cleanup    : 12:dhcp-libs-4.2.5-47.el7.centos.x86_64                                                                                                                                                    18/20
+  Cleanup    : 32:bind-libs-9.9.4-37.el7.x86_64                                                                                                                                                           19/20
+  Cleanup    : 32:bind-license-9.9.4-37.el7.noarch                                                                                                                                                        20/20
+  Verifying  : python-ply-3.4-11.el7.noarch                                                                                                                                                                1/20
+  Verifying  : 32:bind-chroot-9.11.4-9.P2.el7.x86_64                                                                                                                                                       2/20
+  Verifying  : 32:bind-license-9.11.4-9.P2.el7.noarch                                                                                                                                                      3/20
+  Verifying  : 32:bind-export-libs-9.11.4-9.P2.el7.x86_64                                                                                                                                                  4/20
+  Verifying  : 32:bind-libs-9.11.4-9.P2.el7.x86_64                                                                                                                                                         5/20
+  Verifying  : 12:dhcp-common-4.2.5-77.el7.centos.x86_64                                                                                                                                                   6/20
+  Verifying  : 32:bind-libs-lite-9.11.4-9.P2.el7.x86_64                                                                                                                                                    7/20
+  Verifying  : 32:bind-utils-9.11.4-9.P2.el7.x86_64                                                                                                                                                        8/20
+  Verifying  : 12:dhcp-libs-4.2.5-77.el7.centos.x86_64                                                                                                                                                     9/20
+  Verifying  : 32:bind-9.11.4-9.P2.el7.x86_64                                                                                                                                                             10/20
+  Verifying  : 12:dhclient-4.2.5-77.el7.centos.x86_64                                                                                                                                                     11/20
+  Verifying  : 32:bind-chroot-9.9.4-37.el7.x86_64                                                                                                                                                         12/20
+  Verifying  : 32:bind-libs-lite-9.9.4-37.el7.x86_64                                                                                                                                                      13/20
+  Verifying  : 32:bind-license-9.9.4-37.el7.noarch                                                                                                                                                        14/20
+  Verifying  : 12:dhcp-libs-4.2.5-47.el7.centos.x86_64                                                                                                                                                    15/20
+  Verifying  : 12:dhclient-4.2.5-47.el7.centos.x86_64                                                                                                                                                     16/20
+  Verifying  : 12:dhcp-common-4.2.5-47.el7.centos.x86_64                                                                                                                                                  17/20
+  Verifying  : 32:bind-utils-9.9.4-37.el7.x86_64                                                                                                                                                          18/20
+  Verifying  : 32:bind-9.9.4-37.el7.x86_64                                                                                                                                                                19/20
+  Verifying  : 32:bind-libs-9.9.4-37.el7.x86_64                                                                                                                                                           20/20
+
+Dependency Installed:
+  bind-export-libs.x86_64 32:9.11.4-9.P2.el7                                                                   python-ply.noarch 0:3.4-11.el7
+
+Updated:
+  bind.x86_64 32:9.11.4-9.P2.el7
+
+Dependency Updated:
+  bind-chroot.x86_64 32:9.11.4-9.P2.el7   bind-libs.x86_64 32:9.11.4-9.P2.el7        bind-libs-lite.x86_64 32:9.11.4-9.P2.el7  bind-license.noarch 32:9.11.4-9.P2.el7  bind-utils.x86_64 32:9.11.4-9.P2.el7
+  dhclient.x86_64 12:4.2.5-77.el7.centos  dhcp-common.x86_64 12:4.2.5-77.el7.centos  dhcp-libs.x86_64 12:4.2.5-77.el7.centos
+
+Complete!
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# systemctl status named
+● named.service - Berkeley Internet Name Domain (DNS)
+   Loaded: loaded (/usr/lib/systemd/system/named.service; disabled; vendor preset: disabled)
+   Active: inactive (dead)
+[root@m1-zeppelin01p ~]# 
+
+[root@m1-zeppelin01p ~]# mkdir -p ~/work/20200113-1756
+[root@m1-zeppelin01p ~]# cp /etc/named.conf ~/work/20200113-1756/
+[root@m1-zeppelin01p ~]# vim /etc/named.conf
+
+[root@m1-zeppelin01p ~]# diff -Nuar ~/work/20200113-1756/named.conf /etc/named.conf
+--- /root/work/20200113-1756/named.conf 2020-01-13 17:56:40.167604709 +0300
++++ /etc/named.conf     2020-01-13 18:07:28.168258091 +0300
+@@ -11,14 +11,15 @@
+
+ options {
+        listen-on port 53 { 127.0.0.1; };
+-       listen-on-v6 port 53 { ::1; };
++       /* listen-on-v6 port 53 { ::1; }; */
++       listen-on-v6 port 53 { none; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        recursing-file  "/var/named/data/named.recursing";
+        secroots-file   "/var/named/data/named.secroots";
+-       allow-query     { localhost; };
++       /* allow-query     { localhost; }; */
+
+        /*
+         - If you are building an AUTHORITATIVE DNS server, do NOT enable recursion.
+@@ -33,7 +34,8 @@
+        recursion yes;
+
+        dnssec-enable yes;
+-       dnssec-validation yes;
++       /* dnssec-validation yes; */
++       dnssec-validation no;
+
+        /* Path to ISC DLV key */
+        bindkeys-file "/etc/named.root.key";
+@@ -42,6 +44,14 @@
+
+        pid-file "/run/named/named.pid";
+        session-keyfile "/run/named/session.key";
++
++        allow-query     { any; };
++        allow-transfer { "none"; };
++        allow-recursion { any; };
++
++        allow-query-cache { any; };
++        forwarders { 10.219.50.4; 10.219.50.5; };
++        forward first;
+ };
+
+ logging {
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# netstat -nlptu | grep ":53"
+udp        0      0 0.0.0.0:53358           0.0.0.0:*                           125200/python3
+udp        0      0 0.0.0.0:53449           0.0.0.0:*                           80184/python3
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# systemctl start named
+[root@m1-zeppelin01p ~]# systemctl enable named
+Created symlink from /etc/systemd/system/multi-user.target.wants/named.service to /usr/lib/systemd/system/named.service.
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# netstat -lptu | grep "named"
+tcp        0      0 localhost:domain        0.0.0.0:*               LISTEN      49879/named
+tcp        0      0 localhost:rndc          0.0.0.0:*               LISTEN      49879/named
+tcp6       0      0 localhost:rndc          [::]:*                  LISTEN      49879/named
+udp        0      0 localhost:domain        0.0.0.0:*                           49879/named
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# dig @127.0.0.1 repo-linux.tcsbank.ru.
+
+; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> @127.0.0.1 repo-linux.tcsbank.ru.
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 58987
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 13, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;repo-linux.tcsbank.ru.         IN      A
+
+;; ANSWER SECTION:
+repo-linux.tcsbank.ru.  1808    IN      CNAME   ds-repo01.tcsbank.ru.
+ds-repo01.tcsbank.ru.   2015    IN      A       10.216.42.6
+
+;; AUTHORITY SECTION:
+.                       71190   IN      NS      b.root-servers.net.
+.                       71190   IN      NS      c.root-servers.net.
+.                       71190   IN      NS      d.root-servers.net.
+.                       71190   IN      NS      l.root-servers.net.
+.                       71190   IN      NS      i.root-servers.net.
+.                       71190   IN      NS      m.root-servers.net.
+.                       71190   IN      NS      e.root-servers.net.
+.                       71190   IN      NS      k.root-servers.net.
+.                       71190   IN      NS      f.root-servers.net.
+.                       71190   IN      NS      j.root-servers.net.
+.                       71190   IN      NS      h.root-servers.net.
+.                       71190   IN      NS      a.root-servers.net.
+.                       71190   IN      NS      g.root-servers.net.
+
+;; Query time: 2 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Mon Jan 13 18:09:36 MSK 2020
+;; MSG SIZE  rcvd: 301
+
+[root@m1-zeppelin01p ~]#
+
+
+
+[root@m1-zeppelin01p ~]# grep -ie "stat" /etc/named.conf
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+[root@m1-zeppelin01p ~]# ls /var/named/data/named_stats.txt
+ls: cannot access /var/named/data/named_stats.txt: No such file or directory
+[root@m1-zeppelin01p ~]# rndc stats
+[root@m1-zeppelin01p ~]# ls /var/named/data/named_stats.txt
+/var/named/data/named_stats.txt
+[root@m1-zeppelin01p ~]# cat /var/named/data/named_stats.txt
++++ Statistics Dump +++ (1578928308)
+++ Incoming Requests ++
+                   1 QUERY
+++ Incoming Queries ++
+                   1 A
+++ Outgoing Rcodes ++
+                   1 NOERROR
+++ Outgoing Queries ++
+[View: default]
+                   2 A
+                   2 NS
+                   2 DNSKEY
+[View: _bind]
+++ Name Server Statistics ++
+                   1 IPv4 requests received
+                   1 requests with EDNS(0) received
+                   1 responses sent
+                   1 responses with EDNS(0) sent
+                   1 queries resulted in successful answer
+                   1 queries resulted in non authoritative answer
+                   1 queries caused recursion
+                   1 UDP queries received
+++ Zone Maintenance Statistics ++
+++ Resolver Statistics ++
+[Common]
+[View: default]
+                   6 IPv4 queries sent
+                   6 IPv4 responses received
+                   1 truncated responses received
+                   1 query retries
+                   6 queries with RTT < 10ms
+                 523 bucket size
+[View: _bind]
+                 523 bucket size
+++ Cache Statistics ++
+[View: default]
+                  95 cache hits
+                  26 cache misses
+                   0 cache hits (from query)
+                  15 cache misses (from query)
+                   0 cache records deleted due to memory exhaustion
+                   0 cache records deleted due to TTL expiration
+                   4 cache database nodes
+                  64 cache database hash buckets
+              287408 cache tree memory total
+               31552 cache tree memory in use
+               32360 cache tree highest memory in use
+              286720 cache heap memory total
+               25600 cache heap memory in use
+               25600 cache heap highest memory in use
+[View: _bind (Cache: _bind)]
+                   0 cache hits
+                   0 cache misses
+                   0 cache hits (from query)
+                   0 cache misses (from query)
+                   0 cache records deleted due to memory exhaustion
+                   0 cache records deleted due to TTL expiration
+                   0 cache database nodes
+                  64 cache database hash buckets
+              287408 cache tree memory total
+               29512 cache tree memory in use
+               29512 cache tree highest memory in use
+              262144 cache heap memory total
+                1024 cache heap memory in use
+                1024 cache heap highest memory in use
+++ Cache DB RRsets ++
+[View: default]
+                   1 A
+                   1 NS
+                   1 CNAME
+                   1 DNSKEY
+[View: _bind (Cache: _bind)]
+++ ADB stats ++
+[View: default]
+                1021 Address hash table size
+                  28 Addresses in hash table
+                1021 Name hash table size
+                  13 Names in hash table
+[View: _bind]
+                1021 Address hash table size
+                1021 Name hash table size
+++ Socket I/O Statistics ++
+                  36 UDP/IPv4 sockets opened
+                   3 TCP/IPv4 sockets opened
+                   1 TCP/IPv6 sockets opened
+                   1 Raw sockets opened
+                   5 UDP/IPv4 sockets closed
+                   1 TCP/IPv4 sockets closed
+                   5 UDP/IPv4 connections established
+                   1 TCP/IPv4 connections established
+                   1 TCP/IPv4 connections accepted
+                  31 UDP/IPv4 sockets active
+                   3 TCP/IPv4 sockets active
+                   1 TCP/IPv6 sockets active
+                   1 Raw sockets active
+++ Per Zone Query Statistics ++
+--- Statistics Dump --- (1578928308)
+[root@m1-zeppelin01p ~]#
+
+
+
+[root@m1-zeppelin01p ~]# stat /etc/resolv.conf
+  File: ‘/etc/resolv.conf’
+  Size: 95              Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 134284450   Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2020-01-13 00:37:26.990461696 +0300
+Modify: 2019-08-15 00:29:59.767977856 +0300
+Change: 2019-08-15 00:29:59.767977856 +0300
+ Birth: -
+[root@m1-zeppelin01p ~]# systemctl status NetworkManager
+● NetworkManager.service - Network Manager
+   Loaded: loaded (/usr/lib/systemd/system/NetworkManager.service; disabled; vendor preset: enabled)
+   Active: inactive (dead)
+     Docs: man:NetworkManager(8)
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# vim /etc/resolv.conf
+[root@m1-zeppelin01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+nameserver 127.0.0.1
+nameserver 10.219.50.5
+nameserver 10.219.50.4
+search tcsbank.ru
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# grep -A 2 "Cache Statistics" /var/named/data/named_stats.txt
+++ Cache Statistics ++
+[View: default]
+                  95 cache hits
+--
+++ Cache Statistics ++
+[View: default]
+                5406 cache hits
+[root@m1-zeppelin01p ~]#
+
+#
+#	But we still have lot of DNS requests.
+#
+[root@m1-zeppelin01p ~]# time timeout 5s tcpdump -nn -c 15 -i any dst host 10.219.50.4 and port 53
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on any, link-type LINUX_SLL (Linux cooked), capture size 65535 bytes
+12:04:09.734383 IP 10.216.26.26.36310 > 10.219.50.4.53: 26488+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.734388 ethertype IPv4, IP 10.216.26.26.36310 > 10.219.50.4.53: 26488+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.734389 ethertype IPv4, IP 10.216.26.26.36310 > 10.219.50.4.53: 26488+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.734750 IP 10.216.26.26.41708 > 10.219.50.4.53: 8987+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.734751 ethertype IPv4, IP 10.216.26.26.41708 > 10.219.50.4.53: 8987+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.734753 ethertype IPv4, IP 10.216.26.26.41708 > 10.219.50.4.53: 8987+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.735117 IP 10.216.26.26.60990 > 10.219.50.4.53: 33876+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.735118 ethertype IPv4, IP 10.216.26.26.60990 > 10.219.50.4.53: 33876+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.735120 ethertype IPv4, IP 10.216.26.26.60990 > 10.219.50.4.53: 33876+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.735522 IP 10.216.26.26.43104 > 10.219.50.4.53: 39074+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.735524 ethertype IPv4, IP 10.216.26.26.43104 > 10.219.50.4.53: 39074+ A? ha-graylog.tcsbank.ru. (39)
+12:04:09.735526 ethertype IPv4, IP 10.216.26.26.43104 > 10.219.50.4.53: 39074+ A? ha-graylog.tcsbank.ru. (39)
+12:04:10.295569 IP 10.216.26.26.51821 > 10.219.50.4.53: 20908+ A? ha-graylog.tcsbank.ru. (39)
+12:04:10.295573 ethertype IPv4, IP 10.216.26.26.51821 > 10.219.50.4.53: 20908+ A? ha-graylog.tcsbank.ru. (39)
+12:04:10.295575 ethertype IPv4, IP 10.216.26.26.51821 > 10.219.50.4.53: 20908+ A? ha-graylog.tcsbank.ru. (39)
+15 packets captured
+16 packets received by filter
+0 packets dropped by kernel
+
+real    0m0.948s
+user    0m0.002s
+sys     0m0.003s
+[root@m1-zeppelin01p ~]#
+
+[root@m1-zeppelin01p ~]# dig @127.0.0.1 ha-graylog.tcsbank.ru.
+
+; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> @127.0.0.1 ha-graylog.tcsbank.ru.
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 8561
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 13, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;ha-graylog.tcsbank.ru.         IN      A
+
+;; ANSWER SECTION:
+ha-graylog.tcsbank.ru.  2006    IN      A       10.216.40.170
+
+;; AUTHORITY SECTION:
+.                       6592    IN      NS      e.root-servers.net.
+.                       6592    IN      NS      f.root-servers.net.
+.                       6592    IN      NS      h.root-servers.net.
+.                       6592    IN      NS      g.root-servers.net.
+.                       6592    IN      NS      b.root-servers.net.
+.                       6592    IN      NS      j.root-servers.net.
+.                       6592    IN      NS      l.root-servers.net.
+.                       6592    IN      NS      c.root-servers.net.
+.                       6592    IN      NS      m.root-servers.net.
+.                       6592    IN      NS      k.root-servers.net.
+.                       6592    IN      NS      a.root-servers.net.
+.                       6592    IN      NS      i.root-servers.net.
+.                       6592    IN      NS      d.root-servers.net.
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Tue Jan 14 12:06:14 MSK 2020
+;; MSG SIZE  rcvd: 277
+
+[root@m1-zeppelin01p ~]#
+
+
+#
+#	20200114
+#	Today I've found that file was changed. Removed string nameserver 127.0.0.1.
+#
+
+[root@m1-zeppelin01p ~]# cat /etc/resolv.conf
+# Ansible managed
+
+search tcsbank.ru
+domain tcsbank.ru
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+options timeout:3 attempts:1
+
+# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# cat /etc/resolv.conf
+# Ansible managed
+
+search tcsbank.ru
+domain tcsbank.ru
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+options timeout:3 attempts:1
+
+# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+
+#
+#	Here I see, when was changed the file.
+#
+[root@m1-zeppelin01p ~]# stat /etc/resolv.conf
+  File: ‘/etc/resolv.conf’
+  Size: 225             Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 136903249   Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2020-01-13 18:47:43.861426826 +0300
+Modify: 2020-01-13 18:47:42.481430086 +0300
+Change: 2020-01-13 18:47:42.481430086 +0300
+ Birth: -
+[root@m1-zeppelin01p ~]#
+
+
+#
+#	Suslov wrote, that he made appropriate changes. He modified their Ansible.
+#
+[root@m1-zeppelin01p ~]# stat /etc/resolv.conf
+  File: ‘/etc/resolv.conf’
+  Size: 246             Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 136903259   Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2020-01-14 12:39:51.914728083 +0300
+Modify: 2020-01-14 12:39:50.566730320 +0300
+Change: 2020-01-14 12:39:50.566730320 +0300
+ Birth: -
+[root@m1-zeppelin01p ~]# cat /etc/resolv.conf
+nameserver 127.0.0.1
+# Ansible managed
+
+search tcsbank.ru
+domain tcsbank.ru
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+options timeout:3 attempts:1
+
+# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+
+[root@m1-zeppelin01p ~]#
+
+#
+#	Here I can see, that situation changed to better.
+#	Only 12 requests diring 15 seconds.
+#	All requests become differ.
+#
+[root@m1-zeppelin01p ~]# time timeout 5s tcpdump -nn -c 15 -i any dst host 10.219.50.4 and port 53
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on any, link-type LINUX_SLL (Linux cooked), capture size 65535 bytes
+12:43:54.345787 IP 10.216.26.26.59257 > 10.219.50.4.53: 38349+ [1au] NS? . (28)
+12:43:54.345791 ethertype IPv4, IP 10.216.26.26.59257 > 10.219.50.4.53: 38349+ [1au] NS? . (28)
+12:43:54.345793 ethertype IPv4, IP 10.216.26.26.59257 > 10.219.50.4.53: 38349+ [1au] NS? . (28)
+12:43:54.345795 IP 10.216.26.26.60993 > 10.219.50.4.53: 3532+% [1au] AAAA? vault.tcsbank.ru. (45)
+12:43:54.345798 ethertype IPv4, IP 10.216.26.26.60993 > 10.219.50.4.53: 3532+% [1au] AAAA? vault.tcsbank.ru. (45)
+12:43:54.345802 ethertype IPv4, IP 10.216.26.26.60993 > 10.219.50.4.53: 3532+% [1au] AAAA? vault.tcsbank.ru. (45)
+12:43:55.036216 IP 10.216.26.26.40243 > 10.219.50.4.53: 46385+% [1au] A? gp-etl.gtm.tinkoff.ru. (50)
+12:43:55.036217 IP 10.216.26.26.37836 > 10.219.50.4.53: 54830+ [1au] NS? . (28)
+12:43:55.036222 ethertype IPv4, IP 10.216.26.26.40243 > 10.219.50.4.53: 46385+% [1au] A? gp-etl.gtm.tinkoff.ru. (50)
+12:43:55.036223 ethertype IPv4, IP 10.216.26.26.37836 > 10.219.50.4.53: 54830+ [1au] NS? . (28)
+12:43:55.036227 ethertype IPv4, IP 10.216.26.26.37836 > 10.219.50.4.53: 54830+ [1au] NS? . (28)
+12:43:55.036227 ethertype IPv4, IP 10.216.26.26.40243 > 10.219.50.4.53: 46385+% [1au] A? gp-etl.gtm.tinkoff.ru. (50)
+
+12 packets captured
+12 packets received by filter
+0 packets dropped by kernel
+
+real    0m5.019s
+user    0m0.003s
+sys     0m0.004s
+[root@m1-zeppelin01p ~]#
+
+................................................................................
+
+
+#
+#		From: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru> 
+#		Sent: Tuesday, January 14, 2020 4:02 PM
+#		To: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru>
+#		Cc: zeppelin-dev <zeppelin-dev@tinkoff.ru>; Gnitiev Viktor <v.gnitiev@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>; unix-admins <unix-admins@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		
+#		Я поразбираюсь, поправлю и вам сообщу.
+#		Вам пока ничего делать не нужно, чтоб дополнительной энтропии не вносить.
+#		
+#		Сергей Белогруд
+#		Старший системный администратор
+#		Тел.: +7 495 648-10-00, доб. 2173
+#		
+#		From: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru> 
+#		Sent: Tuesday, January 14, 2020 3:37 PM
+#		To: Komyagin Igor Vladimirovich <i.komyagin@tinkoff.ru>; unix-admins <unix-admins@tinkoff.ru>
+#		Cc: zeppelin-dev <zeppelin-dev@tinkoff.ru>; Gnitiev Viktor <v.gnitiev@tinkoff.ru>; Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		
+#		Сергей, поправишь?
+#		Или нам что-то нужно сделать?
+#		Если нам – то что именно?
+#		
+#		
+#		Алексей Суслов
+#		Администратор
+#		Тел.: +7 495 648-10-00, доб. 31162
+#		
+#		From: Komyagin Igor Vladimirovich 
+#		Sent: Tuesday, January 14, 2020 2:58 PM
+#		To: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru>; unix-admins <unix-admins@tinkoff.ru>
+#		Cc: zeppelin-dev <zeppelin-dev@tinkoff.ru>; Gnitiev Viktor <v.gnitiev@tinkoff.ru>; Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Subject: Re: SD#3597918 - повышенная нагрузка на DNS сервер
+#		
+#		Привет!
+#		
+#		Проблема в отличие серверов - на m1 установлен bind,  в ds  -  нет.
+#		При это оба сервера настроены на запросы к localhost в первую очередь.
+#		В DS работает так как на запрос от localhost нет ответа и используются следующие сервера. В М1 же bind сразу отвечает – not found.
+#		
+#		[root@m1-zeppelin01p ~]# host 10.216.26.19 10.219.50.4
+#		Using domain server:
+#		Name: 10.219.50.4
+#		Address: 10.219.50.4#53
+#		Aliases:
+#		19.26.216.10.in-addr.arpa domain name pointer m1-gp-prod-ext.tcsbank.ru.
+#		
+#		[root@m1-zeppelin01p ~]# host 10.216.26.19 10.219.50.5
+#		Using domain server:
+#		Name: 10.219.50.5
+#		Address: 10.219.50.5#53
+#		Aliases:
+#		19.26.216.10.in-addr.arpa domain name pointer m1-gp-prod-ext.tcsbank.ru.
+#		
+#		[root@m1-zeppelin01p ~]# host 10.216.26.19 127.0.0.1
+#		Using domain server:
+#		Name: 127.0.0.1
+#		Address: 127.0.0.1#53
+#		Aliases:
+#		Host 19.26.216.10.in-addr.arpa. not found: 3(NXDOMAIN)
+#		
+#		[root@m1-zeppelin01p ~]# lsof -i:53
+#		COMMAND   PID  USER   FD   TYPE     DEVICE SIZE/OFF NODE NAME
+#		named   49879 named   21u  IPv4 3773612047      0t0  TCP localhost:domain (LISTEN)
+#		named   49879 named  512u  IPv4 3773612045      0t0  UDP localhost:domain
+#		
+#		Нужно поправить настройки bind.
+#		
+#		Игорь
+#		
+#		От: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru>
+#		Дата: вторник, 14 января 2020 г., 14:31
+#		Кому: unix-admins <unix-admins@tinkoff.ru>
+#		Копия: zeppelin-dev <zeppelin-dev@tinkoff.ru>, Gnitiev Viktor <v.gnitiev@tinkoff.ru>, Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>, Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>, Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Тема: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		
+#		Коллеги, мы не против поменять настройки обратно, но помогите нам решить проблему:
+#		при одинаковых настройках resolv.conf на ds-zeppelin01p и m1-zeppelin01p, на ds-zeppelin01p - работает host , а на m1-zeppelin01p – нет:
+#		 
+#		[root@m1-zeppelin01p sas-admin]# host 10.216.26.19
+#		Host 19.26.216.10.in-addr.arpa. not found: 3(NXDOMAIN)
+#		[root@m1-zeppelin01p sas-admin]# cat /etc/resolv.conf
+#		nameserver 127.0.0.1
+#		# Ansible managed
+#		 
+#		search tcsbank.ru
+#		domain tcsbank.ru
+#		nameserver 10.219.50.4
+#		nameserver 10.219.50.5
+#		options timeout:3 attempts:1
+#		 
+#		# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+#		 
+#		[root@ds-zeppelin01p sas-admin]# host 10.216.26.19
+#		19.26.216.10.in-addr.arpa domain name pointer m1-gp-prod-ext.tcsbank.ru.
+#		[root@ds-zeppelin01p sas-admin]# cat /etc/resolv.conf
+#		nameserver 127.0.0.1
+#		# Ansible managed
+#		 
+#		search tcsbank.ru
+#		domain tcsbank.ru
+#		nameserver 10.219.50.4
+#		nameserver 10.219.50.5
+#		options timeout:3 attempts:1
+#		 
+#		# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+#		 
+#		 
+#		
+#		Алексей Суслов
+#		Администратор
+#		Тел.: +7 495 648-10-00, доб. 31162
+#		 
+#		From: Gnitiev Viktor 
+#		Sent: Tuesday, January 14, 2020 1:40 PM
+#		To: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru>; Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Cc: zeppelin-dev <zeppelin-dev@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		 
+#		Тогда ищите доку к «своему» кэширующему ДНСу.
+#		Оно должно работать.
+#		Если не найдете, меняйте на unbound.
+#		 
+#		
+#		Виктор Гнитиёв
+#		Старший системный администратор
+#		Тел.: +7 495 648-10-00, доб. 2065
+#		 
+#		From: Suslov Aleksey Lvovich 
+#		Sent: Tuesday, January 14, 2020 1:38 PM
+#		To: Gnitiev Viktor <v.gnitiev@tinkoff.ru>; Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Cc: zeppelin-dev <zeppelin-dev@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		 
+#		Как понимаю, unbound –а нет.
+#		[root@m1-zeppelin01p sas-admin]# unbound
+#		bash: unbound: command not found
+#		 
+#		
+#		Алексей Суслов
+#		Администратор
+#		Тел.: +7 495 648-10-00, доб. 31162
+#		 
+#		From: Gnitiev Viktor 
+#		Sent: Tuesday, January 14, 2020 1:21 PM
+#		To: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru>; Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Klishin Yuriy Andreevich <y.klishin@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Cc: zeppelin-dev <zeppelin-dev@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		 
+#		И возможно:
+#		 
+#		forward-zone:
+#		        name: "10.in-addr.arpa."
+#		        forward-addr: 10.219.50.4
+#		        forward-addr: 10.219.50.5
+#		 
+#		(но это нужно проверить. По идее, должно работать и без этого, через дефолтный форвардер, по домену «точка»)
+#		 
+#		
+#		Виктор Гнитиёв
+#		Старший системный администратор
+#		Тел.: +7 495 648-10-00, доб. 2065
+#		 
+#		From: Gnitiev Viktor 
+#		Sent: Tuesday, January 14, 2020 1:19 PM
+#		To: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru>; Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Klishin Yuriy Andreevich <y.klishin@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Cc: zeppelin-dev <zeppelin-dev@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		 
+#		Недоконфигурили.
+#		 
+#		Если у вас там unbound, то в разделе:
+#		 
+#		Server:
+#		 
+#		вам нужны строчки:
+#		        local-zone: "10.in-addr.arpa." nodefault
+#		        local-zone: "16.172.in-addr.arpa." nodefault
+#		        local-zone: "17.172.in-addr.arpa." nodefault
+#		        local-zone: "18.172.in-addr.arpa." nodefault
+#		        local-zone: "19.172.in-addr.arpa." nodefault
+#		        local-zone: "20.172.in-addr.arpa." nodefault
+#		        local-zone: "21.172.in-addr.arpa." nodefault
+#		        local-zone: "22.172.in-addr.arpa." nodefault
+#		        local-zone: "23.172.in-addr.arpa." nodefault
+#		        local-zone: "24.172.in-addr.arpa." nodefault
+#		        local-zone: "25.172.in-addr.arpa." nodefault
+#		        local-zone: "26.172.in-addr.arpa." nodefault
+#		        local-zone: "27.172.in-addr.arpa." nodefault
+#		        local-zone: "28.172.in-addr.arpa." nodefault
+#		        local-zone: "29.172.in-addr.arpa." nodefault
+#		        local-zone: "30.172.in-addr.arpa." nodefault
+#		        local-zone: "31.172.in-addr.arpa." nodefault
+#		        local-zone: "168.192.in-addr.arpa." nodefault
+#		 
+#		
+#		Виктор Гнитиёв
+#		Старший системный администратор
+#		Тел.: +7 495 648-10-00, доб. 2065
+#		 
+#		From: Suslov Aleksey Lvovich 
+#		Sent: Tuesday, January 14, 2020 1:14 PM
+#		To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Klishin Yuriy Andreevich <y.klishin@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Cc: Gnitiev Viktor <v.gnitiev@tinkoff.ru>; zeppelin-dev <zeppelin-dev@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		 
+#		Коллеги, вчера это делалось для того, чтобы возобновить работу сервиса.
+#		
+#		Ситуация такая: Если строка nameserver 127.0.01 есть, происходит следующее:
+#		
+#		[root@m1-zeppelin01p sas-admin]# host 10.216.26.19
+#		Host 19.26.216.10.in-addr.arpa. not found: 3(NXDOMAIN)
+#		[root@m1-zeppelin01p sas-admin]# cat /etc/resolv.conf
+#		nameserver 127.0.0.1
+#		# Ansible managed
+#		 
+#		search tcsbank.ru
+#		domain tcsbank.ru
+#		nameserver 10.219.50.4
+#		nameserver 10.219.50.5
+#		options timeout:3 attempts:1
+#		 
+#		# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+#		 
+#		Если же строки нет, всё работает:
+#		
+#		# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+#		 
+#		[root@m1-zeppelin01p sas-admin]# vim /etc/resolv.conf
+#		[root@m1-zeppelin01p sas-admin]# host 10.216.26.19
+#		19.26.216.10.in-addr.arpa domain name pointer m1-gp-prod-ext.tcsbank.ru.
+#		[root@m1-zeppelin01p sas-admin]# cat /etc/resolv.conf
+#		#nameserver 127.0.0.1
+#		# Ansible managed
+#		 
+#		search tcsbank.ru
+#		domain tcsbank.ru
+#		nameserver 10.219.50.4
+#		nameserver 10.219.50.5
+#		options timeout:3 attempts:1
+#		 
+#		# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+#		 
+#		При этом при аналогичных конфигах, в ds-zeppelin01p, всё работает:
+#		[root@ds-zeppelin01p sas-admin]# host 10.216.26.19
+#		19.26.216.10.in-addr.arpa domain name pointer m1-gp-prod-ext.tcsbank.ru.
+#		[root@ds-zeppelin01p sas-admin]# cat /etc/resolv.conf
+#		nameserver 127.0.0.1
+#		# Ansible managed
+#		 
+#		search tcsbank.ru
+#		domain tcsbank.ru
+#		nameserver 10.219.50.4
+#		nameserver 10.219.50.5
+#		options timeout:3 attempts:1
+#		 
+#		# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+#		 
+#		Просьба подсказать, что нужно сделать, чтобы всё было правильно настроено и при этом работало.
+#		
+#		Алексей Суслов
+#		Администратор
+#		Тел.: +7 495 648-10-00, доб. 31162
+#		 
+#		From: Suslov Aleksey Lvovich 
+#		Sent: Tuesday, January 14, 2020 12:41 PM
+#		To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Klishin Yuriy Andreevich <y.klishin@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Cc: Gnitiev Viktor <v.gnitiev@tinkoff.ru>; zeppelin-dev <zeppelin-dev@tinkoff.ru>
+#		Subject: RE: SD#3597918 - повышенная нагрузка на DNS сервер
+#		 
+#		Поправил на m1-zeppelin01p.
+#		
+#		+коллеги
+#		 
+#		
+#		Алексей Суслов
+#		Администратор
+#		Тел.: +7 495 648-10-00, доб. 31162
+#		 
+#		From: Belogrud Sergey Vladimirovich 
+#		Sent: Tuesday, January 14, 2020 12:24 PM
+#		To: Suslov Aleksey Lvovich <a.l.suslov@tinkoff.ru>; Klishin Yuriy Andreevich <y.klishin@tinkoff.ru>; Sotnichenko Sergey <s.sotnichenko@tinkoff.ru>; Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+#		Cc: Gnitiev Viktor <v.gnitiev@tinkoff.ru>
+#		Subject: SD#3597918 - повышенная нагрузка на DNS сервер
+#		 
+#		Добрый день.
+#		 
+#		m1-zeppelin01p - коллеги, этот сервер вами используется?
+#		Если да, то по нему была сделана задача: SD#3597918 - повышенная нагрузка на DNS сервер.
+#		 
+#		Сервер генерирует значительный объём DNS запросов.
+#		 
+#		[root@m1-zeppelin01p ~]# time timeout 5s tcpdump -nn -c 15 -i any dst host 10.219.50.4 and port 53
+#		tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+#		listening on any, link-type LINUX_SLL (Linux cooked), capture size 65535 bytes
+#		12:04:09.734383 IP 10.216.26.26.36310 > 10.219.50.4.53: 26488+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.734388 ethertype IPv4, IP 10.216.26.26.36310 > 10.219.50.4.53: 26488+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.734389 ethertype IPv4, IP 10.216.26.26.36310 > 10.219.50.4.53: 26488+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.734750 IP 10.216.26.26.41708 > 10.219.50.4.53: 8987+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.734751 ethertype IPv4, IP 10.216.26.26.41708 > 10.219.50.4.53: 8987+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.734753 ethertype IPv4, IP 10.216.26.26.41708 > 10.219.50.4.53: 8987+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.735117 IP 10.216.26.26.60990 > 10.219.50.4.53: 33876+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.735118 ethertype IPv4, IP 10.216.26.26.60990 > 10.219.50.4.53: 33876+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.735120 ethertype IPv4, IP 10.216.26.26.60990 > 10.219.50.4.53: 33876+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.735522 IP 10.216.26.26.43104 > 10.219.50.4.53: 39074+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.735524 ethertype IPv4, IP 10.216.26.26.43104 > 10.219.50.4.53: 39074+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:09.735526 ethertype IPv4, IP 10.216.26.26.43104 > 10.219.50.4.53: 39074+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:10.295569 IP 10.216.26.26.51821 > 10.219.50.4.53: 20908+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:10.295573 ethertype IPv4, IP 10.216.26.26.51821 > 10.219.50.4.53: 20908+ A? ha-graylog.tcsbank.ru. (39)
+#		12:04:10.295575 ethertype IPv4, IP 10.216.26.26.51821 > 10.219.50.4.53: 20908+ A? ha-graylog.tcsbank.ru. (39)
+#		15 packets captured
+#		16 packets received by filter
+#		0 packets dropped by kernel
+#		 
+#		real    0m0.948s
+#		user    0m0.002s
+#		sys     0m0.003s
+#		[root@m1-zeppelin01p ~]#
+#		 
+#		 
+#		На сервер был установлен локальный кэширующий DNS сервер bind.
+#		 
+#		[root@m1-zeppelin01p ~]# dig @127.0.0.1 ha-graylog.tcsbank.ru.
+#		 
+#		; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> @127.0.0.1 ha-graylog.tcsbank.ru.
+#		; (1 server found)
+#		;; global options: +cmd
+#		;; Got answer:
+#		;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 8561
+#		;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 13, ADDITIONAL: 1
+#		 
+#		;; OPT PSEUDOSECTION:
+#		; EDNS: version: 0, flags:; udp: 4096
+#		;; QUESTION SECTION:
+#		;ha-graylog.tcsbank.ru.         IN      A
+#		 
+#		;; ANSWER SECTION:
+#		ha-graylog.tcsbank.ru.  2006    IN      A       10.216.40.170
+#		 
+#		;; AUTHORITY SECTION:
+#		.                       6592    IN      NS      e.root-servers.net.
+#		.                       6592    IN      NS      f.root-servers.net.
+#		.                       6592    IN      NS      h.root-servers.net.
+#		.                       6592    IN      NS      g.root-servers.net.
+#		.                       6592    IN      NS      b.root-servers.net.
+#		.                       6592    IN      NS      j.root-servers.net.
+#		.                       6592    IN      NS      l.root-servers.net.
+#		.                       6592    IN      NS      c.root-servers.net.
+#		.                       6592    IN      NS      m.root-servers.net.
+#		.                       6592    IN      NS      k.root-servers.net.
+#		.                       6592    IN      NS      a.root-servers.net.
+#		.                       6592    IN      NS      i.root-servers.net.
+#		.                       6592    IN      NS      d.root-servers.net.
+#		 
+#		;; Query time: 0 msec
+#		;; SERVER: 127.0.0.1#53(127.0.0.1)
+#		;; WHEN: Tue Jan 14 12:06:14 MSK 2020
+#		;; MSG SIZE  rcvd: 277
+#		 
+#		[root@m1-zeppelin01p ~]#
+#		 
+#		Однако содержимое файла /etc/resolv.conf перетирается, предположительно вашими плейбуками Ansible.
+#		Вытирается строчка «nameserver 127.0.0.1».
+#		 
+#		[root@m1-zeppelin01p ~]# cat /etc/resolv.conf
+#		# Ansible managed
+#		 
+#		search tcsbank.ru
+#		domain tcsbank.ru
+#		nameserver 10.219.50.4
+#		nameserver 10.219.50.5
+#		options timeout:3 attempts:1
+#		 
+#		# default settings is 2 attempts for 5 seconds and no rotate, always trying use a first one.
+#		 
+#		[root@m1-zeppelin01p ~]#
+#		 
+#		Пожалуйста откорректируйте ваши плейбуки Ansible, чтобы в файле /etc/resolv.conf сохраняласть строчка использования локального кэширующего DNS сервера.
+#		 
+#		
+#		С уважением,
+#		
+#		Сергей Белогруд
+#		Старший системный администратор
+#
+
+
+[root@m1-zeppelin01p ~]# dig @10.219.50.4 -t a 19.26.216.10.in-addr.arpa
+
+; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> @10.219.50.4 -t a 19.26.216.10.in-addr.arpa
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16491
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;19.26.216.10.in-addr.arpa.     IN      A
+
+;; AUTHORITY SECTION:
+26.216.10.in-addr.arpa. 10      IN      SOA     m1-msk-dc01.tcsbank.ru. hostmaster.tcsbank.ru. 131 900 600 86400 3600
+
+;; Query time: 0 msec
+;; SERVER: 10.219.50.4#53(10.219.50.4)
+;; WHEN: Wed Jan 15 12:21:15 MSK 2020
+;; MSG SIZE  rcvd: 123
+
+[root@m1-zeppelin01p ~]# dig @127.0.0.1 -t a 19.26.216.10.in-addr.arpa
+
+; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> @127.0.0.1 -t a 19.26.216.10.in-addr.arpa
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 36456
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;19.26.216.10.in-addr.arpa.     IN      A
+
+;; AUTHORITY SECTION:
+10.IN-ADDR.ARPA.        86400   IN      SOA     10.IN-ADDR.ARPA. . 0 28800 7200 604800 86400
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Wed Jan 15 12:21:30 MSK 2020
+;; MSG SIZE  rcvd: 104
+
+[root@m1-zeppelin01p ~]#
+
+
+[root@m1-zeppelin01p ~]# dig @127.0.0.1 -x 10.216.26.19
+
+; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> @127.0.0.1 -x 10.216.26.19
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 27038
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;19.26.216.10.in-addr.arpa.     IN      PTR
+
+;; AUTHORITY SECTION:
+10.IN-ADDR.ARPA.        86400   IN      SOA     10.IN-ADDR.ARPA. . 0 28800 7200 604800 86400
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Wed Jan 15 12:32:02 MSK 2020
+;; MSG SIZE  rcvd: 104
+
+[root@m1-zeppelin01p ~]# dig @10.219.50.4 -x 10.216.26.19
+
+; <<>> DiG 9.11.4-P2-RedHat-9.11.4-9.P2.el7 <<>> @10.219.50.4 -x 10.216.26.19
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12124
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;19.26.216.10.in-addr.arpa.     IN      PTR
+
+;; ANSWER SECTION:
+19.26.216.10.in-addr.arpa. 1507 IN      PTR     m1-gp-prod-ext.tcsbank.ru.
+
+;; Query time: 0 msec
+;; SERVER: 10.219.50.4#53(10.219.50.4)
+;; WHEN: Wed Jan 15 12:32:15 MSK 2020
+;; MSG SIZE  rcvd: 93
+
+[root@m1-zeppelin01p ~]#
+
+
+
+[root@m1-zeppelin01p ~]# man host
+[root@m1-zeppelin01p ~]# host 10.216.26.19 127.0.0.1
+Using domain server:
+Name: 127.0.0.1
+Address: 127.0.0.1#53
+Aliases:
+
+Host 19.26.216.10.in-addr.arpa. not found: 3(NXDOMAIN)
+[root@m1-zeppelin01p ~]# host 10.216.26.19 10.219.50.4
+Using domain server:
+Name: 10.219.50.4
+Address: 10.219.50.4#53
+Aliases:
+
+19.26.216.10.in-addr.arpa domain name pointer m1-gp-prod-ext.tcsbank.ru.
+[root@m1-zeppelin01p ~]#
+
+
+[s.belogrud@TCS4357]# cat hieradata/nodes/m1-zeppelin01p.tcsbank.ru.yaml
+unbound::verbosity:                3
+unbound::statistics_interval:      0
+unbound::statistics_cumulative:    false
+unbound::extended_statistics:      true
+unbound::num_threads:              8
+unbound::interface:
+  - "0.0.0.0"
+unbound::interface_automatic:      true
+unbound::do_not_query_localhost:   false
+unbound::do_ip4:                   true
+unbound::do_udp:                   true
+unbound::do_tcp:                   true
+unbound::do_ip6:                   false
+unbound::infra_cache_numhosts:     10000
+unbound::infra_host_ttl:           180
+unbound::msg_cache_size:           '128m'
+unbound::msg_cache_slabs:          4
+unbound::rrset_cache_slabs:        8
+unbound::rrset_cache_size:         '512m'
+unbound::cache_min_ttl:            60
+unbound::logfile:                  "/var/log/unbound.log"
+unbound::log_time_ascii:           true
+unbound::pidfile:                  "/var/run/unbound/unbound.pid"
+unbound::hide_identity:            true
+unbound::hide_version:             true
+unbound::harden_glue:              true
+unbound::harden_dnssec_stripped:   true
+unbound::harden_below_nxdomain:    true
+unbound::harden_referral_path:     true
+unbound::use_caps_for_id:          false
+unbound::unwanted_reply_threshold: 10000000
+unbound::prefetch:                 true
+unbound::prefetch_key:             false
+unbound::rrset_roundrobin:         true
+unbound::minimal_responses:        true
+unbound::val_clean_additional:     true
+unbound::val_permissive_mode:      false
+unbound::val_log_level:            1
+unbound::control_enable:           true
+unbound::auto_trust_anchor_file:   false
+unbound::interface_automatic:      true
+unbound::manage_package:           false
+unbound::access_control:
+  - "0.0.0.0/0 allow"
+
+unbound_local_zones:
+  '.':
+    name: '.'
+    type: 'redirect'
+    data:
+      - '. IN A 127.0.0.1'
+
+  'tinkoff.ru.':
+    name: 'tinkoff.ru.'
+    type: 'transparent'
+
+  'tcsbank.ru.':
+    name: 'tcsbank.ru.'
+    type: 'transparent'
+
+  '10.in-addr.arpa.':
+    name: '10.in-addr.arpa.'
+    type: 'transparent'
+
+  '16.172.in-addr.arpa.':
+    name: '16.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '17.172.in-addr.arpa.':
+    name: '17.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '18.172.in-addr.arpa.':
+    name: '18.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '19.172.in-addr.arpa.':
+    name: '19.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '20.172.in-addr.arpa.':
+    name: '20.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '21.172.in-addr.arpa.':
+    name: '21.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '22.172.in-addr.arpa.':
+    name: '22.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '23.172.in-addr.arpa.':
+    name: '23.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '24.172.in-addr.arpa.':
+    name: '24.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '25.172.in-addr.arpa.':
+    name: '25.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '26.172.in-addr.arpa.':
+    name: '26.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '27.172.in-addr.arpa.':
+    name: '27.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '28.172.in-addr.arpa.':
+    name: '28.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '29.172.in-addr.arpa.':
+    name: '29.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '30.172.in-addr.arpa.':
+    name: '30.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '31.172.in-addr.arpa.':
+    name: '31.172.in-addr.arpa.'
+    type: 'transparent'
+
+  '168.192.in-addr.arpa.':
+    name: '168.192.in-addr.arpa.'
+    type: 'transparent'
+
+unbound_forward_zones:
+  '.':
+    name: '.'
+    addr:
+      - '10.219.50.4'
+      - '10.219.50.5'
+
+[s.belogrud@TCS4357]#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#	20200115
+#	Here is a way to find what process use port 53.
+#	https://serverfault.com/questions/666482/how-to-find-out-pid-of-the-process-sending-packets-generating-network-traffic
+#	
+#	root@m1-itpm-01p:~# lsof -PniTCP:53 -r 1 | grep :53
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	named   20631 bind   21u  IPv4 546916959      0t0  TCP 127.0.0.1:53 (LISTEN)
+#	
+#	root@m1-itpm-01p:~#
+#	
+
+
+#
+#	https://github.com/detailyang/systemtap-toolkit
+#	https://github.com/detailyang/systemtap-toolkit/blob/master/nssdns-watch-question
+#	https://access.redhat.com/discussions/3461991
+#
+#	root@m1-itpm-01p:~# find /usr/lib/ -iname *libnss*
+#	/usr/lib/x86_64-linux-gnu/libnss_dns.so
+#	/usr/lib/x86_64-linux-gnu/libnss_hesiod.so
+#	/usr/lib/x86_64-linux-gnu/libnssutil3.so
+#	/usr/lib/x86_64-linux-gnu/libnss_nisplus.so
+#	/usr/lib/x86_64-linux-gnu/nss/libnssdbm3.chk
+#	/usr/lib/x86_64-linux-gnu/nss/libnssckbi.so
+#	/usr/lib/x86_64-linux-gnu/nss/libnssdbm3.so
+#	/usr/lib/x86_64-linux-gnu/libnss_nis.so
+#	/usr/lib/x86_64-linux-gnu/libnss_compat.so
+#	/usr/lib/x86_64-linux-gnu/libnss3.so
+#	/usr/lib/x86_64-linux-gnu/samba/libnss-info.so.0
+#	/usr/lib/x86_64-linux-gnu/libnss_files.so
+#	root@m1-itpm-01p:~# /usr/bin/perl /tmp/nssdns-watch-question.py -l /usr/lib/x86_64-linux-gnu/libnss_dns.so
+#	Can't exec "stap": No such file or directory at /tmp/nssdns-watch-question.py line 106.
+#	Cannot run stap: No such file or directory
+#	root@m1-itpm-01p:~#
+
+
+
+
+[s.belogrud@TCS4357]# git status
+На ветке 20200115_SD3597918
+Изменения, которые не в индексе для коммита:
+  (используйте «git add <файл>…», чтобы добавить файл в индекс)
+  (используйте «git checkout -- <файл>…», чтобы отменить изменения
+   в рабочем каталоге)
+
+        изменено:      manifests/00_site.pp
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        hieradata/nodes/m1-zeppelin01p.tcsbank.ru.yaml
+        site/role/manifests/zeppelin_unbound_install.pp
+
+нет изменений добавленных для коммита
+(используйте «git add» и/или «git commit -a»)
+[s.belogrud@TCS4357]# git add hieradata/nodes/m1-zeppelin01p.tcsbank.ru.yaml
+[s.belogrud@TCS4357]# git add site/role/manifests/zeppelin_unbound_install.pp
+
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#3597918. Let's install unbound." manifests/00_site.pp hieradata/nodes/m1-zeppelin01p.tcsbank.ru.yaml site/role/manifests/zeppelin_unbound_install.pp
+[20200115_SD3597918 87baa4f3] SD#3597918. Let's install unbound.
+ 3 files changed, 100 insertions(+)
+ create mode 100644 hieradata/nodes/m1-zeppelin01p.tcsbank.ru.yaml
+ create mode 100644 site/role/manifests/zeppelin_unbound_install.pp
+[s.belogrud@TCS4357]# git push origin 20200115_SD3597918
+stty: standard input: Inappropriate ioctl for device
+Enumerating objects: 19, готово.
+Подсчет объектов: 100% (19/19), готово.
+Delta compression using up to 8 threads
+Сжатие объектов: 100% (10/10), готово.
+Запись объектов: 100% (11/11), 1.82 KiB | 30.00 KiB/s, готово.
+Total 11 (delta 6), reused 0 (delta 0)
+remote:
+remote: *** Checking puppet code style ***
+remote:
+remote: *** Checking puppet manifest syntax ***
+remote:
+remote: *** Checking puppet template(epp) syntax ***
+remote:
+remote: *** Checking ruby template(erb) syntax ***
+remote:
+remote: *** Checking ruby syntax ***
+remote:
+remote: *** Checking YAML syntax ***
+remote:
+remote: To create a merge request for 20200115_SD3597918, visit:
+remote:   https://vm-gitlab01.tcsbank.ru/Puppet/control/merge_requests/new?merge_request%5Bsource_branch%5D=20200115_SD3597918
+remote:
+To vm-gitlab01.tcsbank.ru:Puppet/control.git
+ * [new branch]        20200115_SD3597918 -> 20200115_SD3597918
+[s.belogrud@TCS4357]#
+
+
+
+
+[root@m1-zeppelin01p ~]# systemctl status named
+● named.service - Berkeley Internet Name Domain (DNS)
+   Loaded: loaded (/usr/lib/systemd/system/named.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2020-01-13 18:07:36 MSK; 2 days ago
+  Process: 36937 ExecReload=/bin/sh -c /usr/sbin/rndc reload > /dev/null 2>&1 || /bin/kill -HUP $MAINPID (code=exited, status=0/SUCCESS)
+ Main PID: 49879 (named)
+   CGroup: /system.slice/named.service
+           └─49879 /usr/sbin/named -u named -c /etc/named.conf
+
+Jan 15 14:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: resolver priming query complete
+Jan 15 14:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: managed-keys-zone: No DNSKEY RRSIGs found for '.': success
+Jan 15 15:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: managed-keys-zone: No DNSKEY RRSIGs found for '.': success
+Jan 15 15:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: resolver priming query complete
+Jan 15 16:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: managed-keys-zone: No DNSKEY RRSIGs found for '.': success
+Jan 15 16:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: resolver priming query complete
+Jan 15 17:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: resolver priming query complete
+Jan 15 17:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: managed-keys-zone: No DNSKEY RRSIGs found for '.': success
+Jan 15 18:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: resolver priming query complete
+Jan 15 18:43:01 m1-zeppelin01p.tcsbank.ru named[49879]: managed-keys-zone: No DNSKEY RRSIGs found for '.': success
+You have new mail in /var/spool/mail/root
+[root@m1-zeppelin01p ~]# systemctl stop named
+[root@m1-zeppelin01p ~]# systemctl disable named
+Removed symlink /etc/systemd/system/multi-user.target.wants/named.service.
+[root@m1-zeppelin01p ~]#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+................................................................................
+................................................................................
+#
+#	The third server to prepare it to use cashing DNS.
+#
+
+[s.belogrud@TCS4357]# ssh bsv@10.216.37.56
+Warning: Permanently added '10.216.37.56' (RSA) to the list of known hosts.
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+# Ansible managed
+                                      _    _                              _ _     _
+                                     | |  | |                            (_) |   | |
+ _ __   _____      _____ _ __ ___  __| |  | |__  _   _     __ _ _ __  ___ _| |__ | | ___
+| '_ \ / _ \ \ /\ / / _ \ '__/ _ \/ _` |  | '_ \| | | |   / _` | '_ \/ __| | '_ \| |/ _ \
+| |_) | (_) \ V  V /  __/ | |  __/ (_| |  | |_) | |_| |  | (_| | | | \__ \ | |_) | |  __/
+| .__/ \___/ \_/\_/ \___|_|  \___|\__,_|  |_.__/ \__, |   \__,_|_| |_|___/_|_.__/|_|\___|
+| |                                               __/ |
+|_|                                              |___/
+
+                                    with cow supahpower
+
+Welcome to "m1-bpm-prod-consul-1.tcsbank.ru.node.bpm-prod.bpm":
+ - Server type........: "VMware"
+ - Architecture.......: "x86_64"
+ - CPU Cores..........: "2"
+ - Memory.............: "7983" Mb
+ - OS.................: "Ubuntu"
+ - Release............: "16.04"
+ - Kernel.............: "4.4.0-151-generic"
+ - Addresses..........: "10.216.37.56"
+ - Last provisioning..: "2019-10-21"
+
+### TODO
+#
+# - Server role
+# - Server apps
+#
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+bsv@m1-bpm-prod-consul-1:~$ sudo -i
+[sudo] password for bsv:
+root@m1-bpm-prod-consul-1:~#
+
+root@m1-bpm-prod-consul-1:~# cat /etc/resolv.conf
+# Dynamic resolv.conf(5) file for glibc resolver(3) generated by resolvconf(8)
+#     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN
+nameserver 10.216.37.56
+nameserver 10.216.37.57
+nameserver 10.216.37.58
+search tcsbank.ru service.bpm node.bpm-qa.bpm node.bpm-dev.bpm node.bpm-prod.bpm
+# Ansible managedroot@m1-bpm-prod-consul-1:~# host 10.216.37.56
+56.37.216.10.in-addr.arpa domain name pointer m1-bpm-prod-consul-1.tcsbank.ru.node.bpm-prod.bpm.
+root@m1-bpm-prod-consul-1:~#
+
+root@m1-bpm-prod-consul-1:~# apt-get update
+Сущ:1 http://repo-linux.tcsbank.ru/ubuntu xenial InRelease
+Сущ:2 http://repo-linux.tcsbank.ru/ubuntu xenial-updates InRelease
+Сущ:3 http://repo-linux.tcsbank.ru/ubuntu xenial-backports InRelease
+Сущ:4 http://repo-linux.tcsbank.ru/ubuntu xenial-security InRelease
+Чтение списков пакетов… Готово
+root@m1-bpm-prod-consul-1:~# apt-get install bind9
+
+root@m1-bpm-prod-consul-1:~# mkdir -p ~/work/20200113-1827
+root@m1-bpm-prod-consul-1:~# cp /etc/bind/named.conf ~/work/20200113-1827/
+
+root@m1-bpm-prod-consul-1:~# vim /etc/bind/named.conf.options
+
+root@m1-bpm-prod-consul-1:~# cat /etc/bind/named.conf.options
+options {
+        directory "/var/cache/bind";
+
+        // If there is a firewall between you and nameservers you want
+        // to talk to, you may need to fix the firewall to allow multiple
+        // ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+        // If your ISP provided one or more IP addresses for stable
+        // nameservers, you probably want to use them as forwarders.
+        // Uncomment the following block, and insert the addresses replacing
+        // the all-0's placeholder.
+
+        // forwarders {
+        //      0.0.0.0;
+        // };
+
+        //========================================================================
+        // If BIND logs error messages about the root key being expired,
+        // you will need to update your keys.  See https://www.isc.org/bind-keys
+        //========================================================================
+        //dnssec-validation auto;
+        dnssec-validation no;
+
+        auth-nxdomain no;    # conform to RFC1035
+        // listen-on-v6 { any; };
+
+        listen-on port 53 { 127.0.0.1; };
+        listen-on-v6 port 53 { none; };
+
+        allow-query     { any; };
+        allow-transfer { "none"; };
+        recursion yes;
+        allow-recursion { any; };
+
+        allow-query-cache { any; };
+        forwarders { 10.219.50.4; 10.219.50.5; };
+        forward first;
+};
+
+root@m1-bpm-prod-consul-1:~#
+
+
+root@m1-bpm-prod-consul-1:~# systemctl status bind9
+● bind9.service - BIND Domain Name Server
+   Loaded: loaded (/lib/systemd/system/bind9.service; enabled; vendor preset: enabled)
+  Drop-In: /run/systemd/generator/bind9.service.d
+           └─50-insserv.conf-$named.conf
+   Active: inactive (dead)
+     Docs: man:named(8)
+root@m1-bpm-prod-consul-1:~# systemctl restart bind9
+root@m1-bpm-prod-consul-1:~# systemctl enable bind9
+Synchronizing state of bind9.service with SysV init with /lib/systemd/systemd-sysv-install...
+Executing /lib/systemd/systemd-sysv-install enable bind9
+root@m1-bpm-prod-consul-1:~# systemctl status bind9
+● bind9.service - BIND Domain Name Server
+   Loaded: loaded (/lib/systemd/system/bind9.service; enabled; vendor preset: enabled)
+  Drop-In: /run/systemd/generator/bind9.service.d
+           └─50-insserv.conf-$named.conf
+   Active: active (running) since Пн 2020-01-13 18:37:49 MSK; 11s ago
+     Docs: man:named(8)
+ Main PID: 9889 (named)
+   CGroup: /system.slice/bind9.service
+           └─9889 /usr/sbin/named -f -u bind
+
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: additionally listening on IPv4 interface lo, 127.0.0.1#53
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: could not listen on UDP socket: address in use
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: creating IPv4 interface lo failed; interface ignored
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: managed-keys-zone: loaded serial 0
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: zone 0.in-addr.arpa/IN: loaded serial 1
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: zone localhost/IN: loaded serial 2
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: zone 255.in-addr.arpa/IN: loaded serial 1
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: zone 127.in-addr.arpa/IN: loaded serial 1
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: all zones loaded
+янв 13 18:37:49 m1-bpm-prod-consul-1.tcsbank.ru named[9889]: running
+root@m1-bpm-prod-consul-1:~#
+
+
+#
+#	Stopped apparmor was not helped.
+#
+root@m1-bpm-prod-consul-1:~# service apparmor stop
+root@m1-bpm-prod-consul-1:~# systemctl stop bind9
+root@m1-bpm-prod-consul-1:~# systemctl start bind9
+root@m1-bpm-prod-consul-1:~# systemctl status bind9
+● bind9.service - BIND Domain Name Server
+   Loaded: loaded (/lib/systemd/system/bind9.service; enabled; vendor preset: enabled)
+  Drop-In: /run/systemd/generator/bind9.service.d
+           └─50-insserv.conf-$named.conf
+   Active: active (running) since Пн 2020-01-13 18:48:42 MSK; 3s ago
+     Docs: man:named(8)
+  Process: 10120 ExecStop=/usr/sbin/rndc stop (code=exited, status=0/SUCCESS)
+ Main PID: 10128 (named)
+    Tasks: 5
+   Memory: 9.4M
+      CPU: 23ms
+   CGroup: /system.slice/bind9.service
+           └─10128 /usr/sbin/named -f -u bind
+
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: additionally listening on IPv4 interface lo, 127.0.0.1#53
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: could not listen on UDP socket: address in use
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: creating IPv4 interface lo failed; interface ignored
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: managed-keys-zone: loaded serial 0
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: zone 127.in-addr.arpa/IN: loaded serial 1
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: zone localhost/IN: loaded serial 2
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: zone 255.in-addr.arpa/IN: loaded serial 1
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: zone 0.in-addr.arpa/IN: loaded serial 1
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: all zones loaded
+янв 13 18:48:42 m1-bpm-prod-consul-1.tcsbank.ru named[10128]: running
+root@m1-bpm-prod-consul-1:~#
+
+
+root@m1-bpm-prod-consul-1:~# netstat -nlptu | grep ":53"
+tcp6       0      0 :::53                   :::*                    LISTEN      29635/consul
+udp6       0      0 :::53                   :::*                                29635/consul
+root@m1-bpm-prod-consul-1:~#
+
+root@m1-bpm-prod-consul-1:~# systemctl stop bind9
+root@m1-bpm-prod-consul-1:~# systemctl disable bind9
+Synchronizing state of bind9.service with SysV init with /lib/systemd/systemd-sysv-install...
+Executing /lib/systemd/systemd-sysv-install disable bind9
+insserv: warning: current start runlevel(s) (empty) of script `bind9' overrides LSB defaults (2 3 4 5).
+insserv: warning: current stop runlevel(s) (0 1 2 3 4 5 6) of script `bind9' overrides LSB defaults (0 1 6).
+root@m1-bpm-prod-consul-1:~#
+
+
+root@m1-bpm-prod-consul-1:~# service apparmor start
+root@m1-bpm-prod-consul-1:~# service apparmor status
+● apparmor.service - LSB: AppArmor initialization
+   Loaded: loaded (/etc/init.d/apparmor; bad; vendor preset: enabled)
+   Active: active (exited) since Пн 2020-01-13 18:52:25 MSK; 7s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 10266 ExecStart=/etc/init.d/apparmor start (code=exited, status=0/SUCCESS)
+
+янв 13 18:52:25 m1-bpm-prod-consul-1.tcsbank.ru systemd[1]: Starting LSB: AppArmor initialization...
+янв 13 18:52:25 m1-bpm-prod-consul-1.tcsbank.ru apparmor[10266]:  * Starting AppArmor profiles
+янв 13 18:52:25 m1-bpm-prod-consul-1.tcsbank.ru apparmor[10266]: Skipping profile in /etc/apparmor.d/disable: usr.sbin.rsyslogd
+янв 13 18:52:25 m1-bpm-prod-consul-1.tcsbank.ru apparmor[10266]:    ...done.
+янв 13 18:52:25 m1-bpm-prod-consul-1.tcsbank.ru systemd[1]: Started LSB: AppArmor initialization.
+root@m1-bpm-prod-consul-1:~#
+
+root@m1-bpm-prod-consul-1:~# cat /etc/resolv.conf
+# Dynamic resolv.conf(5) file for glibc resolver(3) generated by resolvconf(8)
+#     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN
+nameserver 10.216.37.56
+nameserver 10.216.37.57
+nameserver 10.216.37.58
+search tcsbank.ru service.bpm node.bpm-qa.bpm node.bpm-dev.bpm node.bpm-prod.bpm
+# Ansible managedroot@m1-bpm-prod-consul-1:~# dig @127.0.0.1 repo-linux.tcsbank.ru
+
+; <<>> DiG 9.10.3-P4-Ubuntu <<>> @127.0.0.1 repo-linux.tcsbank.ru
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 60829
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;repo-linux.tcsbank.ru.         IN      A
+
+;; ANSWER SECTION:
+repo-linux.tcsbank.ru.  2445    IN      CNAME   ds-repo01.tcsbank.ru.
+ds-repo01.tcsbank.ru.   2445    IN      A       10.216.42.6
+
+;; Query time: 1 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Mon Jan 13 18:53:21 MSK 2020
+;; MSG SIZE  rcvd: 90
+
+root@m1-bpm-prod-consul-1:~#
+
+
+
+
+
+root@m1-itpm-01p:~# time timeout 5s tcpdump -nn -c 15 -i any dst host 10.219.50.4 and port 53
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on any, link-type LINUX_SLL (Linux cooked), capture size 262144 bytes
+12:03:04.430940 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+12:03:04.430954 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+12:03:04.430956 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+12:03:04.430961 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+12:03:04.430964 IP 10.216.41.242.43174 > 10.219.50.4.53: 11314+ A? m1-kafka03p.tcsbank.ru. (40)
+12:03:04.430971 IP 10.216.41.242.43174 > 10.219.50.4.53: 19520+ AAAA? m1-kafka03p.tcsbank.ru. (40)
+12:03:04.430974 IP 10.216.41.242.43174 > 10.219.50.4.53: 19520+ AAAA? m1-kafka03p.tcsbank.ru. (40)
+12:03:04.557150 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+12:03:04.557161 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+12:03:04.557163 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+12:03:04.557167 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+12:03:04.557171 IP 10.216.41.242.57530 > 10.219.50.4.53: 19573+ A? ds-kafka02p.tcsbank.ru. (40)
+12:03:04.557178 IP 10.216.41.242.57530 > 10.219.50.4.53: 27772+ AAAA? ds-kafka02p.tcsbank.ru. (40)
+12:03:04.557181 IP 10.216.41.242.57530 > 10.219.50.4.53: 27772+ AAAA? ds-kafka02p.tcsbank.ru. (40)
+12:03:04.684416 IP 10.216.41.242.58130 > 10.219.50.4.53: 8400+ A? ds-kafka01p.tcsbank.ru. (40)
+15 packets captured
+30 packets received by filter
+9 packets dropped by kernel
+
+real    0m0.362s
+user    0m0.002s
+sys     0m0.008s
+root@m1-itpm-01p:~#
+
+
+root@m1-bpm-prod-consul-1:~# cat /etc/resolv.conf
+# Dynamic resolv.conf(5) file for glibc resolver(3) generated by resolvconf(8)
+#     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN
+nameserver 10.216.37.56
+nameserver 10.216.37.57
+nameserver 10.216.37.58
+search tcsbank.ru service.bpm node.bpm-qa.bpm node.bpm-dev.bpm node.bpm-prod.bpm
+# Ansible managedroot@m1-bpm-prod-consul-1:~# dig @127.0.0.1 repo-linux.tcsbank.ru
+
+; <<>> DiG 9.10.3-P4-Ubuntu <<>> @127.0.0.1 repo-linux.tcsbank.ru
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 60829
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;repo-linux.tcsbank.ru.         IN      A
+
+;; ANSWER SECTION:
+repo-linux.tcsbank.ru.  2445    IN      CNAME   ds-repo01.tcsbank.ru.
+ds-repo01.tcsbank.ru.   2445    IN      A       10.216.42.6
+
+;; Query time: 1 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Mon Jan 13 18:53:21 MSK 2020
+;; MSG SIZE  rcvd: 90
+
+root@m1-bpm-prod-consul-1:~#
+
+................................................................................
+................................................................................
+

@@ -1,0 +1,768 @@
+
+................................................................................
+
+#	SD#3409605
+#	https://sd.tcsbank.ru/0/Nui/ViewModule.aspx#CardModuleV2/CasePage/edit/cd50e7f3-5e8c-4ed1-8a8a-d95a56a18a57
+
+Высвобождение памяти /var/log/journal/ на серверах postgresql
+Коллеги, у нас в среднем по 100Мб ОП занято логами журнала системы.
+Для изменения необходимо в файле /etc/systemd/journald.conf изменить
+#Storage=auto
+На
+Storage=persistent
+И сделать
+systemctl restart systemd-journald
+Теперь
+du -hs /var/log/journal/
+25M     /var/log/journal/
+
+................................................................................
+
+[root@ds-postgresql01p 20191114-1214]# grep -ie "Storage" /etc/systemd/journald.conf
+#Storage=auto
+[root@ds-postgresql01p 20191114-1214]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat site/role/manifests/postgres.pp
+class role::postgres {
+  include profile::base
+  include profile::postgres
+  include profile::accounts::ima
+  include profile::accounts::vsn
+  include profile::accounts::a_snytko
+  include profile::accounts::i_finogenov
+  include profile::simpana::install
+}
+
+
+[s.belogrud@TCS4357]# ls site/profile/manifests/postgres
+postgres/    postgres.pp
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# vim -R -O site/profile/manifests/postgres.pp site/profile/manifests/postgres/
+limits.pp   postfix.pp  repo.pp     sudo.pp     thp.pp
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/postgres.pp
+class profile::postgres {
+  include customfact::dmimem
+  #include profile::postgres::limits
+  include profile::postgres::repo
+  include profile::postgres::thp
+  include profile::postgres::postfix
+  include profile::postgres::sudo
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# vim -R -p site/profile/manifests/postgres/{sudo.pp,postfix.pp,thp.pp,repo.pp}
+
+
+[s.belogrud@TCS4357]# for var1 in site/profile/manifests/postgres/{sudo.pp,postfix.pp,thp.pp,repo.pp} ; do echo ; echo ${var1} ; cat ${var1} ; done
+
+site/profile/manifests/postgres/sudo.pp
+class profile::postgres::sudo () {
+  if !defined(Class['sudo']) {
+    class { 'sudo':
+      config_file_replace => false,
+      purge               => false,
+    }
+  }
+
+  if !defined(Group['oinstall']) {
+    group { "oinstall":
+      ensure  => present,
+      gid     => 1000,
+    }
+  }
+
+  sudo::conf { 'oinstall':
+    priority => 11,
+    content  => "%oinstall ALL=(ALL) ALL",
+    require  => Group['oinstall'],
+  }
+}
+
+site/profile/manifests/postgres/postfix.pp
+class profile::postgres::postfix(Array $packages = [
+  'mailx',
+  'postfix',
+  ]) {
+
+  package {$packages:
+  } ->
+
+  augeas { 'relayhost':
+    changes => ['set /files/etc/postfix/main.cf/relayhost "[smtp.tcsbank.ru]"'],
+  } ~>
+
+  service {'postfix':
+    ensure => running,
+    enable => true,
+  }
+
+}
+
+site/profile/manifests/postgres/thp.pp
+class profile::postgres::thp {
+  case $::osfamily {
+    'redhat': {
+      case $::operatingsystemmajrelease {
+        '7': {
+          augeas { 'grubthp':
+            lens        => 'Shellvars_list.lns',
+            incl        => '/etc/default/grub',
+            onlyif      => 'get GRUB_CMDLINE_LINUX/*[. = "transparent_hugepage=never"] != transparent_hugepage=never',
+            changes     => 'set GRUB_CMDLINE_LINUX/value[last()+1] transparent_hugepage=never'
+          } ~>
+
+          exec { "update_grub":
+            command     => 'grubby --update-kernel=ALL --args="transparent_hugepage=never"',
+            refreshonly => true,
+            path        => ['/usr/local/sbin','/usr/local/bin','/usr/sbin','/usr/bin']
+          }
+        }
+        '6': {
+          exec { "update_grub":
+            command     => 'grubby --update-kernel=ALL --args="transparent_hugepage=never"',
+            refreshonly => true,
+            path        => ['/usr/local/sbin','/usr/local/bin','/usr/sbin','/usr/bin'],
+            onlyif      => 'test `grubby --info=ALL | grep transparent_hugepage=never | wc -l` -lt 1'
+          }
+        }
+      }
+    }
+  }
+}
+
+site/profile/manifests/postgres/repo.pp
+class profile::postgres::repo (
+  String $pgver = '10'
+) {
+  class { 'tcs_repos::pgdb_rpm':
+  pgver => $pgver
+  }
+}[s.belogrud@TCS4357]#
+
+................................................................................
+
+#
+#	Next section below, that was made on this server was wrong.
+#	Because it has puppet 3 version. Old version.
+#
+[root@ds-postgresql01p 20191114-1214]# ls /etc/puppet/
+auth.conf  modules  puppet.conf
+[root@ds-postgresql01p 20191114-1214]#
+
+
+[root@ds-postgresql01p ~]# vim -R /etc/systemd/journald.conf
+[root@ds-postgresql01p ~]# mkdir -p ~/work/20191114-1214
+[root@ds-postgresql01p ~]# cd ~/work/20191114-1214
+
+[root@ds-postgresql01p 20191114-1214]# cat journald.pp
+class { 'journald':
+  options => {
+    'Storage' => 'persistent',
+  }
+}
+[root@ds-postgresql01p 20191114-1214]#
+
+[root@ds-postgresql01p 20191114-1214]# cat journald.20191114-1216.pp
+journald::options:
+  Storage: 'persistent'
+[root@ds-postgresql01p 20191114-1214]#
+
+[root@ds-postgresql01p 20191114-1214]# puppet apply --noop journald.pp
+Error: Puppet::Parser::AST::Resource failed with error ArgumentError: Could not find declared class journald at /root/work/20191114-1214/journald.pp:5 on node ds-postgresql01p.tcsbank.ru
+Error: Puppet::Parser::AST::Resource failed with error ArgumentError: Could not find declared class journald at /root/work/20191114-1214/journald.pp:5 on node ds-postgresql01p.tcsbank.ru
+[root@ds-postgresql01p 20191114-1214]# vim journald.pp journald.20191114-1216.pp -O
+2 files to edit
+[root@ds-postgresql01p 20191114-1214]# puppet apply --noop journald.20191114-1216.pp
+Error: Could not parse for environment production: Syntax error at ':' at /root/work/20191114-1214/journald.20191114-1216.pp:1 on node ds-postgresql01p.tcsbank.ru
+Error: Could not parse for environment production: Syntax error at ':' at /root/work/20191114-1214/journald.20191114-1216.pp:1 on node ds-postgresql01p.tcsbank.ru
+[root@ds-postgresql01p 20191114-1214]#
+
+
+................................................................................
+
+
+[root@ds-postgresql01p 20191114-1214]# puppet module generate journald
+Error: Could not generate directory "journald", you must specify a dash-separated username and module name.
+Error: Try 'puppet help module generate' for usage
+[root@ds-postgresql01p 20191114-1214]# puppet module generate bsv-journald
+We need to create a metadata.json file for this module.  Please answer the
+following questions; if the question is not applicable to this module, feel free
+to leave it blank.
+
+Puppet uses Semantic Versioning (semver.org) to version modules.
+What version is this module?  [0.1.0]
+-->
+
+Who wrote this module?  [bsv]
+-->
+
+What license does this module code fall under?  [Apache 2.0]
+-->
+
+How would you describe this module in a single sentence?
+-->
+
+Where is this module's source code repository?
+-->
+
+Where can others go to learn more about this module?
+-->
+
+Where can others go to file issues about this module?
+-->
+
+----------------------------------------
+{
+  "name": "bsv-journald",
+  "version": "0.1.0",
+  "author": "bsv",
+  "summary": null,
+  "license": "Apache 2.0",
+  "source": "",
+  "project_page": null,
+  "issues_url": null,
+  "dependencies": [
+    {"name":"puppetlabs-stdlib","version_requirement":">= 1.0.0"}
+  ]
+}
+----------------------------------------
+
+About to generate this metadata; continue? [n/Y]
+-->
+
+Notice: Generating module at /root/work/20191114-1214/bsv-journald...
+Notice: Populating templates...
+Finished; module generated in bsv-journald.
+bsv-journald/Gemfile
+bsv-journald/Rakefile
+bsv-journald/manifests
+bsv-journald/manifests/init.pp
+bsv-journald/spec
+bsv-journald/spec/classes
+bsv-journald/spec/classes/init_spec.rb
+bsv-journald/spec/spec_helper.rb
+bsv-journald/tests
+bsv-journald/tests/init.pp
+bsv-journald/README.md
+bsv-journald/metadata.json
+[root@ds-postgresql01p 20191114-1214]#
+
+[root@ds-postgresql01p 20191114-1214]# mv bsv-journald/ journald
+
+[root@ds-postgresql01p 20191114-1214]# tree journald
+journald
++-- Gemfile
++-- manifests
+¦   L-- init.pp
++-- metadata.json
++-- Rakefile
++-- README.md
++-- spec
+¦   +-- classes
+¦   ¦   L-- init_spec.rb
+¦   L-- spec_helper.rb
+L-- tests
+    L-- init.pp
+
+4 directories, 8 files
+[root@ds-postgresql01p 20191114-1214]#
+
+[root@ds-postgresql01p 20191114-1214]# cp journald.pp journald/manifests/
+
+
+................................................................................
+................................................................................
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/postgres/journald.pp
+class profile::postgres::journald { 'journald':
+  options => {
+    'Storage' => 'persistent',
+  }
+}
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/postgres.pp
+class profile::postgres {
+  include customfact::dmimem
+  #include profile::postgres::limits
+  include profile::postgres::repo
+  include profile::postgres::thp
+  include profile::postgres::postfix
+  include profile::postgres::sudo
+  include profile::postgres::journald
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# ls site/profile/templates/postgres/
+sysctl.erb
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+#
+#	To use new module in puppet it needs to be installed into the file
+#	https://gitlab.tcsbank.ru/Puppet/control/blob/production/Puppetfile
+
+#	Here I've searched and found three results about "journald".
+#	https://forge.puppet.com/tags/journald
+
+#	This is - didn't want to install.
+#	https://forge.puppet.com/simp/journald
+#
+#	But this one installed successfully.
+#	https://forge.puppet.com/cristifalcas/journald
+#	
+
+[root@vm-puppetmaster02p ~]# puppet module install simp-journald --version 1.1.0
+Notice: Preparing to install into /etc/puppetlabs/code/environments/production/site ...
+Notice: Downloading from https://forgeapi.puppet.com ...
+Error: Could not install module 'simp-journald' (???)
+  No version of 'simp-journald' can satisfy all dependencies
+    Use `puppet module install --ignore-dependencies` to install only this module
+[root@vm-puppetmaster02p ~]# puppet module install cristifalcas-journald --version 0.6.0
+Notice: Preparing to install into /etc/puppetlabs/code/environments/production/site ...
+Notice: Downloading from https://forgeapi.puppet.com ...
+Notice: Installing -- do not interrupt ...
+/etc/puppetlabs/code/environments/production/site
+L-T cristifalcas-journald (v0.6.0)
+  L-- puppetlabs-stdlib (v4.20.0) [/etc/puppetlabs/code/environments/production/modules]
+[root@vm-puppetmaster02p ~]#
+
+[root@vm-puppetmaster02p ~]# tree /etc/puppetlabs/code/environments/production/site/journald/
+/etc/puppetlabs/code/environments/production/site/journald/
++-- checksums.json
++-- Gemfile
++-- LICENSE
++-- manifests
+¦   +-- config.pp
+¦   +-- init.pp
+¦   +-- params.pp
+¦   L-- service.pp
++-- metadata.json
++-- Rakefile
++-- README.md
++-- spec
+¦   +-- classes
+¦   ¦   L-- init_spec.rb
+¦   L-- spec_helper.rb
+L-- tests
+    L-- init.pp
+
+4 directories, 13 files
+[root@vm-puppetmaster02p ~]#
+
+[root@vm-puppetmaster02p ~]# rm -rf /etc/puppetlabs/code/environments/production/site/journald/
+
+[root@vm-puppetmaster02p ~]# tree /etc/puppetlabs/code/environments/production/modules/journald/
+/etc/puppetlabs/code/environments/production/modules/journald/
++-- checksums.json
++-- Gemfile
++-- LICENSE
++-- manifests
+¦   +-- config.pp
+¦   +-- init.pp
+¦   +-- params.pp
+¦   L-- service.pp
++-- metadata.json
++-- Rakefile
++-- README.md
++-- spec
+¦   +-- classes
+¦   ¦   L-- init_spec.rb
+¦   L-- spec_helper.rb
+L-- tests
+    L-- init.pp
+
+4 directories, 13 files
+[root@vm-puppetmaster02p ~]#
+
+
+................................................................................
+
+#	Here is how to declare new module in Puppetfile.
+#	https://forge.puppet.com/cristifalcas/journald
+#
+#	Add this declaration to your Puppetfile:
+#	mod 'cristifalcas-journald', '0.6.0'
+#
+
+
+[s.belogrud@TCS4357]# git --no-pager diff Puppetfile
+diff --git a/Puppetfile b/Puppetfile
+index 888d6fc5..c5946276 100644
+--- a/Puppetfile
++++ b/Puppetfile
+@@ -31,6 +31,7 @@ mod 'lwf-remote_file', '1.1.3'
+ mod 'camptocamp-systemd', '1.1.1'
+ mod 'puppetlabs-puppet_agent', '1.5.0'
+ mod 'puppetlabs-puppet_conf', '0.1.4'
++mod 'cristifalcas-journald', '0.6.0'
+
+ # Forked modules
+ mod 'puppet-unbound',
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#3409605. Was added puppet module journald." Puppetfile
+[20191115_SD3409605_1553 319006e6] SD#3409605. Was added puppet module journald.
+ 1 file changed, 1 insertion(+)
+[s.belogrud@TCS4357]# git push origin 20191115_SD3409605_1553
+
+[s.belogrud@TCS4357]# git branch
+  20191101_SD3363342
+* 20191115_SD3409605_1553
+  20191115_SD3411807
+  production
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# git checkout -b 20191115_SD3409605_1604
+Переключено на новую ветку «20191115_SD3409605_1604»
+[s.belogrud@TCS4357]# vim site/profile/manifests/postgres/journald.pp
+[s.belogrud@TCS4357]# vim site/profile/manifests/postgres.pp
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/postgres/journald.pp
+class profile::postgres::journald { 'journald':
+  options => {
+    'Storage' => 'persistent',
+  }
+}
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/postgres.pp
+class profile::postgres {
+  include customfact::dmimem
+  #include profile::postgres::limits
+  include profile::postgres::repo
+  include profile::postgres::thp
+  include profile::postgres::postfix
+  include profile::postgres::sudo
+  include profile::postgres::journald
+}
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# git status
+На ветке 20191115_SD3409605_1604
+Изменения, которые не в индексе для коммита:
+  (используйте «git add <файл>…», чтобы добавить файл в индекс)
+  (используйте «git checkout -- <файл>…», чтобы отменить изменения
+   в рабочем каталоге)
+
+        изменено:      site/profile/manifests/postgres.pp
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        site/profile/manifests/postgres/journald.pp
+
+нет изменений добавленных для коммита
+(используйте «git add» и/или «git commit -a»)
+[s.belogrud@TCS4357]# git add site/profile/manifests/postgres/journald.pp
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#3409605. Attempt to create new puppet manifest." site/profile/manifests/postgres.pp site/profile/manifests/postgres/journald.pp
+[20191115_SD3409605_1604 b0695c0a] SD#3409605. Attempt to create new puppet manifest.
+ 2 files changed, 6 insertions(+)
+ create mode 100644 site/profile/manifests/postgres/journald.pp
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+#
+#	This syntax start working.
+#
+
+[s.belogrud@TCS4357]# cat site/profile/manifests/postgres/journald.pp
+class profile::postgres::journald {
+    class {'journald': options => {
+        'Storage' => 'persistent',
+        }
+    }
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+
+[root@ds-postgresql200p ~]# puppet agent -t --noop --environment 20191115_SD3409605_1604
+
+#
+#	Follow was changed by puppet.
+#	Last two parameters not needs to be changed.
+#
+[root@ds-postgresql200p ~]# vim ~/work/20191115-1707/journald.conf
+...
+#Storage=auto
+Storage = persistent
+...
+#SplitMode=uid
+SplitMode = login
+...
+#ForwardToKMsg=no
+ForwardToKMsg = yes
+...
+
+#	https://www.freedesktop.org/software/systemd/man/journald.conf.html
+Storage=¶
+Controls where to store journal data. One of "volatile", "persistent", "auto" and "none". If "volatile", journal log data will be stored only in memory, i.e. below the /run/log/journal hierarchy (which is created if needed). If "persistent", data will be stored preferably on disk, i.e. below the /var/log/journal hierarchy (which is created if needed), with a fallback to /run/log/journal (which is created if needed), during early boot and if the disk is not writable. "auto" is similar to "persistent" but the directory /var/log/journal is not created if needed, so that its existence controls where log data goes. "none" turns off all storage, all log data received will be dropped. Forwarding to other targets, such as the console, the kernel log buffer, or a syslog socket will still work however. Defaults to "auto".
+...
+SplitMode=¶
+Controls whether to split up journal files per user, either "uid" or "none". Split journal files are primarily useful for access control: on UNIX/Linux access control is managed per file, and the journal daemon will assign users read access to their journal files. If "uid", all regular users will each get their own journal files, and system users will log to the system journal. If "none", journal files are not split up by user and all messages are instead stored in the single system journal. In this mode unprivileged users generally do not have access to their own log data. Note that splitting up journal files by user is only available for journals stored persistently. If journals are stored on volatile storage (see Storage= above), only a single journal file is used. Defaults to "uid".
+...
+ForwardToSyslog=, ForwardToKMsg=, ForwardToConsole=, ForwardToWall=
+Control whether log messages received by the journal daemon shall be forwarded to a traditional syslog daemon, to the kernel log buffer (kmsg), to the system console, or sent as wall messages to all logged-in users. These options take boolean arguments. If forwarding to syslog is enabled but nothing reads messages from the socket, forwarding to syslog has no effect. By default, only forwarding to wall is enabled. These settings may be overridden at boot time with the kernel command line options "systemd.journald.forward_to_syslog", "systemd.journald.forward_to_kmsg", "systemd.journald.forward_to_console", and "systemd.journald.forward_to_wall". If the option name is specified without "=" and the following argument, true is assumed. Otherwise, the argument is parsed as a boolean.
+
+When forwarding to the console, the TTY to log to can be changed with TTYPath=, described below.
+
+When forwarding to the kernel log buffer (kmsg), make sure to select a suitably large size for the log buffer, and ensure the kernel's rate-limiting applied to userspace processes is turned off. Specifically, add "log_buf_len=8M" and "printk.devkmsg=on" (or similar) to the kernel command line.
+
+................................................................................
+
+#
+#	20191118
+#
+
+#
+#	I've commit my changes in production.
+#	And then - I've applyed it on servers via "puppet agent -t".
+#	Below are lines what puppet did.
+#	And what I've found here - systemd was restarted after changes.
+#	This means - I need not to restart systemd service manual with ansible.
+#	That's difficult, because some of servers are not uccessible.
+#	There are lot of servers unaccessible - I count it about 20 items.
+#
+
+[root@ds-postgresql201p ~]# less /var/log/messages
+...
+Nov 18 15:43:39 ds-postgresql201p puppet-agent[23490]: Using configured environment 'production'
+Nov 18 15:43:39 ds-postgresql201p puppet-agent[23490]: Retrieving pluginfacts
+Nov 18 15:43:39 ds-postgresql201p puppet-agent[23490]: Retrieving plugin
+Nov 18 15:43:45 ds-postgresql201p puppet-agent[23490]: Loading facts
+Nov 18 15:43:49 ds-postgresql201p puppet-agent[23490]: Caching catalog for ds-postgresql201p.tcsbank.ru
+Nov 18 15:43:49 ds-postgresql201p puppet-agent[23490]: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-production-ab1c6501432'
+Nov 18 15:43:52 ds-postgresql201p journal: Permanent journal is using 8.0M (max allowed 1.9G, trying to leave 2.9G free of 14.7G available > current limit 1.9G).
+Nov 18 15:43:54 ds-postgresql201p journal: Time spent on flushing to /var is 1.852579s for 62154 entries.
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/File[/var/log/journal/]/ensure) created
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/Ini_setting[/etc/systemd/journald.conf [Journal] Storage]/ensure) created
+Nov 18 15:43:54 ds-postgresql201p systemd: Stopped Flush Journal to Persistent Storage.
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/Ini_setting[/etc/systemd/journald.conf [Journal] Storage]) Scheduling refresh of Service[systemd-journald]
+Nov 18 15:43:54 ds-postgresql201p systemd: Stopping Flush Journal to Persistent Storage...
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/Ini_setting[/etc/systemd/journald.conf [Journal] Compress]/ensure) created
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/Ini_setting[/etc/systemd/journald.conf [Journal] Compress]) Scheduling refresh of Service[systemd-journald]
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/Ini_setting[/etc/systemd/journald.conf [Journal] Seal]/ensure) created
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/Ini_setting[/etc/systemd/journald.conf [Journal] Seal]) Scheduling refresh of Service[systemd-journald]
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Config/Ini_setting[/etc/systemd/journald.conf [Journal] SplitMode]/ensure) created
+...
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (Class[Journald::Config]) Scheduling refresh of Class[Journald::Service]
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (Class[Journald::Service]) Scheduling refresh of Service[systemd-journald]
+Nov 18 15:43:54 ds-postgresql201p journal: Journal stopped
+Nov 18 15:43:54 ds-postgresql201p journal: Permanent journal is using 72.0M (max allowed 1.9G, trying to leave 2.9G free of 14.6G available > current limit 1.9G).
+Nov 18 15:43:54 ds-postgresql201p systemd-journald[2872]: Received SIGTERM from PID 1 (systemd).
+Nov 18 15:43:54 ds-postgresql201p journal: Journal started
+...
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: (/Stage[main]/Journald::Service/Service[systemd-journald]) Triggered 'refresh' from 17 events
+Nov 18 15:43:54 ds-postgresql201p systemd: Starting Flush Journal to Persistent Storage...
+Nov 18 15:43:54 ds-postgresql201p systemd: Started Flush Journal to Persistent Storage.
+Nov 18 15:43:54 ds-postgresql201p puppet-agent[23490]: Applied catalog in 4.99 seconds
+
+................................................................................
+
+
+[support@centos puppet]$ ansible-playbook 20191025-1644.puppet-agent-del-old-install-new.yaml -i list_of_hosts --become --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'" -f 20
+
+[support@centos puppet]$ ansible-playbook 20180918-1625.puppet.run.yaml -i list_of_hosts --become --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'" -f 20
+
+
+#
+#	It execute under root.
+#
+[support@centos puppet]$ ansible-playbook 20191025-1644.puppet-agent-del-old-install-new.yaml -i list_of_hosts --become --extra-vars "ansible_user=root ansible_password=$(pass common/linux-default) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'" -f 20
+
+[support@centos puppet]$ ansible-playbook 20180918-1625.puppet.run.yaml -i list_of_hosts --become --extra-vars "ansible_user=root ansible_password=$(pass common/linux-default) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'" -f 20
+
+
+
+[support@centos puppet]$ ansible all -i list_of_hosts -m shell -a "/opt/puppetlabs/bin/puppet --version" --become --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'"
+
+
+[support@centos puppet]$ ansible all -i list_of_hosts -m ping --become --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'" | tee -a /tmp/20191119-1554.ping.txt
+
+................................................................................
+
+root@ds-postgresql28p ~ # cat /etc/redhat-release
+CentOS Linux release 7.6.1810 (Core)
+root@ds-postgresql28p ~ #
+
+root@ds-postgresql28p ~ # puppet agent -t
+...
+Info: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-production-ab1c6501432'
+Error: Execution of '/bin/yum -d 0 -e 0 -y install net-snmp' returned 1: Error: Package: 1:net-snmp-utils-5.7.2-28.el7_4.1.x86_64 (@updates)
+           Requires: net-snmp-libs = 1:5.7.2-28.el7_4.1
+           Removing: 1:net-snmp-libs-5.7.2-28.el7_4.1.x86_64 (@updates)
+               net-snmp-libs = 1:5.7.2-28.el7_4.1
+           Updated By: 1:net-snmp-libs-5.7.2-43.el7.x86_64 (base)
+               net-snmp-libs = 1:5.7.2-43.el7
+           Removing: 1:net-snmp-libs-5.7.2-37.el7.x86_64 (installed)
+               net-snmp-libs = 1:5.7.2-37.el7
+           Updated By: 1:net-snmp-libs-5.7.2-43.el7.x86_64 (base)
+               net-snmp-libs = 1:5.7.2-43.el7
+ You could try using --skip-broken to work around the problem
+** Found 236 pre-existing rpmdb problem(s), 'yum check' output follows:
+...
+
+
+#
+#	Troubled servers.
+#
+
+m1-postgresql28p
+[root@m1-postgresql28p ~]# yum install ansible
+...
+Error downloading packages:
+  PyYAML-3.10-11.el7.x86_64: [Errno 5] [Errno 12] Cannot allocate memory
+  python2-jmespath-0.9.0-3.el7.noarch: [Errno 5] [Errno 12] Cannot allocate memory
+  python-httplib2-0.9.2-1.el7.noarch: [Errno 5] [Errno 12] Cannot allocate memory
+  python-markupsafe-0.11-10.el7.x86_64: [Errno 5] [Errno 12] Cannot allocate memory
+  python-babel-0.9.6-8.el7.noarch: [Errno 5] [Errno 12] Cannot allocate memory
+  python-paramiko-2.1.1-9.el7.noarch: [Errno 5] [Errno 12] Cannot allocate memory
+  ansible-2.9.0-1.el7.noarch: [Errno 5] [Errno 12] Cannot allocate memory
+  python-jinja2-2.8-7.rhel7.noarch: [Errno 5] [Errno 12] Cannot allocate memory
+  sshpass-1.06-2.el7.x86_64: [Errno 5] [Errno 12] Cannot allocate memory
+
+[root@m1-postgresql28p ~]#
+
+................................................................................
+
+#	20191119
+#
+
+ds-postgresql127p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql127p port 22: Connection timed out",
+ds-postgresql128p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql128p port 22: Connection timed out",
+ds-postgresql129p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql129p port 22: Connection timed out",
+ds-postgresql130p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql130p port 22: Connection timed out",
+ds-postgresql131p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql131p port 22: Connection timed out",
+
+ds-postgresql257p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql257p port 22: Connection timed out",
+ds-postgresql258p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql258p port 22: Connection timed out",
+ds-postgresql260p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql260p port 22: Connection timed out",
+ds-postgresql261p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql261p port 22: Connection timed out",
+ds-postgresql262p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql262p port 22: Connection timed out",
+
+ds-postgresql285p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: Could not resolve hostname ds-postgresql285p: Name or service not known",
+
+ds-postgresql271p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host ds-postgresql271p port 22: Connection timed out",
+
+
+m1-postgresql98p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql98p port 22: Connection timed out",
+m1-postgresql99p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql99p port 22: Connection timed out",
+m1-postgresql100p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql100p port 22: Connection timed out",
+m1-postgresql101p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql101p port 22: Connection timed out",
+m1-postgresql102p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql102p port 22: Connection timed out",
+
+m1-postgresql229p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql229p port 22: Connection timed out",
+m1-postgresql230p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql230p port 22: Connection timed out",
+m1-postgresql231p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql231p port 22: Connection timed out",
+m1-postgresql232p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql232p port 22: Connection timed out",
+m1-postgresql233p | UNREACHABLE! => {
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host m1-postgresql233p port 22: Connection timed out",
+
+
+
+#	v.3
+#	There is no memory to do something.
+m1-postgresql28p
+
+................................................................................
+
+
+ds-postgresql127p
+ds-postgresql128p
+ds-postgresql129p
+ds-postgresql130p
+ds-postgresql131p
+ds-postgresql257p
+ds-postgresql258p
+ds-postgresql260p
+ds-postgresql261p
+ds-postgresql262p
+ds-postgresql285p
+ds-postgresql271p
+m1-postgresql98p
+m1-postgresql99p
+m1-postgresql100p
+m1-postgresql101p
+m1-postgresql102p
+m1-postgresql229p
+m1-postgresql230p
+m1-postgresql231p
+m1-postgresql232p
+m1-postgresql233p
+
+[support@centos ~]$ list_of_hosts="" ; while read var1_hosts ; do list_of_hosts="${list_of_hosts} ${var1_hosts}" ; done << 'EOF' ; for var1_hosts in ${list_of_hosts} ; do SSHPASS="$(pass common/linux)" sshpass -e timeout 10 ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1_hosts}.tcsbank.ru "( echo '$(pass common/linux)' | sudo -S -i sh -c 'echo ; hostname ; puppet --version' )" ; done
+> ds-postgresql127p
+> ds-postgresql128p
+> ds-postgresql129p
+> ds-postgresql130p
+> ds-postgresql131p
+> ds-postgresql257p
+> ds-postgresql258p
+> ds-postgresql260p 
+> ds-postgresql261p
+> ds-postgresql262p
+> ds-postgresql285p
+> ds-postgresql271p
+> m1-postgresql98p
+> m1-postgresql99p
+> m1-postgresql100p
+> m1-postgresql101p
+> m1-postgresql102p
+> m1-postgresql229p
+> m1-postgresql230p
+> m1-postgresql231p
+> m1-postgresql232p
+> m1-postgresql233p
+> EOF
+Warning: Permanently added 'ds-postgresql127p.tcsbank.ru' (ECDSA) to the list of known hosts.
+[sudo] password for bsv:
+ds-postgresql127p.tcsbank.ru
+5.5.17
+Connection to ds-postgresql127p.tcsbank.ru closed.
+Warning: Permanently added 'ds-postgresql128p.tcsbank.ru' (ECDSA) to the list of known hosts.
+[sudo] password for bsv:
+ds-postgresql128p.tcsbank.ru
+5.5.17
+...
+
+................................................................................
+
+

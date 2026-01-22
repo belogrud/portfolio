@@ -1,0 +1,76 @@
+
+................................................................................
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             ONLINE ISS - ON-US Approved Auth Requests
+        check_command                   check_nrpe!check_tcs_monitor_00_rc
+        check_interval                  1
+        first_notification_delay        0
+        contact_groups                  empty-group
+    contacts                      s.morozkin_email,s.morozkin_sms,pss_24x7_email,d.a.makeev_sms,processing_duty_sms,s.polyakov_sms,s.polyakov_email,d.a.makeev_sms,v.leshchuk_sms,m.lazykin_email,m.lazykin_sms
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           5
+}
+
+
+................................................................................
+
+[root@vm-dbamon01 online4]# awk '/check_tcs_monitor_00_rc/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_online4.cfg         command[check_tcs_monitor_00_rc]=/opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+/etc/nrpe.d/nrpe.cfg_    command[check_tcs_monitor_00_rc]               = /usr/bin/sudo /usr/lib64/nagios/plugins/check_oracle_tcs -u tcs_monitor -p monitor_1 -d ONLINE4 -q "select * from tctdbs.tcs_monitor_00_rc"
+[root@vm-dbamon01 online4]#
+
+................................................................................
+
+[root@vm-dbamon01 online4]# cd /opt/TCS/scripts/nagios/plugins/online4/
+[root@vm-dbamon01 online4]# cp online4-check_tcs_monitor_00_rc.sh tctdbs_tcs_monitor_cron_eod.sh
+[root@vm-dbamon01 online4]# cp online4-check_tcs_monitor_00_rc.sql tctdbs_tcs_monitor_cron_eod.sql
+[root@vm-dbamon01 online4]# vim -o tctdbs_tcs_monitor_cron_eod.sh tctdbs_tcs_monitor_cron_eod.sql
+2 files to edit
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# ./tctdbs_tcs_monitor_cron_eod.sh
+Connection OK. Result=0
+[root@vm-dbamon01 online4]#
+
+................................................................................
+
+[root@vm-dbamon01 online4]# cp online4-check_tcs_monitor_00_rc.sh tctdbs_tcs_monitor_cron_daily.sh
+[root@vm-dbamon01 online4]# cp online4-check_tcs_monitor_00_rc.sql tctdbs_tcs_monitor_cron_daily.sql
+[root@vm-dbamon01 online4]# vim -o tctdbs_tcs_monitor_cron_daily.sh tctdbs_tcs_monitor_cron_daily.sql
+2 files to edit
+[root@vm-dbamon01 online4]# ./tctdbs_tcs_monitor_cron_daily.sh
+Connection OK. Result=0
+[root@vm-dbamon01 online4]#
+
+................................................................................
+
+[root@vm-dbamon01 online4]# vim /etc/nrpe.d/check_db_online4.cfg
+[root@vm-dbamon01 online4]# tail -n 3 /etc/nrpe.d/check_db_online4.cfg
+# SD#1388364
+command[tctdbs_tcs_monitor_cron_eod]=/opt/TCS/scripts/nagios/plugins/online4/tctdbs_tcs_monitor_cron_eod.sh
+command[tctdbs_tcs_monitor_cron_daily]=/opt/TCS/scripts/nagios/plugins/online4/tctdbs_tcs_monitor_cron_daily.sh
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 online4]#
+
+................................................................................
+
+
+
+
+
+
+
+
+
+
+
+
+

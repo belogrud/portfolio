@@ -1,0 +1,277 @@
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim $(pynag list filename where object_type=host and host_name=vm-dbamon01 --quiet)
+...
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           PRIME ISS - EOD
+    check_command                 check_nrpe!check_check_tcs_monitor_eod
+    check_interval                1
+    max_check_attempts            1
+    notification_interval         5
+    contacts                      s.morozkin_email, s.morozkin_sms, a.gladyshev_email, s.suradeev_email, d.a.makeev_email, d.a.makeev_sms, processing_duty_sms, cards_24x7_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+ }
+
+[root@vm-dbamon01 ~]# awk '/check_check_tcs_monitor_eod/{print FILENAME,"\t",$0 }' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_prime4.cfg          command[check_check_tcs_monitor_eod]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_monitor_eod.sh
+/etc/nrpe.d/check_db_prime4.cfg          command[check_check_tcs_monitor_eod_prestart]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_monitor_eod_prestart.sh
+/etc/nrpe.d/check_db_prime4.cfg          command[check_check_tcs_monitor_eod_structure]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_monitor_eod_structure.sh
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cd /opt/TCS/scripts/nagios/plugins/prime4/
+
+................................................................................
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_monitor_eod.sh prime-check_tctdbs_tcs_monitor_incomming_files.sh
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_monitor_eod.sql prime-check_tctdbs_tcs_monitor_incomming_files.sql
+
+[root@vm-dbamon01 prime4]# vim -o prime-check_tctdbs_tcs_monitor_incomming_files.sh prime-check_tctdbs_tcs_monitor_incomming_files.sql
+
+[root@vm-dbamon01 prime4]# diff -Nuar prime4-check_tcs_monitor_eod.sh prime-check_tctdbs_tcs_monitor_incomming_files.sh
+--- prime4-check_tcs_monitor_eod.sh     2016-07-19 10:02:39.245431811 +0300
++++ prime-check_tctdbs_tcs_monitor_incomming_files.sh   2017-03-06 15:24:46.451977473 +0300
+@@ -7,7 +7,7 @@
+ SQL_QUERY_PASSWORD='tcs_monitor_1'
+
+ SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+-SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime4-check_tcs_monitor_eod.sql
++SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime-check_tctdbs_tcs_monitor_incomming_files.sql
+
+ STATE_OK=0
+ STATE_WARNING=1
+[root@vm-dbamon01 prime4]# diff -Nuar prime4-check_tcs_monitor_eod.sql prime-check_tctdbs_tcs_monitor_incomming_files.sql
+--- prime4-check_tcs_monitor_eod.sql    2016-07-19 10:03:04.740543507 +0300
++++ prime-check_tctdbs_tcs_monitor_incomming_files.sql  2017-03-06 15:24:44.851998187 +0300
+@@ -4,4 +4,4 @@
+ set heading off
+ set trimspool on
+
+-select * from tctdbs.tcs_monitor_eod;
++select * from tctdbs.tcs_monitor_incomming_files;
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# ./prime-check_tctdbs_tcs_monitor_incomming_files.sh
+OK. Result=0
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# git add prime-check_tctdbs_tcs_monitor_incomming_files.sh prime-check_tctdbs_tcs_monitor_incomming_files.sql
+
+[root@vm-dbamon01 prime4]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#236573. Create monitoring \"Check List - PRIME ISS Incoming Files\"." prime-check_tctdbs_tcs_monitor_incomming_files.sh prime-check_tctdbs_tcs_monitor_incomming_files.sql
+[master 50a3630] SD#236573. Create monitoring "Check List - PRIME ISS Incoming Files".
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ Committer: root <root@vm-dbamon01.tcsbank.ru>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+If the identity used for this commit is wrong, you can fix it with:
+
+    git commit --amend --author='Your Name <you@example.com>'
+
+ 2 files changed, 35 insertions(+), 0 deletions(-)
+ create mode 100755 prime4/prime-check_tctdbs_tcs_monitor_incomming_files.sh
+ create mode 100644 prime4/prime-check_tctdbs_tcs_monitor_incomming_files.sql
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# vim /etc/nrpe.d/check_db_prime4.cfg
+...
+command[prime-check_tctdbs_tcs_monitor_incomming_files]=/opt/TCS/scripts/nagios/plugins/prime4/prime-check_tctdbs_tcs_monitor_incomming_files.sh
+
+[root@vm-dbamon01 prime4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-vol-nag4-tst objects]# vim $(pynag list filename where object_type=host and host_name=vm-dbamon01 --quiet)
+...
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           Check List - PRIME ISS Incoming Files
+    check_command                 check_nrpe!prime-check_tctdbs_tcs_monitor_incomming_files
+    check_interval                1
+    max_check_attempts            1
+    notification_interval         5
+    contacts                      card_support_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+ }
+...
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#236573. Created monitoring \"Check List - PRIME ISS Incoming Files\"." servers/vmware/vm-dbamon01.cfg
+[master e47071f] SD#236573. Created monitoring "Check List - PRIME ISS Incoming Files".
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 648 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   8cf41b7..e47071f  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim $(pynag list filename where object_type=host and host_name=vm-dbamon01 --quiet) -c ":/PRIME ACQ - Invalid Objects"
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PRIME ACQ - Invalid Objects
+        check_command                   check_nrpe!prime_acq-check_tcs_monitor_invalid
+        check_interval                  1
+        max_check_attempts              1
+        notification_interval           5
+        contacts                        s.morozkin_email, s.morozkin_sms, a.gladyshev_email, a.gladyshev_sms, d.a.makeev_email, d.a.makeev_sms, processing_duty_sms, cards_24x7_email, a.boldyrev_email, a.boldyrev_sms
+        contact_groups                  servicedesk-duty-critical-group
+        flap_detection_enabled          0
+}
+...
+
+[root@vm-dbamon01 prime4]# awk '/prime_acq-check_tcs_monitor_invalid/{ print FILENAME,"\t",$0 }' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_prime4.cfg          command[prime_acq-check_tcs_monitor_invalid]=/opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_invalid.sh
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# cp prime_acq-check_tcs_monitor_invalid.sh prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh
+[root@vm-dbamon01 prime4]# cp prime_acq-check_tcs_monitor_invalid.sql prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql
+
+[root@vm-dbamon01 prime4]# vim -o prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql
+
+[root@vm-dbamon01 prime4]# diff -Nuar prime_acq-check_tcs_monitor_invalid.sh prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh
+--- prime_acq-check_tcs_monitor_invalid.sh      2017-02-01 16:26:40.313064661 +0300
++++ prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh       2017-03-06 15:53:19.504773163 +0300
+@@ -7,7 +7,7 @@
+ SQL_QUERY_PASSWORD='MON_ever2122'
+
+ SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+-SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime_acq-check_tcs_monitor_invalid.sql
++SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql
+
+ STATE_OK=0
+ STATE_WARNING=1
+[root@vm-dbamon01 prime4]# diff -Nuar prime_acq-check_tcs_monitor_invalid.sql prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql
+--- prime_acq-check_tcs_monitor_invalid.sql     2016-08-08 12:40:27.192134795 +0300
++++ prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql      2017-03-06 15:53:55.395308954 +0300
+@@ -4,4 +4,4 @@
+ set heading off
+ set trimspool on
+
+-select * from tctdbs.tcs_monitor_invalid;
++select * from tctdbs.tcs_monitor_incomming_files;
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# ./prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh
+OK. Result=0
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# git add prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql
+
+[root@vm-dbamon01 prime4]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#236573. Create monitoring \"Check List - PRIME ACQ Incoming Files\"." prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql
+[master 8b46f9d] SD#236573. Create monitoring "Check List - PRIME ACQ Incoming Files".
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ Committer: root <root@vm-dbamon01.tcsbank.ru>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+If the identity used for this commit is wrong, you can fix it with:
+
+    git commit --amend --author='Your Name <you@example.com>'
+
+ 2 files changed, 35 insertions(+), 0 deletions(-)
+ create mode 100755 prime4/prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh
+    iontacts                      card_support_email,prime_products_email
+ create mode 100644 prime4/prime_acq-check_tctdbs_tcs_monitor_incomming_files.sql
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# git push
+git@gitlab.tcsbank.ru's password:
+Counting objects: 45, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (40/40), done.
+Writing objects: 100% (40/40), 4.39 KiB, done.
+Total 40 (delta 28), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/monitoring/vm-dbamon01-opt.git
+   0c9bcaa..8b46f9d  master -> master
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# vim /etc/nrpe.d/check_db_prime4.cfg
+...
+command[prime_acq-check_tctdbs_tcs_monitor_incomming_files]=/opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tctdbs_tcs_monitor_incomming_files.sh
+...
+
+[root@vm-dbamon01 prime4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-vol-nag4-tst objects]# vim $(pynag list filename where object_type=host and host_name=vm-dbamon01 --quiet) -c ":/PRIME ACQ - Invalid Objects"
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             Check List - PRIME ACQ Incoming Files
+        check_command                   check_nrpe!prime_acq-check_tcs_monitor_invalid
+        check_interval                  1
+        max_check_attempts              1
+        notification_interval           5
+        contacts                        card_support_email
+        contact_groups                  servicedesk-duty-critical-group
+        flap_detection_enabled          0
+}
+...
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#236573. Created monitoring \"Check List - PRIME ACQ Incoming Files\"." servers/vmware/vm-dbamon01.cfg
+[master 3ca8fda] SD#236573. Created monitoring "Check List - PRIME ACQ Incoming Files".
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 637 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   e47071f..3ca8fda  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+

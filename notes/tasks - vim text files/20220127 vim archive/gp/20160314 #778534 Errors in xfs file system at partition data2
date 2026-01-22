@@ -1,0 +1,279 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   778534
+Название    №778534
+Приоритет   Низкий
+Класс обслуживания  9x5
+Дата и время обращения  14.03.2016 08:02
+Дата регистрации    14.03.2016 08:02
+Тип запроса Nagios запрос
+Категория
+Критичность 3 - Высокая
+Срочность   Высокая
+Описание запроса
+** PROBLEM Service Alert: m1-gp-tst-sdw2//data2 Partition is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: /data2 Partition
+Host: m1-gp-tst-sdw2
+Address: 10.216.0.2
+State: CRITICAL
+
+Date/Time: Mon Mar 14 08:01:51 MSK 2016
+
+Additional Info:
+
+DISK CRITICAL - /data2 is not accessible: Input/output error
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Служебный Сотрудник
+Соглашение  Базовое соглашение
+Сервис  Другое
+Контактное лицо Служебный Сотрудник
+Контактный e-mail   -
+Контактные телефоны 123456
+
+................................................................................
+
+[root@m1-gp-tst-sdw2 ~]# mount
+/dev/sda2 on / type ext4 (rw)
+proc on /proc type proc (rw)
+sysfs on /sys type sysfs (rw)
+devpts on /dev/pts type devpts (rw,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw)
+/dev/sda1 on /boot type ext4 (rw)
+/dev/sdb1 on /duet type ext4 (rw)
+/dev/sda4 on /data1 type xfs (rw,noatime,inode64,allocsize=16m)
+/dev/sdb2 on /data2 type xfs (rw,noatime,inode64,allocsize=16m)
+none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
+sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw)
+m1-gp-prd-nfs:/data on /mnt/backup_m1 type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock,addr=10.216.4.40)
+[root@m1-gp-tst-sdw2 ~]# ls /data2
+ls: cannot access /data2: Input/output error
+[root@m1-gp-tst-sdw2 ~]#
+
+
+[root@m1-gp-tst-sdw2 ~]# hpssacli controller all show config
+
+Smart Array P410 in Slot 1                (sn: PACCRID11320CZ8)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 50014380167ED48F)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438009BD5390)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438009BD539F)
+
+[root@m1-gp-tst-sdw2 ~]#
+
+[root@m1-gp-tst-sdw2 ~]# umount /data2
+
+[root@m1-gp-tst-sdw2 ~]# xfs_check /dev/sdb2
+ERROR: The filesystem has valuable metadata changes in a log which needs to
+be replayed.  Mount the filesystem to replay the log, and unmount it before
+re-running xfs_check.  If you are unable to mount the filesystem, then use
+the xfs_repair -L option to destroy the log and attempt a repair.
+Note that destroying the log may cause corruption -- please attempt a mount
+of the filesystem before doing this.
+[root@m1-gp-tst-sdw2 ~]#
+
+[root@m1-gp-tst-sdw2 ~]# mount /data2
+[root@m1-gp-tst-sdw2 ~]# ls /data2
+lost+found  mirror  primary
+[root@m1-gp-tst-sdw2 ~]#
+
+
+................................................................................
+................................................................................
+
+
+Mar 14 05:51:34 m1-gp-tst-sdw2 puppet-agent[1222]: Finished catalog run in 3.98 seconds
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: ABORT REQUEST on C1:B0:T0:L0 Tag:0x00000000:000001d0 Command:0x28 SN:0x76593244  REQUEST SUCCEEDED.
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+Mar 14 05:51:44 m1-gp-tst-sdw2 kernel: hpsa 0000:08:00.0: Abort request on C1:B0:T0:L0
+...
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 13
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 13
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 13
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 14
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 14
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 14
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 15
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 15
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel:
+Mar 14 06:50:58 m1-gp-tst-sdw2 kernel: XFS (sdb2): Access to block zero in inode 12885623863 start_block: 0 start_off: 0 blkcnt: 0 extent-state: 0 lastx: 15
+...
+Mar 14 10:34:24 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:34:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:35:24 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:35:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:36:24 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:36:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:37:24 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:37:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:38:24 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:38:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:39:24 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 10:39:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+...
+Mar 14 11:24:43 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:43 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:43 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:43 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:43 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:24:58 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:58 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:58 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:58 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:58 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+Mar 14 11:24:58 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updatin
+g the parity data to match the data drive content
+...
+#   Here is filesystem remounted and self-repaired.
+Mar 14 11:25:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:26:13 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updating the parity data to match the data drive content
+Mar 14 11:26:13 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updating the parity data to match the data drive content
+Mar 14 11:26:13 m1-gp-tst-sdw2 cmaeventd[2908]: Logical drive 0 of Array Controller in slot 1: Inconsistent stripe on RAID6 has been repaired by surface analysis by updating the parity data to match the data drive content
+Mar 14 11:26:24 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:26:54 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:27:05 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:27:05 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:27:05 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_do_force_shutdown(0x1) called from line 1061 of file fs/xfs/linux-2.6/xfs_buf.c.  Return address = 0xffffffffa0409083
+Mar 14 11:27:05 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:27:05 m1-gp-tst-sdw2 kernel: XFS (sdb2): xfs_log_force: error 5 returned.
+Mar 14 11:28:31 m1-gp-tst-sdw2 kernel: XFS (sdb2): Mounting Filesystem
+Mar 14 11:28:31 m1-gp-tst-sdw2 kernel: XFS (sdb2): Starting recovery (logdev: internal)
+Mar 14 11:28:33 m1-gp-tst-sdw2 kernel: XFS (sdb2): Ending recovery (logdev: internal)
+...
+
+................................................................................
+
+Дата
+Комментарий Автор
+14.03.2016 11:37    Неполадки в файловой системе xfs на разделе /data2 исправлены.
+
+[root@m1-gp-tst-sdw2 ~]# ls /data2
+ls: cannot access /data2: Input/output error
+[root@m1-gp-tst-sdw2 ~]
+
+[root@m1-gp-tst-sdw2 ~]# umount /data2
+
+[root@m1-gp-tst-sdw2 ~]# xfs_check /dev/sdb2
+ERROR: The filesystem has valuable metadata changes in a log which needs to
+be replayed. Mount the filesystem to replay the log, and unmount it before
+re-running xfs_check. If you are unable to mount the filesystem, then use
+the xfs_repair -L option to destroy the log and attempt a repair.
+Note that destroying the log may cause corruption -- please attempt a mount
+of the filesystem before doing this.
+[root@m1-gp-tst-sdw2 ~]# mount /data2
+[root@m1-gp-tst-sdw2 ~]# ls /data2
+lost+found mirror primary
+[root@m1-gp-tst-sdw2 ~]#
+Белогруд Сергей В
+
+................................................................................
+
+[root@m1-gp-tst-sdw2 ~]# df -h
+Filesystem           Size  Used Avail Use% Mounted on
+/dev/sda2             96G   13G   79G  14% /
+tmpfs                 64G     0   64G   0% /dev/shm
+/dev/sda1            976M   34M  891M   4% /boot
+/dev/sdb1             96G   54G   38G  59% /duet
+/dev/sda4            3.8T  2.2T  1.6T  58% /data1
+m1-gp-prd-nfs:/data   73T   43T   31T  58% /mnt/backup_m1
+/dev/sdb2            3.8T  2.1T  1.7T  57% /data2
+[root@m1-gp-tst-sdw2 ~]#
+
+
+
+
+
+
+
+
+
+
+
+

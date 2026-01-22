@@ -1,0 +1,82 @@
+
+
+[root@vm-sas-drbd03p ~]# xfs_info /dev/drbd3
+meta-data=/dev/drbd3             isize=256    agcount=32, agsize=23487408 blks
+         =                       sectsz=512   attr=2
+data     =                       bsize=4096   blocks=751597056, imaxpct=5
+         =                       sunit=16     swidth=64 blks
+naming   =version 2              bsize=4096   ascii-ci=0
+log      =internal               bsize=4096   blocks=366992, version=2
+         =                       sectsz=512   sunit=16 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@vm-sas-drbd03p ~]# man xfs_growfs
+[root@vm-sas-drbd03p ~]# xfs_growfs -m 10 /dev/drbd3
+meta-data=/dev/drbd3             isize=256    agcount=32, agsize=23487408 blks
+         =                       sectsz=512   attr=2
+data     =                       bsize=4096   blocks=751597056, imaxpct=5
+         =                       sunit=16     swidth=64 blks
+naming   =version 2              bsize=4096   ascii-ci=0
+log      =internal               bsize=4096   blocks=366992, version=2
+         =                       sectsz=512   sunit=16 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data blocks changed from 751597056 to 751597149
+inode max percent changed from 5 to 10
+[root@vm-sas-drbd03p ~]# /usr/lib64/nagios/plugins/check_disk -W 5% -K 3% -w 5% -c 3% -p /mnt/drbd3
+DISK WARNING - free space: /mnt/drbd3 158838 MB (5% inode=99%);| /mnt/drbd3=2775653MB;2787767;2846457;0;2934492
+[root@vm-sas-drbd03p ~]#
+
+[root@vm-sas-drbd03p ~]# /usr/lib64/nagios/plugins/check_disk -W 5% -K 3% -w 1% -c 3% -p /mnt/drbd3
+DISK OK - free space: /mnt/drbd3 158786 MB (5% inode=99%);| /mnt/drbd3=2775705MB;2905147;2846457;0;2934492
+[root@vm-sas-drbd03p ~]#
+
+
+[root@vm-sas-drbd03p ~]# /usr/lib64/nagios/plugins/check_disk --help
+check_disk v2.0.3 (nagios-plugins 2.0.3)
+Copyright (c) 1999 Ethan Galstad <nagios@nagios.org>
+Copyright (c) 1999-2014 Nagios Plugin Development Team
+        <devel@nagios-plugins.org>
+
+This plugin checks the amount of used disk space on a mounted file system
+and generates an alert if free space is less than one of the threshold values
+
+
+Usage:
+ check_disk -w limit -c limit [-W limit] [-K limit] {-p path | -x device}
+[-C] [-E] [-e] [-f] [-g group ] [-k] [-l] [-M] [-m] [-R path ] [-r path ]
+[-t timeout] [-u unit] [-v] [-X type] [-N type] [-n]
+
+Options:
+ -h, --help
+    Print detailed help screen
+ -V, --version
+    Print version information
+ --extra-opts=[section][@file]
+    Read options from an ini file. See
+    https://www.nagios-plugins.org/doc/extra-opts.html
+    for usage and examples.
+ -w, --warning=INTEGER
+    Exit with WARNING status if less than INTEGER units of disk are free
+ -w, --warning=PERCENT%
+    Exit with WARNING status if less than PERCENT of disk space is free
+...
+
+[root@vm-sas-drbd03p ~]# /usr/lib64/nagios/plugins/check_disk -W 5% -K 3% -w 4% -c 3% -p /mnt/drbd3
+DISK OK - free space: /mnt/drbd3 158811 MB (5% inode=99%);| /mnt/drbd3=2775681MB;2817112;2846457;0;2934492
+[root@vm-sas-drbd03p ~]#
+
+
+[root@vm-sas-drbd03p ~]# grep -ire drbd3 /etc/nrpe.d/
+/etc/nrpe.d/check_disks.cfg:command[check_mnt_drbd3_fs]=/usr/lib64/nagios/plugins/check_disk -W 5% -K 3% -w 5% -c 3% -p /mnt/drbd3
+[root@vm-sas-drbd03p ~]#
+
+
+[root@vm-sas-drbd03p ~]# df -hT /mnt/drbd3
+Filesystem    Type    Size  Used Avail Use% Mounted on
+/dev/drbd3     xfs    2.8T  2.7T  155G  95% /mnt/drbd3
+[root@vm-sas-drbd03p ~]#
+
+
+
+
+
+

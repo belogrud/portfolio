@@ -1,0 +1,599 @@
+
+
+
+
+
+
+From: Chestnov Fedor Petrovich
+Sent: Monday, August 24, 2015 1:55 PM
+To: Kalinin Aleksey Alkeseevich; Belogrud Sergey Vladimirovich
+Cc: Dykhalkin Mikhail Andreevich
+Subject: RE: [JIRA] (ITP-974) Перемещение тома "archives" на V6250-DS с sas-агрегата на sata-агрегат
+
+На смену старому ресурсу «V6250-DS-NFS.TCSBANK.RU:/vol/archives/kvk_cache», сделал новый ресурс «V6250-DS-NFS.TCSBANK.RU:/vol/kupi_v_kredit/kvk_cache».
+Доступ на чтение+запись предоставлен хостам ds-kvk-dmz-nfe01, m1-kvk-dmz-nfe01, ds-kvk-prod-be01, m1-kvk-prod-be01, ds-kvk-dmz-fe01, m1-kvk-dmz-fe01.
+Сейчас новый ресурс в режиме только для чтения, т. к. является репликой старого.
+Порядок переключения будет следующий:
+1.       Отмонтируем старый ресурс.
+2.       Обновляем данные нового ресурса со старого. Параллельно на серверах исправляем файл «/etc/fstab».
+3.       Монтируем новый ресурс.
+С демонтированием/монтированием на серверах нам поможет Сергей.
+Все работы по вашей команде. Главное, чтобы ничего не упало.
+
+Федор Честнов
+Старший администратор систем хранения данных
+
+
+................................................................................
+................................................................................
+
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-kvk-dmz-nfe01
+Warning: Permanently added 'ds-kvk-dmz-nfe01,10.218.11.22' (RSA) to the list of known hosts.
+Last login: Tue Nov 26 10:40:52 2013 from tcs4500.tcsbank.ru
+
+This system is managed by Salt.
+Welcome to ds-kvk-dmz-nfe01.tcsbank.ru:
+ - Server type........: VMware
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz
+ - CPU Cores..........: 8
+ - Memory.............: 7872 Mb
+ - OS.................: RedHat
+ - Release............: 6.4
+ - Kernel.............: 2.6.32-358.18.1.el6.x86_64
+ - Addresses..........: ['10.218.11.22', '127.0.0.1']
+ - Uptime.............: 13:58:52 up 78 days,  7:48,  0 users,  load average: 0.32, 0.07, 0.02
+
+ - Last highstate.....: Mon Aug 24 13:58:52 MSK 2015
+ - Server Roles.......: ['core', 'prod']
+ - Applications.......: ['splunk']
+
+[bsv@ds-kvk-dmz-nfe01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-kvk-dmz-nfe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@ds-kvk-dmz-nfe01 ~]# mount
+mount         mount.nfs     mount.nfs4    mountpoint    mountstats    mount.tmpfs   mount.vmhgfs
+[root@ds-kvk-dmz-nfe01 ~]# showmount -e v6250-ds-nfs
+^C^C
+[root@ds-kvk-dmz-nfe01 ~]# mkdir /mnt/kvk_cache_new
+[root@ds-kvk-dmz-nfe01 ~]#
+
+
+[root@ds-kvk-dmz-nfe01 ~]# showmount -e v6250-ds | grep kvk_cache
+/vol/kupi_v_kredit/kvk_cache                   m1-kvk-dmz-fe01,ds-kvk-dmz-fe01,m1-kvk-prod-be01,ds-kvk-prod-be01,m1-kvk-dmz-nfe01,ds-kvk-dmz-nfe01
+/vol/archives/kvk_cache                        ds-kvk-dmz-nfe01,m1-kvk-dmz-nfe01,ds-kvk-prod-be01,m1-kvk-prod-be01,ds-kvk-dmz-fe01,m1-kvk-dmz-fe01
+[root@ds-kvk-dmz-nfe01 ~]#
+
+
+v6250-ds:/vol/kupi_v_kredit/kvk_cache           /mnt/kvk_cache_new nfs     rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3
+
+
+[root@ds-kvk-dmz-nfe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@ds-kvk-dmz-nfe01 ~]#
+
+................................................................................
+
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-kvk-dmz-nfe01
+Warning: Permanently added 'm1-kvk-dmz-nfe01,10.218.6.22' (RSA) to the list of known hosts.
+Last login: Tue Nov 26 10:40:52 2013 from tcs4500.tcsbank.ru
+
+This system is managed by Salt.
+Welcome to m1-kvk-dmz-nfe01.tcsbank.ru:
+ - Server type........: VMware
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz
+ - CPU Cores..........: 8
+ - Memory.............: 7872 Mb
+ - OS.................: RedHat
+ - Release............: 6.4
+ - Kernel.............: 2.6.32-358.18.1.el6.x86_64
+ - Addresses..........: ['10.218.6.22', '127.0.0.1']
+ - Uptime.............: 14:01:49 up 76 days, 22:15,  0 users,  load average: 1.62, 1.15, 1.15
+
+ - Last highstate.....: Mon Aug 24 14:01:49 MSK 2015
+ - Server Roles.......: ['core', 'prod']
+ - Applications.......: ['splunk']
+
+[bsv@m1-kvk-dmz-nfe01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-kvk-dmz-nfe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@m1-kvk-dmz-nfe01 ~]# mkdir /mnt/kvk_cache_new
+[root@m1-kvk-dmz-nfe01 ~]#
+
+[root@m1-kvk-dmz-nfe01 ~]# mount /mnt/kvk_cache_new
+[root@m1-kvk-dmz-nfe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@m1-kvk-dmz-nfe01 ~]#
+
+
+................................................................................
+
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-kvk-prod-be01
+Last login: Thu Mar 27 17:07:32 2014 from tcs4500.tcsbank.ru
+
+This system is managed by Salt.
+Welcome to ds-kvk-prod-be01.tcsbank.ru:
+ - Server type........: VMware
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz
+ - CPU Cores..........: 4
+ - Memory.............: 1876 Mb
+ - OS.................: RedHat
+ - Release............: 6.5
+ - Kernel.............: 2.6.32-431.23.3.el6.x86_64
+ - Addresses..........: ['10.218.7.70', '127.0.0.1']
+ - Uptime.............: 12:41:45 up 78 days,  6:36,  0 users,  load average: 0.86, 1.01, 0.96
+
+ - Last highstate.....: Mon Aug 24 12:41:45 MSK 2015
+ - Server Roles.......: ['core', 'prod']
+ - Applications.......: ['splunk']
+
+[bsv@ds-kvk-prod-be01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-kvk-prod-be01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-m1:/vol/cards_images/kvk_share on /mnt/kvk_share type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=4,addr=10.217.67.8,clientaddr=10.218.7.70)
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk on /mnt/kvk_reports type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.8)
+[root@ds-kvk-prod-be01 ~]# mkdir /mnt/kvk_cache_new
+[root@ds-kvk-prod-be01 ~]#
+
+[root@ds-kvk-prod-be01 ~]# mount /mnt/kvk_cache_new
+[root@ds-kvk-prod-be01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-m1:/vol/cards_images/kvk_share on /mnt/kvk_share type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=4,addr=10.217.67.8,clientaddr=10.218.7.70)
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk on /mnt/kvk_reports type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.8)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@ds-kvk-prod-be01 ~]#
+
+................................................................................
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-kvk-prod-be01
+Last login: Wed Dec 31 18:33:34 2014 from tcs4500.tcsbank.ru
+
+This system is managed by Salt.
+Welcome to m1-kvk-prod-be01.tcsbank.ru:
+ - Server type........: VMware
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz
+ - CPU Cores..........: 4
+ - Memory.............: 1876 Mb
+ - OS.................: RedHat
+ - Release............: 6.5
+ - Kernel.............: 2.6.32-431.23.3.el6.x86_64
+ - Addresses..........: ['10.218.2.70', '127.0.0.1']
+ - Uptime.............: 12:39:27 up 99 days,  5:20,  0 users,  load average: 0.70, 0.78, 0.75
+
+ - Last highstate.....: Mon Aug 24 12:39:27 MSK 2015
+ - Server Roles.......: ['core', 'prod']
+ - Applications.......: ['splunk']
+
+[bsv@m1-kvk-prod-be01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-kvk-prod-be01 ~]# mkdir /mnt/kvk_cache_new
+[root@m1-kvk-prod-be01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-m1:/vol/cards_images/kvk_share on /mnt/kvk_share type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=4,addr=10.217.67.8,clientaddr=10.218.2.70)
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk on /mnt/kvk_reports type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.8)
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# mount /mnt/kvk_cache_new
+[root@m1-kvk-prod-be01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-m1:/vol/cards_images/kvk_share on /mnt/kvk_share type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=4,addr=10.217.67.8,clientaddr=10.218.2.70)
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk on /mnt/kvk_reports type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.8)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@m1-kvk-prod-be01 ~]#
+
+................................................................................
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-kvk-dmz-fe01
+Last login: Wed Aug 13 14:37:12 2014 from tcs4500.tcsbank.ru
+
+This system is managed by Salt.
+Welcome to ds-kvk-dmz-fe01.tcsbank.ru:
+ - Server type........: VMware
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz
+ - CPU Cores..........: 4
+ - Memory.............: 1876 Mb
+ - OS.................: RedHat
+ - Release............: 6.5
+ - Kernel.............: 2.6.32-431.23.3.el6.x86_64
+ - Addresses..........: ['10.218.11.20', '127.0.0.1']
+ - Uptime.............: 14:25:18 up 78 days,  8:19,  0 users,  load average: 0.21, 0.12, 0.05
+
+ - Last highstate.....: Mon Aug 24 14:25:18 MSK 2015
+ - Server Roles.......: ['core']
+ - Applications.......: ['']
+
+[bsv@ds-kvk-dmz-fe01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-kvk-dmz-fe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@ds-kvk-dmz-fe01 ~]# mkdir /mnt/kvk_cache_new
+[root@ds-kvk-dmz-fe01 ~]#
+
+[root@ds-kvk-dmz-fe01 ~]# mount /mnt/kvk_cache_new
+[root@ds-kvk-dmz-fe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@ds-kvk-dmz-fe01 ~]#
+
+................................................................................
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-kvk-dmz-fe01
+Last login: Wed Aug 13 14:39:38 2014 from tcs4500.tcsbank.ru
+
+This system is managed by Salt.
+Welcome to m1-kvk-dmz-fe01.tcsbank.ru:
+ - Server type........: VMware
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz
+ - CPU Cores..........: 4
+ - Memory.............: 1876 Mb
+ - OS.................: RedHat
+ - Release............: 6.5
+ - Kernel.............: 2.6.32-431.23.3.el6.x86_64
+ - Addresses..........: ['10.218.6.20', '10.218.6.21', '127.0.0.1']
+ - Uptime.............: 14:49:49 up 99 days,  7:30,  0 users,  load average: 0.52, 0.15, 0.03
+
+ - Last highstate.....: Mon Aug 24 14:49:49 MSK 2015
+ - Server Roles.......: ['core']
+ - Applications.......: ['']
+
+[bsv@m1-kvk-dmz-fe01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-kvk-dmz-fe01 ~]# mkdir /mnt/kvk_cache_new
+[root@m1-kvk-dmz-fe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@m1-kvk-dmz-fe01 ~]#
+
+[root@m1-kvk-dmz-fe01 ~]# mount /mnt/kvk_cache_new
+[root@m1-kvk-dmz-fe01 ~]# mount -t nfs
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+[root@m1-kvk-dmz-fe01 ~]#
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; mount -t nfs | grep kvk_cache ' )" ; done
+ds-kvk-dmz-nfe01
+m1-kvk-dmz-nfe01
+ds-kvk-prod-be01
+m1-kvk-prod-be01
+ds-kvk-dmz-fe01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+ds-kvk-dmz-nfe01.tcsbank.ru
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to ds-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+ds-kvk-prod-be01
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to ds-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+ds-kvk-dmz-fe01
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to ds-kvk-dmz-fe01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+v6250-ds:/vol/archives/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache_new type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$
+
+
+................................................................................
+................................................................................
+
+От: Chestnov Fedor Petrovich <f.chestnov@tinkoff.ru>
+Дата: Monday 24 August 2015 16:00
+Кому: Пользователь Microsoft Office <f.nehaev@tinkoff.ru>
+Копия: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>
+Тема: RE: [JIRA] (ITP-974) Перемещение тома "archives" на V6250-DS с sas-агрегата на sata-агрегат
+
+Привет.
+Можно сегодня в 17:00 переключить?
+Я подготовил новый ресурс «V6250-DS:/vol/portal/repository» - это копия существующего «V6250-DS:/vol/archives/portal_repository». Доступ к новому ресурсу для хоста «vm-prt-npm» предоставлен на чтение+запись.
+Порядок переключения будет следующий:
+1.       Отмонтируем старый ресурс.
+2.       Обновляем данные нового ресурса со старого. Параллельно на серверах исправляем файл «/etc/fstab».
+3.       Монтируем новый ресурс.
+Время недоступности ресурса около 10 минут.
+
+Федор Честнов
+Старший администратор систем хранения данных
+
+................................................................................
+
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@vm-prt-npm
+Warning: Permanently added 'vm-prt-npm,10.218.1.116' (RSA) to the list of known hosts.
+
+This system is managed by Salt.
+Welcome to npm.tcsbank.ru:
+ - Server type........: VMware
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz
+ - CPU Cores..........: 1
+ - Memory.............: 1878 Mb
+ - OS.................: CentOS
+ - Release............: 6.4
+ - Kernel.............: 2.6.32-358.el6.x86_64
+ - Addresses..........: ['10.218.1.116', '127.0.0.1']
+ - Uptime.............: 15:04:04 up 657 days,  2:04,  3 users,  load average: 0.29, 0.06, 0.02
+
+ - Last highstate.....: Mon Aug 24 15:04:04 MSK 2015
+ - Server Roles.......: ['core', 'nexus']
+ - Applications.......: ['nexus']
+
+[bsv@vm-prt-npm ~]$ sudo -i
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+[sudo] password for bsv:
+[root@vm-prt-npm ~]# mount -t nfs
+v6250-ds:/vol/archives/portal_repository on /mnt/portal_repository type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp,intr,addr=10.217.67.9)
+[root@vm-prt-npm ~]#
+
+
+[root@vm-prt-npm ~]# mkdir /mnt/portal_repository_new
+mkdir: cannot create directory `/mnt/portal_repository_new': File exists
+[root@vm-prt-npm ~]# ls -Alh /mnt
+total 16K
+drwxr-xr-x. 2 root root 4.0K Jul 15  2013 cdrom
+drwxr-xr-x. 2 root root 4.0K Jul 15  2013 cdroom
+drwxr-xr-x. 4 root bin  4.0K Aug 21 07:47 portal_repository
+drwxr-xr-x. 2 root root 4.0K Jul  3  2014 portal_repository_new
+[root@vm-prt-npm ~]# ls /mnt/portal_repository_new/
+[root@vm-prt-npm ~]# mkdir /mnt/portal_repository_newest
+[root@vm-prt-npm ~]#
+
+
+[root@vm-prt-npm ~]# mount /mnt/portal_repository_newest
+[root@vm-prt-npm ~]# mount -t nfs
+v6250-ds:/vol/archives/portal_repository on /mnt/portal_repository type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp,intr,addr=10.217.67.9)
+v6250-ds:/vol/portal/repository on /mnt/portal_repository_newest type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp,intr,addr=10.217.67.9)
+[root@vm-prt-npm ~]#
+
+................................................................................
+................................................................................
+
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; umount /mnt/kvk_cache /mnt/kvk_cache_new ' )" ; done
+ds-kvk-dmz-nfe01
+ds-kvk-prod-be01
+ds-kvk-dmz-fe01
+
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; cp /etc/fstab /tmp/$(date +%Y%m%d-%H%M.%S).fstab ' )" ; done
+ds-kvk-dmz-nfe01
+ds-kvk-prod-be01
+ds-kvk-dmz-fe01
+
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; sed -i.backup.$(date +%Y%m%d-%H%M.%S) -e \"s/^v6250-ds:\/vol\/archives\/kvk_cache */#v6250-ds:\/vol\/archives\/kvk_cache/\" -e \"s/kvk_cache_new/kvk_cache/\" /etc/fstab ' )" ; done
+ds-kvk-dmz-nfe01
+ds-kvk-prod-be01
+ds-kvk-dmz-fe01
+
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; mount /mnt/kvk_cache && rmdir /mnt/kvk_cache_new ' )" ; done
+ds-kvk-dmz-nfe01
+ds-kvk-prod-be01
+ds-kvk-dmz-fe01
+
+................................................................................
+
+sed -i.backup.$(date +%Y%m%d-%H%M.%S) -e "s/^v6250-ds:\/vol\/archives\/kvk_cache */#v6250-ds:\/vol\/archives\/kvk_cache/" /etc/fstab
+sed -i.backup.$(date +%Y%m%d-%H%M.%S) -e "s/kvk_cache_new/kvk_cache/" $(pwd)/fstab
+
+................................................................................
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; umount /mnt/kvk_cache /mnt/kvk_cache_new ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; cp /etc/fstab /tmp/$(date +%Y%m%d-%H%M.%S).fstab ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; sed -i.backup.$(date +%Y%m%d-%H%M.%S) -e \"s/^v6250-ds:\/vol\/archives\/kvk_cache */#v6250-ds:\/vol\/archives\/kvk_cache/\" /etc/fstab ; sed -i.backup.$(date +%Y%m%d-%H%M.%S) -e \"s/kvk_cache_new/kvk_cache/\" /etc/fstab ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+
+
+for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; mount /mnt/kvk_cache && rmdir /mnt/kvk_cache_new ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+
+
+................................................................................
+
+
+
+................................................................................
+................................................................................
+
+
+
+From: Chestnov Fedor Petrovich
+Sent: Monday, August 24, 2015 5:54 PM
+To: avaya-admins
+Cc: Belogrud Sergey Vladimirovich
+Subject: FW: [JIRA] (ITP-974) Перемещение тома "archives" на V6250-DS с sas-агрегата на sata-агрегат
+
+Добрый день.
+Мы хотели бы перенести на одной из СХД ресурс с вашими данными на другие диски.
+Интересует ресурс «V6250-DS:/vol/archives/cms_backup». Он смонтирован на m1-cms01, ds-cms02, hq-msk-srv-dc03.
+
+Я подготовил новый ресурс «V6250-DS:/vol/avaya/cms_backup» - это копия существующего «V6250-DS:/vol/archives/cms_backup». Доступ к новому ресурсу для хостов (m1-cms01, ds-cms02, hq-msk-srv-dc03) предоставлен на чтение+запись.
+Порядок переключения будет следующий:
+1.       Отмонтируем старый ресурс.
+2.       Обновляем данные нового ресурса со старого. Параллельно на серверах исправляем файл «/etc/fstab».
+3.       Монтируем новый ресурс.
+Время недоступности ресурса около 10 минут.
+Со стороны unix-admins нам может помочь Сергей.
+Скажите, когда можем это выполнить? Нужна ли какая-то подготовка или ваше участие?
+
+
+................................................................................
+
+Wed Aug 26 15:49:35 MSK 2015
+
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; cp /etc/fstab /tmp/$(date +%Y%m%d-%H%M.%S).fstab ' )" ; done
+ds-kvk-dmz-nfe01
+ds-kvk-prod-be01
+ds-kvk-dmz-fe01
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+ds-kvk-dmz-nfe01.tcsbank.ru
+Connection to ds-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+ds-kvk-prod-be01
+Connection to ds-kvk-prod-be01 closed.
+[sudo] password for bsv:
+ds-kvk-dmz-fe01
+Connection to ds-kvk-dmz-fe01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+Thu Aug 27 13:47:53 MSK 2015
+
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; umount /mnt/kvk_cache /mnt/kvk_cache_new ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; cp /etc/fstab /tmp/$(date +%Y%m%d-%H%M.%S).fstab ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; mount -t nfs ' )" ; done                 m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+v6250-m1:/vol/cards_images/kvk_share on /mnt/kvk_share type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=4,addr=10.217.67.8,clientaddr=10.218.2.70)
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk on /mnt/kvk_reports type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.8)
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; sed -i.backup.$(date +%Y%m%d-%H%M.%S) -e \"s/^v6250-ds:\/vol\/archives\/kvk_cache */#v6250-ds:\/vol\/archives\/kvk_cache/\" /etc/fstab ; sed -i.backup.$(date +%Y%m%d-%H%M.%S) -e \"s/kvk_cache_new/kvk_cache/\" /etc/fstab ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; mount /mnt/kvk_cache && rmdir /mnt/kvk_cache_new ' )" ; done
+m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$
+[support@centos00 ~]$ for var1 in $(cat) ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( sudo -i sh -c ' hostname ; mount -t nfs ' )" ; done                 m1-kvk-dmz-nfe01
+m1-kvk-prod-be01
+m1-kvk-dmz-fe01
+[sudo] password for bsv:
+m1-kvk-dmz-nfe01.tcsbank.ru
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to m1-kvk-dmz-nfe01 closed.
+[sudo] password for bsv:
+m1-kvk-prod-be01
+v6250-m1:/vol/cards_images/kvk_share on /mnt/kvk_share type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=4,addr=10.217.67.8,clientaddr=10.218.2.70)
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk on /mnt/kvk_reports type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.8)
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to m1-kvk-prod-be01 closed.
+[sudo] password for bsv:
+m1-kvk-dmz-fe01
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+Connection to m1-kvk-dmz-fe01 closed.
+[support@centos00 ~]$
+
+................................................................................
+
+
+

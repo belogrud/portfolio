@@ -1,0 +1,165 @@
+
+
+
+
+[root@vm-vol-nag4-tst etc]# pynag list filename where object_type=host and host_name__contains="ds-mvno" --quiet
+/usr/local/nagios/etc/objects/servers/vmware/ds-mvno-ota-app01p.cfg
+[root@vm-vol-nag4-tst etc]# pynag list filename where object_type=host and host_name__contains="m1-mvno" --quiet
+/usr/local/nagios/etc/objects/servers/vmware/m1-mvno-ota-app01p.cfg
+[root@vm-vol-nag4-tst etc]#
+
+...........................................................................
+
+define host{
+    use                             linux-server
+    host_name                       ds-mvno-ota-app01p
+    address                         10.250.4.3
+    contacts                        +a.susoev_email, a.v.mironov_email
+    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+}
+
+define host{
+    use                             linux-server
+    host_name                       m1-mvno-ota-app01p
+    address                         10.250.3.3
+    contacts                        +a.susoev_email, a.v.mironov_email
+    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+}
+
+...........................................................................
+
+[root@vm-vol-nag4-tst etc]# host ds-mvno-agg01
+ds-mvno-agg01.tcsbank.ru has address 10.219.111.245
+[root@vm-vol-nag4-tst etc]# host m1-mvno-agg01
+m1-mvno-agg01.tcsbank.ru has address 10.219.109.244
+[root@vm-vol-nag4-tst etc]#
+
+...........................................................................
+
+[root@vm-vol-nag4-tst etc]# check_snmp -H 10.250.4.3 -o .1.3.6.1.2.1.15.3.1.2.10.12.30.13 -C tcspub_123 -c 2 -P 2c
+External command error: Timeout: No Response from 10.250.4.3:161.
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub 10.250.4.3 1
+Timeout: No Response from 10.250.4.3
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 10.250.4.3 1
+Timeout: No Response from 10.250.4.3
+[root@vm-vol-nag4-tst etc]# check_snmp -H 10.250.3.3 -o .1.3.6.1.2.1.15.3.1.2.10.12.30.13 -C tcspub_123 -c 2 -P 2c
+External command error: Timeout: No Response from 10.250.3.3:161.
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 10.250.3.3 1
+Timeout: No Response from 10.250.3.3
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub 10.216.4.41 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-gp-prd-bkp1.tcsbank.ru 2.6.32-642.13.1.el6.x86_64 #1 SMP Wed Nov 23 16:03:01 EST 2016 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (1279425318) 148 days, 1:57:33.18
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-gp-prd-bkp1.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (12) 0:00:00.12
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDMIBObjects.3.1.1
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@vm-vol-nag4-tst etc]#
+
+...........................................................................
+
+[root@vm-vol-nag4-tst etc]# check_snmp -H 10.219.111.245 -o .1.3.6.1.2.1.15.3.1.2.10.12.30.13 -C tcspub_123 -c 2 -P 2c
+SNMP CRITICAL - *6* | iso.3.6.1.2.1.15.3.1.2.10.12.30.13=6
+[root@vm-vol-nag4-tst etc]# check_snmp -H 10.219.109.244 -o .1.3.6.1.2.1.15.3.1.2.10.12.30.13 -C tcspub_123 -c 2 -P 2c
+No valid data returned[root@vm-vol-nag4-tst etc]#
+
+
+[root@vm-vol-nag4-tst etc]# check_snmp -H 10.219.109.244 -o .1.3.6.1.2.1.15.3.1.2.10.154.123.78 -C tcspub_123 -c 2 -P 2c
+SNMP CRITICAL - *6* | iso.3.6.1.2.1.15.3.1.2.10.154.123.78=6
+[root@vm-vol-nag4-tst etc]#
+
+...........................................................................
+
+ -s, --string=STRING
+    Return OK state (for that OID) if STRING is an exact match
+ -r, --ereg=REGEX
+    Return OK state (for that OID) if extended regular expression REGEX matches
+ -R, --eregi=REGEX
+    Return OK state (for that OID) if case-insensitive extended REGEX matches
+...
+ --invert-search
+    Invert search result (CRITICAL if found)
+...
+
+#
+#	There is significant - the option "-c 2" must be absent!
+#
+[root@vm-vol-nag4-tst etc]# check_snmp -H 10.219.109.244 -o .1.3.6.1.2.1.15.3.1.2.10.154.123.78 -C tcspub_123 -s 6 -P 2c
+SNMP OK - 6 | iso.3.6.1.2.1.15.3.1.2.10.154.123.78=6
+[root@vm-vol-nag4-tst etc]#
+
+#	I see errors if I use "-c 2" option.
+[root@vm-vol-nag4-tst etc]# check_snmp -H 10.219.109.244 -o .1.3.6.1.2.1.15.3.1.2.10.154.123.78 -C tcspub_123 -c 2 -P 2c -s 6
+SNMP CRITICAL - *6* | iso.3.6.1.2.1.15.3.1.2.10.154.123.78=6
+[root@vm-vol-nag4-tst etc]#
+
+#	This host was taken as an example and for a test.
+#
+[root@vm-vol-nag4-tst etc]# check_snmp -H 172.16.1.90 -o .1.3.6.1.4.1.232.3.2.2.2.1.2.0 -C tcspub -s 3 -P 2c
+SNMP OK - 3 | iso.3.6.1.4.1.232.3.2.2.2.1.2.0=3
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 10.219.109.244 .1.3.6.1.2.1.15.3.1.2.10.154.123.78
+SNMPv2-SMI::mib-2.15.3.1.2.10.154.123.78 = INTEGER: 6
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub 172.16.1.90 .1.3.6.1.4.1.232.3.2.2.2.1.2.0
+SNMPv2-SMI::enterprises.232.3.2.2.2.1.2.0 = INTEGER: 3
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# vim -o objects/servers/dc-ds/ds-mvno-agg01.cfg objects/servers/dc-m1/m1-mvno-agg01.cfg
+
+...........................................................................
+
+
+[root@vm-vol-nag4-tst etc]# cat objects/servers/dc-ds/ds-mvno-agg01.cfg
+define host{
+    use                             linux-server
+    host_name                       ds-mvno-agg01
+    address                         10.219.111.245
+    contact_groups                  network-admins
+    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+}
+define service{
+    use                             generic-service-ping
+    host_name                       ds-mvno-agg01
+    service_description             PING
+    check_command                   check_ping!100.0,20%!500.0,60%
+    contact_groups                  network-admins
+}
+define service{
+    use                             generic-service
+    host_name                       ds-mvno-agg01
+    service_description             BGP_RETN_MD_RND
+    check_command                   check_snmp!-o .1.3.6.1.2.1.15.3.1.2.10.12.30.13 -C tcspub_123 -s 6 -P 2c
+    contact_groups                  network-admins
+}
+...
+define service{
+    use                             generic-service
+    host_name                       ds-mvno-agg01
+    service_description             BGP_RETN_GN_NSB
+    check_command                   check_snmp!-o .1.3.6.1.2.1.15.3.1.2.10.154.123.90 -C tcspub_123 -s 6 -P 2c
+    contact_groups                  network-admins
+}
+define service{
+    use                             generic-service
+    host_name                       ds-mvno-agg01
+    service_description             BGP_RETN_GN_EKB
+    check_command                   check_snmp!-o .1.3.6.1.2.1.15.3.1.2.10.154.123.94 -C tcspub_123 -s 6 -P 2c
+    contact_groups                  network-admins
+}
+define service{
+    use                             generic-service
+    host_name                       ds-mvno-agg01
+    service_description             BGP_RETN_GN_NNO
+    check_command                   check_snmp!-o .1.3.6.1.2.1.15.3.1.2.10.154.123.96 -C tcspub_123 -s 6 -P 2c
+    contact_groups                  network-admins
+}
+[root@vm-vol-nag4-tst etc]#
+
+...........................................................................
+
+
+

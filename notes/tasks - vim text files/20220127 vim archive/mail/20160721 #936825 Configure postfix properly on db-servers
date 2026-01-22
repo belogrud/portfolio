@@ -1,0 +1,896 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   936825
+Название    №936825
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  14.07.2016 11:20
+Дата регистрации    14.07.2016 11:20
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Unix-Admins:
+
+Только что я видел в логах отправку почты с сервера m1-db06-stb.tcsbank.ru через старый почтовый шлюз (10.219.0.2).
+
+Для ДНС-записи smtp.tcsbank.ru изменен IP-адрес.
+
+Поэтому, нужно на всех unix-серверах проверить/изменить smtp-шлюз.
+
+Мой совет – использовать не IP-адрес, а имя: smtp.tcsbank.ru
+Но если вы почему-то использовали IP вместо имени, значит на то были причины.
+Что именно использовать: IP или имя – решайте сами.
+
+Срок – до конца следующей недели (до 25.07.2016).
+
+
+
+С уважением,
+
+Виктор Гнитиёв
+Старший системный администратор
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Гнитиёв Виктор
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Гнитиёв Виктор
+Контактный e-mail   v.gnitiev@tinkoff.ru
+Контактные телефоны 79253003690, 2065
+
+................................................................................
+
+[root@m1-db06-stb ~]# rpm -qa | grep -e postfix -e sendmail
+sendmail-8.14.4-8.el6.x86_64
+postfix-2.6.6-2.2.el6_1.x86_64
+sendmail-cf-8.14.4-8.el6.noarch
+[root@m1-db06-stb ~]#
+
+[root@m1-db06-stb ~]# mailq
+/var/spool/mqueue is empty
+                Total requests: 0
+[root@m1-db06-stb ~]#
+
+[root@m1-db06-stb ~]# grep -e "^DS" /etc/mail/sendmail.cf
+DSvm-msk-mail-clr.tcsbank.ru
+[root@m1-db06-stb ~]#
+
+[root@m1-db06-stb ~]# netstat -nlpt | grep ":25"
+tcp        0      0 127.0.0.1:25                0.0.0.0:*                   LISTEN      22606/master
+[root@m1-db06-stb ~]#
+
+
+[root@m1-db06-stb ~]# ps axu | grep sendmai[l]
+root      4377  0.0  0.0  86628  1200 ?        Ss    2015   8:27 sendmail: accepting connections
+smmsp     4385  0.0  0.0  78220   800 ?        Ss    2015   0:03 sendmail: Queue runner@01:00:00 for /var/spool/clientmqueue
+[root@m1-db06-stb ~]#
+
+[root@m1-db06-stb ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+inet_protocols = all
+[root@m1-db06-stb ~]#
+
+
+[root@vm-o2g01p ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-o2g01p
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@vm-o2g01p ~]#
+
+[root@m1-db06-stb ~]# service sendmail status
+sendmail (pid  4377) is running...
+sm-client (pid  4385) is running...
+[root@m1-db06-stb ~]# service postfix status
+master is stopped
+[root@m1-db06-stb ~]# service sendmail stop && service postfix start
+Shutting down sm-client:                                   [  OK  ]
+Shutting down sendmail:                                    [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@m1-db06-stb ~]#
+
+
+[root@m1-db06-stb ~]# chkconfig --list sendmail ; chkconfig --list postfix
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+service postfix supports chkconfig, but is not referenced in any runlevel (run 'chkconfig --add postfix')
+[root@m1-db06-stb ~]#
+[root@m1-db06-stb ~]# chkconfig --add postfix
+[root@m1-db06-stb ~]# chkconfig --list sendmail ; chkconfig --list postfix
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@m1-db06-stb ~]# chkconfig sendmail off
+[root@m1-db06-stb ~]# chkconfig --list sendmail ; chkconfig --list postfix
+sendmail        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@m1-db06-stb ~]#
+
+[root@m1-db06-stb ~]# ps aux | grep postfi[x]
+root     22606  0.4  0.0  81220  3428 ?        Ss   16:56   0:00 /usr/libexec/postfix/master
+postfix  22643  0.4  0.0  81300  3472 ?        S    16:56   0:00 pickup -l -t fifo -u
+postfix  22645  0.6  0.0  82264  4484 ?        S    16:56   0:01 qmgr -l -t fifo -u
+postfix  22902  0.2  0.0  81420  3484 ?        S    16:56   0:00 scache -l -t unix -u
+[root@m1-db06-stb ~]#
+
+[root@m1-db06-stb ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.17...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 m1-msk-mail1302.tcsbank.ru Microsoft ESMTP MAIL Service ready at Thu, 21 Jul 2016 17:01:09 +0300
+^]
+telnet> quit
+Connection closed.
+[root@m1-db06-stb ~]#
+
+
+[root@m1-db06-stb ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+
+Jul 21 17:02:29 m1-db06-stb postfix/smtpd[43772]: 21F8FC006E: client=localhost[127.0.0.1]
+Jul 21 17:02:29 m1-db06-stb postfix/cleanup[43775]: 21F8FC006E: message-id=<201607211402.u6LE2TOO043769@m1-db06-stb.tcsbank.ru>
+Jul 21 17:02:29 m1-db06-stb sendmail[43769]: u6LE2TOO043769: to=s.belogrud@tcsbank.ru, ctladdr=bsv (525/525), delay=00:00:00, xdelay=00:00:00, mailer=relay, pri=30307, relay=[127.0.0.1] [127.0.0.1], dsn=2.0.0, stat=Sent (Ok: queued as 21F8FC006E)
+Jul 21 17:02:29 m1-db06-stb postfix/qmgr[22645]: 21F8FC006E: from=<bsv@m1-db06-stb.tcsbank.ru>, size=795, nrcpt=1 (queue active)
+Jul 21 17:02:29 m1-db06-stb postfix/smtpd[43772]: disconnect from localhost[127.0.0.1]
+Jul 21 17:02:29 m1-db06-stb postfix/smtp[43776]: 21F8FC006E: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=0.2, delays=0.05/0.01/0.01/0.13, dsn=2.6.0, status=sent (250 2.6.0 <201607211402.u6LE2TOO043769@m1-db06-stb.tcsbank.ru> [InternalId=40007620363161, Hostname=m1-msk-mail1302.tcsbank.ru] Queued mail for delivery)
+Jul 21 17:02:29 m1-db06-stb postfix/qmgr[22645]: 21F8FC006E: removed
+...
+
+................................................................................
+................................................................................
+
+ds-db01-stb
+ds-db02-stb
+ds-db07-stb
+m1-db05-stb
+m1-db06-stb
+m1-db08-stb
+
+[root@vm-vol-nag4-tst objects]# find . -name *-db*-prod.*
+./servers/dc-ds/linux/db06/ds-db06-prod.cfg
+./servers/dc-ds/linux/db08/ds-db08-prod.cfg
+./servers/dc-ds/linux/db01/ds-db01-prod.cfg
+./servers/dc-ds/linux/db05/ds-db05-prod.cfg
+./servers/dc-ds/linux/db07/ds-db07-prod.cfg
+./servers/dc-ds/linux/db02/ds-db02-prod.cfg
+./servers/dc-m1/linux/db06/m1-db06-prod.cfg
+./servers/dc-m1/linux/db09/m1-db09-prod.cfg
+./servers/dc-m1/linux/db08/m1-db08-prod.cfg
+./servers/dc-m1/linux/db01/m1-db01-prod.cfg
+./servers/dc-m1/linux/db05/m1-db05-prod.cfg
+./servers/dc-m1/linux/db07/m1-db07-prod.cfg
+./servers/dc-m1/linux/db02/m1-db02-prod.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db05-prod
+ds-db07-prod
+ds-db02-prod
+m1-db06-prod
+m1-db09-prod
+m1-db08-prod
+m1-db01-prod
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do export SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; service sendmail status ; service postfix status ' )" ; done ; SSHPASS=''
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db05-prod
+ds-db07-prod
+ds-db02-prod
+m1-db06-prod
+m1-db09-prod
+m1-db08-prod
+m1-db01-prod
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+[sudo] password for bsv:
+ds-db06-prod
+sendmail (pid  9542) is running...
+sm-client (pid  9636) is running...
+master is stopped
+Connection to ds-db06-prod closed.
+[sudo] password for bsv:
+ds-db08-prod
+sendmail: unrecognized service
+master (pid  9759) is running...
+Connection to ds-db08-prod closed.
+[sudo] password for bsv:
+ds-db01-prod
+sendmail (pid  8391) is running...
+sm-client (pid  8399) is running...
+master is stopped
+Connection to ds-db01-prod closed.
+[sudo] password for bsv:
+ds-db05-prod
+sendmail (pid  8559) is running...
+sm-client (pid  8593) is running...
+master is stopped
+Connection to ds-db05-prod closed.
+[sudo] password for bsv:
+ds-db07-prod.tcsbank.ru
+sendmail: unrecognized service
+master (pid  10233) is running...
+Connection to ds-db07-prod closed.
+[sudo] password for bsv:
+ds-db02-prod
+sendmail (pid  10068) is running...
+sm-client (pid  10076) is running...
+master dead but pid file exists
+Connection to ds-db02-prod closed.
+[sudo] password for bsv:
+m1-db06-prod
+sendmail (pid  9449) is running...
+sm-client (pid  9457) is running...
+master is stopped
+Connection to m1-db06-prod closed.
+Warning: Permanently added 'm1-db09-prod,10.217.50.184' (RSA) to the list of known hosts.
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+[sudo] password for bsv:
+m1-db09-prod.tcsbank.ru
+sendmail: unrecognized service
+master (pid  4579) is running...
+Connection to m1-db09-prod closed.
+[sudo] password for bsv:
+m1-db08-prod
+sendmail: unrecognized service
+master (pid  9829) is running...
+Connection to m1-db08-prod closed.
+[sudo] password for bsv:
+m1-db01-prod
+sendmail (pid  8293) is running...
+sm-client (pid  8301) is running...
+master dead but pid file exists
+Connection to m1-db01-prod closed.
+[sudo] password for bsv:
+m1-db05-prod
+sendmail (pid  8168) is running...
+sm-client (pid  8176) is running...
+master is stopped
+Connection to m1-db05-prod closed.
+[sudo] password for bsv:
+m1-db07-prod.tcsbank.ru
+sendmail: unrecognized service
+master (pid  10165) is running...
+Connection to m1-db07-prod closed.
+[sudo] password for bsv:
+m1-db02-prod
+sendmail (pid  10320) is running...
+sm-client (pid  10329) is running...
+master dead but pid file exists
+Connection to m1-db02-prod closed.
+[support@centos00 ~]$
+[support@centos00 ~]$ for var1 in $(cat) ; do export SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; chkconfig --list sendmail ; chkconfig --list postfix ' )" ; done ; SSHPASS=''
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db05-prod
+ds-db07-prod
+ds-db02-prod
+m1-db06-prod
+m1-db09-prod
+m1-db08-prod
+m1-db01-prod
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+[sudo] password for bsv:
+ds-db06-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+service postfix supports chkconfig, but is not referenced in any runlevel (run 'chkconfig --add postfix')
+Connection to ds-db06-prod closed.
+[sudo] password for bsv:
+ds-db08-prod
+error reading information on service sendmail: No such file or directory
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-db08-prod closed.
+[sudo] password for bsv:
+ds-db01-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to ds-db01-prod closed.
+[sudo] password for bsv:
+ds-db05-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+service postfix supports chkconfig, but is not referenced in any runlevel (run 'chkconfig --add postfix')
+Connection to ds-db05-prod closed.
+[sudo] password for bsv:
+ds-db07-prod.tcsbank.ru
+error reading information on service sendmail: No such file or directory
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-db07-prod closed.
+[sudo] password for bsv:
+ds-db02-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to ds-db02-prod closed.
+[sudo] password for bsv:
+m1-db06-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+service postfix supports chkconfig, but is not referenced in any runlevel (run 'chkconfig --add postfix')
+Connection to m1-db06-prod closed.
+[sudo] password for bsv:
+m1-db09-prod.tcsbank.ru
+error reading information on service sendmail: No such file or directory
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to m1-db09-prod closed.
+[sudo] password for bsv:
+m1-db08-prod
+error reading information on service sendmail: No such file or directory
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to m1-db08-prod closed.
+[sudo] password for bsv:
+m1-db01-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db01-prod closed.
+[sudo] password for bsv:
+m1-db05-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db05-prod closed.
+[sudo] password for bsv:
+m1-db07-prod.tcsbank.ru
+error reading information on service sendmail: No such file or directory
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to m1-db07-prod closed.
+[sudo] password for bsv:
+m1-db02-prod
+sendmail        0:off   1:off   2:on    3:on    4:on    5:on    6:off
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db02-prod closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do export SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; chkconfig --list postfix ' )" ; done ; SSHPASS=''
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db05-prod
+ds-db07-prod
+ds-db02-prod
+m1-db06-prod
+m1-db09-prod
+m1-db08-prod
+m1-db01-prod
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+[sudo] password for bsv:
+ds-db06-prod
+service postfix supports chkconfig, but is not referenced in any runlevel (run 'chkconfig --add postfix')
+Connection to ds-db06-prod closed.
+[sudo] password for bsv:
+ds-db08-prod
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-db08-prod closed.
+[sudo] password for bsv:
+ds-db01-prod
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to ds-db01-prod closed.
+[sudo] password for bsv:
+ds-db05-prod
+service postfix supports chkconfig, but is not referenced in any runlevel (run 'chkconfig --add postfix')
+Connection to ds-db05-prod closed.
+[sudo] password for bsv:
+ds-db07-prod.tcsbank.ru
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-db07-prod closed.
+[sudo] password for bsv:
+ds-db02-prod
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to ds-db02-prod closed.
+[sudo] password for bsv:
+m1-db06-prod
+service postfix supports chkconfig, but is not referenced in any runlevel (run 'chkconfig --add postfix')
+Connection to m1-db06-prod closed.
+[sudo] password for bsv:
+m1-db09-prod.tcsbank.ru
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to m1-db09-prod closed.
+[sudo] password for bsv:
+m1-db08-prod
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to m1-db08-prod closed.
+[sudo] password for bsv:
+m1-db01-prod
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db01-prod closed.
+[sudo] password for bsv:
+m1-db05-prod
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db05-prod closed.
+[sudo] password for bsv:
+m1-db07-prod.tcsbank.ru
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to m1-db07-prod closed.
+[sudo] password for bsv:
+m1-db02-prod
+postfix         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db02-prod closed.
+[support@centos00 ~]
+
+................................................................................
+
+ds-db08-prod
+ds-db01-prod
+ds-db07-prod
+ds-db02-prod
+m1-db09-prod
+m1-db08-prod
+m1-db01-prod
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+
+[support@centos00 ~]$ for var1 in $(cat) ; do export SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf ' )" ; done ; SSHPASS=''
+ds-db08-prod
+ds-db01-prod
+ds-db07-prod
+ds-db02-prod
+m1-db09-prod
+m1-db08-prod
+m1-db01-prod
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+[sudo] password for bsv:
+ds-db08-prod
+mydomain = tcsbank.ru
+relayhost = smtp.tcsbank.ru
+inet_protocols = all
+Connection to ds-db08-prod closed.
+[sudo] password for bsv:
+ds-db01-prod
+inet_protocols = all
+Connection to ds-db01-prod closed.
+[sudo] password for bsv:
+ds-db07-prod.tcsbank.ru
+inet_protocols = all
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db07-prod closed.
+[sudo] password for bsv:
+ds-db02-prod
+inet_protocols = all
+relayhost = vm-msk-mail-clr.tcsbank.ru
+Connection to ds-db02-prod closed.
+[sudo] password for bsv:
+m1-db09-prod.tcsbank.ru
+mydomain = tcsbank.ru
+inet_protocols = all
+relayhost = smtp.tcsbank.ru
+Connection to m1-db09-prod closed.
+[sudo] password for bsv:
+m1-db08-prod
+mydomain = tcsbank.ru
+inet_protocols = all
+relayhost = smtp.tcsbank.ru
+Connection to m1-db08-prod closed.
+[sudo] password for bsv:
+m1-db01-prod
+inet_protocols = all
+relayhost = smtp.tcsbank.ru
+Connection to m1-db01-prod closed.
+[sudo] password for bsv:
+m1-db05-prod
+inet_protocols = all
+Connection to m1-db05-prod closed.
+[sudo] password for bsv:
+m1-db07-prod.tcsbank.ru
+inet_protocols = all
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db07-prod closed.
+[sudo] password for bsv:
+m1-db02-prod
+inet_protocols = all
+relayhost = vm-msk-mail-clr.tcsbank.ru
+Connection to m1-db02-prod closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do export SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; grep -e "smtp" -e "10.219.0.2" /etc/hosts ' )" ; done ; SSHPASS=''
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db05-prod
+ds-db07-prod
+ds-db02-prod
+m1-db06-prod
+m1-db09-prod
+m1-db08-prod
+m1-db01-prod
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+[sudo] password for bsv:
+ds-db06-prod
+Connection to ds-db06-prod closed.
+[sudo] password for bsv:
+ds-db08-prod
+Connection to ds-db08-prod closed.
+[sudo] password for bsv:
+ds-db01-prod
+Connection to ds-db01-prod closed.
+[sudo] password for bsv:
+ds-db05-prod
+Connection to ds-db05-prod closed.
+[sudo] password for bsv:
+ds-db07-prod.tcsbank.ru
+Connection to ds-db07-prod closed.
+[sudo] password for bsv:
+ds-db02-prod
+Connection to ds-db02-prod closed.
+[sudo] password for bsv:
+m1-db06-prod
+Connection to m1-db06-prod closed.
+[sudo] password for bsv:
+m1-db09-prod.tcsbank.ru
+Connection to m1-db09-prod closed.
+[sudo] password for bsv:
+m1-db08-prod
+Connection to m1-db08-prod closed.
+[sudo] password for bsv:
+m1-db01-prod
+Connection to m1-db01-prod closed.
+[sudo] password for bsv:
+m1-db05-prod
+Connection to m1-db05-prod closed.
+[sudo] password for bsv:
+m1-db07-prod.tcsbank.ru
+Connection to m1-db07-prod closed.
+[sudo] password for bsv:
+m1-db02-prod
+Connection to m1-db02-prod closed.
+[support@centos00 ~]$
+
+................................................................................
+
+ds-db06-prod
+ds-db05-prod
+m1-db06-prod
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# find . \( -name *-db*-prod.* -o -name *-db*-stb.* \)
+./servers/dc-ds/linux/db06/ds-db06-prod.cfg
+./servers/dc-ds/linux/db08/ds-db08-prod.cfg
+./servers/dc-ds/linux/db01/ds-db01-prod.cfg
+./servers/dc-ds/linux/db01/ds-db01-stb.cfg
+./servers/dc-ds/linux/db05/ds-db05-prod.cfg
+./servers/dc-ds/linux/db07/ds-db07-prod.cfg
+./servers/dc-ds/linux/db07/ds-db07-stb.cfg
+./servers/dc-ds/linux/db02/ds-db02-stb.cfg
+./servers/dc-ds/linux/db02/ds-db02-prod.cfg
+./servers/dc-m1/linux/db06/m1-db06-prod.cfg
+./servers/dc-m1/linux/db06/m1-db06-stb.cfg
+./servers/dc-m1/linux/db09/m1-db09-prod.cfg
+./servers/dc-m1/linux/db08/m1-db08-stb.cfg
+./servers/dc-m1/linux/db08/m1-db08-prod.cfg
+./servers/dc-m1/linux/db01/m1-db01-prod.cfg
+./servers/dc-m1/linux/db05/m1-db05-stb.cfg
+./servers/dc-m1/linux/db05/m1-db05-prod.cfg
+./servers/dc-m1/linux/db05/m1-db05-stb.cfg.orig
+./servers/dc-m1/linux/db07/m1-db07-prod.cfg
+./servers/dc-m1/linux/db02/m1-db02-prod.cfg
+[root@vm-vol-nag4-tst objects]#
+
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db01-stb
+ds-db05-prod
+ds-db07-prod
+ds-db07-stb
+ds-db02-stb
+ds-db02-prod
+m1-db06-prod
+m1-db06-stb
+m1-db09-prod
+m1-db08-stb
+m1-db08-prod
+m1-db01-prod
+m1-db05-stb
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+
+[support@centos00 ~]$ for var1 in $(cat) ; do export SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; service postfix status ; grep -e "^relayhost" /etc/postfix/main.cf ' )" ; done ; SSHPASS=''
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db01-stb
+ds-db05-prod
+ds-db07-prod
+ds-db07-stb
+ds-db02-stb
+ds-db02-prod
+m1-db06-prod
+m1-db06-stb
+m1-db09-prod
+m1-db08-stb
+m1-db08-prod
+m1-db01-prod
+m1-db05-stb
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+[sudo] password for bsv:
+ds-db06-prod
+master (pid  44698) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db06-prod closed.
+[sudo] password for bsv:
+ds-db08-prod
+master (pid  143288) is running...
+relayhost = smtp.tcsbank.ru
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db08-prod closed.
+[sudo] password for bsv:
+ds-db01-prod
+master (pid  10748) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db01-prod closed.
+[sudo] password for bsv:
+ds-db01-stb
+master (pid  17117) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db01-stb closed.
+[sudo] password for bsv:
+ds-db05-prod
+master (pid  6732) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db05-prod closed.
+[sudo] password for bsv:
+ds-db07-prod.tcsbank.ru
+master (pid  126648) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db07-prod closed.
+[sudo] password for bsv:
+ds-db07-stb.tcsbank.ru
+master (pid  162257) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db07-stb closed.
+[sudo] password for bsv:
+ds-db02-stb
+master (pid  35271) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db02-stb closed.
+[sudo] password for bsv:
+ds-db02-prod
+master (pid  4373) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to ds-db02-prod closed.
+[sudo] password for bsv:
+m1-db06-prod
+master (pid  31836) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db06-prod closed.
+[sudo] password for bsv:
+m1-db06-stb
+master (pid  22606) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db06-stb closed.
+[sudo] password for bsv:
+m1-db09-prod.tcsbank.ru
+master (pid  32817) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db09-prod closed.
+[sudo] password for bsv:
+m1-db08-stb
+master (pid  61013) is running...
+relayhost = smtp.tcsbank.ru
+Connection to m1-db08-stb closed.
+[sudo] password for bsv:
+m1-db08-prod
+master (pid  145716) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db08-prod closed.
+[sudo] password for bsv:
+m1-db01-prod
+master (pid  39043) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db01-prod closed.
+[sudo] password for bsv:
+m1-db05-stb
+master (pid  467) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db05-stb closed.
+[sudo] password for bsv:
+m1-db05-prod
+master (pid  23494) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db05-prod closed.
+[sudo] password for bsv:
+m1-db07-prod.tcsbank.ru
+master (pid  97903) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db07-prod closed.
+[sudo] password for bsv:
+m1-db02-prod
+master (pid  57421) is running...
+relayhost = [smtp.tcsbank.ru]
+Connection to m1-db02-prod closed.
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do export SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; mailq ' )" ; done ; SSHPASS=''
+ds-db06-prod
+ds-db08-prod
+ds-db01-prod
+ds-db01-stb
+ds-db05-prod
+ds-db07-prod
+ds-db07-stb
+ds-db02-stb
+ds-db02-prod
+m1-db06-prod
+m1-db06-stb
+m1-db09-prod
+m1-db08-stb
+m1-db08-prod
+m1-db01-prod
+m1-db05-stb
+m1-db05-prod
+m1-db07-prod
+m1-db02-prod
+[sudo] password for bsv:
+ds-db06-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to ds-db06-prod closed.
+[sudo] password for bsv:
+ds-db08-prod
+Mail queue is empty
+Connection to ds-db08-prod closed.
+[sudo] password for bsv:
+ds-db01-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to ds-db01-prod closed.
+[sudo] password for bsv:
+ds-db01-stb
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to ds-db01-stb closed.
+[sudo] password for bsv:
+ds-db05-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to ds-db05-prod closed.
+[sudo] password for bsv:
+ds-db07-prod.tcsbank.ru
+Mail queue is empty
+Connection to ds-db07-prod closed.
+[sudo] password for bsv:
+ds-db07-stb.tcsbank.ru
+Mail queue is empty
+Connection to ds-db07-stb closed.
+[sudo] password for bsv:
+ds-db02-stb
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to ds-db02-stb closed.
+[sudo] password for bsv:
+ds-db02-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to ds-db02-prod closed.
+[sudo] password for bsv:
+m1-db06-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to m1-db06-prod closed.
+[sudo] password for bsv:
+m1-db06-stb
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to m1-db06-stb closed.
+[sudo] password for bsv:
+m1-db09-prod.tcsbank.ru
+Mail queue is empty
+Connection to m1-db09-prod closed.
+[sudo] password for bsv:
+m1-db08-stb
+Mail queue is empty
+Connection to m1-db08-stb closed.
+[sudo] password for bsv:
+m1-db08-prod
+Mail queue is empty
+Connection to m1-db08-prod closed.
+[sudo] password for bsv:
+m1-db01-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to m1-db01-prod closed.
+[sudo] password for bsv:
+m1-db05-stb
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to m1-db05-stb closed.
+[sudo] password for bsv:
+m1-db05-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to m1-db05-prod closed.
+[sudo] password for bsv:
+m1-db07-prod.tcsbank.ru
+Mail queue is empty
+Connection to m1-db07-prod closed.
+[sudo] password for bsv:
+m1-db02-prod
+/var/spool/mqueue is empty
+                Total requests: 0
+Connection to m1-db02-prod closed.
+[support@centos00 ~]$
+
+
+[root@m1-db06-prod ~]# ls -Alh /var/spool/mail/
+total 1.7M
+-rw-rw----  1 a.leonov mail    0 Apr  9  2014 a.leonov
+-rw-rw----  1 ash      mail    0 Dec 17  2014 ash
+-rw-rw----  1 avk      mail    0 Mar 15  2013 avk
+-rw-rw----  1 backup   mail    0 Apr  4  2013 backup
+-rw-rw----  1 bsv      mail    0 Sep  2  2013 bsv
+-rw-rw----  1 cfp      mail    0 Mar 25  2015 cfp
+-rw-rw----  1 che      mail    0 Nov  8  2013 che
+-rw-rw----  1 dza      mail  20K Jul  1 11:00 dza
+-rw-rw----  1 hpsmh    mail    0 Mar 25  2013 hpsmh
+-rw-rw----  1 jet      mail    0 Mar 15  2013 jet
+-rw-rw----  1 k.gus    mail    0 Aug 19  2014 k.gus
+-rw-rw----  1 mda      mail    0 Mar  4  2014 mda
+-rw-rw----  1 mdu      mail    0 Mar 22  2013 mdu
+-rw-rw----  1 mitilan  mail    0 Mar 15  2013 mitilan
+-rw-rw----  1 nms      mail    0 Mar 15  2013 nms
+-rw-rw----  1     1005 mail    0 Oct  1  2014 nsanit
+-rw-rw----. 1 oracle   mail    0 Dec 17  2014 oracle
+-rw-rw----  1 rda      mail 223K Jul 18 11:09 rda
+-rw-------  1 root     mail 1.4M Jul 18 00:05 root
+-rw-rw----  1 rpc      mail    0 Feb 26  2013 rpc
+-rw-rw----  1 splunk   mail    0 Feb  6  2014 splunk
+-rw-rw----  1 tan      mail    0 Mar 15  2013 tan
+-rw-rw----  1 vma      mail    0 Mar 15  2013 vma
+-rw-rw----  1 vsn      mail    0 Mar 15  2013 vsn
+-rw-rw----  1 zbir     mail    0 Nov  8  2013 zbir
+[root@m1-db06-prod ~]#
+
+[root@m1-db06-prod ~]# grep oradba /etc/aliases
+oracle: oradba@tinkoff.ru
+[root@m1-db06-prod ~]#
+
+[root@m1-db06-prod ~]# ls -Alh /var/spool/mail/oracle
+-rw-rw----. 1 oracle mail 0 Dec 17  2014 /var/spool/mail/oracle
+[root@m1-db06-prod ~]#
+
+[root@m1-db06-prod ~]# mailq
+/var/spool/mqueue is empty
+                Total requests: 0
+[root@m1-db06-prod ~]#
+
+
+

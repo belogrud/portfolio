@@ -1,0 +1,185 @@
+
+................................................................................
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim $(pynag list filename where object_type=host and host_name=vm-dbamon01 --quiet)
+...
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           PRIME ISS - EOD
+    check_command                 check_nrpe!check_check_tcs_monitor_eod
+    check_interval                1
+    max_check_attempts            1
+    notification_interval         5
+    contacts                      s.morozkin_email, s.morozkin_sms, a.gladyshev_email, s.suradeev_email, d.a.makeev_email, d.a.makeev_sms, processing_duty_sms, cards_24x7_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+ }
+
+................................................................................
+
+[root@vm-dbamon01 ~]# awk '/check_check_tcs_monitor_eod/{print FILENAME,"\t",$0 }' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_prime4.cfg          command[check_check_tcs_monitor_eod]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_monitor_eod.sh
+/etc/nrpe.d/check_db_prime4.cfg          command[check_check_tcs_monitor_eod_prestart]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_monitor_eod_prestart.sh
+/etc/nrpe.d/check_db_prime4.cfg          command[check_check_tcs_monitor_eod_structure]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_monitor_eod_structure.sh
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cd /opt/TCS/scripts/nagios/plugins/prime4/
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_monitor_eod.sh prime-check_tctdbs_tcs_v_monitor_daily.sh
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_monitor_eod.sql prime-check_tctdbs_tcs_v_monitor_daily.sql
+
+[root@vm-dbamon01 prime4]# vim prime-check_tctdbs_tcs_v_monitor_daily.sh -o prime-check_tctdbs_tcs_v_monitor_daily.sql
+
+
+[root@vm-dbamon01 prime4]# diff -Nuar prime4-check_tcs_monitor_eod.sh prime-check_tctdbs_tcs_v_monitor_daily.sh
+--- prime4-check_tcs_monitor_eod.sh     2016-07-19 10:02:39.245431811 +0300
++++ prime-check_tctdbs_tcs_v_monitor_daily.sh   2017-01-10 17:48:59.082182041 +0300
+@@ -7,7 +7,7 @@
+ SQL_QUERY_PASSWORD='tcs_monitor_1'
+
+ SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+-SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime4-check_tcs_monitor_eod.sql
++SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime-check_tctdbs_tcs_v_monitor_daily.sql
+
+ STATE_OK=0
+ STATE_WARNING=1
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# diff -Nuar prime4-check_tcs_monitor_eod.sql prime-check_tctdbs_tcs_v_monitor_daily.sql
+--- prime4-check_tcs_monitor_eod.sql    2016-07-19 10:03:04.740543507 +0300
++++ prime-check_tctdbs_tcs_v_monitor_daily.sql  2017-01-10 17:49:33.879722339 +0300
+@@ -4,4 +4,4 @@
+ set heading off
+ set trimspool on
+
+-select * from tctdbs.tcs_monitor_eod;
++select * from tctdbs.tcs_v_monitor_daily_check;
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# git add prime-check_tctdbs_tcs_v_monitor_daily.sh prime-check_tctdbs_tcs_v_monitor_daily.sql
+
+
+[root@vm-dbamon01 prime4]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#160193. Create new monitoring." prime-check_tctdbs_tcs_v_monitor_daily.sh prime-check_tctdbs_tcs_v_monitor_daily.sql
+[master a7b1cd0] SD#160193. Create new monitoring.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ Committer: root <root@vm-dbamon01.tcsbank.ru>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+If the identity used for this commit is wrong, you can fix it with:
+
+    git commit --amend --author='Your Name <you@example.com>'
+
+ 2 files changed, 35 insertions(+), 0 deletions(-)
+ create mode 100755 prime4/prime-check_tctdbs_tcs_v_monitor_daily.sh
+ create mode 100644 prime4/prime-check_tctdbs_tcs_v_monitor_daily.sql
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# ./prime-check_tctdbs_tcs_v_monitor_daily.sh
+OK. Result=0
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# vim /etc/nrpe.d/check_db_prime4.cfg
+...
+command[prime-check_tctdbs_tcs_v_monitor_daily]=/opt/TCS/scripts/nagios/plugins/prime4/prime-check_tctdbs_tcs_v_monitor_daily.sh
+
+[root@vm-dbamon01 prime4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 prime4]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim $(pynag list filename where object_type=host and host_name=vm-dbamon01 --quiet)
+...
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           PRIME ISS - Prime AM Daily Check
+    check_command                 check_nrpe!prime-check_tctdbs_tcs_v_monitor_daily
+    check_interval                1
+    max_check_attempts            1
+    notification_interval         30
+    contacts                      s.morozkin_email, s.morozkin_sms, a.gladyshev_email, s.suradeev_email, d.a.makeev_email, d.a.makeev_sms, processing_duty_sms, cards_24x7_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+ }
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Stopping nagios:/etc/init.d/nagios: line 140: kill: (17155) - No such process
+ done.
+Starting nagios: done.
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#160193. Add into monitoring one \"view\"." servers/vmware/vm-dbamon01.cfg
+Running configuration check...
+ OK.
+[master 3997978] SD#160193. Add into monitoring one "view".
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 621 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   7a6bf4c..3997978  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+[root@vm-dbamon01 prime4]# logout
+
+DO NOT FORGET TO MAKE A COMMIT!
+
+1. I did it already
+2. Follow on my dick!
+
+Choise: 1
+Good boy! See you later :)
+[bsv@vm-dbamon01 ~]$
+
+
+[root@vm-dbamon01 ~]# cat .bash_logout
+# ~/.bash_logout
+while true
+do
+  trap '' 2
+  echo ''
+  echo 'DO NOT FORGET TO MAKE A COMMIT!'
+  echo ''
+  echo "1. I did it already"
+  echo "2. Follow on my dick!"
+  echo ""
+  echo -n "Choise: "
+  read x
+
+  case $x in
+    1) echo "Good boy! See you later :)"
+       exit 0
+       ;;
+    2) echo "OK, I remembered."
+       exit 1
+       ;;
+    *) echo "Stupid monkey! Try again"
+  esac
+
+done
+[root@vm-dbamon01 ~]#
+
+

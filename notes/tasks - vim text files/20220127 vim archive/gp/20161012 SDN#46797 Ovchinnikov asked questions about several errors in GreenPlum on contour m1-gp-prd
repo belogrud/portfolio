@@ -1,0 +1,162 @@
+
+
+................................................................................
+
+Тема
+
+RE: Подозрения на сетевые проблемы
+Номер
+
+46797
+Описание
++ helpdesk_in
+
+На сегментах у нас стоит таймаут в 30 минут, поэтому при проверке посмотрите пожалуйста еще ошибки в это время:
+
+2016-10-10 04:34:06.271390 GMT-3,,,p53813,th-795171040,"127.0.0.1","13701",2016-10-10 04:34:06 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+
+И
+
+2016-10-11 04:04:08.292514 GMT-3,,,p18313,th-2026322144,"127.0.0.1","17091",2016-10-11 04:04:08 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712
+
+
+
+Дмитрий Овчинников
+Администратор DWH
+Тел.: +7 495 648-10-00, доб. 2460
+
+From: Ovchinnikov Dmitriy Sergeevich
+Sent: Tuesday, October 11, 2016 3:26 PM
+To: net-admins <net-admins@tinkoff.ru>
+Subject: Подозрения на сетевые проблемы
+
+Добрый день.
+Коллеги, на greenplum prod M1 рано утром падают зеркала, пока причины падения найти не удалось. На форумах одна из рекомендаций проверить сеть. Собрал информацию по падениям за 2 дня, посмотрите пожалуйста не было ли ошибок или разрывов в это время на сетевом оборудовании?
+
+Сегодня проблема случилась в 04:20:33 из лога m1-gp-prd-sdw3:
+
+2016-10-11 04:04:08.307331 GMT-3,,,p18316,th-2026322144,"127.0.0.1","17092",2016-10-11 04:04:08 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+2016-10-11 04:19:04.596742 GMT-3,,,p16317,th-2026322144,"127.0.0.1","17326",2016-10-11 04:19:04 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+2016-10-11 04:19:04.610723 GMT-3,,,p16320,th-2026322144,"127.0.0.1","17327",2016-10-11 04:19:04 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+2016-10-11 04:20:33.722705 GMT-3,,,p27255,th-2026322144,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"LOG","XX000","could not receive data from client: Время ожидания соединения истекло (pqcomm.c:873)",,,,,,,0,,"pqcomm.c",873,
+2016-10-11 04:20:33.722760 GMT-3,,,p27255,th-2026322144,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"WARNING","XX000","receive EOF on connection: Время ожидания соединения истекло (cdbfilerepconnserver.c:397)",,,,,,,0,,"cdbfilerepconnserver.c",397,
+
+Упало зеркало, основной инстанс работает на m1-gp-prd-sdw6 на нем в логах пошли ошибки:
+
+2016-10-11 04:19:04.771247 GMT-3,,,p22941,th-808966368,"127.0.0.1","16346",2016-10-11 04:19:04 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+2016-10-11 04:19:04.784635 GMT-3,,,p22944,th-808966368,"127.0.0.1","16347",2016-10-11 04:19:04 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+2016-10-11 04:20:33.798874 GMT-3,,,p29495,th-808966368,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"WARNING","XX000","receive close on connection: <CF><EE><E1><E5><E4><E0> (cdbfilerepconnserver.c:337)",,,,,,,0,,"cdbfilerepconnserver.c",337,
+2016-10-11 04:20:33.809807 GMT-3,,,p29504,th-808966368,,,,0,,,seg-1,,,,,"WARNING","01000","mirror failure, could not complete mirrored request identifier 'heartBeat' ack state 'waiting for ack', failover requested",,"run gprecoverseg to re-establish mirror connectivity"
+,,,"mirroring role 'primary role' mirroring state 'sync' segment state 'in fault' process name(pid) 'primary recovery process(29504)' filerep state 'up and running'
+position ack begin '0x7fa7c379c040' position ack end '0x7fa7c381c040' position ack insert '0x7fa7c37fe350' position ack consume '0x7fa7c37fe350' position ack wraparound '0x7fa7c381c040' insert count ack '2106424' consume count ack '2106425' ",,0,,"cdbfilerepprimaryack.c
+",898,
+2016-10-11 04:20:33.809847 GMT-3,,,p29504,th-808966368,,,,0,,,seg-1,,,,,"WARNING","01000","mirror failure, could not complete operation on mirror, failover requested","identifier 'heartBeat' operation 'heart beat' relation type 'control message' message count '-1'","run
+gprecoverseg to re-establish mirror connectivity",,,"mirroring role 'primary role' mirroring state 'sync' segment state 'in fault' process name(pid) 'primary recovery process(29504)' filerep state 'up and running'
+position ack begin '0x7fa7c379c040' position ack end '0x7fa7c381c040' position ack insert '0x7fa7c37fe350' position ack consume '0x7fa7c37fe350' position ack wraparound '0x7fa7c381c040' insert count ack '2106424' consume count ack '2106425'
+position begin '0x7fa7c2f9b040' position end '0x7fa7c379b100' position insert '0x7fa7c3035908' position consume '0x7fa7c3037048' position wraparound '0x7fa7c3798818' insert count '41601806' consume count '41601598' ",,0,,"cdbfilerepprimary.c",1432,
+
+Аналогичная ситуация была сразу на нескольких серверах, зеркало упало на m1-gp-prd-sdw16, основным является m1-gp-prd-sdw18
+Лог m1-gp-prd-sdw16:
+2016-10-11 04:19:00.826761 GMT-3,,,p25264,th-1554000096,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"WARNING","XX000","receive close on connection:
+
+Лог m1-gp-prd-sdw18:
+2016-10-11 04:19:00.440534 GMT-3,,,p31007,th-524871904,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"LOG","XX000","could not receive data from client: <C2><F0><E5><EC><FF> <EE><E6><E8><E4><E0><ED><E8><FF> <F1><EE><E5><E4><E8><ED><E5><ED><E8><FF> <E8><F1><F2><E5><EA><EB>
+<EE> (pqcomm.c:873)",,,,,,,0,,"pqcomm.c",873,
+2016-10-11 04:19:00.440584 GMT-3,,,p31007,th-524871904,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"WARNING","XX000","receive EOF on connection: <C2><F0><E5><EC><FF> <EE><E6><E8><E4><E0><ED><E8><FF> <F1><EE><E5><E4><E8><ED><E5><ED><E8><FF> <E8><F1><F2><E5><EA><EB><EE> (cdbfilerepconnserver.c:327)",,,,,,,0,,"cdbfilerepconnserver.c",327,
+2016-10-11 04:19:00.507877 GMT-3,,,p31012,th-524871904,,,,0,,,seg-1,,,,,"WARNING","01000","mirror failure, could not complete mirrored request identifier 'heartBeat' ack state 'waiting for ack', failover requested",,"run gprecoverseg to re-establish mirror connectivity",,,"mirroring role 'primary role' mirroring state 'sync' segment state 'in fault' process name(pid) 'primary recovery process(31012)' filerep state 'fault'
+position ack begin '0x7f08d468b040' position ack end '0x7f08d470b040' position ack insert '0x7f08d46e5ef0' position ack consume '0x7f08d46e5ef0' position ack wraparound '0x7f08d470b040' insert count ack '2108660' consume count ack '2108661' ",,0,,"cdbfilerepprimaryack.c",898,
+
+Вчера было тоже самое только чуть позже на серверах m1-gp-prd-sdw8, m1-gp-prd-sdw10.
+Лог m1-gp-prd-sdw10:
+2016-10-10 05:04:03.427721 GMT-3,,,p62075,th-445700320,"127.0.0.1","44004",2016-10-10 05:04:03 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+2016-10-10 05:04:03.441337 GMT-3,,,p62078,th-445700320,"127.0.0.1","44005",2016-10-10 05:04:03 GMT-3,0,,,seg-1,,,,,"LOG","00000","received transition request packet. processing the request",,,,,,,0,,"postmaster.c",2712,
+2016-10-10 05:08:32.470744 GMT-3,,,p7080,th-445700320,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"LOG","XX000","could not receive data from client: Время ожидания соединения истекло (pqcomm.c:873)",,,,,,,0,,"pqcomm.c",873,
+2016-10-10 05:08:32.470782 GMT-3,,,p7080,th-445700320,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"WARNING","XX000","receive EOF on connection: Время ожидания соединения истекло (cdbfilerepconnserver.c:327)",,,,,,,0,,"cdbfilerepconnserver.c",327,
+
+Лог m1-gp-prd-sdw8:
+2016-10-10 05:08:15.257155 GMT-3,,,p2924,th-795171040,"10.216.4.111","32331",2016-10-10 05:08:15 GMT-3,0,,,seg-1,,,,,"LOG","00000","query finish request to process 62043",,,,,,,0,,"postmaster.c",4040,
+2016-10-10 05:08:32.513980 GMT-3,,,p4236,th-795171040,,,2000-01-01 03:00:00 GMT-3,0,,,seg-1,,,,,"WARNING","XX000","receive close on connection: <CF><EE><E1><E5><E4><E0> (cdbfilerepconnserver.c:337)",,,,,,,0,,"cdbfilerepconnserver.c",337,
+2016-10-10 05:08:32.514305 GMT-3,,,p4243,th-795171040,,,,0,,,seg-1,,,,,"WARNING","01000","mirror failure, could not queue message to be mirrored, failover requested","identifier 'heartBeat' operation 'heart beat' relation type 'control message' message count '-1'","run
+gprecoverseg to re-establish mirror connectivity",,,"mirroring role 'primary role' mirroring state 'sync' segment state 'in fault' process name(pid) 'primary recovery process(4243)' filerep state 'fault'
+position begin '0x7f7ac3cc3040' position end '0x7f7ac44c3100' position insert '0x7f7ac4472ad8' position consume '0x7f7ac4472ae8' position wraparound '0x7f7ac44b3c60' insert count '9310414' consume count '9310265' ",,0,,"cdbfilerepprimary.c",444,
+2016-10-10 05:08:58.524163 GMT-3,"analyst","db_prod",p62043,th-795171040,"10.216.4.111","29351",2016-10-10 05:05:54 GMT-3,258580605,con15333,cmd25,seg30,slice1,dx10037054,x258580605,sx1,"LOG","00000","failure is detected in segment mirroring, failover requested",,,,,"mi
+rroring role 'primary role' mirroring state 'sync' segment state 'in fault' process name(pid) 'filerep uninitialized process(62043)' filerep state 'not initialized' ","SELECT  ""servicecall_uuid"", ""inherit_behavior""  FROM prod_v_odd.TBL_SERVICE_CALL  WHERE  ( ""inher
+it_behavior"" = 0 ) FOR READ ONLY ",0,,"cdbfilerepprimary.c",275,
+
+
+
+С уважением,
+
+Дмитрий Овчинников
+Администратор DWH
+
+
+................................................................................
+................................................................................
+
+...
+Oct 11 04:20:19 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:20:19 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:20:19 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:20:19 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:20:19 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:20:19 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:24:42 sdw3 kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Oct 11 04:26:14 sdw3 puppet-agent[41160]: Finished catalog run in 1.00 seconds
+Oct 11 04:26:50 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:26:50 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:26:50 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:26:50 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:26:51 sdw3 snmpd[2927]: truncating integer value > 32 bits
+Oct 11 04:26:51 sdw3 snmpd[2927]: truncating integer value > 32 bits
+...
+
+[root@m1-gp-prd-sdw3 ~]# ifconfig
+eth0      Link encap:Ethernet  HWaddr AC:16:2D:AB:79:E8
+          inet addr:10.216.4.3  Bcast:10.216.4.255  Mask:255.255.255.0
+          inet6 addr: fe80::ae16:2dff:feab:79e8/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:290469764901 errors:0 dropped:33796 overruns:0 frame:0
+          TX packets:265359634727 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:376603475706971 (342.5 TiB)  TX bytes:315588096224152 (287.0 TiB)
+          Memory:f7cc0000-f7ce0000
+
+eth1      Link encap:Ethernet  HWaddr AC:16:2D:AB:79:EC
+          inet addr:10.216.5.3  Bcast:10.216.5.255  Mask:255.255.255.0
+          inet6 addr: fe80::ae16:2dff:feab:79ec/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:205026665605 errors:6 dropped:40813 overruns:2888257 frame:6
+          TX packets:222458973283 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:260439105078560 (236.8 TiB)  TX bytes:280789851606050 (255.3 TiB)
+          Memory:f7c60000-f7c80000
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:15664127167 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:15664127167 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:266540246994021 (242.4 TiB)  TX bytes:266540246994021 (242.4 TiB)
+
+[root@m1-gp-prd-sdw3 ~]#
+
+
+
+[root@m1-gp-prd-sdw3 ~]# sar -A -f /var/log/sa/sa11 > /tmp/20161011.sar.m1-gp-prd-sdw3.log
+[root@m1-gp-prd-sdw3 ~]# ls -Alh !$
+ls -Alh /tmp/20161011.sar.m1-gp-prd-sdw3.log
+-rw-r--r-- 1 root root 776K Oct 12 17:16 /tmp/20161011.sar.m1-gp-prd-sdw3.log
+[root@m1-gp-prd-sdw3 ~]#
+
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw3 ~]# LC_ALL=C sar -A -f /var/log/sa/sa11 > /tmp/20161011.sar.m1-gp-prd-sdw3.log
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-gp-prd-sdw3:/tmp/20161011.sar.m1-gp-prd-sdw3.log ~/mnt/share/temp/
+
+

@@ -1,0 +1,1111 @@
+
+
+
+................................................................................
+
+
+From: Golovin Andrej Olegovich 
+Sent: Wednesday, November 28, 2018 12:51 PM
+To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>
+Subject: RE: Уточнение по SD#1357396
+
+Требований к версии RHEL нет.
+
+На ней должны работать tomcat 7.x, 8.x
+
+
+Андрей Головин
+Старший специалист
+Тел.: +7 495 648-10-00, доб. 2228
+
+From: Belogrud Sergey Vladimirovich 
+Sent: Wednesday, November 28, 2018 11:22 AM
+To: Golovin Andrej Olegovich <a.golovin@tinkoff.ru>
+Subject: RE: Уточнение по SD#1357396
+
+А верисия rhel какая?
+Например, 7.x или чётко такая и такая.
+
+Сергей Белогруд
+Старший системный администратор
+Тел.: +7 495 648-10-00, доб. 2173
+
+From: Golovin Andrej Olegovich 
+Sent: Wednesday, November 28, 2018 11:15 AM
+To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>
+Subject: RE: Уточнение по SD#1357396
+
+Сергей, привет!
+
+1. Наименование серверов.
+m1-afs-prod02
+ds-afs-prod02   
+2. Какую ОС устанавливать.
+RHEL
+3. Конфигурация raid масса.
+По аналогии с m1-afs-prod, или можем обсудить твои варианты.
+4. Какие разделы дисковые создавать, куда смонтировать.
+По аналогии с m1-afs-prod
+5. Прочее, что имеет важность.
+Нужно создать пользователей с такими же UID что и на старых серверах, т.к. это завязано на доступ приложения к файлам в сетевой папке /mnt/AFS_prod/
+
+Андрей Головин
+Старший специалист
+Тел.: +7 495 648-10-00, доб. 2228
+
+From: Belogrud Sergey Vladimirovich 
+Sent: Tuesday, November 27, 2018 12:39 PM
+To: Golovin Andrej Olegovich <a.golovin@tinkoff.ru>
+Subject: Уточнение по SD#1357396
+
+Добрый день.
+
+Требуется уточнение по SD#1357396.
+
+Нужны детали по подготовке двух серверов к использованию.
+1. Наименование серверов.
+2. Какую ОС устанавливать.
+3. Конфигурация raid масса.
+4. Какие разделы дисковые создавать, куда смонтировать.
+5. Прочее, что имеет важность.
+
+В netbox ссылка на два сервера: https://netbox.tcsbank.ru/dcim/devices/?tag=purchase_oct2018_type06_app_afs
+
+................................................................................
+
+[root@m1-afs-prod ~]# dmidecode -t system
+# dmidecode 2.11
+SMBIOS 2.8 present.
+# SMBIOS implementations newer than version 2.7 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ22500MJQ
+        UUID: 31323436-3630-5A43-3232-3530304D4A51
+        Wake-up Type: Power Switch
+        SKU Number: 642106-421
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-afs-prod ~]#
+
+[root@m1-afs-prod ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.2 (Santiago)
+[root@m1-afs-prod ~]#
+
+
+[root@m1-afs-prod ~]# hpssacli controller all show config
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 0014380241418B0)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (136.7 GB, RAID 1, OK)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 146 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 146 GB, OK)
+
+   array B (Solid State SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 2 (372.6 GB, RAID 1+0, OK)
+
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, Solid State SAS, 200 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, Solid State SAS, 200 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, Solid State SAS, 200 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, Solid State SAS, 200 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 50014380241418BF)
+
+[root@m1-afs-prod ~]#
+
+[root@m1-afs-prod ~]# uname -a
+Linux m1-afs-prod 2.6.32-220.el6.x86_64 #1 SMP Wed Nov 9 08:03:13 EST 2011 x86_64 x86_64 x86_64 GNU/Linux
+[root@m1-afs-prod ~]#
+
+[root@m1-afs-prod ~]# lsblk -o NAME,MOUNTPOINT,FSTYPE,SIZE
+NAME                       MOUNTPOINT FSTYPE        SIZE
+sr0                                                1024M
+sdb                                   LVM2_member 372.6G
+└─vg_data-lvol0 (dm-1)     /mnt/afs   ext4        372.6G
+sda                                               136.7G
+├─sda1                     /boot      ext4          256M
+├─sda2                     [SWAP]     swap           16G
+├─sda3                                LVM2_member  19.5G
+│ ├─vg-LogVol00 (dm-0)     /          ext4            8G
+│ └─vg-LogVol01 (dm-3)     /var       ext4         11.5G
+├─sda4                                                1K
+└─sda5                                LVM2_member 100.9G
+  └─vg_opt-LogVol00 (dm-2) /opt       ext4        100.9G
+[root@m1-afs-prod ~]#
+
+[root@m1-afs-prod ~]# findmnt
+TARGET                       SOURCE                                             FSTYPE      OPTIONS
+/                            /dev/mapper/vg-LogVol00                            ext4        rw,relatime,barrier=1,stripe=64,data=ordered
+├─/proc                      /proc                                              proc        rw,relatime
+│ ├─/proc/bus/usb            /proc/bus/usb                                      usbfs       rw,relatime
+│ └─/proc/sys/fs/binfmt_misc                                                    binfmt_misc rw,relatime
+├─/sys                       /sys                                               sysfs       rw,relatime
+├─/dev                       udev                                               devtmpfs    rw,relatime,size=264608644k,nr_inodes=66152161,mode=755
+│ ├─/dev/pts                 devpts                                             devpts      rw,relatime,gid=5,mode=620,ptmxmode=000
+│ └─/dev/shm                 tmpfs                                              tmpfs       rw,relatime
+├─/boot                      /dev/sda1                                          ext4        rw,relatime,barrier=1,stripe=256,data=ordered
+├─/mnt/afs                   /dev/mapper/vg_data-lvol0                          ext4        rw,relatime,barrier=1,stripe=128,data=ordered
+├─/opt                       /dev/mapper/vg_opt-LogVol00                        ext4        rw,relatime,barrier=1,stripe=64,data=ordered
+├─/var                       /dev/mapper/vg-LogVol01                            ext4        rw,relatime,barrier=1,stripe=64,data=ordered
+│ └─/var/lib/nfs/rpc_pipefs  sunrpc                                             rpc_pipefs  rw,relatime
+├─/mnt/AFS_prod              v6250-m1:/vol/integration_fs/integration3/AFS_prod nfs         rw,relatime,vers=3,rsize=32768,wsize=32768,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mo
+├─/mnt/backup_diff           fas3210b-m1-nfs.tcsbank.ru:/vol/afs/afs_backup     nfs         rw,relatime,vers=3,rsize=32768,wsize=32768,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mo
+├─/misc                      /etc/auto.misc                                     autofs      rw,relatime,fd=7,pgrp=3360,timeout=300,minproto=5,maxproto=5,indirect
+└─/net                       -hosts                                             autofs      rw,relatime,fd=13,pgrp=3360,timeout=300,minproto=5,maxproto=5,indirect
+[root@m1-afs-prod ~]#
+
+[root@m1-afs-prod ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.32.101/24 brd 10.216.32.255 scope global bond0
+[root@m1-afs-prod ~]#
+
+[root@m1-afs-prod ~]# findmnt -t nfs
+TARGET           SOURCE                                             FSTYPE OPTIONS
+/mnt/AFS_prod    v6250-m1:/vol/integration_fs/integration3/AFS_prod nfs    rw,relatime,vers=3,r
+/mnt/backup_diff fas3210b-m1-nfs.tcsbank.ru:/vol/afs/afs_backup     nfs    rw,relatime,vers=3,r
+[root@m1-afs-prod ~]#
+
+
+[root@m1-afs-prod ~]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ; echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+ONBOOT=yes
+IPADDR=10.216.32.101
+NETMASK=255.255.255.0
+GATEWAY=10.216.32.254
+BONDING_OPTS="mode=1 miimon=100"
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE="eth0"
+#HWADDR="2C:27:D7:53:D0:B0"
+NM_CONTROLLED="yes"
+ONBOOT="yes"
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth0.1632
+DEVICE="eth0.1632"
+ONBOOT="yes"
+VLAN=yes
+MASTER=bond0
+SLAVE=yes
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth1
+DEVICE="eth1"
+HWADDR="2C:27:D7:53:D0:B4"
+NM_CONTROLLED="yes"
+ONBOOT="no"
+
+/etc/sysconfig/network-scripts/ifcfg-eth2
+DEVICE="eth2"
+NM_CONTROLLED="yes"
+ONBOOT="yes"
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth2.1632
+DEVICE="eth2.1632"
+ONBOOT="yes"
+VLAN=yes
+MASTER=bond0
+SLAVE=yes
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth3
+DEVICE="eth3"
+HWADDR="2C:27:D7:53:B1:F4"
+NM_CONTROLLED="yes"
+ONBOOT="no"
+
+/etc/sysconfig/network-scripts/ifcfg-eth4
+DEVICE="eth4"
+HWADDR="AC:16:2D:72:15:74"
+NM_CONTROLLED="yes"
+ONBOOT="no"
+
+/etc/sysconfig/network-scripts/ifcfg-eth5
+DEVICE="eth5"
+HWADDR="AC:16:2D:72:15:75"
+NM_CONTROLLED="yes"
+ONBOOT="no"
+
+/etc/sysconfig/network-scripts/ifcfg-eth6
+DEVICE="eth6"
+HWADDR="AC:16:2D:72:15:76"
+NM_CONTROLLED="yes"
+ONBOOT="no"
+
+/etc/sysconfig/network-scripts/ifcfg-eth7
+DEVICE="eth7"
+HWADDR="AC:16:2D:72:15:77"
+NM_CONTROLLED="yes"
+ONBOOT="no"
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+[root@m1-afs-prod ~]#
+
+
+
+................................................................................
+
+
+#
+#	On servers, during installation, I've configured one interface very simply.
+#	I've found free ip address.
+#
+[s.belogrud@TCS4357]# ssh bsv@vm-pxe01p
+Last login: Thu Sep 27 16:42:12 2018 from 172.16.28.74
+[bsv@vm-pxe01p ~]$ sudo -
+[sudo] password for bsv:
+[bsv@vm-pxe01p ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-pxe01p ~]# grep -ie "fixed-address" /etc/dhcp/dhcpd.conf
+        fixed-address 10.218.15.123;
+        fixed-address 10.218.15.126;
+        fixed-address 10.218.15.130;
+        fixed-address 10.218.15.112;
+        fixed-address 10.218.15.127;
+        fixed-address 10.218.15.131;
+        fixed-address 10.218.15.124;
+        fixed-address 10.218.15.133;
+        fixed-address 10.218.15.134;
+        fixed-address 192.168.1.100;
+        fixed-address 10.218.15.128;
+        fixed-address 10.218.15.120;
+        fixed-address 10.218.15.129;
+        fixed-address 10.218.15.125;
+        fixed-address 10.218.15.135;
+        fixed-address 10.218.15.111;
+        fixed-address 10.218.15.122;
+        fixed-address 10.218.15.121;
+        fixed-address 10.218.15.132;
+        fixed-address 10.218.15.2;
+[root@vm-pxe01p ~]# 
+#
+#	As usually - disable ipv6, manually configure ip address 10.218.15.42 its netmask 24 and gateway 10.218.15.254 and dns names, I've taken it from vm-pxe01p. And I've written dns suffix tcsbank.ru. Everything very simple and as usually.
+#
+
+[root@ds-afs-prod02 ~]# cat /etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=48f48b74-c7e0-4dc7-868e-ad4e4bbe8a6d
+DEVICE=em1
+ONBOOT=no
+IPADDR=10.218.15.42
+PREFIX=24
+GATEWAY=10.218.15.254
+DNS1=10.216.41.4
+DNS2=10.216.42.4
+DOMAIN=tcsbank.ru
+[root@ds-afs-prod02 ~]#
+
+#
+#	After servers booted, on both servers was made default procedure.
+#	Was disabled selinux, stopped NetworkManager, stopped firewalld.
+#
+    1  ip -f inet addr
+    2  ls -Alh /etc/sysconfig/network-scripts/ifcfg-*
+    3  vim /etc/selinux/config
+    4  systemctl stop NetworkManager
+    5  systemctl disable NetworkManager
+    6  systemctl stop firewalld
+    7  systemctl disable firewalld
+    8  reboot
+    9  ip -f inet addr
+
+
+#
+#	Garnyshev Igor have configured VLAN 1815 on both of target servers.
+#	Port on commutator was configured as "access" - that's means it's without tagging.
+#
+#	I've tested available gateway from console.
+#
+[root@ds-afs-prod02 ~]# ping -c 3 10.218.15.254
+PING 10.218.15.254 (10.218.15.254) 56(84) bytes of data.
+64 bytes from 10.218.15.254: icmp_seq=1 ttl=64 time=1.08 ms
+64 bytes from 10.218.15.254: icmp_seq=2 ttl=64 time=1.14 ms
+64 bytes from 10.218.15.254: icmp_seq=3 ttl=64 time=1.20 ms
+
+--- 10.218.15.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 1.086/1.145/1.205/0.062 ms
+[root@ds-afs-prod02 ~]#
+
+
+#
+#	I've logged in on both servers.
+#
+[s.belogrud@TCS4357]# ssh root@10.218.15.42
+Warning: Permanently added '10.218.15.42' (ECDSA) to the list of known hosts.
+root@10.218.15.42's password:
+Last login: Tue Dec  4 22:05:14 2018
+[root@ds-afs-prod02 ~]#
+
+[root@ds-afs-prod02 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    inet 10.218.15.42/24 brd 10.218.15.255 scope global em1
+       valid_lft forever preferred_lft forever
+
+[root@ds-afs-prod02 ~]# puppet agent -t
+-bash: puppet: command not found
+[root@ds-afs-prod02 ~]# logout
+Connection to 10.218.15.42 closed.
+
+
+#
+#	Then I've ran puppet installation via ansible.
+#
+[support@centos puppet]$ ansible-playbook 20180808-1512.install.puppet-agent.yaml -i 20180808-1512.list_of_hosts --become --extra-vars "ansible_user=root ansible_password=$(pass common/linux-default
+) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'"
+
+PLAY [all] *******************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************************************************************
+ok: [10.218.15.42]
+ok: [10.218.15.41]
+
+TASK [Add Puppetlabs Repo v5 (rpm) for RHEL] *********************************************************************************************************************************************************
+changed: [10.218.15.42]
+changed: [10.218.15.41]
+
+TASK [Add Puppetlabs Repo v5 (deb)] ******************************************************************************************************************************************************************
+skipping: [10.218.15.42]
+skipping: [10.218.15.41]
+
+TASK [Add Puppetlabs Repo key (deb)] *****************************************************************************************************************************************************************
+skipping: [10.218.15.42]
+skipping: [10.218.15.41]
+
+TASK [Install puppet-agent via apt module on Ubuntu with option -y] **********************************************************************************************************************************
+skipping: [10.218.15.42]
+skipping: [10.218.15.41]
+
+TASK [Install new puppet] ****************************************************************************************************************************************************************************
+changed: [10.218.15.41]
+changed: [10.218.15.42]
+
+TASK [Set puppet server in config] *******************************************************************************************************************************************************************
+changed: [10.218.15.42]
+changed: [10.218.15.41]
+
+TASK [Enable agent (for ubuntu)] *********************************************************************************************************************************************************************
+skipping: [10.218.15.42]
+skipping: [10.218.15.41]
+
+TASK [First run puppet] ******************************************************************************************************************************************************************************
+fatal: [10.218.15.41]: FAILED! => {"changed": false, "disabled": false, "error": true, "msg": "puppet did not run", "rc": 1, "stderr": "", "stderr_lines": [], "stdout": "Info: Creating a new SSL key for m1-afs-prod02.tcsbank.ru\nInfo: Caching certificate for ca\nInfo: csr_attributes file loading from /etc/puppetlabs/puppet/csr_attributes.yaml\nInfo: Creating a new SSL certificate request for m1-afs-prod02.tcsbank.ru\nInfo: Certificate Request fingerprint (SHA256): 76:36:E5:97:C6:D4:00:B8:FE:80:43:9F:36:0D:76:8E:63:1F:88:FE:C3:B2:85:DB:33:DE:AA:07:CD:69:E3:BB\nInfo: Caching certificate for ca\nExiting; no certificate found and waitforcert is disabled\n", "stdout_lines": ["Info: Creating a new SSL key for m1-afs-prod02.tcsbank.ru", "Info: Caching certificate for ca", "Info: csr_attributes file loading from /etc/puppetlabs/puppet/csr_attributes.yaml", "Info: Creating a new SSL certificate request for m1-afs-prod02.tcsbank.ru", "Info: Certificate Request fingerprint (SHA256): 76:36:E5:97:C6:D4:00:B8:FE:80:43:9F:36:0D:76:8E:63:1F:88:FE:C3:B2:85:DB:33:DE:AA:07:CD:69:E3:BB", "Info: Caching certificate for ca", "Exiting; no certificate found and waitforcert is disabled"]}
+...ignoring
+fatal: [10.218.15.42]: FAILED! => {"changed": false, "disabled": false, "error": true, "msg": "puppet did not run", "rc": 1, "stderr": "", "stderr_lines": [], "stdout": "Info: Creating a new SSL key for ds-afs-prod02.tcsbank.ru\nInfo: Caching certificate for ca\nInfo: csr_attributes file loading from /etc/puppetlabs/puppet/csr_attributes.yaml\nInfo: Creating a new SSL certificate request for ds-afs-prod02.tcsbank.ru\nInfo: Certificate Request fingerprint (SHA256): 99:1F:65:D4:56:1F:2B:57:84:20:14:A5:33:5D:C7:F8:1F:07:62:28:D0:10:F3:B3:5A:AE:B8:80:97:0A:09:0E\nInfo: Caching certificate for ca\nExiting; no certificate found and waitforcert is disabled\n", "stdout_lines": ["Info: Creating a new SSL key for ds-afs-prod02.tcsbank.ru", "Info: Caching certificate for ca", "Info: csr_attributes file loading from /etc/puppetlabs/puppet/csr_attributes.yaml", "Info: Creating a new SSL certificate request for ds-afs-prod02.tcsbank.ru", "Info: Certificate Request fingerprint (SHA256): 99:1F:65:D4:56:1F:2B:57:84:20:14:A5:33:5D:C7:F8:1F:07:62:28:D0:10:F3:B3:5A:AE:B8:80:97:0A:09:0E", "Info: Caching certificate for ca", "Exiting; no certificate found and waitforcert is disabled"]}
+...ignoring
+
+PLAY RECAP *******************************************************************************************************************************************************************************************
+10.218.15.41               : ok=5    changed=3    unreachable=0    failed=0
+10.218.15.42               : ok=5    changed=3    unreachable=0    failed=0
+
+[support@centos puppet]$
+
+
+[s.belogrud@TCS4357]# ssh root@10.218.15.42
+Last login: Wed Dec  5 13:35:41 2018 from tcs4357.tcsbank.ru
+[root@ds-afs-prod02 ~]# puppet agent -t
+Exiting; no certificate found and waitforcert is disabled
+[root@ds-afs-prod02 ~]#
+
+
+[root@vm-puppetmaster02p ~]# puppet cert list -a | egrep -e "afs-prod"
+  "ds-afs-prod02.tcsbank.ru"                                        (SHA256) 99:1F:65:D4:56:1F:2B:57:84:20:14:A5:33:5D:C7:F8:1F:07:62:28:D0:10:F3:B3:5A:AE:B8:80:97:0A:09:0E
+  "m1-afs-prod02.tcsbank.ru"                                        (SHA256) 76:36:E5:97:C6:D4:00:B8:FE:80:43:9F:36:0D:76:8E:63:1F:88:FE:C3:B2:85:DB:33:DE:AA:07:CD:69:E3:BB
++ "ds-afs-prod.tcsbank.ru"                                          (SHA256) 40:48:C7:A9:AA:53:39:04:67:5A:5E:B4:0A:E3:E0:A0:82:AA:03:3E:64:B0:50:60:76:DF:64:E6:0D:0A:CA:4D
+[root@vm-puppetmaster02p ~]#
+
+[root@vm-puppetmaster02p ~]# puppet cert sign "m1-afs-prod02.tcsbank.ru"
+Signing Certificate Request for:
+  "m1-afs-prod02.tcsbank.ru" (SHA256) 76:36:E5:97:C6:D4:00:B8:FE:80:43:9F:36:0D:76:8E:63:1F:88:FE:C3:B2:85:DB:33:DE:AA:07:CD:69:E3:BB
+Notice: Signed certificate request for m1-afs-prod02.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest m1-afs-prod02.tcsbank.ru at '/etc/puppetlabs/puppet/ssl/ca/requests/m1-afs-prod02.tcsbank.ru.pem'
+[root@vm-puppetmaster02p ~]# puppet cert sign "ds-afs-prod02.tcsbank.ru"
+Signing Certificate Request for:
+  "ds-afs-prod02.tcsbank.ru" (SHA256) 99:1F:65:D4:56:1F:2B:57:84:20:14:A5:33:5D:C7:F8:1F:07:62:28:D0:10:F3:B3:5A:AE:B8:80:97:0A:09:0E
+Notice: Signed certificate request for ds-afs-prod02.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest ds-afs-prod02.tcsbank.ru at '/etc/puppetlabs/puppet/ssl/ca/requests/ds-afs-prod02.tcsbank.ru.pem'
+[root@vm-puppetmaster02p ~]#
+
+#
+#	Let's run puppet to apply base config on servers.
+#
+[root@m1-afs-prod02 ~]# puppet agent -t
+Info: Caching certificate for m1-afs-prod02.tcsbank.ru
+Info: Caching certificate_revocation_list for ca
+Info: Caching certificate for m1-afs-prod02.tcsbank.ru
+Info: Using configured environment 'production'
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Notice: /File[/opt/puppetlabs/puppet/cache/lib/1.8.7]/ensure: created
+Notice: /File[/opt/puppetlabs/puppet/cache/lib/1.8.7/csv.rb]/ensure: defined content as '{md5}1637aa570ea2ab7f6caf851de779f4d9'
+Notice: /File[/opt/puppetlabs/puppet/cache/lib/easy_type]/ensure: created
+...
+
+
+................................................................................
+
+
+#
+#	Next step was configured custom config in puppet to apply it on these two servers.
+#
+[s.belogrud@TCS4357]# git checkout -b 20181205_SD1357396
+Switched to a new branch '20181205_SD1357396'
+
+[s.belogrud@TCS4357]# git --no-pager log -n 1 -p manifests/00_site.pp
+commit e4f8ee25fd8dd8da184b4926dc0684390f4bc5c9
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Dec 5 12:20:16 2018 +0300
+
+    SD#1357396. Access to server for user.
+
+diff --git a/manifests/00_site.pp b/manifests/00_site.pp
+index 279d0da..5abeea2 100644
+--- a/manifests/00_site.pp
++++ b/manifests/00_site.pp
+@@ -132,6 +132,9 @@ node 'vm-sso-prod-zipkin-1.tcsbank.ru' {
+ node /^(ds|m1)-afs-prod\.tcsbank\.ru$/ {
+   include role::afs_prod
+ }
++node /^(ds|m1)-afs-prod\d+\.tcsbank\.ru$/ {
++  include role::afs_prod
++}
+ node /^(ds|m1)-pr-pg-encashment\d+\.tcsbank\.ru$/ {
+   include role::pr_encashment
+ }
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# git status
+On branch 20181205_SD1357396
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   manifests/00_site.pp
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#1357396. Access to server for user." manifests/00_site.pp
+[20181205_SD1357396 e4f8ee2] SD#1357396. Access to server for user.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 file changed, 3 insertions(+)
+[s.belogrud@TCS4357]# git push origin 20181205_SD1357396
+Counting objects: 4, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 427 bytes | 0 bytes/s, done.
+Total 4 (delta 3), reused 0 (delta 0)
+remote:
+remote: *** Checking puppet code style ***
+remote:
+remote: *** Checking puppet manifest syntax ***
+remote:
+remote: *** Checking puppet template(epp) syntax ***
+remote:
+remote: *** Checking ruby template(erb) syntax ***
+remote:
+remote: *** Checking ruby syntax ***
+remote:
+remote: *** Checking YAML syntax ***
+remote:
+remote: To create a merge request for 20181205_SD1357396, visit:
+remote:   https://vm-gitlab01.tcsbank.ru/Puppet/control/merge_requests/new?merge_request%5Bsource_branch%5D=20181205_SD1357396
+remote:
+To git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+ * [new branch]      20181205_SD1357396 -> 20181205_SD1357396
+[s.belogrud@TCS4357]#
+
+[root@ds-afs-prod02 ~]# puppet agent -t
+Info: Using configured environment 'production'
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for ds-afs-prod02.tcsbank.ru
+Info: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-production-adb28fc9228'
+Notice: /Stage[main]/Profile::Accounts::Dwhusers/Group[dwhusers]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Afsadmin/Group[afsadmin]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Afsadmin/User[afsadmin]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Afsadmin/File[/etc/sudoers.d/afsadmin]/ensure: defined content as '{md5}df9a79017f58874e871d7581bc147fe8'
+Notice: /Stage[main]/Profile::Accounts::Agolovin/Group[a.golovin]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Agolovin/User[a.golovin]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Inikitin/Group[i.nikitin]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Inikitin/User[i.nikitin]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Ylitvin/Group[y.litvin]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Ylitvin/User[y.litvin]/ensure: created
+Notice: /Stage[main]/Splunk::Forwarder/Package[install splunk forwarder]/ensure: created
+Notice: /Stage[main]/Splunk::Forwarder/Exec[accept splunk forwarder license]/returns: executed successfully
+Notice: /Stage[main]/Splunk::Forwarder/Exec[create splunk forwarder init file]/returns: executed successfully
+Notice: /Stage[main]/Splunk::Forwarder/File[splunk forwarder deploymentclient configuration]/ensure: defined content as '{md5}304c39c416926482540712301c23d47b'
+Info: /Stage[main]/Splunk::Forwarder/File[splunk forwarder deploymentclient configuration]: Scheduling refresh of Service[splunk]
+Notice: /Stage[main]/Splunk::Forwarder/Service[splunk]/ensure: ensure changed 'stopped' to 'running'
+Info: /Stage[main]/Splunk::Forwarder/Service[splunk]: Unscheduling refresh on Service[splunk]
+Notice: Applied catalog in 3.70 seconds
+[root@ds-afs-prod02 ~]#
+
+................................................................................
+
+
+[root@ds-afs-prod02 ~]# pvcreate /dev/sdb
+  Physical volume "/dev/sdb" successfully created.
+
+[root@ds-afs-prod02 ~]# vgcreate data /dev/sdb
+  Volume group "data" successfully created
+
+[root@ds-afs-prod02 ~]# lvcreate -l 100%VG data -n lv0
+  Logical volume "lv0" created.
+[root@ds-afs-prod02 ~]#
+
+[root@ds-afs-prod02 ~]# lvs
+  LV   VG   Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv0  data -wi-a----- <893.75g
+  root rhel -wi-ao---- <553.18g
+  swap rhel -wi-ao----    4.00g
+[root@ds-afs-prod02 ~]# mkfs.ext4 /dev/mapper/data-lv0
+mke2fs 1.42.9 (28-Dec-2013)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=0 blocks, Stripe width=0 blocks
+58572800 inodes, 234290176 blocks
+11714508 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=2382364672
+7150 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@ds-afs-prod02 ~]#
+
+[root@ds-afs-prod02 ~]# mkdir /mnt/afs
+[root@ds-afs-prod02 ~]# vim /etc/fstab
+[root@ds-afs-prod02 ~]# mount /mnt/afs
+[root@ds-afs-prod02 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Tue Dec  4 21:47:10 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/rhel-root   /                       ext4    defaults        1 1
+UUID=e94afcf3-8afa-4543-ad72-eef3e145d3bd /boot                   ext4    defaults        1 2
+UUID=BAB4-59FE          /boot/efi               vfat    umask=0077,shortname=winnt 0 0
+/dev/mapper/rhel-swap   swap                    swap    defaults        0 0
+/dev/mapper/data-lv0    /mnt/afs                ext4    defaults        0 0
+[root@ds-afs-prod02 ~]#
+
+[root@ds-afs-prod02 ~]# lsblk
+NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda             8:0    0 558.4G  0 disk
+├─sda1          8:1    0   200M  0 part /boot/efi
+├─sda2          8:2    0     1G  0 part /boot
+└─sda3          8:3    0 557.2G  0 part
+  ├─rhel-root 253:0    0 553.2G  0 lvm  /
+  └─rhel-swap 253:1    0     4G  0 lvm  [SWAP]
+sdb             8:16   0 893.8G  0 disk
+└─data-lv0    253:2    0 893.8G  0 lvm  /mnt/afs
+sr0            11:0    1  1024M  0 rom
+[root@ds-afs-prod02 ~]#
+
+................................................................................
+
+
+[root@ds-afs-prod02 network-scripts]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ;echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=48f48b74-c7e0-4dc7-868e-ad4e4bbe8a6d
+DEVICE=em1
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+UUID=57d56491-7a57-4a88-91f3-cca615aa62c5
+DEVICE=em2
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=team0
+ONBOOT=yes
+DEVICETYPE=Team
+# TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+TEAM_CONFIG='{"runner":{"name": "lacp","active": true,"fast_rate":true,"tx_hash": ["eth", "ipv4", "ipv6"]},"link_watch": {"name": "ethtool"}}'
+MTU=9000
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-team0.1632
+DEVICE=team0.1632
+TYPE=Ethernet
+BOOTPROTO=none
+DEFROUTE=yes
+ONBOOT=yes
+USERCTL=no
+IPV6INIT=no
+VLAN=yes
+IPADDR=10.216.32.202
+NETMASK=255.255.255.0
+GATEWAY=10.216.32.254
+MTU=1500
+NM_CONTROLLED=no
+[root@ds-afs-prod02 network-scripts]#
+
+
+
+[root@ds-afs-prod02 ~]# teamdctl team0 state view
+setup:
+  runner: lacp
+ports:
+  em1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+    runner:
+      aggregator ID: 2, Selected
+      selected: yes
+      state: current
+  em2
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+    runner:
+      aggregator ID: 2, Selected
+      selected: yes
+      state: current
+runner:
+  active: yes
+  fast rate: yes
+[root@ds-afs-prod02 ~]#
+
+[root@ds-afs-prod02 ~]# teamdctl team0 state view -v
+setup:
+  runner: lacp
+  kernel team mode: loadbalance
+  D-BUS enabled: yes
+  ZeroMQ enabled: no
+  debug level: 0
+  daemonized: no
+  PID: 45546
+  PID file: /var/run/teamd/team0.pid
+ports:
+  em1
+    ifindex: 2
+    addr: f4:e9:d4:3f:6d:d4
+    ethtool link: 25000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 2, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: f4:e9:d4:3f:6d:d4
+        key: 0
+        port_priority: 255
+        port: 2
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 01:25:26:08:08:11
+        key: 8
+        port_priority: 127
+        port: 8
+        state: 0x3f
+  em2
+    ifindex: 3
+    addr: f4:e9:d4:3f:6d:d4
+    ethtool link: 25000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 2, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: f4:e9:d4:3f:6d:d4
+        key: 0
+        port_priority: 255
+        port: 3
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 01:25:26:08:08:11
+        key: 8
+        port_priority: 127
+        port: 8
+        state: 0x3f
+runner:
+  active: yes
+  fast rate: yes
+  system priority: 65535
+[root@ds-afs-prod02 ~]#
+
+[root@ds-afs-prod02 ~]# ethtool -i em1
+driver: qede
+version: 8.10.10.21
+firmware-version: mfw 8.24.44.0 storm 8.20.0.0
+expansion-rom-version:
+bus-info: 0000:19:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: yes
+supports-priv-flags: yes
+[root@ds-afs-prod02 ~]# lspci -s 0000:19:00.0
+19:00.0 Ethernet controller: QLogic Corp. FastLinQ QL41000 Series 10/25/40/50GbE Controller (rev 02)
+[root@ds-afs-prod02 ~]# lspci -s 0000:19:00.0 -v
+19:00.0 Ethernet controller: QLogic Corp. FastLinQ QL41000 Series 10/25/40/50GbE Controller (rev 02)
+        Subsystem: QLogic Corp. Device 000c
+        Flags: bus master, fast devsel, latency 0, IRQ 123, NUMA node 0
+        Memory at 9e820000 (64-bit, prefetchable) [size=128K]
+        Memory at 9e000000 (64-bit, prefetchable) [size=8M]
+        Memory at 9e850000 (64-bit, prefetchable) [size=64K]
+        Expansion ROM at 9ec00000 [disabled] [size=512K]
+        Capabilities: [40] Power Management version 3
+        Capabilities: [50] MSI: Enable- Count=1/8 Maskable+ 64bit+
+        Capabilities: [70] Express Endpoint, MSI 00
+        Capabilities: [b0] MSI-X: Enable+ Count=129 Masked-
+        Capabilities: [d0] Vital Product Data
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [148] Virtual Channel
+        Capabilities: [168] Device Serial Number 00-00-00-00-00-00-00-00
+        Capabilities: [178] Power Budgeting <?>
+        Capabilities: [188] Alternative Routing-ID Interpretation (ARI)
+        Capabilities: [198] #19
+        Capabilities: [1f8] Transaction Processing Hints
+        Capabilities: [284] Latency Tolerance Reporting
+        Capabilities: [28c] Vendor Specific Information: ID=0002 Rev=3 Len=100 <?>
+        Capabilities: [38c] Vendor Specific Information: ID=0001 Rev=1 Len=038 <?>
+        Capabilities: [3c4] Precision Time Measurement
+        Capabilities: [3d0] Vendor Specific Information: ID=0003 Rev=1 Len=054 <?>
+        Capabilities: [424] #15
+        Kernel driver in use: qede
+        Kernel modules: qede
+
+[root@ds-afs-prod02 ~]#
+
+................................................................................
+
+
+[support@centos puppet]$ ansible-playbook 20180808-1512.install.puppet-agent.yaml -i 20180808-1512.list_of_hosts --become --extra-vars "ansible_user=root ansible_password=$(pass common/linux-default) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'"
+
+PLAY [all] *******************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************************************************************
+ok: [10.216.32.201]
+ok: [10.216.32.202]
+
+TASK [Add Puppetlabs Repo v5 (rpm) for RHEL] *********************************************************************************************************************************************************
+ok: [10.216.32.202]
+ok: [10.216.32.201]
+
+TASK [Add Puppetlabs Repo v5 (deb)] ******************************************************************************************************************************************************************
+skipping: [10.216.32.202]
+skipping: [10.216.32.201]
+
+TASK [Add Puppetlabs Repo key (deb)] *****************************************************************************************************************************************************************
+skipping: [10.216.32.202]
+skipping: [10.216.32.201]
+
+TASK [Install puppet-agent via apt module on Ubuntu with option -y] **********************************************************************************************************************************
+skipping: [10.216.32.202]
+skipping: [10.216.32.201]
+
+TASK [Install new puppet] ****************************************************************************************************************************************************************************
+ok: [10.216.32.202]
+ok: [10.216.32.201]
+
+TASK [Set puppet server in config] *******************************************************************************************************************************************************************
+changed: [10.216.32.202]
+changed: [10.216.32.201]
+
+TASK [Enable agent (for ubuntu)] *********************************************************************************************************************************************************************
+skipping: [10.216.32.202]
+skipping: [10.216.32.201]
+
+TASK [First run puppet] ******************************************************************************************************************************************************************************
+ok: [10.216.32.201]
+ok: [10.216.32.202]
+
+PLAY RECAP *******************************************************************************************************************************************************************************************
+10.216.32.201              : ok=5    changed=1    unreachable=0    failed=0   
+10.216.32.202              : ok=5    changed=1    unreachable=0    failed=0   
+
+[support@centos puppet]$
+
+
+#
+#	The puppet is working well.
+#
+[root@m1-afs-prod02 ~]# puppet agent -t
+Info: Using configured environment 'production'
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for m1-afs-prod02.tcsbank.ru
+Info: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-production-b28f8dccf74'
+Notice: Applied catalog in 1.43 seconds
+[root@m1-afs-prod02 ~]#
+
+................................................................................
+
+#
+#	20181211
+#
+[s.belogrud@TCS4357]# ssh bsv@m1-afs-prod02
+Last login: Thu Dec  6 15:04:21 2018 from tcs4357.tcsbank.ru
+'abrt-cli status' timed out
+[bsv@m1-afs-prod02 ~]$ sudo -i
+[sudo] password for bsv:
+'abrt-cli status' timed out
+[root@m1-afs-prod02 ~]#
+
+[s.belogrud@TCS4357]# ssh bsv@ds-afs-prod02
+Warning: Permanently added 'ds-afs-prod02' (ECDSA) to the list of known hosts.
+Last login: Thu Dec  6 15:04:21 2018 from tcs4357.tcsbank.ru
+[bsv@ds-afs-prod02 ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-afs-prod02 ~]#
+
+
+#
+#	There were found follow articles:
+#	https://forums.cpanel.net/threads/strange-error-when-logging-in-as-root-via-ssh.590691/
+#	https://access.redhat.com/solutions/3077311
+#	https://bugzilla.redhat.com/show_bug.cgi?id=1249101
+#
+
+
+#	Update - was not helped.
+[root@m1-afs-prod02 ~]# yum install abrt
+
+#
+#	What helped.
+#	As I see - something related with soft abrt doesn't work on this server correct.
+#
+[root@m1-afs-prod02 ~]# systemctl disable abrt-ccpp ; systemctl disable abrt-oops
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrt-ccpp.service.
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrt-oops.service.
+[root@m1-afs-prod02 ~]# systemctl disable abrtd
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrtd.service.
+[root@m1-afs-prod02 ~]#
+
+
+[root@m1-afs-prod02 ~]# ps aux | grep -ie "abr[t]"
+root      51245 99.7 64.8 1027879732 1027756992 ? R  Dec05 8128:38 /usr/libexec/abrt-hook-ccpp 11 0 46174 0 0 1544030178 e 46174 46174 m1-afs-prod02.tcsbank.ru
+root      65637  0.0  0.0 345912  6692 ?        Sl   Dec06   0:31 /usr/sbin/abrt-dbus -t133
+[root@m1-afs-prod02 ~]# kill -9 65637
+[root@m1-afs-prod02 ~]# kill -9 51245
+[root@m1-afs-prod02 ~]# ps aux | grep -ie "abr[t]"
+root      51245 99.7  0.0      0     0 ?        R    Dec05 8128:57 [abrt-hook-ccpp]
+[root@m1-afs-prod02 ~]# kill -9 51245
+[root@m1-afs-prod02 ~]# ps aux | grep -ie "abr[t]"
+root      51245 99.7  0.0      0     0 ?        R    Dec05 8129:13 [abrt-hook-ccpp]
+[root@m1-afs-prod02 ~]# logout
+[bsv@m1-afs-prod02 ~]$ logout
+Connection to m1-afs-prod02 closed.
+[s.belogrud@TCS4357]# ssh bsv@m1-afs-prod02
+Last login: Tue Dec 11 12:03:03 2018 from tcs4357.tcsbank.ru
+[bsv@m1-afs-prod02 ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-afs-prod02 ~]# 
+
+[root@m1-afs-prod02 ~]# systemctl list-units --type service | grep -ie "abrt"
+● abrtd.service                                                                             loaded failed failed  ABRT Automated Bug Reporting Tool
+[root@m1-afs-prod02 ~]#
+
+
+
+#
+#	Here is not problems.
+#	And how it looks.
+#
+[root@ds-afs-prod02 ~]# ps aux | grep -ie "abr[t]"
+root       1653  0.0  0.0 223672  5692 ?        Ss   Dec04   0:00 /usr/sbin/abrtd -d -s
+root       1661  0.0  0.0 221164  4724 ?        Ss   Dec04   0:02 /usr/bin/abrt-watch-log -F BUG: WARNING: at WARNING: CPU: INFO: possible recursive locking detected ernel BUG at list_del corruption list_add corruption do_IRQ: stack overflow: ear stack overflow (cur: eneral protection fault nable to handle kernel ouble fault: RTNL: assertion failed eek! page_mapcount(page) went negative! adness at NETDEV WATCHDOG ysctl table check failed : nobody cared IRQ handler type mismatch Kernel panic - not syncing: Machine Check Exception: Machine check events logged divide error: bounds: coprocessor segment overrun: invalid TSS: segment not present: invalid opcode: alignment check: stack segment: fpu exception: simd exception: iret exception: /var/log/messages -- /usr/bin/abrt-dump-oops -xtD
+[root@ds-afs-prod02 ~]# systemctl stop abrtd ; systemctl disable abrtd ; systemctl stop abrt-ccpp ; systemctl disable abrt-ccpp ; systemctl stop abrt-oops ; systemctl disable abrt-oops
+
+[root@ds-afs-prod02 ~]# systemctl stop abrtd ; systemctl disable abrtd ; systemctl stop abrt-ccpp ; systemctl disable abrt-ccpp ; systemctl stop abrt-oops ; systemctl disable abrt-oops
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrtd.service.
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrt-ccpp.service.
+Removed symlink /etc/systemd/system/multi-user.target.wants/abrt-oops.service.
+[root@ds-afs-prod02 ~]# ps aux | grep -ie "abr[t]"
+[root@ds-afs-prod02 ~]#
+
+[root@ds-afs-prod02 ~]# systemctl list-units --type service | grep -ie "abrt"
+[root@ds-afs-prod02 ~]#
+
+................................................................................
+
+
+#
+#	Just to see what's differ between new and old servers.
+#
+[root@m1-afs-prod02 ~]# lsblk -o NAME,MOUNTPOINT,FSTYPE,SIZE
+NAME          MOUNTPOINT FSTYPE        SIZE
+sda                                  558.4G
+├─sda1        /boot/efi  vfat          200M
+├─sda2        /boot      ext4            1G
+└─sda3                   LVM2_member 557.2G
+  ├─rhel-root /          ext4        553.2G
+  └─rhel-swap [SWAP]     swap            4G
+sdb                      LVM2_member 893.8G
+└─data-lv0    /mnt/afs   ext4        893.8G
+[root@m1-afs-prod02 ~]#
+
+
+
+[root@m1-afs-prod ~]# lsblk -o NAME,MOUNTPOINT,FSTYPE,SIZE
+NAME                       MOUNTPOINT FSTYPE        SIZE
+sr0                                                1024M
+sdb                                   LVM2_member 372.6G
+└─vg_data-lvol0 (dm-1)     /mnt/afs   ext4        372.6G
+sda                                               136.7G
+├─sda1                     /boot      ext4          256M
+├─sda2                     [SWAP]     swap           16G
+├─sda3                                LVM2_member  19.5G
+│ ├─vg-LogVol00 (dm-0)     /          ext4            8G
+│ └─vg-LogVol01 (dm-3)     /var       ext4         11.5G
+├─sda4                                                1K
+└─sda5                                LVM2_member 100.9G
+  └─vg_opt-LogVol00 (dm-2) /opt       ext4        100.9G
+[root@m1-afs-prod ~]#
+
+
+................................................................................
+

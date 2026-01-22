@@ -1,0 +1,71 @@
+bsv@m1-yandex-tank01t:~$ sudo -i
+[sudo] password for bsv:
+root@m1-yandex-tank01t:~# ip route
+default via 10.218.71.254 dev eth0 onlink
+10.218.13.0/24 via 10.218.14.254 dev eth1
+10.218.14.0/24 dev eth1  proto kernel  scope link  src 10.218.14.246
+10.218.71.0/24 dev eth0  proto kernel  scope link  src 10.218.71.28
+root@m1-yandex-tank01t:~# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    inet 10.218.71.28/24 brd 10.218.71.255 scope global eth0
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    inet 10.218.14.246/24 brd 10.218.14.255 scope global eth1
+       valid_lft forever preferred_lft forever
+root@m1-yandex-tank01t:~#
+
+   15  route -n
+   16  route -net 10.218.13.0 netmask 255.255.255.0 gw 10.218.14.254
+   17  route add -net 10.218.13.0 netmask 255.255.255.0 gw 10.218.14.254
+   18  route -n
+   19  ping 10.218.13.254
+   20  route -n
+   21  grep -r route /etc/*
+   22  ip addr show
+   23  route -n
+
+
+root@m1-yandex-tank01t:~# vim /etc/network/interfaces
+
+root@m1-yandex-tank01t:~# cat /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+        address 10.218.71.28
+        netmask 255.255.255.0
+        gateway 10.218.71.254
+
+auto eth1
+iface eth1 inet static
+        address 10.218.14.246
+        netmask 255.255.255.0
+
+#staric route
+up route add -net 10.218.13.0 netmask 255.255.255.0 gw 10.218.14.254 eth1
+up route add -net 10.219.137.0 netmask 255.255.255.0 gw 10.218.14.254 eth1
+
+root@m1-yandex-tank01t:~#
+
+
+root@m1-yandex-tank01t:~# route add -net 10.219.137.0 netmask 255.255.255.0 gw 10.218.14.254 eth1
+root@m1-yandex-tank01t:~# ip route
+default via 10.218.71.254 dev eth0 onlink
+10.218.13.0/24 via 10.218.14.254 dev eth1
+10.218.14.0/24 dev eth1  proto kernel  scope link  src 10.218.14.246
+10.218.71.0/24 dev eth0  proto kernel  scope link  src 10.218.71.28
+10.219.137.0/24 via 10.218.14.254 dev eth1
+root@m1-yandex-tank01t:~#
+
+
+

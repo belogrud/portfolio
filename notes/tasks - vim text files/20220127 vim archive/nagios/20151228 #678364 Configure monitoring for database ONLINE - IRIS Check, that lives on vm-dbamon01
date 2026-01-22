@@ -1,0 +1,325 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   678364
+Название    №678364
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  28.12.2015 10:03
+Дата регистрации    28.12.2015 10:03
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день,
+
+Просьба настроить мониторинг в Nagios.
+Название - ONLINE - IRIS Checks
+View на БД ONLINE - tctdbs.tcs_iris_monitor_onl
+Кому нужно грантовать доступ?
+
+Все параметры мониторинга/алертов аналогично – «ONLINE - ON-US Approved Auth Requests»
+
+Спасибо.
+
+
+Best regards,
+
+Alexandr Rodriguez Gonzalez
+Development department
+Bank Card Processing and
+Payment Technologies control unit
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Родригес Александр
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Родригес Александр
+Контактный e-mail   a.rodriges@tinkoff.ru
+Контактные телефоны 79259916321, 2638
+
+................................................................................
+................................................................................
+
+./objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             ONLINE - ON-US Approved Auth Requests
+        check_command                   check_nrpe!check_tcs_monitor_00_rc
+        normal_check_interval           1
+        first_notification_delay        0
+        contact_groups                  empty-group
+        contacts                        m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           5
+}
+...
+
+[root@vm-dbamon01 ~]# grep -ir -e "check_tcs_monitor_00_rc" /etc/
+/etc/nrpe.d/check_db_online4.cfg:command[check_tcs_monitor_00_rc]=/opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+/etc/nrpe.d/nrpe.cfg_:command[check_tcs_monitor_00_rc]          = /usr/bin/sudo /usr/lib64/nagios/plugins/check_oracle_tcs -u tcs_monitor -p monitor_1 -d ONLINE4 -q "select * from tctdbs.tcs_monitor_00_rc"
+[root@vm-dbamon01 ~]#
+
+
+
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description check_command where object_type=service service_description__contains="ONLINE - ON-US Approved Auth Requests"
+host_name            service_description  check_command
+--------------------------------------------------------------------------------
+vm-dbamon01          ONLINE - ON-US Approved Auth Requests check_nrpe!check_tcs_monitor_00_rc
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+#!/bin/bash
+
+SQL_QUERY_HOST='db-online4-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='ONLINE4'
+SQL_QUERY_USER='tcs_monitor'
+SQL_QUERY_PASSWORD='monitor_1'
+
+SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+SQL_QUERY_FILE=$SQL_QUERY_DIR/online4/online4-check_tcs_monitor_00_rc.sql
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+export ORACLE_HOME=/opt/oracle/products/11g/client
+export PATH=$PATH:/$ORACLE_HOME/bin
+
+RESULT=$(echo "exit" | sqlplus -s $SQL_QUERY_USER/$SQL_QUERY_PASSWORD@\"$SQL_QUERY_HOST:$SQL_QUERY_PORT/$SQL_QUERY_BASE\" @$SQL_QUERY_FILE)
+
+if [ "$RESULT" = 0 ]; then
+  echo "Connection OK. Result=$RESULT"
+  exit $STATE_OK
+else
+  echo "ERROR. Result=$RESULT"
+  exit $STATE_CRITICAL
+fi
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select * from tctdbs.tcs_monitor_00_rc;
+[root@vm-dbamon01 ~]#
+
+
+................................................................................
+................................................................................
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Monday, December 28, 2015 12:09 PM
+To: Rodriges Aleksandr Osvaldovich
+Subject: Уточнения по SD# 678364
+
+Добрый день.
+
+Уточнения по SD# 678364.
+
+> Кому нужно грантовать доступ?
+>
+
+Проверка доступности «ONLINE - ON-US Approved Auth Requests» осуществляется следующим скриптом со следующими параметрами доступа.
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+#!/bin/bash
+
+SQL_QUERY_HOST='db-online4-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='ONLINE4'
+SQL_QUERY_USER='tcs_monitor'
+SQL_QUERY_PASSWORD='monitor_1'
+
+SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+SQL_QUERY_FILE=$SQL_QUERY_DIR/online4/online4-check_tcs_monitor_00_rc.sql
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+export ORACLE_HOME=/opt/oracle/products/11g/client
+export PATH=$PATH:/$ORACLE_HOME/bin
+
+RESULT=$(echo "exit" | sqlplus -s $SQL_QUERY_USER/$SQL_QUERY_PASSWORD@\"$SQL_QUERY_HOST:$SQL_QUERY_PORT/$SQL_QUERY_BASE\" @$SQL_QUERY_FILE)
+
+if [ "$RESULT" = 0 ]; then
+  echo "Connection OK. Result=$RESULT"
+  exit $STATE_OK
+else
+  echo "ERROR. Result=$RESULT"
+  exit $STATE_CRITICAL
+fi
+[root@vm-dbamon01 ~]#
+
+
+SQL-запрос выглядит так:
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select * from tctdbs.tcs_monitor_00_rc;
+[root@vm-dbamon01 ~]#
+
+Если, как Вы написали:
+> Все параметры мониторинга/алертов аналогично – «ONLINE - ON-US Approved Auth Requests»
+>
+, то параметры доступа следует сделать аналогично вышеописанным.
+
+Уточняющий вопрос.
+
+Как я понимаю, для работы запрошенной Вами проверки будет достаточно изменить только строчку в SQL-запросе на следующую:
+select * from tctdbs.tcs_iris_monitor_onl;
+Или, что-то ещё?
+
+
+
+................................................................................
+................................................................................
+
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_{00,01}_rc.sh
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_{00,01}_rc.sql
+[root@vm-dbamon01 ~]#
+
+................................................................................
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+Connection OK. Result=0
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-vol-nag01t nagios]# grep -irl -e "cards_24x7" ./objects/contacts/
+./objects/contacts/processing_duty.cfg
+[root@vm-vol-nag01t nagios]# grep -irl -e "cards_24x7" ./objects/groups/
+./objects/groups/contact-group/processing-admins.cfg
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_01_rc.sh
+Connection OK. Result=0
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+Connection OK. Result=0
+[root@vm-dbamon01 ~]#
+
+................................................................................
+
+
+[root@vm-dbamon01 ~]# vim /etc/nrpe.d/check_db_online4.cfg
+...
+command[check_tcs_monitor_00_rc]=/opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+command[check_tcs_monitor_01_rc]=/opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_01_rc.sh
+...
+
+[root@vm-dbamon01 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 ~]#
+
+
+
+[root@vm-vol-nag01t nagios]# vim ./objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             ONLINE - IRIS Checks
+        check_command                   check_nrpe!check_tcs_monitor_01_rc
+        normal_check_interval           1
+        first_notification_delay        0
+        contact_groups                  empty-group
+        contacts                        m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           5
+}
+
+[root@vm-vol-nag01t nagios]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#678364. Added check \"ONLINE - IRIS Checks\"" objects/servers/vmware/vm-dbamon01.cfg
+[master 0c44d73] SD#678364. Added check "ONLINE - IRIS Checks"
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# service nagios checkconfig
+Running configuration check... OK.
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# egrep -irl -e "d.a.makeev_sms|a.rodriges|s.b.antonov|s.mukhanov" ./objects/contacts/
+./objects/contacts/s.mukhanov.cfg
+./objects/contacts/s.b.antonov.cfg
+./objects/contacts/a.rodriges.cfg
+./objects/contacts/d.a.makeev.cfg
+[root@vm-vol-nag01t nagios]# egrep -ir -e "d.a.makeev|a.rodriges|s.b.antonov|s.mukhanov" ./objects/contacts/
+./objects/contacts/s.mukhanov.cfg:        contact_name                    s.mukhanov_email
+./objects/contacts/s.mukhanov.cfg:        email                           s.mukhanov@tinkoff.ru
+./objects/contacts/s.mukhanov.cfg:        contact_name                    s.mukhanov_sms
+./objects/contacts/s.mukhanov.cfg:        email                           s.mukhanov@tinkoff.ru
+./objects/contacts/s.b.antonov.cfg:        contact_name            s.b.antonov_email
+./objects/contacts/s.b.antonov.cfg:        email                   s.b.antonov@tinkoff.ru
+./objects/contacts/s.b.antonov.cfg:        contact_name            s.b.antonov_sms
+./objects/contacts/s.b.antonov.cfg:        email                   s.b.antonov@tinkoff.ru
+./objects/contacts/a.rodriges.cfg:        contact_name            a.rodriges_email
+./objects/contacts/a.rodriges.cfg:        email                   a.rodriges@tinkoff.ru
+./objects/contacts/a.rodriges.cfg:        contact_name            a.rodriges_sms
+./objects/contacts/a.rodriges.cfg:        email                   a.rodriges@tinkoff.ru
+./objects/contacts/d.a.makeev.cfg:        contact_name                    d.a.makeev
+./objects/contacts/d.a.makeev.cfg:        contact_name                    d.a.makeev_email
+./objects/contacts/d.a.makeev.cfg:        email                           d.a.makeev@tinkoff.ru
+./objects/contacts/d.a.makeev.cfg:        contact_name                    d.a.makeev_sms
+./objects/contacts/d.a.makeev.cfg:        email                           d.a.makeev@tinkoff.ru
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#678364. Edited contacts for service \"ONLINE - IRIS Checks\"" objects/servers/vmware/vm-dbamon01.cfg
+[master d416a99] SD#678364. Edited contacts for service "ONLINE - IRIS Checks"
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]# pynag list object_type shortname contacts where host_name=vm-dbamon01 and service_description="ONLINE - IRIS Checks"
+object_type          shortname            contacts
+--------------------------------------------------------------------------------
+service              vm-dbamon01/ONLINE - IRIS Checks s.morozkin_email,s.morozkin_sms,cards_24x7_email,processing_duty_sms,s.b.antonov_email,s.b.antonov_sms,a.rodriges_email,a.rodriges_sms,s.mukhanov_email,s.mukhanov_sms,d.a.makeev_sms
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+
+
+

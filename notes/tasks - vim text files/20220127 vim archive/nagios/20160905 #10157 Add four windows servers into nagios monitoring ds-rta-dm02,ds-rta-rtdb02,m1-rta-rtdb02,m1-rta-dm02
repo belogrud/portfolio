@@ -1,0 +1,234 @@
+
+................................................................................
+
+Тема
+
+Мониторинг Nagios
+Номер
+
+10157
+Описание
+Коллеги, поставьте, пожалуйста, на мониторинг:
+ds-rta-dm02
+ds-rta-rtdb02
+m1-rta-rtdb02
+m1-rta-dm02
+
+Проверки:
+·         C:\ Drive Space
+·         CPU Load
+·         Server Health (iDrac)
+·         Memory Usage
+·         PING
+·         Service: Windows Time
+·         Uptime
++
+
+Сервера:
+
+m1-rta-rtdb02
+ds-rta-rtdb02
+Диски:
+
+D
+E
+F
+G
+H
+
+
+
+Сервера:
+
+m1-rta-dm02
+ds-rta-dm02
+Диски:
+
+D
+E
+F
+G
+H
+P
+
+
+Службы:
+
+1.       Service: SQL Agent - MSSQLSERVER
+
+2.       Service: SQL Server - MSSQLSERVER
+
+3.       Service: CommVault Client Event Manager - Instance001
+
+4.       Service: CommVault Communications Service - Instance001
+
+
+
+
+
+Семен Барков
+Главный системный администратор серверных платформ
+
+
+From: Barkov Semen Vladimirovich
+Sent: Friday, September 2, 2016 4:33 PM
+To: net-admins <net-admins@tinkoff.ru>; helpdesk_in <helpdesk_in@tinkoff.ru>
+Subject: Доступ до WSUS
+
+Просьба предоставить доступ с vlan 1685 до ds-wsus01 tcp 80
+
+
+Семен Барков
+Главный системный администратор серверных платформ
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/hw-win-template.cfg servers/dc-m1/windows/m1-rta-rtdb02.cfg
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/hw-win-template.cfg servers/dc-m1/windows/m1-rta-dm02.cfg
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/hw-win-template.cfg servers/dc-ds/windows/m1-rta-rtdb02.cfg
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/hw-win-template.cfg servers/dc-ds/windows/ds-rta-rtdb02.cfg
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/hw-win-template.cfg servers/dc-ds/windows/ds-rta-dm02.cfg
+[root@vm-vol-nag4-tst objects]# rm servers/dc-ds/windows/m1-rta-rtdb02.cfg
+rm: remove regular file `servers/dc-ds/windows/m1-rta-rtdb02.cfg'? y
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       modified:   servers/dc-ds/linux/db01/ds-db01-prod.cfg
+#       modified:   servers/dc-m1/linux/db01/m1-db01-prod.cfg
+#
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   servers/dc-m1/linux/sas/m1-sasfront02p.cfg
+#       modified:   servers/vmware/vm-ds-repo01.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       servers/dc-ds/windows/ds-rta-dm02.cfg
+#       servers/dc-ds/windows/ds-rta-rtdb02.cfg
+#       servers/dc-m1/windows/m1-rta-dm02.cfg
+#       servers/dc-m1/windows/m1-rta-rtdb02.cfg
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# for var1 in ds-rta-dm02 ds-rta-rtdb02 m1-rta-rtdb02 m1-rta-dm02 ; do host ${var1} ; done
+ds-rta-dm02.tcsbank.ru has address 10.216.85.61
+ds-rta-rtdb02.tcsbank.ru has address 10.216.85.51
+m1-rta-rtdb02.tcsbank.ru has address 10.216.85.52
+m1-rta-dm02.tcsbank.ru has address 10.216.85.62
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# vim -o servers/dc-m1/windows/m1-rta-dm02.cfg servers/dc-ds/windows/ds-rta-dm02.cfg servers/dc-m1/windows/m1-rta-rtdb02.cfg servers/dc-ds/windows/ds-rta-rtdb02.cfg
+
+
+define service{
+    use                      generic-service
+    host_name                m1-hadoop-wk09t
+        service_description           Server Health
+    check_command            check_dell_heavy
+}
+
+
+define service{
+    use                     generic-service
+    host_name               ds-sql01
+    service_description     Service: SQL Agent - MSSQLSERVER
+    check_command           check_nt!SERVICESTATE!-d SHOWALL -l SQLSERVERAGENT
+}
+define service{
+    use                     generic-service
+    host_name               ds-sql01
+    service_description     Service: SQL Server - MSSQLSERVER
+    check_command           check_nt!SERVICESTATE!-d SHOWALL -l MSSQLSERVER
+}
+define service{
+    use                     generic-service
+    host_name               ds-sql01
+    service_description     Service: CommVault Client Event Manager - Instance001
+    check_command           check_nt!SERVICESTATE!-d SHOWALL -l "GxCVD(Instance001)"
+    notifications_enabled   0
+}
+define service{
+    use                     generic-service
+    host_name               ds-sql01
+    service_description     Service: CommVault Communications Service - Instance001
+    check_command           check_nt!SERVICESTATE!-d SHOWALL -l "GxEvMgrC(Instance001)"
+    notifications_enabled   0
+}
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list members filename where contactgroup_name__contains="avaya"
+members              filename
+--------------------------------------------------------------------------------
+k.kovrigin_email, k.kovrigin_sms, d.churikov_sms, d.churikov_email, a.terentyev_email, a.terentyev_sms, v.dergunov_email, v.dergunov_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical /usr/local/nagios/etc/objects/groups/contact-group/avaya-admins.cfg
+v.dergunov,a.aronchikov,d.churikov,v.a.golubev,k.kovrigin,d.v.sokolov /usr/local/nagios/etc/objects/groups/contact-group/avaya-web-access.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# find groups/contact-group/ -name *avaya*
+groups/contact-group/avaya-admins.cfg
+groups/contact-group/avaya-web-access.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list members filename where contactgroup_name__contains="windows-admins"
+members              filename
+--------------------------------------------------------------------------------
+a.kuritcyn_sms, a.kuritcyn_email, a.terentyev_sms, a.terentyev_email, s.sotnikov_email, s.sotnikov_sms, Naumen_nag_request_email, a.solomkin_email, a.solomkin_sms, s.barkov_email, s.barkov_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical /usr/local/nagios/etc/objects/groups/contact-group/windows-admins.cfg
+a.kuritcyn_sms, a.terentyev_sms, s.sotnikov_sms, Naumen_nag_request_email, a.solomkin_sms, s.barkov_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical /usr/local/nagios/etc/objects/groups/contact-group/windows-admins-critical.cfg
+a.kuritcyn_sms, a.terentyev_sms, s.sotnikov_sms, a.solomkin_sms, s.barkov_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical, v.gnitiev_email, v.gnitiev_sms /usr/local/nagios/etc/objects/groups/contact-group/windows-admins-critical-nonaumen.cfg
+----------3 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list members filename where contactgroup_name__contains="servicedesk-duty-critical-group"
+members              filename
+--------------------------------------------------------------------------------
+servicedesk_duty_sms_FOR_DUTY_GROUP, servicedesk_duty_khutor_sms_FOR_DUTY_GROUP, servicedesk_duty_diapazon1_sms_FOR_DUTY_GROUP, servicedesk_duty_diapazon2_sms_FOR_DUTY_GROUP, servicedesk_duty_diapazon3_sms_FOR_DUTY_GROUP /usr/local/nagios/etc/objects/groups/contact-group/servicedesk-duty-group.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+    contact_groups                  servicedesk-duty-critical-group,windows-admins,avaya-admins
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git add servers/dc-ds/windows/ds-rta-dm02.cfg servers/dc-ds/windows/ds-rta-rtdb02.cfg servers/dc-m1/windows/m1-rta-dm02.cfg servers/dc-m1/windows/m1-rta-rtdb02.cfg
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDNew:10157. Create monitoring for four hosts." servers/dc-ds/windows/ds-rta-dm02.cfg servers/dc-ds/windows/ds-rta-rtdb02.cfg servers/dc-m1/windows/m1-rta-dm02.cfg servers/dc-m1/windows/m1-rta-rtdb02.cfg
+[master da7c86d] SDNew:10157. Create monitoring for four hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 4 files changed, 432 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-ds/windows/ds-rta-dm02.cfg
+ create mode 100644 objects/servers/dc-ds/windows/ds-rta-rtdb02.cfg
+ create mode 100644 objects/servers/dc-m1/windows/m1-rta-dm02.cfg
+ create mode 100644 objects/servers/dc-m1/windows/m1-rta-rtdb02.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 19, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (12/12), done.
+Writing objects: 100% (12/12), 1.78 KiB, done.
+Total 12 (delta 10), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   7dd21e0..da7c86d  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDNew#15991. Added group nice-rta-web-access to two hosts to allow their member configure downtime and so on." servers/dc-m1/windows/m1-rta-dm02.cfg servers/dc-ds/windows/ds-rta-dm02.cfg
+[master bc3672c] SDNew#15991. Added group nice-rta-web-access to two hosts to allow their member configure downtime and so on.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+

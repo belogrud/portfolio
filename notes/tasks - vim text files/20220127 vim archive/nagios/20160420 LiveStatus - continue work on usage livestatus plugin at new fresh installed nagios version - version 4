@@ -1,0 +1,370 @@
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst 20160420-1922]# git clone git@gitlab.tcsbank.ru:repositories/s.belogrud/nagios-livestatus-usage
+Initialized empty Git repository in /root/work/20160420-1922/nagios-livestatus-usage/.git/
+remote: Counting objects: 75, done.
+remote: Compressing objects: 100% (75/75), done.
+remote: Total 75 (delta 42), reused 0 (delta 0)
+Receiving objects: 100% (75/75), 12.08 KiB, done.
+Resolving deltas: 100% (42/42), done.
+[root@vm-vol-nag4-tst 20160420-1922]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst 20160420-1922]# ls nagios-livestatus-usage/
+email_notification_for_nagios_find_greenplum_hardware_check_service_with_critical_state.sh  nagios_find_services_with_critical_state_more_then_10_days.sh
+email_notification_for_nagios_find_hadoop_hardware_check_service_with_critical_state.sh     nagios_find_services_with_critical_state_more_then_8_hours_and_send_separate_emails.sh
+email_notification_for_nagios_find_services_with_critical_state_more_then_10_days.sh        nagios_find_services_with_critical_state_more_then_8_hours.sh
+email_notification_for_nagios_find_services_with_critical_state_more_then_8_hours.sh        nagios_print_date_when_service_has_critical_state.sh
+nagios_find_greenplum_hardware_check_service_with_critical_state.sh                         nagstatus.sh
+nagios_find_hadoop_hardware_check_service_with_critical_state.sh                            README
+[root@vm-vol-nag4-tst 20160420-1922]#
+
+
+................................................................................
+
+
+
+[root@vm-vol-nag4-tst 20160420-1922]# vim +view /usr/local/nagios/etc/nagios.cfg
+...
+#   broker_module=<modulepath> [moduleargs]
+
+#broker_module=/somewhere/module1.o
+#broker_module=/somewhere/module2.o arg1 arg2=3 debug=0
+#broker_module=/usr/local/nagios/bin/ndomod.o config_file=/usr/local/nagios/etc/ndomod.cfg
+broker_module=/usr/local/lib/mk-livestatus/livestatus.o /usr/local/nagios/var/rw/live
+
+...
+
+................................................................................
+
+#   Old config style.
+unixcat /var/spool/nagios/cmd/live
+
+#   New nagios v.4 style.
+/usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+
+................................................................................
+
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# ./nagios_find_services_with_critical_state_more_then_8_hours.sh
+Critical state duration for services without notification more then 8 hours.
+
+Host: vm-dmz-app16
+Service: Current Load
+Duration: 51 days 9 hours 2 minutes 33 seconds
+[root@vm-vol-nag4-tst nagios-livestatus-usage]#
+
+................................................................................
+
+#   Adopt scripts to new version of nagios (v.4).
+#
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# sed -e 's/ unixcat/ \/usr\/local\/bin\/unixcat/g' ./* | grep -e "unixcat" | vim -
+
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# sed -i -e 's/ \/var\/spool\/nagios\/cmd\/live/ \/usr\/local\/nagios\/var\/rw\/live/g' ./*
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# grep -e " /var/spool/nagios/cmd/live" ./*
+
+................................................................................
+
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# git commit -a --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "Adopt scripts to work with nagios v.4. Changed path to unixcat utility and socket file"
+[master d4988bb] Adopt scripts to work with nagios v.4. Changed path to unixcat utility and socket file
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 6 files changed, 12 insertions(+), 12 deletions(-)
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# git push
+Counting objects: 13, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 1.62 KiB, done.
+Total 8 (delta 7), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:repositories/s.belogrud/nagios-livestatus-usage
+   6bdc3d1..d4988bb  master -> master
+[root@vm-vol-nag4-tst nagios-livestatus-usage]#
+
+................................................................................
+
+
+#
+#   Configuring email sending.
+#
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# vim /etc/aliases
+...
+# Person who should get root's mail
+#root:          marc
+
+root: a.leonov@tinkoff.ru
+
+notification_via_nagios_livestatus_broker_module:       s.belogrud@tinkoff.ru
+
+"/etc/aliases" 101L, 1619C written
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# newaliases
+
+
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# tail /var/log/maillog
+Apr 25 06:00:01 vm-vol-nag4-tst postfix/qmgr[9190]: F312A581C43: from=<root@nag-tst.tinkoff.ru>, size=15743, nrcpt=1 (queue active)
+Apr 25 06:00:02 vm-vol-nag4-tst postfix/local[29915]: EA5965820C9: to=<root@nag-tst.tinkoff.ru>, orig_to=<root>, relay=local, delay=0.33, delays=0.31/0.01/0/0.01, dsn=2.0.0, status=sent (forwarded as F312A581C43)
+Apr 25 06:00:02 vm-vol-nag4-tst postfix/qmgr[9190]: EA5965820C9: removed
+Apr 25 06:00:07 vm-vol-nag4-tst postfix/smtp[29916]: F312A581C43: to=<a.leonov@tinkoff.ru>, orig_to=<root>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=5.4, delays=0/0.01/5/0.39, dsn=2.6.0, status=sent (250 2.6.0 <20160425030001.EA5965820C9@nag-tst.tinkoff.ru> [InternalId=58847334] Queued mail for delivery)
+Apr 25 06:00:07 vm-vol-nag4-tst postfix/qmgr[9190]: F312A581C43: removed
+Apr 25 17:09:46 vm-vol-nag4-tst postfix/pickup[20589]: 6EA6A5820C9: uid=0 from=<root>
+Apr 25 17:09:46 vm-vol-nag4-tst postfix/cleanup[3516]: 6EA6A5820C9: message-id=<20160425140946.6EA6A5820C9@nag-tst.tinkoff.ru>
+Apr 25 17:09:47 vm-vol-nag4-tst postfix/qmgr[9190]: 6EA6A5820C9: from=<root@nag-tst.tinkoff.ru>, size=544, nrcpt=1 (queue active)
+Apr 25 17:09:47 vm-vol-nag4-tst postfix/smtp[3521]: 6EA6A5820C9: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=1.4, delays=1/0.01/0.01/0.33, dsn=2.6.0, status=sent (250 2.6.0 <20160425140946.6EA6A5820C9@nag-tst.tinkoff.ru> [InternalId=58884657] Queued mail for delivery)
+Apr 25 17:09:47 vm-vol-nag4-tst postfix/qmgr[9190]: 6EA6A5820C9: removed
+[root@vm-vol-nag4-tst nagios-livestatus-usage]#
+
+
+[root@vm-vol-nag4-tst nagios]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" notification_via_nagios_livestatus_broker_module
+[root@vm-vol-nag4-tst nagios]#
+
+[root@vm-vol-nag4-tst nagios]# tail /var/log/maillog
+Apr 25 17:09:47 vm-vol-nag4-tst postfix/qmgr[9190]: 6EA6A5820C9: removed
+Apr 25 18:25:26 vm-vol-nag4-tst postfix/pickup[22244]: A7D0E5820C9: uid=0 from=<root>
+Apr 25 18:25:26 vm-vol-nag4-tst postfix/cleanup[14024]: A7D0E5820C9: message-id=<20160425152526.A7D0E5820C9@nag-tst.tinkoff.ru>
+Apr 25 18:25:26 vm-vol-nag4-tst postfix/qmgr[9190]: A7D0E5820C9: from=<root@nag-tst.tinkoff.ru>, size=590, nrcpt=1 (queue active)
+Apr 25 18:25:26 vm-vol-nag4-tst postfix/cleanup[14024]: BCF50581551: message-id=<20160425152526.A7D0E5820C9@nag-tst.tinkoff.ru>
+Apr 25 18:25:26 vm-vol-nag4-tst postfix/local[14041]: A7D0E5820C9: to=<notification_via_nagios_livestatus_broker_module@nag-tst.tinkoff.ru>, orig_to=<notification_via_nagios_livestatus_broker_module>, relay=local, delay=0.15, delays=0.12/0.02/0/0.01, dsn=2.0.0, status=sent (forwarded as BCF50581551)
+Apr 25 18:25:26 vm-vol-nag4-tst postfix/qmgr[9190]: BCF50581551: from=<root@nag-tst.tinkoff.ru>, size=772, nrcpt=1 (queue active)
+Apr 25 18:25:26 vm-vol-nag4-tst postfix/qmgr[9190]: A7D0E5820C9: removed
+Apr 25 18:25:27 vm-vol-nag4-tst postfix/smtp[14042]: BCF50581551: to=<s.belogrud@tinkoff.ru>, orig_to=<notification_via_nagios_livestatus_broker_module>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.5, delays=0.01/0.02/0.01/0.46, dsn=2.6.0, status=sent (250 2.6.0 <20160425152526.A7D0E5820C9@nag-tst.tinkoff.ru> [InternalId=58889814] Queued mail for delivery)
+Apr 25 18:25:27 vm-vol-nag4-tst postfix/qmgr[9190]: BCF50581551: removed
+[root@vm-vol-nag4-tst nagios]#
+
+
+................................................................................
+
+#
+#   As we can see, all scripts would be placed at "/opt/TCS/scripts/nagios/".
+#   Let's move them there.
+#
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# head -n 4 email_notification_for_nagios_find_services_with_critical_state_more_then_8_hours.sh
+#!/bin/bash
+
+email_body="$(/opt/TCS/scripts/nagios/nagios_find_services_with_critical_state_more_then_8_hours.sh)"
+
+[root@vm-vol-nag4-tst nagios-livestatus-usage]#
+
+[root@vm-vol-nag4-tst nagios-livestatus-usage]# mkdir -p /opt/TCS/scripts/nagios/
+[root@vm-vol-nag4-tst 20160420-1922]# mv nagios-livestatus-usage/* /opt/TCS/scripts/nagios/
+[root@vm-vol-nag4-tst 20160420-1922]# mv nagios-livestatus-usage/.git /opt/TCS/scripts/nagios/
+
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-prod etc]# ls -Alh /opt/TCS/scripts/nagios/
+ls: cannot access /opt/TCS/scripts/nagios/: No such file or directory
+[root@vm-vol-nag4-prod etc]# mkdir -p /opt/TCS/scripts/nagios/
+[root@vm-vol-nag4-prod etc]# cd !$
+cd /opt/TCS/scripts/nagios/
+[root@vm-vol-nag4-prod nagios]# git clone git@gitlab.tcsbank.ru:repositories/s.belogrud/nagios-livestatus-usage
+Initialized empty Git repository in /opt/TCS/scripts/nagios/nagios-livestatus-usage/.git/
+remote: Counting objects: 83, done.
+remote: Compressing objects: 100% (83/83), done.
+remote: Total 83 (delta 49), reused 0 (delta 0)
+Receiving objects: 100% (83/83), 12.96 KiB, done.
+Resolving deltas: 100% (49/49), done.
+[root@vm-vol-nag4-prod nagios]#
+
+[root@vm-vol-nag4-prod nagios]# mv nagios-livestatus-usage/{*,.git} .
+[root@vm-vol-nag4-prod nagios]# rmdir nagios-livestatus-usage/
+[root@vm-vol-nag4-prod nagios]#
+
+
+[root@vm-vol-nag4-prod nagios]# vim /etc/aliases
+...
+# Person who should get root's mail
+#root:          marc
+
+root: a.leonov@tinkoff.ru
+
+notification_via_nagios_livestatus_broker_module:       s.belogrud@tinkoff.ru
+
+"/etc/aliases" 101L, 1619C written
+[root@vm-vol-nag4-prod nagios]# newaliases
+
+[root@vm-vol-nag4-prod nagios]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" notification_via_nagios_livestatus_broker_module
+[root@vm-vol-nag4-prod nagios]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-prod nagios]# pwd
+/opt/TCS/scripts/nagios
+[root@vm-vol-nag4-prod nagios]# ll
+total 68
+-rwxr-xr-x 1 root root  317 Apr 25 18:43 email_notification_for_nagios_find_greenplum_hardware_check_service_with_critical_state.sh
+-rwxr-xr-x 1 root root  314 Apr 25 18:43 email_notification_for_nagios_find_hadoop_hardware_check_service_with_critical_state.sh
+-rwxr-xr-x 1 root root  341 Apr 25 18:43 email_notification_for_nagios_find_services_with_critical_state_more_then_10_days.sh
+-rwxr-xr-x 1 root root  341 Apr 25 18:43 email_notification_for_nagios_find_services_with_critical_state_more_then_8_hours.sh
+-rwxr-xr-x 1 root root 5885 Apr 25 18:43 nagios_find_greenplum_hardware_check_service_with_critical_state.sh
+-rwxr-xr-x 1 root root 5687 Apr 25 18:43 nagios_find_hadoop_hardware_check_service_with_critical_state.sh
+-rwxr-xr-x 1 root root 4331 Apr 25 18:43 nagios_find_services_with_critical_state_more_then_10_days.sh
+-rwxr-xr-x 1 root root 4836 Apr 25 18:43 nagios_find_services_with_critical_state_more_then_8_hours_and_send_separate_emails.sh
+-rwxr-xr-x 1 root root 4636 Apr 25 18:43 nagios_find_services_with_critical_state_more_then_8_hours.sh
+-rwxr-xr-x 1 root root 3219 Apr 25 18:43 nagios_print_date_when_service_has_critical_state.sh
+-rwxr-xr-x 1 root root  497 Apr 25 18:43 nagstatus.sh
+-rw-r--r-- 1 root root  220 Apr 25 18:43 README
+[root@vm-vol-nag4-prod nagios]#
+
+[root@vm-vol-nag4-prod nagios]# crontab -e -u root
+
+# For details see man 4 crontabs
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  *  command to be executed
+
+15 04 * * * /usr/local/nagios/libexec/opt/scripts/nagios_notes.sh
+15 05 * * * /usr/local/nagios/libexec/opt/scripts/make_notes.sh
+00 04 * * * /root/.pyenv/versions/nagnotes/bin/python /usr/local/nagios/libexec/opt/scripts/vmware_notes/nagnotes.py
+00 06 * * * rsync -avz /tmp/notes/total/ /usr/local/nagios/share/notes/
+* * * * * /usr/local/nagios/libexec/opt/scripts/nagstatus.sh
+00 16 * * * /usr/local/nagios/libexec/opt/scripts/git_puller.sh
+
+01 11 * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_services_with_critical_state_more_then_8_hours.sh
+02 11 * * * /opt/TCS/scripts/nagios/nagios_find_services_with_critical_state_more_then_8_hours_and_send_separate_emails.sh
+*/10 * * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_greenplum_hardware_check_service_with_critical_state.sh
+*/10 * * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_hadoop_hardware_check_service_with_critical_state.sh
+
+~
+"/tmp/crontab.HffKvv" 23L, 1320C written
+crontab: installing new crontab
+[root@vm-vol-nag4-prod nagios]#
+
+................................................................................
+................................................................................
+................................................................................
+
+#
+#   Here is a main way how to find objects (host or service) with disabled notification via Web GUI.
+#   This means that someone manually changed this option and possible forget about it.
+#
+
+[root@vm-vol-nag4-prod nagios]# echo -e "GET hosts\nColumns: host_name modified_attributes_list\nFilter: modified_attributes ~ notifications_enabled\nFilter: notifications_enabled = 0" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+nice-log05;notifications_enabled
+[root@vm-vol-nag4-prod nagios]#
+
+[root@vm-vol-nag4-prod nagios]# echo -e "GET services\nColumns: host_name description modified_attributes_list\nFilter: modified_attributes ~ notifications_enabled\nFilter: notifications_enabled = 0" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+AT2-PDU-OF3-L;humidity PERCENT;notifications_enabled
+D1-PDU-OF2-L;humidity PERCENT;notifications_enabled
+HT3-PDU-R3-L;humidity PERCENT;notifications_enabled
+HT4-PDU-R2-R;humidity PERCENT;notifications_enabled
+ds-sw01;TRAP;notifications_enabled
+nice-log05;C:\ Drive Space;notifications_enabled
+nice-log05;CPU Load;notifications_enabled
+nice-log05;D:\ Drive Space;notifications_enabled
+nice-log05;HP System Health Application;notifications_enabled
+nice-log05;Memory Usage;notifications_enabled
+nice-log05;PING;notifications_enabled
+nice-log05;RTP Traffic Bytes/sec;notifications_enabled
+nice-log05;RTP Traffic Packets/sec;notifications_enabled
+nice-log05;Service: Windows Time;notifications_enabled
+nice-log05;Uptime;notifications_enabled
+vm-acme-mon02;TRAP;notifications_enabled
+[root@vm-vol-nag4-prod nagios]#
+
+................................................................................
+................................................................................
+................................................................................
+................................................................................
+
+#   20160603
+#
+
+#   Found difficulties.
+#   One script gives unusual results
+#
+
+
+-----Original Message-----
+From: root@nagios.tinkoff.ru [mailto:root@nagios.tinkoff.ru]
+Sent: Friday, June 03, 2016 10:04 AM
+To: notification_via_nagios_livestatus_broker_module_services_with_critical_state_more_then_8_hours_and_have_no_downtime_acknowledge_comment@nagios.tinkoff.ru
+Subject: Nagios notification. Services with critical state duration, and without comment, downtime, acknowledge, have more than 8 hours.
+
+Critical state duration, for services without comment, downtime, acknowledge, has more than 8 hours.
+
+Host: m1-msk-mail1308
+Service: Memory Usage
+Duration: 15 hours 12 minutes 1 second
+
+Host: vm-dbamon01
+Service: RATES - No Rates from Central Bank
+Duration: 14 hours 39 minutes 27 seconds
+
+Host: vm-sblapp01at
+Service: CPU Load
+Duration: 15 hours 51 minutes 49 seconds
+
+Host: vm-wof-app01t
+Service: CPU Load
+Duration: 10 hours 36 minutes 15 seconds
+
+
+
+-----Original Message-----
+From: root@nagios.tinkoff.ru [mailto:root@nagios.tinkoff.ru]
+Sent: Friday, June 03, 2016 10:01 AM
+To: notification_via_nagios_livestatus_broker_module_services_with_critical_state_more_then_8_hours_and_send_separate_emails_to_servicedesk@nagios.tinkoff.ru
+Subject: Nagios notification. Host: vm-wmq-app01. Service: /VAR Partition.
+
+Critical state duration, for services without comment, downtime, acknowledge, has more than 8 hours.
+
+Host: vm-wmq-app01
+Service: /VAR Partition
+Duration: 94 days 19 hours 5 minutes 33 seconds
+
+
+
+
+-----Original Message-----
+From: root@nagios.tinkoff.ru [mailto:root@nagios.tinkoff.ru]
+Sent: Friday, June 03, 2016 10:01 AM
+To: notification_via_nagios_livestatus_broker_module_services_with_critical_state_more_then_8_hours_and_send_separate_emails_to_servicedesk@nagios.tinkoff.ru
+Subject: Nagios notification. Host: vm-wmq-app02. Service: /VAR Partition.
+
+Critical state duration, for services without comment, downtime, acknowledge, has more than 8 hours.
+
+Host: vm-wmq-app02
+Service: /VAR Partition
+Duration: 79 days 6 hours 3 minutes 49 seconds
+
+
+
+
+-----Original Message-----
+From: root@nagios.tinkoff.ru [mailto:root@nagios.tinkoff.ru]
+Sent: Friday, June 03, 2016 10:01 AM
+To: notification_via_nagios_livestatus_broker_module_services_with_critical_state_more_then_8_hours_and_send_separate_emails_to_servicedesk@nagios.tinkoff.ru
+Subject: Nagios notification. Host: vm-wmq-app02. Service: /OPT Partition.
+
+Critical state duration, for services without comment, downtime, acknowledge, has more than 8 hours.
+
+Host: vm-wmq-app02
+Service: /OPT Partition
+Duration: 79 days 6 hours 8 minutes 49 seconds
+
+................................................................................
+
+[root@vm-vol-nag4-prod nagios]# crontab -e -u root
+...
+04 23,10,17 * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_services_with_critical_state_more_then_8_hours_and_have_no_downtime_acknowledge_comment.sh
+02 23,10,17 * * * /opt/TCS/scripts/nagios/nagios_find_services_with_critical_state_more_then_8_hours_and_send_separate_emails_to_servicedesk.sh
+
+
+
+
+
+
+
+
+
+

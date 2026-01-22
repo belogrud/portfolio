@@ -1,0 +1,470 @@
+
+
+
+[2017-10-03 18:25.25]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b find . -type f -iname *mvno-elb01p*
+./hieradata/nodes/ds-mvno-elb01p.tcsbank.ru.yaml
+./hieradata/nodes/m1-mvno-elb01p.tcsbank.ru.yaml
+
+
+[s.belogrud.TCS4357] b vim -o $(find . -type f -iname *mvno-elb01p*)
+
+
+profile::nginx::stream_log_format::log_format:
+  stream_common: '[$time_local] protocol="$protocol" server_addr="$server_addr" server_port="$server_port" status="$status" remote_addr="$remote_addr" remote_port="$remote_port" bytes_sent="$bytes_sent" bytes_received="$bytes_received" upstream_connect_time="$upstream_connect_time" upstream_bytes_received="$upstream_bytes_received" session_time="$session_time"'
+
+nginx::stream: true
+nginx::confd_purge: true
+
+nginx::nginx_upstreams:
+  'msg__dekking_3490':
+    ensure: present
+    upstream_context: stream
+    members:
+      - ds-mvno-msg01p.tcsbank.ru:3490
+      - m1-mvno-msg01p.tcsbank.ru:3490
+
+nginx::nginx_streamhosts:
+  'msg_dekking_tcp':
+    ensure: present
+    listen_port: 3490
+
+    listen_options: 'so_keepalive=off'
+    ipv6_enable: false
+    proxy: 'msg__dekking_3490'
+    raw_prepend:
+      - 'access_log /var/log/nginx/msg__dekking_3490.log stream_common;'
+
+
+
+
+
+[2017-10-03 18:28.16]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b grep -irle "mvno-elb01p" ./*
+./.git/index
+./manifests/01_mvno.pp
+
+
+./manifests/01_mvno.pp
+...
+node /^(m1|ds)-mvno-elb01p\.tcsbank\.ru$/ {
+  include role::mvno_load_balancer
+  }
+...
+
+................................................................................
+................................................................................
+
+
+[2017-10-03 18:33.33]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b find . -type f -iname *nrpe*
+./site/profile/manifests/tcs_nrpe.pp
+
+[2017-10-03 18:33.56]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b grep -irle "tcs_nrpe" ./*
+./.git/index
+./.git/objects/pack/pack-23cc1c3bde248e71a711379ffc8d13a1bf32b13c.pack
+./Puppetfile
+./site/profile/manifests/tcs_nrpe.pp
+./site/role/manifests/mvno_ipsec.pp
+./site/role/manifests/mvno_ota_app.pp
+
+[2017-10-03 18:34.25]  ~/work/puppet/control/control
+[s.belogrud.TCS4358] b cat ./site/role/manifests/mvno_ipsec.pp
+class role::mvno_ipsec {
+  include profile::base
+  include profile::accounts::aglaz
+  include profile::accounts::daaleksandrov
+  include profile::accounts::extasavich
+  include profile::accounts::extekozhevnikova
+  include profile::tcs_nrpe
+}
+
+[2017-10-03 18:34.47]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b cat ./site/role/manifests/mvno_ota_app.pp
+class role::mvno_ota_app {
+        include profile::base
+        include profile::java
+        include profile::mvno_ota_app
+        include profile::accounts::a1s
+        include profile::accounts::asusoev
+        include profile::accounts::smorozkin
+        include profile::accounts::avmironov
+        include profile::tcs_nrpe
+}
+
+[2017-10-03 18:35.04]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b cat ./site/role/manifests/mvno_load_balancer.pp
+class role::mvno_load_balancer {
+  include profile::base
+  include profile::mvno_load_balancer
+}
+
+................................................................................
+................................................................................
+
+#
+#	20171004
+#
+[2017-10-04 11:07.03]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b vim ./site/role/manifests/mvno_load_balancer.pp
+
+[2017-10-04 11:08.06]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git status
+On branch production
+Your branch is up-to-date with 'origin/production'.
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   site/role/manifests/mvno_load_balancer.pp
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+[2017-10-04 11:08.19]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#702973. Make nagios monitoring for hosts." site/role/manifests/mvno_load_balancer.pp
+[production b4ff6ef] SD#702973. Make nagios monitoring for hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ Committer: U-TCSBANK\s.belogrud <s.belogrud@TCS4357.tcsbank.ru>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 1 insertion(+)
+
+[2017-10-04 11:10.06]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b
+
+
+[2017-10-04 11:10.57]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git pull && git push
+Already up-to-date.
+warning: push.default is unset; its implicit value has changed in
+Git 2.0 from 'matching' to 'simple'. To squelch this message
+and maintain the traditional behavior, use:
+
+  git config --global push.default matching
+
+To squelch this message and adopt the new behavior now, use:
+
+  git config --global push.default simple
+
+When push.default is set to 'matching', git will push local branches
+to the remote branches that already exist with the same name.
+
+Since Git 2.0, Git defaults to the more conservative 'simple'
+behavior, which only pushes the current branch to the corresponding
+remote branch that 'git pull' uses to update the current branch.
+
+See 'git help config' and search for 'push.default' for further information.
+(the 'simple' mode was introduced in Git 1.7.11. Use the similar mode
+'current' instead of 'simple' if you sometimes use older versions of Git)
+
+Counting objects: 6, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (6/6), 534 bytes | 0 bytes/s, done.
+Total 6 (delta 3), reused 0 (delta 0)
+remote: GitLab: You are not allowed to push code to protected branches on this project.
+To git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+ ! [remote rejected] production -> production (pre-receive hook declined)
+error: failed to push some refs to 'git@vm-gitlab01.tcsbank.ru:Puppet/control.git'
+
+[2017-10-04 11:11.08]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b
+
+
+[2017-10-04 11:11.08]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git config user.name "s.belogrud"
+
+[2017-10-04 11:13.47]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git config user.email "s.belogrud@tinkoff.ru"
+
+[2017-10-04 11:14.04]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b
+
+[s.belogrud.TCS4357] b vim  control/control/.git/config
+
+[core]
+        repositoryformatversion = 0
+        filemode = false
+        bare = false
+        logallrefupdates = true
+        ignorecase = true
+[remote "origin"]
+        url = git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+        fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "production"]
+        remote = origin
+        merge = refs/heads/production
+[user]
+        name = s.belogrud
+        email = s.belogrud@tinkoff.ru
+
+
+
+[s.belogrud.TCS4357] b git remote add origin git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+fatal: remote origin already exists.
+
+................................................................................
+
+
+[2017-10-04 11:31.44]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b cat ./site/role/manifests/mvno_load_balancer.pp
+class role::mvno_load_balancer {
+  include profile::base
+  include profile::mvno_load_balancer
+  include profile::tcs_nrpe
+}
+
+[2017-10-04 11:32.17]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git --no-pager log -n 2
+commit b4ff6ef3449838afec487ff6a93a82c81550120c
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Oct 4 11:10:06 2017 +0300
+
+    SD#702973. Make nagios monitoring for hosts.
+
+commit f6014f529b343eb82d50ca7b8468406161a15a4f
+Merge: 5876404 9400bdb
+Author: Кирилочкин Андрей Викторович <a.kirilochkin@tinkoff.ru>
+Date:   Tue Oct 3 17:20:14 2017 +0300
+
+    Merge branch 'akirilochkin' into 'production'
+
+    Fix
+
+    See merge request !263
+
+[2017-10-04 11:32.29]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git checkout f6014f529b343eb82d50ca7b8468406161a15a4f
+Previous HEAD position was b4ff6ef... SD#702973. Make nagios monitoring for hosts.
+HEAD is now at f6014f5... Merge branch 'akirilochkin' into 'production'
+
+[2017-10-04 11:33.17]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b cat ./site/role/manifests/mvno_load_balancer.pp
+class role::mvno_load_balancer {
+  include profile::base
+  include profile::mvno_load_balancer
+}
+
+................................................................................
+
+[2017-10-04 11:33.58]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git pull origin master
+From vm-gitlab01.tcsbank.ru:Puppet/control
+ * branch            master     -> FETCH_HEAD
+Already up-to-date.
+
+................................................................................
+
+[2017-10-04 11:38.04]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch SD702973
+
+[2017-10-04 11:39.47]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git checkout SD702973
+Switched to branch 'SD702973'
+
+[s.belogrud.TCS4357] b vim ./site/role/manifests/mvno_load_balancer.pp
+
+[2017-10-04 11:46.58]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git status
+On branch SD702973
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   site/role/manifests/mvno_load_balancer.pp
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+[2017-10-04 11:47.03]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#702973. Make nagio
+s monitoring for hosts." site/role/manifests/mvno_load_balancer.pp
+[SD702973 ae58cfc] SD#702973. Make nagios monitoring for hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 file changed, 1 insertion(+)
+
+................................................................................
+
+[2017-10-04 11:47.42]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git push origin SD702973
+      0 [main] git 21908 fork: child -1 - forked process 20196 died unexpectedly, retry 36000, exit code 0xC0000142, errno 11
+error: cannot fork() for pack-objects: Resource temporarily unavailable
+fatal: git pack-objects failed: Resource temporarily unavailable
+
+[2017-10-04 11:49.38]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git status
+On branch SD702973
+nothing to commit, working directory clean
+
+[2017-10-04 11:50.18]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch
+* SD702973
+  production
+
+[2017-10-04 11:51.33]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b
+
+................................................................................
+
+[2017-10-04 11:52.17]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git push SD702973 SD702973
+fatal: 'SD702973' does not appear to be a git repository
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+
+[2017-10-04 11:55.52]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git checkout master
+Branch master set up to track remote branch master from origin.
+Switched to a new branch 'master'
+
+[2017-10-04 11:56.30]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch
+  SD702973
+* master
+  production
+
+[2017-10-04 11:56.34]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git push SD702973 SD702973
+fatal: 'SD702973' does not appear to be a git repository
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+
+[2017-10-04 11:57.58]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git push origin SD702973
+      0 [main] bash 1088 fork: child -1 - forked process 18860 died unexpectedly, retry 36000, exit code 0xC0000142, errno 11
+/bin/ssh: fork: retry: Resource temporarily unavailable
+Counting objects: 6, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (6/6), 510 bytes | 0 bytes/s, done.
+Total 6 (delta 3), reused 0 (delta 0)
+remote:
+remote: To create a merge request for SD702973, visit:
+remote:   https://vm-gitlab01.tcsbank.ru/Puppet/control/merge_requests/new?merge_request%5Bsource_branch%5D=SD702973
+remote:
+To git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+ * [new branch]      SD702973 -> SD702973
+
+[2017-10-04 11:58.21]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b
+
+................................................................................
+
+
+#
+#	I need to go to puppet server and execute follow command.
+#
+[root@vm-puppetmaster02p ~]# /opt/puppetlabs/puppet/bin/r10k deploy environment
+WARN     -> Environment "patch-1" contained non-word characters, correcting name to patch_1
+WARN     -> Environment "patch-2" contained non-word characters, correcting name to patch_2
+WARN     -> Environment "patch-3" contained non-word characters, correcting name to patch_3
+WARN     -> Environment "patch-4" contained non-word characters, correcting name to patch_4
+WARN     -> Environment "patch-5" contained non-word characters, correcting name to patch_5
+[root@vm-puppetmaster02p ~]#
+
+
+#
+#	Then go to target server.
+#	Try to apply my new branch, but without changes. It's for test.
+#	And then if everything is ok, execute same command without "--noop".
+
+[root@m1-mvno-elb01p ~]# puppet agent -t --environment SD702973 --noop
+[root@m1-mvno-elb01p ~]# puppet agent -t --environment SD702973
+
+#
+#	Then it's need to go to web interface of gitlab and press merge.
+#	Choose than again to apply and probably to remove my branch.
+#
+
+................................................................................
+
+
+[2017-10-04 14:54.14]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch
+  SD702973
+  master
+* production
+
+[2017-10-04 14:54.17]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git --no-pager log -n 2
+commit b4ff6ef3449838afec487ff6a93a82c81550120c
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Oct 4 11:10:06 2017 +0300
+
+    SD#702973. Make nagios monitoring for hosts.
+
+commit f6014f529b343eb82d50ca7b8468406161a15a4f
+Merge: 5876404 9400bdb
+Author: Кирилочкин Андрей Викторович <a.kirilochkin@tinkoff.ru>
+Date:   Tue Oct 3 17:20:14 2017 +0300
+
+    Merge branch 'akirilochkin' into 'production'
+
+    Fix
+
+    See merge request !263
+
+[2017-10-04 14:54.33]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch -d SD702973
+error: The branch 'SD702973' is not fully merged.
+If you are sure you want to delete it, run 'git branch -D SD702973'.
+
+[2017-10-04 14:57.55]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch -D SD702973
+Deleted branch SD702973 (was ae58cfc).
+
+[2017-10-04 14:58.15]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch
+      0 [main] -bash 3636 fork: child -1 - forked process 18860 died unexpectedly, retry 36000, exit code 0xC0000142, errno 11
+-bash: fork: retry: Resource temporarily unavailable
+  master
+* production
+
+[2017-10-04 14:58.26]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git branch -d master
+Deleted branch master (was c891ffe).
+
+[2017-10-04 14:58.32]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git remote update
+Fetching origin
+
+[2017-10-04 14:58.50]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b git --no-pager log -n 2
+commit b4ff6ef3449838afec487ff6a93a82c81550120c
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Oct 4 11:10:06 2017 +0300
+
+    SD#702973. Make nagios monitoring for hosts.
+
+commit f6014f529b343eb82d50ca7b8468406161a15a4f
+Merge: 5876404 9400bdb
+Author: Кирилочкин Андрей Викторович <a.kirilochkin@tinkoff.ru>
+Date:   Tue Oct 3 17:20:14 2017 +0300
+
+    Merge branch 'akirilochkin' into 'production'
+
+    Fix
+
+    See merge request !263
+
+[2017-10-04 14:58.55]  ~/work/puppet/control/control
+[s.belogrud.TCS4357] b
+
+................................................................................
+
+
+
+

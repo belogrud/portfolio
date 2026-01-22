@@ -1,0 +1,350 @@
+
+................................................................................
+
+Добрый день!
+
+ Коллеги, сейчас на машинах с приложением ONLINE ISS  IP 10.217.8.11, 10.217.8.12, 10.217.9.11  есть алерт Log Size Check. Как мы недавно выяснили, он проверяет наличие и размер одного лишь лог файла, спрятанного в глубине директорий.
+ Нам необходимо внести изменения в этот алерт. Нужно проверять не размер этого файла, а общий размер папки /home/online/traces/,  – не выходит ли он за предельно допустимый. Кроме того необходимо проверять папку /home/online/traces/ и файл /home/online/logs/log на наличие файлов размером более 1.7 Гб. При размере файла 1.7 Гб – критикал.
+ Проверять это необходимо по той причине, что онлайн не может писать в файлы, размер которых более 2 Гб.
+
+
+   Кураков Максим
+   Инженер процессинга
+
+................................................................................
+
+[root@m1-pr-onl01 ~]# cat /etc/nrpe.d/check_log_size.cfg
+command[check_log_size]=/opt/TCS/scripts/nagios/plugins/check_log_size.sh
+[root@m1-pr-onl01 ~]# cat /opt/TCS/scripts/nagios/plugins/check_log_size.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+
+RESULT=$(/usr/bin/du -s /home/online/logs/log | cut -f 1)
+
+#WARNING=${WARNING:-$DEF_MIN}
+#CRITICAL=${CRITICAL:-$DEF_MAX}
+
+#RESULT=2000001
+
+if [ $RESULT -lt 1900000 ]; then
+  echo "LOG SIZE OK - count $RESULT | Count=$RESULT"
+  exit $STATE_OK
+elif [ $RESULT -ge 1900000 ]; then
+  echo "LOG SIZE CRITICAL - count $RESULT | Count=$RESULT"
+  exit $STATE_CRITICAL
+else
+  echo "UNKNOWN"
+  exit $STATE_UNKNOWN
+fi
+[root@m1-pr-onl01 ~]#
+
+................................................................................
+
+[root@m1-pr-onl01 plugins]# cp check_log_size.sh check_folder_size.sh
+
+[root@m1-pr-onl01 plugins]# du -s /home/online/traces/
+90828   /home/online/traces/
+[root@m1-pr-onl01 plugins]#
+
+[root@m1-pr-onl01 plugins]# ls -Alh /home/online/logs/log
+-rw-rw-r-- 1 online online 26K Apr 27 03:04 /home/online/logs/log
+[root@m1-pr-onl01 plugins]#
+
+
+[bsv@m1-pr-onl01 ~]$ bc <<<  "scale=2;( 1.7 * 1024 )"
+1740.8
+[bsv@m1-pr-onl01 ~]$
+
+
+[root@m1-pr-onl01 plugins]# find /home/online/traces/ -type f -size +1M | wc -l
+4
+[root@m1-pr-onl01 plugins]# find /home/online/traces/ -type f -size +100M | wc -l
+0
+[root@m1-pr-onl01 plugins]#
+
+
+[root@m1-pr-onl01 plugins]# find /home/online/logs/ -type f -name log -size +1M
+[root@m1-pr-onl01 plugins]#
+[root@m1-pr-onl01 plugins]# find /home/online/logs/log -type f -size +1k
+/home/online/logs/log
+[root@m1-pr-onl01 plugins]#
+
+
+[root@m1-pr-onl01 plugins]# ./check_size_files.sh
+./check_size_files.sh: line 22: syntax error near unexpected token `${amount_of_files_with_big_size_inside_folder}'
+./check_size_files.sh: line 22: `if [( ${amount_of_files_with_big_size_inside_folder} -eq 0 ) -a (${test_size_one_file} -eq 0) ] ; then'
+[root@m1-pr-onl01 plugins]#
+
+................................................................................
+
+[root@m1-pr-onl01 plugins]# pwd
+/opt/TCS/scripts/nagios/plugins
+[root@m1-pr-onl01 plugins]# ll
+total 236
+-rwxr-xr-x 1 root root    148 Feb 13  2014 check_compress_size.sh
+-rwxr-xr-x 1 root root    473 Feb 14  2014 check_cron_errors.sh
+-rwxr-xr-x 1 root root   1446 Oct  1  2015 check_heartbeat
+-rwxr-xr-x 1 root root 199962 Jul 10  2015 check_logfiles
+-rw-r--r-- 1 root root    184 Jul 21  2015 check_logfiles-ha-log.cfg
+-rwxr-xr-x 1 root root    481 Feb 14  2014 check_log_size.sh
+-rwxr-xr-x 1 root root   1664 May  2 17:36 check_size_files.sh
+-rwxr-xr-x 1 root root    457 May  2 17:53 check_size_folder.sh
+-rwxr-xr-x 1 root root   5178 Jul 10  2015 pwd-expire.sh
+[root@m1-pr-onl01 plugins]#
+
+[root@m1-pr-onl01 plugins]# cat check_size_files.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+big_size="1740"
+message_text=""
+
+let amount_of_files_with_big_size_inside_folder=$(find /home/online/traces/ -type f -size +${big_size}M | wc -l)
+if [ ${amount_of_files_with_big_size_inside_folder} -gt 0 ] ; then message_text_1="A folder /home/online/traces/ contains file or files with size greater than ${big_size}MB." ; fi
+let test_size_one_file=$(find /home/online/logs/log -type f -size +${big_size}M | wc -l)
+if [ ${test_size_one_file} -gt 0 ] ; then message_text_2="A file /home/online/logs/log has size greater than ${big_size}MB." ; fi
+
+if [ \( ${amount_of_files_with_big_size_inside_folder} -eq 0 \) -a \( ${test_size_one_file} -eq 0 \) ] ; then
+        message_text="A folder's files /home/online/traces/ and a file /home/online/logs/log have size less than ${big_size}MB. | Count=0"
+        echo "${message_text}"
+        exit $STATE_OK
+    elif [ \( ${amount_of_files_with_big_size_inside_folder} -gt 0 \) -a \( ${test_size_one_file} -gt 0 \) ] ; then
+        message_text="${message_text_1} ${message_text_2} | Count=$(expr ${amount_of_files_with_big_size_inside_folder} + ${test_size_one_file})"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${amount_of_files_with_big_size_inside_folder} -gt 0 ] ; then
+        message_text="${message_text_1} | Count=${amount_of_files_with_big_size_inside_folder}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${test_size_one_file} -gt 0 ] ; then
+        message_text="${message_text_2} | Count=${test_size_one_file}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    else
+        message_text="UNKNOWN"
+        echo "${message_text}"
+        exit $STATE_UNKNOWN
+fi
+[root@m1-pr-onl01 plugins]#
+
+
+[root@m1-pr-onl01 plugins]# cat check_size_folder.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+
+RESULT=$(/usr/bin/du -s /home/online/traces/ | cut -f 1)
+
+
+if [ $RESULT -lt 1900000 ]; then
+  echo "A folder /home/online/traces/ has size OK - ${RESULT}KB. | Count=$RESULT"
+  exit $STATE_OK
+elif [ $RESULT -ge 1900000 ]; then
+  echo "Folder /home/online/traces/ has size CRITICAL - ${RESULT}KB. | Count=$RESULT"
+  exit $STATE_CRITICAL
+else
+  echo "UNKNOWN"
+  exit $STATE_UNKNOWN
+fi
+[root@m1-pr-onl01 plugins]#
+
+
+................................................................................
+
+[root@m1-pr-onl01 plugins]# host 10.217.8.11
+11.8.217.10.in-addr.arpa domain name pointer m1-pr-onl01.tcsbank.ru.
+[root@m1-pr-onl01 plugins]# host  10.217.8.12
+12.8.217.10.in-addr.arpa domain name pointer m1-pr-onl02.tcsbank.ru.
+[root@m1-pr-onl01 plugins]# host 10.217.9.11
+11.9.217.10.in-addr.arpa domain name pointer ds-pr-onl01.tcsbank.ru.
+[root@m1-pr-onl01 plugins]#
+
+................................................................................
+
+[root@m1-pr-onl01 plugins]# vim /etc/nrpe.d/check_log_size.cfg
+
+[root@m1-pr-onl01 plugins]# cat /etc/nrpe.d/check_log_size.cfg
+command[check_log_size]=/opt/TCS/scripts/nagios/plugins/check_log_size.sh
+command[check_size_files]=/opt/TCS/scripts/nagios/plugins/check_size_files.sh
+command[check_size_folder]=/opt/TCS/scripts/nagios/plugins/check_size_folder.sh
+[root@m1-pr-onl01 plugins]#
+
+[root@m1-pr-onl01 plugins]# lsb_release -a
+LSB Version:    :core-3.1-ia32:core-3.1-noarch:graphics-3.1-ia32:graphics-3.1-noarch
+Distributor ID: RedHatEnterpriseServer
+Description:    Red Hat Enterprise Linux Server release 5.5 (Tikanga)
+Release:        5.5
+Codename:       Tikanga
+[root@m1-pr-onl01 plugins]#
+
+[root@m1-pr-onl01 plugins]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@m1-pr-onl01 plugins]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="m1-pr-onl01" --quiet                                                                                    /usr/local/nagios/etc/objects/servers/dc-m1/linux/processing/online/m1-pr-onl01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim $(pynag list filename where object_type=host and host_name__contains="m1-pr-onl01" --quiet)
+...
+define service{
+    use                     generic-service
+    host_name               m1-pr-onl01
+    service_description     Check Size Files
+    normal_check_interval   5
+    retry_check_interval    1
+    check_command           check_nrpe!check_size_files
+    contact_groups          linux-admins, processing-admins-sd186883
+    contacts                processing_duty_sms
+}
+define service{
+    use                     generic-service
+    host_name               m1-pr-onl01
+    service_description     Check Size Folder
+    normal_check_interval   5
+    retry_check_interval    1
+    check_command           check_nrpe!check_size_folder
+    contact_groups          linux-admins, processing-admins-sd186883
+    contacts                processing_duty_sms
+}
+...
+
+................................................................................
+
+[root@m1-pr-onl01 plugins]# bc <<<  "scale=2;( 1.5 * 1024 )"
+1536.0
+[root@m1-pr-onl01 plugins]#
+
+................................................................................
+
+[root@m1-pr-onl01 plugins]# cat ./check_size_files.new.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+big_size="1536"
+message_text=""
+
+let amount_of_files_with_big_size_inside_folder_1=$(find /home/online/ -maxdepth 4 -type f -size +${big_size}M | wc -l)
+if [ ${amount_of_files_with_big_size_inside_folder_1} -gt 0 ] ; then message_text_1="A folder /home/online/ contains file or files with size greater than ${big_size}MB." ; fi
+
+let amount_of_files_with_big_size_inside_folder_2=$(find /opt/online/traces/ -maxdepth 4 -type f -size +${big_size}M | wc -l)
+if [ ${amount_of_files_with_big_size_inside_folder_2} -gt 0 ] ; then message_text_2="A folder /opt/online/traces/ contains file or files with size greater than ${big_size}MB." ; fi
+
+if [ \( ${amount_of_files_with_big_size_inside_folder_1} -eq 0 \) -a \( ${amount_of_files_with_big_size_inside_folder_2} -eq 0 \) ] ; then
+        message_text="A folders /home/online/ and /opt/online/traces/ have size less than ${big_size}MB. | Count=0"
+        echo "${message_text}"
+        exit $STATE_OK
+    elif [ \( ${amount_of_files_with_big_size_inside_folder_1} -gt 0 \) -a \( ${amount_of_files_with_big_size_inside_folder_2} -gt 0 \) ] ; then
+        message_text="${message_text_1} ${message_text_2} | Count=$(expr ${amount_of_files_with_big_size_inside_folder_1} + ${amount_of_files_with_big_size_inside_folder_2})"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${amount_of_files_with_big_size_inside_folder_1} -gt 0 ] ; then
+        message_text="${message_text_1} | Count=${amount_of_files_with_big_size_inside_folder_1}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    elif [ ${amount_of_files_with_big_size_inside_folder_2} -gt 0 ] ; then
+        message_text="${message_text_2} | Count=${amount_of_files_with_big_size_inside_folder_2}"
+        echo "${message_text}"
+        exit $STATE_CRITICAL
+    else
+        message_text="UNKNOWN"
+        echo "${message_text}"
+        exit $STATE_UNKNOWN
+fi
+
+[root@m1-pr-onl01 plugins]#
+
+................................................................................
+
+[root@m1-pr-onl01 plugins]# mv check_size_files{,.version.1}.sh && mv check_size_files{.new,}.sh
+[root@m1-pr-onl01 plugins]# ll
+total 240
+-rwxr-xr-x 1 root root    148 Feb 13  2014 check_compress_size.sh
+-rwxr-xr-x 1 root root    473 Feb 14  2014 check_cron_errors.sh
+-rwxr-xr-x 1 root root   1446 Oct  1  2015 check_heartbeat
+-rwxr-xr-x 1 root root 199962 Jul 10  2015 check_logfiles
+-rw-r--r-- 1 root root    184 Jul 21  2015 check_logfiles-ha-log.cfg
+-rwxr-xr-x 1 root root    481 Feb 14  2014 check_log_size.sh
+-rwxr-xr-x 1 root root   1878 May  2 19:09 check_size_files.sh
+-rwxr-xr-x 1 root root   1664 May  2 17:36 check_size_files.version.1.sh
+-rwxr-xr-x 1 root root    457 May  2 17:53 check_size_folder.sh
+-rwxr-xr-x 1 root root   5178 Jul 10  2015 pwd-expire.sh
+[root@m1-pr-onl01 plugins]# ./check_size_files.sh
+A folders /home/online/ and /opt/online/traces/ have size less than 1536MB. | Count=0
+[root@m1-pr-onl01 plugins]#
+
+................................................................................
+
+define service{
+    use                     generic-service
+    host_name               m1-pr-onl01
+    service_description     Check Size Files
+    normal_check_interval   5
+    retry_check_interval    1
+    check_command           check_nrpe!check_size_files
+    contact_groups          linux-admins, processing-admins-sd186883
+    contacts                processing_duty_sms
+}
+
+................................................................................
+
+
+[root@m1-pr-onl01 plugins]# scp check_size_files.sh bsv@m1-pr-onl02.tcsbank.ru:/tmp/
+bsv@m1-pr-onl02.tcsbank.ru's password:
+check_size_files.sh                                                                                                                                                       100% 1878     1.8KB/s   00:00
+[root@m1-pr-onl01 plugins]# scp check_size_files.sh bsv@ds-pr-onl01.tcsbank.ru:/tmp/
+The authenticity of host 'ds-pr-onl01.tcsbank.ru (10.217.9.11)' can't be established.
+RSA key fingerprint is 4e:0a:b7:e9:c9:84:1e:49:a4:04:85:2f:1b:e7:6b:76.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'ds-pr-onl01.tcsbank.ru' (RSA) to the list of known hosts.
+bsv@ds-pr-onl01.tcsbank.ru's password:
+check_size_files.sh                                                                                                                                                       100% 1878     1.8KB/s   00:00
+[root@m1-pr-onl01 plugins]#
+
+[root@m1-pr-onl02 ~]# cp /tmp/check_size_files.sh /opt/TCS/scripts/nagios/plugins/
+[root@ds-pr-onl01 ~]# vim /etc/nrpe.d/check_log_size.cfg
+[root@ds-pr-onl01 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@ds-pr-onl01 ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#369954. Create new check \"Check Size Files\" on three servers." servers/dc-ds/linux/ds-pr-onl01.cfg servers/dc-m1/linux/processing/online/m1-pr-onl01.cfg servers/dc-m1/linux/processing/online/m1-pr-onl02.cfg
+Running configuration check...
+ OK.
+[master 8da8866] SD#369954. Create new check "Check Size Files" on three servers.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 9 insertions(+), 10 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 25, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (13/13), done.
+Writing objects: 100% (13/13), 1.14 KiB, done.
+Total 13 (delta 11), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   c5fff0c..8da8866  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+

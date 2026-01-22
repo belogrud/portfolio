@@ -1,0 +1,114 @@
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim ./switchs/cisco/nsk-r1.cfg
+define host{
+    use                         cisco
+    host_name                   nsk-r1
+    address                     172.16.102.254
+    contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+    contact_groups              network-admins-email
+}
+define service{
+    use                           generic-service-ping
+    host_name                   nsk-r1
+    service_description         PING
+    check_command               check_ping!200.0,20%!600.0,60%
+    normal_check_interval       5
+    retry_check_interval        1
+    _EMAILINFO                  Ответственные за устройство: \n\nМ.Кубрак\nЮ.Капустин
+}
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# cat ./switchs/cisco/nsk-r1.cfg
+define host{
+    use                         cisco
+    host_name                   nsk-r1
+    address                     172.16.102.254
+    contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+    contact_groups              network-admins-email
+}
+define service{
+        use                           generic-service-ping
+    host_name                   nsk-r1
+    service_description         PING
+    check_command               check_ping!200.0,20%!600.0,60%
+    normal_check_interval       5
+    retry_check_interval        1
+    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$@$SERVICEDESC$
+    _EMAILINFO                  Ответственные за устройство: \n\nМ.Кубрак\nЮ.Капустин
+}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# grep -r -e "_EMAILINFO"
+switchs/cisco/nsk-r1.cfg:    _EMAILINFO                  Ответственные за устройство: \n\nМ.Кубрак\nЮ.Капустин
+templates/services-templates.cfg:        _EMAILINFO                      ""
+templates/services-templates.cfg:        _EMAILINFO                      ""
+templates/services-templates.cfg:        _EMAILINFO                      ""
+templates/services-templates.cfg:        _EMAILINFO                      ""
+services/asterisk-call-transfering-service.cfg:    _EMAILINFO               Instruction:\n\nhttps://wiki.tcsbank.ru/pages/viewpage.action?pageId=226164793
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+define service{
+    use                      generic-service
+    host_name                m1-asterisk01,m1-asterisk02,m1-asterisk03,ds-asterisk01,ds-asterisk02,ds-asterisk04,vm-asterisk01t,vm-asterisk02t,vm-asterisk01d,vm-asterisk04t,ds-asterisk05
+    service_description      Calls transfering
+    check_command            check_nrpe!check_wmover
+    #contacts                 a.y.ovchinnikov_email, a.y.ovchinnikov_sms
+    contacts                 s.belogrud_email
+    #contact_groups           devops
+    contact_groups          empty-group
+    check_interval           30
+    max_check_attempts       1
+    notes_url                       https://wiki.tcsbank.ru/display/sd/@$SERVICEDESC$
+    #_EMAILINFO               Instruction:\n\nhttps://wiki.tcsbank.ru/pages/viewpage.action?pageId=226164793
+    _EMAILINFO               Instruction:\n\nhttps://wiki.tcsbank.ru/display/SD/@Calls%20transfering
+}
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim commands.cfg
+...
+# 'notify-host-by-email' command definition
+define command{
+    command_name    notify-host-by-email
+    command_line    /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /bin/mail -s "** $NOTIFICATIONTYPE$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ **" $CONTACTEMAIL$
+    }
+
+# 'notify-service-by-email' command definition
+define command{
+    command_name    notify-service-by-email
+    command_line    /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICEOUTPUT$\n\n$_SERVICEEMAILINFO$\n" | /bin/mail -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$
+    }
+...
+
+[root@vm-vol-nag4-tst objects]# find . -name vm-ossec01t*
+./servers/vmware/vm-ossec01t.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# grep -r -e "_EMAILINFO"
+switchs/cisco/nsk-r1.cfg:    _EMAILINFO                  Instruction:\n\nhttps://wiki.tcsbank.ru/display/sd/nsk-r1@PING
+templates/services-templates.cfg:        _EMAILINFO                      ""
+templates/services-templates.cfg:        _EMAILINFO                      ""
+templates/services-templates.cfg:        _EMAILINFO                      ""
+templates/services-templates.cfg:        _EMAILINFO                      ""
+services/asterisk-call-transfering-service.cfg:    _EMAILINFO               Instruction:\n\nhttps://wiki.tcsbank.ru/display/SD/@Calls%20transferring
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+
+

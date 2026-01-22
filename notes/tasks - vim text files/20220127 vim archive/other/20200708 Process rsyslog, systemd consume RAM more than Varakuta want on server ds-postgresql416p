@@ -1,0 +1,1840 @@
+
+
+................................................................................
+#
+#	https://jira.tcsbank.ru/browse/IN-324
+#
+
+#	https://laracasts.com/discuss/channels/servers/rsyslogd-taking-up-a-ton-of-memory-how-do-i-lower-it
+#	https://hightechsorcery.com/2016/01/20/reducing-memory-usage-of-rsyslog/
+
+................................................................................
+
+[root@ds-postgresql416p ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:           1838        1401          81           0         354         272
+Swap:          2047         659        1388
+[root@ds-postgresql416p ~]# cat /etc/os-release
+NAME="CentOS Linux"
+VERSION="7 (Core)"
+...
+[root@ds-postgresql416p ~]# df -hT
+Filesystem                                       Type      Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0                        xfs        20G  5.6G   15G  29% /
+devtmpfs                                         devtmpfs  908M     0  908M   0% /dev
+tmpfs                                            tmpfs     920M  8.0K  920M   1% /dev/shm
+tmpfs                                            tmpfs     920M  972K  919M   1% /run
+tmpfs                                            tmpfs     920M     0  920M   0% /sys/fs/cgroup
+/dev/sda1                                        xfs       253M  126M  128M  50% /boot
+a700-pgsql4-prod-nfs2:/PGSQL_candy_ds/pgsys      nfs       333G   46G  287G  14% /pgsys/candy
+a700-pgsql4-prod-nfs2:/PGSQL_candy_ds/candy_temp nfs        64G     0   64G   0% /pgsys/candy_temp
+a700-pgsql4-prod-nfs2:/PGSQL_candy_ds/data       nfs       333G   46G  287G  14% /data/candy
+a700-pgsql4-prod-nfs2:/PGSQL_candy_ds/arch       nfs       333G   46G  287G  14% /arch/candy
+tmpfs                                            tmpfs     184M     0  184M   0% /run/user/525
+tmpfs                                            tmpfs     184M     0  184M   0% /run/user/26
+[root@ds-postgresql416p ~]# cat
+
+[root@ds-postgresql416p ~]# yum list installled rsyslog systemd
+Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+Installed Packages
+rsyslog.x86_64                                                                    8.24.0-34.el7                                                                      @anaconda
+systemd.x86_64                                                                    219-62.el7_6.6                                                                     @updates
+Available Packages
+rsyslog.x86_64                                                                    8.24.0-52.el7                                                                      base
+systemd.x86_64                                                                    219-73.el7_8.6                                                                     tcs-centos-updates
+[root@ds-postgresql416p ~]# uname -a
+Linux ds-postgresql416p.tcsbank.ru 3.10.0-957.12.1.el7.x86_64 #1 SMP Mon Apr 29 14:59:59 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+
+[root@ds-postgresql416p ~]# md5sum /etc/rsyslog.conf
+56227bb1ab9d0c35837ad45a99ab9245  /etc/rsyslog.conf
+[root@ds-postgresql416p ~]# vim /etc/rsyslog.conf
+[root@ds-postgresql416p ~]# ls -Alh /etc/rsyslog.*
+-rw-r--r--. 1 root root 3.2K May 21 09:04 /etc/rsyslog.conf
+
+/etc/rsyslog.d:
+total 8.0K
+-rw-r--r--. 1 root root  1 May 21 09:04 99-audit.conf
+-rw-r--r--. 1 root root 49 Apr 25  2019 listen.conf
+[root@ds-postgresql416p ~]# cat /etc/rsyslog.d/listen.conf
+$SystemLogSocketName /run/systemd/journal/syslog
+[root@ds-postgresql416p ~]# cat /etc/rsyslog.d/99-audit.conf
+
+[root@ds-postgresql416p ~]# systemctl status rsyslog
+● rsyslog.service - System Logging Service
+   Loaded: loaded (/usr/lib/systemd/system/rsyslog.service; enabled; vendor preset: enabled)
+   Active: active (running) since Fri 2020-07-03 16:49:18 MSK; 4 days ago
+     Docs: man:rsyslogd(8)
+           http://www.rsyslog.com/doc/
+ Main PID: 27152 (rsyslogd)
+   CGroup: /system.slice/rsyslog.service
+           └─27152 /usr/sbin/rsyslogd -n
+
+Jul 08 12:39:43 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:45:46 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: sd_journal_get_cursor() failed: 'Cannot assign requested address'  [v8.24.0-34.el7]
+Jul 08 12:45:46 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:45:46 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:53:01 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: sd_journal_get_cursor() failed: 'Cannot assign requested address'  [v8.24.0-34.el7]
+Jul 08 12:53:01 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:53:01 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:59:01 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: sd_journal_get_cursor() failed: 'Cannot assign requested address'  [v8.24.0-34.el7]
+Jul 08 12:59:01 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:59:01 ds-postgresql416p.tcsbank.ru rsyslogd[27152]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+[root@ds-postgresql416p ~]# ps -p 27152 -o ppid,user,nice,tty,comm,args
+ PPID USER      NI TT       COMMAND         COMMAND
+    1 root       0 ?        rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# ps aux | grep -ie "systemd"
+root         1  0.0  0.2 489696  4064 ?        Ss   May26  41:08 /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+root      2882  0.4  0.4  80464  8876 ?        Ss   May26 285:54 /usr/lib/systemd/systemd-journald
+root      2917  0.0  0.0  44416     8 ?        Ss   May26   0:00 /usr/lib/systemd/systemd-udevd
+dbus      5447  0.0  0.0  70516  1028 ?        Ss   May26  20:37 /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation
+root      5601  0.0  0.0  36788  1092 ?        Ss   May26  10:31 /usr/lib/systemd/systemd-logind
+root     30330  0.0  0.0 112812   992 pts/0    S+   13:29   0:00 grep --color=auto -ie systemd
+[root@ds-postgresql416p ~]# ps -p 1,27152 -o ppid,user,nice,tty,%mem,vsz,rss,comm,args
+ PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    0 root       0 ?         0.2 489696  4004 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+    1 root       0 ?         8.4 527784 158472 rsyslogd       /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# ps -p 1,27152 -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4004 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+27152     1 root       0 ?         8.4 527784 159520 rsyslogd       /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# du -sm /var/log/* | sort -nk1
+0       /var/log/boot.log
+0       /var/log/boot.log-20190118
+0       /var/log/boot.log-20190207
+0       /var/log/boot.log-20190405
+0       /var/log/boot.log-20190514
+0       /var/log/btmp-20200521
+0       /var/log/chrony
+0       /var/log/cron-20190207
+0       /var/log/cron-20190405
+0       /var/log/cron-20190514
+0       /var/log/firewalld
+0       /var/log/freshclam.log
+0       /var/log/grubby
+0       /var/log/grubby_prune_debug
+0       /var/log/maillog-20190207
+0       /var/log/maillog-20190405
+0       /var/log/maillog-20190514
+0       /var/log/messages-20190207
+0       /var/log/messages-20190405
+0       /var/log/messages-20190514
+0       /var/log/netdata
+0       /var/log/ntpstats
+0       /var/log/puppetlabs
+0       /var/log/rhsm
+0       /var/log/samba
+0       /var/log/secure-20190207
+0       /var/log/secure-20190405
+0       /var/log/secure-20190514
+0       /var/log/spooler
+0       /var/log/spooler-20190207
+0       /var/log/spooler-20190405
+0       /var/log/spooler-20190514
+0       /var/log/spooler-20200521
+0       /var/log/tallylog
+0       /var/log/vmware-network.2.log
+0       /var/log/wtmp-20190514
+0       /var/log/yum.log-20190207
+0       /var/log/yum.log-20190405
+0       /var/log/yum.log-20190514
+1       /var/log/boot.log-20200521
+1       /var/log/boot.log-20200527.gz
+1       /var/log/btmp
+1       /var/log/btmp-20200601.gz
+1       /var/log/btmp-20200701.gz
+1       /var/log/clamav
+1       /var/log/cron
+1       /var/log/cron-20200521
+1       /var/log/cron-20200609.gz
+1       /var/log/cron-20200610.gz
+1       /var/log/cron-20200611.gz
+1       /var/log/cron-20200612.gz
+1       /var/log/cron-20200613.gz
+1       /var/log/cron-20200614.gz
+1       /var/log/cron-20200615.gz
+1       /var/log/cron-20200616.gz
+1       /var/log/cron-20200617.gz
+1       /var/log/cron-20200618.gz
+1       /var/log/cron-20200619.gz
+1       /var/log/cron-20200620.gz
+1       /var/log/cron-20200621.gz
+1       /var/log/cron-20200622.gz
+1       /var/log/cron-20200623.gz
+1       /var/log/cron-20200624.gz
+1       /var/log/cron-20200625.gz
+1       /var/log/cron-20200626.gz
+1       /var/log/cron-20200627.gz
+1       /var/log/cron-20200628.gz
+1       /var/log/cron-20200629.gz
+1       /var/log/cron-20200630.gz
+1       /var/log/cron-20200701.gz
+1       /var/log/cron-20200702.gz
+1       /var/log/cron-20200703.gz
+1       /var/log/cron-20200704.gz
+1       /var/log/cron-20200705.gz
+1       /var/log/cron-20200706.gz
+1       /var/log/cron-20200707.gz
+1       /var/log/cron-20200708.gz
+1       /var/log/dmesg
+1       /var/log/dmesg.old
+1       /var/log/ipaclient-install.log
+1       /var/log/lastlog
+1       /var/log/maillog
+1       /var/log/maillog-20200521
+1       /var/log/maillog-20200609.gz
+1       /var/log/maillog-20200610.gz
+1       /var/log/maillog-20200611.gz
+1       /var/log/maillog-20200612.gz
+1       /var/log/maillog-20200613.gz
+1       /var/log/maillog-20200614.gz
+1       /var/log/maillog-20200615.gz
+1       /var/log/maillog-20200616.gz
+1       /var/log/maillog-20200617.gz
+1       /var/log/maillog-20200618.gz
+1       /var/log/maillog-20200619.gz
+1       /var/log/maillog-20200620.gz
+1       /var/log/maillog-20200621.gz
+1       /var/log/maillog-20200622.gz
+1       /var/log/maillog-20200623.gz
+1       /var/log/maillog-20200624.gz
+1       /var/log/maillog-20200625.gz
+1       /var/log/maillog-20200626.gz
+1       /var/log/maillog-20200627.gz
+1       /var/log/maillog-20200628.gz
+1       /var/log/maillog-20200629.gz
+1       /var/log/maillog-20200630.gz
+1       /var/log/maillog-20200701.gz
+1       /var/log/maillog-20200702.gz
+1       /var/log/maillog-20200703.gz
+1       /var/log/maillog-20200704.gz
+1       /var/log/maillog-20200705.gz
+1       /var/log/maillog-20200706.gz
+1       /var/log/maillog-20200707.gz
+1       /var/log/maillog-20200708.gz
+1       /var/log/messages
+1       /var/log/messages-20200521
+1       /var/log/messages-20200609.gz
+1       /var/log/messages-20200610.gz
+1       /var/log/messages-20200611.gz
+1       /var/log/messages-20200612.gz
+1       /var/log/messages-20200613.gz
+1       /var/log/messages-20200614.gz
+1       /var/log/messages-20200615.gz
+1       /var/log/messages-20200616.gz
+1       /var/log/messages-20200617.gz
+1       /var/log/messages-20200618.gz
+1       /var/log/messages-20200619.gz
+1       /var/log/messages-20200620.gz
+1       /var/log/messages-20200621.gz
+1       /var/log/messages-20200622.gz
+1       /var/log/messages-20200623.gz
+1       /var/log/messages-20200624.gz
+1       /var/log/messages-20200625.gz
+1       /var/log/messages-20200626.gz
+1       /var/log/messages-20200627.gz
+1       /var/log/messages-20200628.gz
+1       /var/log/messages-20200629.gz
+1       /var/log/messages-20200630.gz
+1       /var/log/messages-20200701.gz
+1       /var/log/messages-20200702.gz
+1       /var/log/messages-20200703.gz
+1       /var/log/messages-20200704.gz
+1       /var/log/messages-20200705.gz
+1       /var/log/messages-20200706.gz
+1       /var/log/messages-20200707.gz
+1       /var/log/messages-20200708.gz
+1       /var/log/secure-20200521
+1       /var/log/secure-20200609.gz
+1       /var/log/secure-20200610.gz
+1       /var/log/secure-20200611.gz
+1       /var/log/secure-20200612.gz
+1       /var/log/secure-20200613.gz
+1       /var/log/secure-20200614.gz
+1       /var/log/secure-20200615.gz
+1       /var/log/secure-20200616.gz
+1       /var/log/secure-20200617.gz
+1       /var/log/secure-20200618.gz
+1       /var/log/secure-20200619.gz
+1       /var/log/secure-20200620.gz
+1       /var/log/secure-20200621.gz
+1       /var/log/secure-20200622.gz
+1       /var/log/secure-20200623.gz
+1       /var/log/secure-20200624.gz
+1       /var/log/secure-20200625.gz
+1       /var/log/secure-20200626.gz
+1       /var/log/secure-20200627.gz
+1       /var/log/secure-20200628.gz
+1       /var/log/secure-20200629.gz
+1       /var/log/secure-20200630.gz
+1       /var/log/secure-20200701.gz
+1       /var/log/secure-20200702.gz
+1       /var/log/secure-20200703.gz
+1       /var/log/secure-20200704.gz
+1       /var/log/secure-20200705.gz
+1       /var/log/secure-20200706.gz
+1       /var/log/secure-20200707.gz
+1       /var/log/secure-20200708.gz
+1       /var/log/spooler-20200609.gz
+1       /var/log/spooler-20200610.gz
+1       /var/log/spooler-20200611.gz
+1       /var/log/spooler-20200612.gz
+1       /var/log/spooler-20200613.gz
+1       /var/log/spooler-20200614.gz
+1       /var/log/spooler-20200615.gz
+1       /var/log/spooler-20200616.gz
+1       /var/log/spooler-20200617.gz
+1       /var/log/spooler-20200618.gz
+1       /var/log/spooler-20200619.gz
+1       /var/log/spooler-20200620.gz
+1       /var/log/spooler-20200621.gz
+1       /var/log/spooler-20200622.gz
+1       /var/log/spooler-20200623.gz
+1       /var/log/spooler-20200624.gz
+1       /var/log/spooler-20200625.gz
+1       /var/log/spooler-20200626.gz
+1       /var/log/spooler-20200627.gz
+1       /var/log/spooler-20200628.gz
+1       /var/log/spooler-20200629.gz
+1       /var/log/spooler-20200630.gz
+1       /var/log/spooler-20200701.gz
+1       /var/log/spooler-20200702.gz
+1       /var/log/spooler-20200703.gz
+1       /var/log/spooler-20200704.gz
+1       /var/log/spooler-20200705.gz
+1       /var/log/spooler-20200706.gz
+1       /var/log/spooler-20200707.gz
+1       /var/log/spooler-20200708.gz
+1       /var/log/tuned
+1       /var/log/vmware-network.1.log
+1       /var/log/vmware-network.log
+1       /var/log/vmware-vgauthsvc.log.0
+1       /var/log/vmware-vmsvc.log
+1       /var/log/wtmp-20200529.gz
+1       /var/log/wtmp-20200603.gz
+1       /var/log/wtmp-20200701.gz
+1       /var/log/yum.log
+1       /var/log/yum.log-20200521
+1       /var/log/zabbix
+2       /var/log/secure
+2       /var/log/wtmp
+6       /var/log/pgbouncer
+12      /var/log/mamonsu
+14      /var/log/sssd
+24      /var/log/commvault
+29      /var/log/audit
+73      /var/log/graylog
+179     /var/log/journal
+195     /var/log/sa
+You have new mail in /var/spool/mail/root
+[root@ds-postgresql416p ~]# 
+
+[root@ds-postgresql416p ~]# mailx
+Heirloom Mail version 12.5 7/5/10.  Type ? for help.
+"/var/spool/mail/root": 386 messages 386 new
+...
+& Z10
+>N181 (Cron Daemon)         Fri Jun 12 22:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N182 (Cron Daemon)         Sat Jun 13 01:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N183 (Cron Daemon)         Sat Jun 13 04:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N184 (Cron Daemon)         Sat Jun 13 07:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N185 (Cron Daemon)         Sat Jun 13 10:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N186 (Cron Daemon)         Sat Jun 13 13:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N187 (Cron Daemon)         Sat Jun 13 16:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N188 (Cron Daemon)         Sat Jun 13 19:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N189 (Cron Daemon)         Sat Jun 13 22:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N190 (Cron Daemon)         Sun Jun 14 01:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N191 (Cron Daemon)         Sun Jun 14 04:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N192 (Cron Daemon)         Sun Jun 14 07:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N193 (Cron Daemon)         Sun Jun 14 10:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N194 (Cron Daemon)         Sun Jun 14 13:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N195 (Cron Daemon)         Sun Jun 14 16:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N196 (Cron Daemon)         Sun Jun 14 19:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N197 (Cron Daemon)         Sun Jun 14 22:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+ N198 (Cron Daemon)         Mon Jun 15 01:59  26/1010  "Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep"
+& 198
+Message 198:
+From root@ds-postgresql416p.tcsbank.ru  Mon Jun 15 01:59:50 2020
+Return-Path: <root@ds-postgresql416p.tcsbank.ru>
+X-Original-To: root
+Delivered-To: root@ds-postgresql416p.tcsbank.ru
+From: "(Cron Daemon)" <root@ds-postgresql416p.tcsbank.ru>
+To: root@ds-postgresql416p.tcsbank.ru
+Subject: Cron <root@ds-postgresql416p> /usr/share/clamav/freshclam-sleep
+Content-Type: text/plain; charset=UTF-8
+Auto-Submitted: auto-generated
+Precedence: bulk
+X-Cron-Env: <XDG_SESSION_ID=89958>
+X-Cron-Env: <XDG_RUNTIME_DIR=/run/user/0>
+X-Cron-Env: <LANG=en_US.UTF-8>
+X-Cron-Env: <MAILTO=root>
+X-Cron-Env: <SHELL=/bin/sh>
+X-Cron-Env: <HOME=/root>
+X-Cron-Env: <PATH=/usr/bin:/bin>
+X-Cron-Env: <LOGNAME=root>
+X-Cron-Env: <USER=root>
+Date: Mon, 15 Jun 2020 01:59:50 +0300 (MSK)
+Status: R
+
+ERROR: Can't open/parse the config file /etc/freshclam.conf
+
+& q
+Held 386 messages in /var/spool/mail/root
+You have mail in /var/spool/mail/root
+[root@ds-postgresql416p ~]# ls /usr/share/clamav/freshclam-sleep
+/usr/share/clamav/freshclam-sleep
+[root@ds-postgresql416p ~]# yum list installed clamav
+Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+Installed Packages
+clamav.x86_64                                                                          0.102.2-4.el7                                                                          @tcs-epel
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# less /var/log/maillog
+
+[root@ds-postgresql416p ~]# less /var/log/messages
+[root@ds-postgresql416p ~]# grep -ie "rsyslog" /var/log/messages | less
+
+
+#
+#	Idea No.1 Make changes in service config file.
+#
+
+[root@ds-postgresql416p ~]# vim /usr/lib/systemd/system/rsyslog.service
+
+[root@ds-postgresql416p ~]# ps -p 1,27152 -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4060 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+27152     1 root       0 ?         8.7 527784 164384 rsyslogd       /usr/sbin/rsyslogd -n
+[root@ds-postgresql417p ~]#
+
+[root@ds-postgresql417p ~]# expr 30 * 1024 * 1024
+31457280
+[root@ds-postgresql417p ~]#
+
+[root@ds-postgresql416p ~]# cat /usr/lib/systemd/system/rsyslog.service
+[Unit]
+Description=System Logging Service
+;Requires=syslog.socket
+Wants=network.target network-online.target
+After=network.target network-online.target
+Documentation=man:rsyslogd(8)
+Documentation=http://www.rsyslog.com/doc/
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/sysconfig/rsyslog
+ExecStart=/usr/sbin/rsyslogd -n $SYSLOGD_OPTIONS
+Restart=on-failure
+UMask=0066
+StandardOutput=null
+Restart=on-failure
+MemoryAccounting=yes MemoryCurrent=31457280 MemoryLimit=31457280
+
+[Install]
+WantedBy=multi-user.target
+;Alias=syslog.service
+[root@ds-postgresql416p ~]#
+
+
+[root@ds-postgresql416p ~]# systemctl daemon-reload
+[root@ds-postgresql416p ~]# systemctl restart rsyslog
+[root@ds-postgresql416p ~]# ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4420 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+18141     1 root       0 ?         0.1 396744  3108 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]#
+
+................................................................................
+
+[root@ds-postgresql416p ~]# cat /etc/security/limits.conf
+# /etc/security/limits.conf
+#
+#This file sets the resource limits for the users logged in via PAM.
+#It does not affect resource limits of the system services.
+#
+#Also note that configuration files in /etc/security/limits.d directory,
+#which are read in alphabetical order, override the settings in this
+#file in case the domain is the same or more specific.
+#That means for example that setting a limit for wildcard domain here
+#can be overriden with a wildcard setting in a config file in the
+#subdirectory, but a user specific setting here can be overriden only
+#with a user specific setting in the subdirectory.
+#
+#Each line describes a limit for a user in the form:
+#
+#<domain>        <type>  <item>  <value>
+#
+#Where:
+#<domain> can be:
+#        - a user name
+#        - a group name, with @group syntax
+#        - the wildcard *, for default entry
+#        - the wildcard %, can be also used with %group syntax,
+#                 for maxlogin limit
+#
+#<type> can have the two values:
+#        - "soft" for enforcing the soft limits
+#        - "hard" for enforcing hard limits
+#
+#<item> can be one of the following:
+#        - core - limits the core file size (KB)
+#        - data - max data size (KB)
+#        - fsize - maximum filesize (KB)
+#        - memlock - max locked-in-memory address space (KB)
+#        - nofile - max number of open file descriptors
+#        - rss - max resident set size (KB)
+#        - stack - max stack size (KB)
+#        - cpu - max CPU time (MIN)
+#        - nproc - max number of processes
+#        - as - address space limit (KB)
+#        - maxlogins - max number of logins for this user
+#        - maxsyslogins - max number of logins on the system
+#        - priority - the priority to run user process with
+#        - locks - max number of file locks the user can hold
+#        - sigpending - max number of pending signals
+#        - msgqueue - max memory used by POSIX message queues (bytes)
+#        - nice - max nice priority allowed to raise to values: [-20, 19]
+#        - rtprio - max realtime priority
+#
+#<domain>      <type>  <item>         <value>
+#
+
+#*               soft    core            0
+#*               hard    rss             10000
+#@student        hard    nproc           20
+#@faculty        soft    nproc           20
+#@faculty        hard    nproc           50
+#ftp             hard    nproc           0
+#@student        -       maxlogins       4
+
+# End of file
+* soft nofile 4096
+* hard nofile 8192
+postgres soft nofile 65535
+postgres hard nofile 65535
+postgres soft nproc 2048
+postgres hard nproc 2048
+[root@ds-postgresql416p ~]# cat /proc/`pidof rsyslogd`/limits
+Limit                     Soft Limit           Hard Limit           Units
+Max cpu time              unlimited            unlimited            seconds
+Max file size             unlimited            unlimited            bytes
+Max data size             unlimited            unlimited            bytes
+Max stack size            8388608              unlimited            bytes
+Max core file size        0                    unlimited            bytes
+Max resident set          unlimited            unlimited            bytes
+Max processes             7260                 7260                 processes
+Max open files            1024                 4096                 files
+Max locked memory         65536                65536                bytes
+Max address space         unlimited            unlimited            bytes
+Max file locks            unlimited            unlimited            locks
+Max pending signals       7260                 7260                 signals
+Max msgqueue size         819200               819200               bytes
+Max nice priority         0                    0
+Max realtime priority     0                    0
+Max realtime timeout      unlimited            unlimited            us
+[root@ds-postgresql416p ~]#
+
+................................................................................
+................................................................................................................................................................
+
+
+[root@ds-postgresql417p ~]# cat /etc/os-release
+NAME="CentOS Linux"
+VERSION="7 (Core)"
+...
+[root@ds-postgresql417p ~]# yum list installled rsyslog systemd
+Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+Installed Packages
+rsyslog.x86_64                                                                    8.24.0-34.el7                                                                      @anaconda
+systemd.x86_64                                                                    219-62.el7_6.6                                                                     @updates
+Available Packages
+rsyslog.x86_64                                                                    8.24.0-52.el7                                                                      base
+systemd.x86_64                                                                    219-73.el7_8.6                                                                     tcs-centos-updates
+[root@ds-postgresql417p ~]# uname -a
+Linux ds-postgresql417p.tcsbank.ru 3.10.0-957.12.1.el7.x86_64 #1 SMP Mon Apr 29 14:59:59 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+[root@ds-postgresql417p ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:           1838         946         131         114         760         628
+Swap:          2047           4        2043
+[root@ds-postgresql417p ~]# ls -Alh /etc/rsyslog.
+rsyslog.conf  rsyslog.d/
+[root@ds-postgresql417p ~]# ls -Alh /etc/rsyslog.*
+-rw-r--r--. 1 root root 3.2K Oct 30  2018 /etc/rsyslog.conf
+
+/etc/rsyslog.d:
+total 4.0K
+-rw-r--r--. 1 root root 49 Apr 25  2019 listen.conf
+[root@ds-postgresql417p ~]# md5sum /etc/rsyslog.conf
+0dd94a0c285fb32f41fa5b226e83c26b  /etc/rsyslog.conf
+[root@ds-postgresql417p ~]# vim /etc/rsyslog.conf
+[root@ds-postgresql417p ~]# vim -R /etc/rsyslog.d/listen.conf
+[root@ds-postgresql417p ~]# systemctl status rsyslog
+● rsyslog.service - System Logging Service
+   Loaded: loaded (/usr/lib/systemd/system/rsyslog.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2020-05-26 17:56:43 MSK; 1 months 12 days ago
+     Docs: man:rsyslogd(8)
+           http://www.rsyslog.com/doc/
+ Main PID: 5819 (rsyslogd)
+   CGroup: /system.slice/rsyslog.service
+           └─5819 /usr/sbin/rsyslogd -n
+
+Jul 08 08:12:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 08:12:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 08:12:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:18:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: sd_journal_get_cursor() failed: 'Cannot assign requested address'  [v8.24.0-34.el7]
+Jul 08 12:18:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:18:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:18:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:18:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:18:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+Jul 08 12:18:01 ds-postgresql417p.tcsbank.ru rsyslogd[5819]: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+[root@ds-postgresql417p ~]# ps -p 5819 -o ppid,user,nice,tty,%mem,vsz,rss,comm,args
+ PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1 root       0 ?         1.6 355672 31456 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql417p ~]# systemctl status systemd
+Unit systemd.service could not be found.
+[root@ds-postgresql417p ~]#
+
+[root@ds-postgresql417p ~]# ps -p 1,5819 -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.1 125688  3456 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 5819     1 root       0 ?         1.6 355672 31656 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql417p ~]# du -sm /var/log/* | sort -nk1
+0       /var/log/boot.log
+0       /var/log/boot.log-20190118
+0       /var/log/boot.log-20190207
+0       /var/log/boot.log-20190405
+0       /var/log/boot.log-20190514
+0       /var/log/btmp
+0       /var/log/btmp-20200701
+0       /var/log/chrony
+0       /var/log/firewalld
+0       /var/log/grubby
+0       /var/log/grubby_prune_debug
+0       /var/log/maillog
+0       /var/log/maillog-20200614
+0       /var/log/maillog-20200621
+0       /var/log/maillog-20200628
+0       /var/log/maillog-20200705
+0       /var/log/netdata
+0       /var/log/ntpstats
+0       /var/log/puppetlabs
+0       /var/log/rhsm
+0       /var/log/samba
+0       /var/log/spooler
+0       /var/log/spooler-20200614
+0       /var/log/spooler-20200621
+0       /var/log/spooler-20200628
+0       /var/log/spooler-20200705
+0       /var/log/tallylog
+0       /var/log/vmware-network.2.log
+0       /var/log/yum.log-20190207
+0       /var/log/yum.log-20190405
+0       /var/log/yum.log-20190514
+1       /var/log/boot.log-20200521
+1       /var/log/boot.log-20200527
+1       /var/log/dmesg
+1       /var/log/dmesg.old
+1       /var/log/ipaclient-install.log
+1       /var/log/lastlog
+1       /var/log/pgbouncer
+1       /var/log/tuned
+1       /var/log/vmware-network.1.log
+1       /var/log/vmware-network.log
+1       /var/log/vmware-vgauthsvc.log.0
+1       /var/log/vmware-vmsvc.log
+1       /var/log/yum.log
+1       /var/log/yum.log-20200521
+1       /var/log/zabbix
+2       /var/log/wtmp
+3       /var/log/cron
+5       /var/log/cron-20200614
+5       /var/log/cron-20200621
+5       /var/log/cron-20200628
+5       /var/log/cron-20200705
+6       /var/log/messages
+7       /var/log/secure
+7       /var/log/wtmp-20200701
+10      /var/log/messages-20200614
+11      /var/log/messages-20200621
+11      /var/log/messages-20200628
+11      /var/log/messages-20200705
+11      /var/log/secure-20200614
+12      /var/log/secure-20200621
+13      /var/log/mamonsu
+13      /var/log/secure-20200628
+13      /var/log/secure-20200705
+14      /var/log/sssd
+25      /var/log/commvault
+34      /var/log/audit
+73      /var/log/graylog
+145     /var/log/journal
+196     /var/log/sa
+[root@ds-postgresql417p ~]# yum list installed clamav
+Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+Error: No matching Packages to list
+[root@ds-postgresql417p ~]# vim /usr/lib/systemd/system/rsyslog.service
+[root@ds-postgresql417p ~]# ps -p 1,5819 -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.1 125688  3456 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 5819     1 root       0 ?         1.8 355672 35124 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql417p ~]# expr 30 * 1024
+30720
+[root@ds-postgresql417p ~]#
+
+................................................................................
+
+#
+#	20200709
+#
+
+#	RSS increasing...
+#
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args ; cat
+Thu Jul  9 12:44:27 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4316 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+18141     1 root       0 ?         1.9 396712 35976 rsyslogd        /usr/sbin/rsyslogd -n
+
+[root@ds-postgresql416p ~]#
+
+#
+#	Idea No.2. Change limits for stack for threads. To reduce amount of threads.
+#
+#	https://hightechsorcery.com/2016/01/20/reducing-memory-usage-of-rsyslog/
+#
+
+[root@ds-postgresql416p ~]# cat /proc/`pidof rsyslogd`/limits | grep -ie "Max stack"
+Max stack size            8388608              unlimited            bytes
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# vim /etc/default/rsyslog
+[root@ds-postgresql416p ~]# cat /etc/default/rsyslog
+ulimit -S -s 128
+[root@ds-postgresql416p ~]#
+
+#	That was not worked.
+[root@ds-postgresql416p ~]# systemctl restart rsyslog
+[root@ds-postgresql416p ~]# cat /proc/`pidof rsyslogd`/limits | grep -ie "Max stack"
+Max stack size            8388608              unlimited            bytes
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# rm /etc/default/rsyslog
+rm: remove regular file ‘/etc/default/rsyslog’? y
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Thu Jul  9 13:01:43 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4380 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 4625     1 root       0 ?         0.3 396744  6816 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]#
+[root@ds-postgresql416p ~]# cat /proc/`pidof rsyslogd`/limits
+Limit                     Soft Limit           Hard Limit           Units
+Max cpu time              unlimited            unlimited            seconds
+Max file size             unlimited            unlimited            bytes
+Max data size             unlimited            unlimited            bytes
+Max stack size            8388608              unlimited            bytes
+Max core file size        0                    unlimited            bytes
+Max resident set          unlimited            unlimited            bytes
+Max processes             7260                 7260                 processes
+Max open files            1024                 4096                 files
+Max locked memory         65536                65536                bytes
+Max address space         unlimited            unlimited            bytes
+Max file locks            unlimited            unlimited            locks
+Max pending signals       7260                 7260                 signals
+Max msgqueue size         819200               819200               bytes
+Max nice priority         0                    0
+Max realtime priority     0                    0
+Max realtime timeout      unlimited            unlimited            us
+[root@ds-postgresql416p ~]#
+
+................................................................................
+................................................................................
+
+#
+#	20200709
+#	I found, that for No.1 idea I used wrong syntax.
+
+#	These instruction have to be written not in one row as it was before.
+#	It have to be written one by one in separate lines.
+#
+#	MemoryAccounting=yes
+#	MemoryCurrent=31457280
+#	MemoryLimit=31457280
+#
+
+[root@ds-postgresql416p ~]# vim /usr/lib/systemd/system/rsyslog.service
+[root@ds-postgresql416p ~]# cat /usr/lib/systemd/system/rsyslog.service
+[Unit]
+Description=System Logging Service
+;Requires=syslog.socket
+Wants=network.target network-online.target
+After=network.target network-online.target
+Documentation=man:rsyslogd(8)
+Documentation=http://www.rsyslog.com/doc/
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/sysconfig/rsyslog
+ExecStart=/usr/sbin/rsyslogd -n $SYSLOGD_OPTIONS
+Restart=on-failure
+UMask=0066
+StandardOutput=null
+Restart=on-failure
+MemoryAccounting=yes
+MemoryCurrent=31457280
+MemoryLimit=31457280
+
+[Install]
+WantedBy=multi-user.target
+;Alias=syslog.service
+[root@ds-postgresql416p ~]#
+
+
+[root@ds-postgresql416p ~]# systemctl daemon-reload
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Thu Jul  9 17:52:20 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4424 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 4625     1 root       0 ?         0.7 396716 13396 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# systemctl restart rsyslog
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Thu Jul  9 17:52:41 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4444 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         0.1 396744  3076 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]#
+
+
+................................................................................
+
+[root@ds-postgresql416p ~]# yum install root-memstat
+Resolving Dependencies
+--> Running transaction check
+---> Package root-memstat.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: root-core(x86-64) = 6.20.06-1.el7 for package: root-memstat-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-hist(x86-64) = 6.20.06-1.el7 for package: root-memstat-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-io(x86-64) = 6.20.06-1.el7 for package: root-memstat-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-tree(x86-64) = 6.20.06-1.el7 for package: root-memstat-6.20.06-1.el7.x86_64
+--> Processing Dependency: libCore.so.6.20()(64bit) for package: root-memstat-6.20.06-1.el7.x86_64
+--> Processing Dependency: libHist.so.6.20()(64bit) for package: root-memstat-6.20.06-1.el7.x86_64
+--> Processing Dependency: libRIO.so.6.20()(64bit) for package: root-memstat-6.20.06-1.el7.x86_64
+--> Processing Dependency: libTree.so.6.20()(64bit) for package: root-memstat-6.20.06-1.el7.x86_64
+--> Running transaction check
+---> Package root-core.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: root-cling(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-fonts = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-graf(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-graf-asimage(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-graf-gpad(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-graf-postscript(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-graf3d(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-icons = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-mathcore(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-matrix(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-multiproc(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-net(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-physics(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-tree-dataframe(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-tree-player(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-vecops(x86-64) = 6.20.06-1.el7 for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: font(d050000l) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: font(droidsansfallback) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: font(freemono) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: font(freesans) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: font(freeserif) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: font(standardsymbolsps) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: font(z003) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: xorg-x11-fonts-ISO8859-1-75dpi for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: libxxhash.so.0()(64bit) for package: root-core-6.20.06-1.el7.x86_64
+--> Processing Dependency: libzstd.so.1()(64bit) for package: root-core-6.20.06-1.el7.x86_64
+---> Package root-hist.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: root-hist-painter(x86-64) = 6.20.06-1.el7 for package: root-hist-6.20.06-1.el7.x86_64
+---> Package root-io.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-tree.x86_64 0:6.20.06-1.el7 will be installed
+--> Running transaction check
+---> Package gnu-free-mono-fonts.noarch 0:20120503-8.el7 will be installed
+--> Processing Dependency: gnu-free-fonts-common = 20120503-8.el7 for package: gnu-free-mono-fonts-20120503-8.el7.noarch
+---> Package gnu-free-sans-fonts.noarch 0:20120503-8.el7 will be installed
+---> Package gnu-free-serif-fonts.noarch 0:20120503-8.el7 will be installed
+---> Package google-droid-sans-fonts.noarch 0:20120715-12.el7 will be installed
+--> Processing Dependency: fontpackages-filesystem for package: google-droid-sans-fonts-20120715-12.el7.noarch
+---> Package libzstd.x86_64 0:1.4.5-3.el7 will be installed
+---> Package root-cling.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: redhat-rpm-config for package: root-cling-6.20.06-1.el7.x86_64
+---> Package root-fonts.noarch 0:6.20.06-1.el7 will be installed
+---> Package root-graf.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: libfontconfig.so.1()(64bit) for package: root-graf-6.20.06-1.el7.x86_64
+---> Package root-graf-asimage.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: root-gui(x86-64) = 6.20.06-1.el7 for package: root-graf-asimage-6.20.06-1.el7.x86_64
+--> Processing Dependency: libAfterImage >= 1.20-21 for package: root-graf-asimage-6.20.06-1.el7.x86_64
+--> Processing Dependency: libAfterImage.so.0()(64bit) for package: root-graf-asimage-6.20.06-1.el7.x86_64
+--> Processing Dependency: libGui.so.6.20()(64bit) for package: root-graf-asimage-6.20.06-1.el7.x86_64
+---> Package root-graf-gpad.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-graf-postscript.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-graf3d.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-hist-painter.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-icons.noarch 0:6.20.06-1.el7 will be installed
+---> Package root-mathcore.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: root-mathmore(x86-64) = 6.20.06-1.el7 for package: root-mathcore-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-minuit(x86-64) = 6.20.06-1.el7 for package: root-mathcore-6.20.06-1.el7.x86_64
+---> Package root-matrix.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-multiproc.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-net.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-physics.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-tree-dataframe.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-tree-player.x86_64 0:6.20.06-1.el7 will be installed
+---> Package root-vecops.x86_64 0:6.20.06-1.el7 will be installed
+---> Package urw-base35-d050000l-fonts.noarch 0:20170801-10.el7 will be installed
+--> Processing Dependency: urw-base35-fonts-common = 20170801-10.el7 for package: urw-base35-d050000l-fonts-20170801-10.el7.noarch
+--> Processing Dependency: xorg-x11-server-utils for package: urw-base35-d050000l-fonts-20170801-10.el7.noarch
+--> Processing Dependency: xorg-x11-server-utils for package: urw-base35-d050000l-fonts-20170801-10.el7.noarch
+--> Processing Dependency: xorg-x11-font-utils for package: urw-base35-d050000l-fonts-20170801-10.el7.noarch
+--> Processing Dependency: xorg-x11-font-utils for package: urw-base35-d050000l-fonts-20170801-10.el7.noarch
+---> Package urw-base35-standard-symbols-ps-fonts.noarch 0:20170801-10.el7 will be installed
+---> Package urw-base35-z003-fonts.noarch 0:20170801-10.el7 will be installed
+---> Package xorg-x11-fonts-ISO8859-1-75dpi.noarch 0:7.5-9.el7 will be installed
+---> Package xxhash-libs.x86_64 0:0.7.3-1.el7 will be installed
+--> Running transaction check
+---> Package fontconfig.x86_64 0:2.13.0-4.3.el7 will be installed
+--> Processing Dependency: dejavu-sans-fonts for package: fontconfig-2.13.0-4.3.el7.x86_64
+---> Package fontpackages-filesystem.noarch 0:1.44-8.el7 will be installed
+---> Package gnu-free-fonts-common.noarch 0:20120503-8.el7 will be installed
+---> Package libAfterImage.x86_64 0:1.20-21.el7 will be installed
+--> Processing Dependency: libjpeg.so.62(LIBJPEG_6.2)(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+--> Processing Dependency: libtiff.so.5(LIBTIFF_4.0)(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+--> Processing Dependency: libcairo.so.2()(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+--> Processing Dependency: libgdk_pixbuf-2.0.so.0()(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+--> Processing Dependency: libgif.so.4()(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+--> Processing Dependency: libjpeg.so.62()(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+--> Processing Dependency: librsvg-2.so.2()(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+--> Processing Dependency: libtiff.so.5()(64bit) for package: libAfterImage-1.20-21.el7.x86_64
+---> Package redhat-rpm-config.noarch 0:9.1.0-88.el7.centos will be installed
+--> Processing Dependency: dwz >= 0.4 for package: redhat-rpm-config-9.1.0-88.el7.centos.noarch
+--> Processing Dependency: python-srpm-macros for package: redhat-rpm-config-9.1.0-88.el7.centos.noarch
+--> Processing Dependency: perl-srpm-macros for package: redhat-rpm-config-9.1.0-88.el7.centos.noarch
+---> Package root-gui.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: root-graf-x11(x86-64) = 6.20.06-1.el7 for package: root-gui-6.20.06-1.el7.x86_64
+--> Processing Dependency: root-gui-ged(x86-64) = 6.20.06-1.el7 for package: root-gui-6.20.06-1.el7.x86_64
+---> Package root-mathmore.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: libgsl.so.0()(64bit) for package: root-mathmore-6.20.06-1.el7.x86_64
+--> Processing Dependency: libgslcblas.so.0()(64bit) for package: root-mathmore-6.20.06-1.el7.x86_64
+---> Package root-minuit.x86_64 0:6.20.06-1.el7 will be installed
+---> Package urw-base35-fonts-common.noarch 0:20170801-10.el7 will be installed
+---> Package xorg-x11-font-utils.x86_64 1:7.5-21.el7 will be installed
+--> Processing Dependency: libfontenc.so.1()(64bit) for package: 1:xorg-x11-font-utils-7.5-21.el7.x86_64
+---> Package xorg-x11-server-utils.x86_64 0:7.7-20.el7 will be installed
+--> Processing Dependency: libXxf86vm.so.1()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXxf86misc.so.1()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXt.so.6()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXrender.so.1()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXrandr.so.2()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXmuu.so.1()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXmu.so.6()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXinerama.so.1()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXi.so.6()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libXcursor.so.1()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Processing Dependency: libICE.so.6()(64bit) for package: xorg-x11-server-utils-7.7-20.el7.x86_64
+--> Running transaction check
+---> Package cairo.x86_64 0:1.15.12-4.el7 will be installed
+--> Processing Dependency: libpixman-1.so.0()(64bit) for package: cairo-1.15.12-4.el7.x86_64
+--> Processing Dependency: libGL.so.1()(64bit) for package: cairo-1.15.12-4.el7.x86_64
+--> Processing Dependency: libEGL.so.1()(64bit) for package: cairo-1.15.12-4.el7.x86_64
+---> Package dejavu-sans-fonts.noarch 0:2.33-6.el7 will be installed
+--> Processing Dependency: dejavu-fonts-common = 2.33-6.el7 for package: dejavu-sans-fonts-2.33-6.el7.noarch
+---> Package dwz.x86_64 0:0.11-3.el7 will be installed
+---> Package gdk-pixbuf2.x86_64 0:2.36.12-3.el7 will be installed
+--> Processing Dependency: libjasper.so.1()(64bit) for package: gdk-pixbuf2-2.36.12-3.el7.x86_64
+---> Package giflib.x86_64 0:4.1.6-9.el7 will be installed
+--> Processing Dependency: libSM.so.6()(64bit) for package: giflib-4.1.6-9.el7.x86_64
+---> Package gsl.x86_64 0:1.15-13.el7 will be installed
+--> Processing Dependency: libsatlas.so.3()(64bit) for package: gsl-1.15-13.el7.x86_64
+---> Package libICE.x86_64 0:1.0.9-9.el7 will be installed
+---> Package libXcursor.x86_64 0:1.1.15-1.el7 will be installed
+--> Processing Dependency: libXfixes.so.3()(64bit) for package: libXcursor-1.1.15-1.el7.x86_64
+---> Package libXi.x86_64 0:1.7.9-1.el7 will be installed
+---> Package libXinerama.x86_64 0:1.1.3-2.1.el7 will be installed
+---> Package libXmu.x86_64 0:1.1.2-2.el7 will be installed
+---> Package libXrandr.x86_64 0:1.5.1-2.el7 will be installed
+---> Package libXrender.x86_64 0:0.9.10-1.el7 will be installed
+---> Package libXt.x86_64 0:1.1.5-3.el7 will be installed
+---> Package libXxf86misc.x86_64 0:1.0.3-7.1.el7 will be installed
+---> Package libXxf86vm.x86_64 0:1.1.4-1.el7 will be installed
+---> Package libfontenc.x86_64 0:1.1.3-3.el7 will be installed
+---> Package libjpeg-turbo.x86_64 0:1.2.90-8.el7 will be installed
+---> Package librsvg2.x86_64 0:2.40.20-1.el7 will be installed
+--> Processing Dependency: libpangoft2-1.0.so.0()(64bit) for package: librsvg2-2.40.20-1.el7.x86_64
+--> Processing Dependency: libpangocairo-1.0.so.0()(64bit) for package: librsvg2-2.40.20-1.el7.x86_64
+--> Processing Dependency: libpango-1.0.so.0()(64bit) for package: librsvg2-2.40.20-1.el7.x86_64
+---> Package libtiff.x86_64 0:4.0.3-32.el7 will be installed
+--> Processing Dependency: libjbig.so.2.0()(64bit) for package: libtiff-4.0.3-32.el7.x86_64
+---> Package perl-srpm-macros.noarch 0:1-8.el7 will be installed
+---> Package python-srpm-macros.noarch 0:3-32.el7 will be installed
+---> Package root-graf-x11.x86_64 0:6.20.06-1.el7 will be installed
+--> Processing Dependency: libXft.so.2()(64bit) for package: root-graf-x11-6.20.06-1.el7.x86_64
+--> Processing Dependency: libXpm.so.4()(64bit) for package: root-graf-x11-6.20.06-1.el7.x86_64
+---> Package root-gui-ged.x86_64 0:6.20.06-1.el7 will be installed
+--> Running transaction check
+---> Package atlas.x86_64 0:3.10.1-12.el7 will be installed
+--> Processing Dependency: libgfortran.so.3(GFORTRAN_1.4)(64bit) for package: atlas-3.10.1-12.el7.x86_64
+--> Processing Dependency: libgfortran.so.3(GFORTRAN_1.0)(64bit) for package: atlas-3.10.1-12.el7.x86_64
+--> Processing Dependency: libgfortran.so.3()(64bit) for package: atlas-3.10.1-12.el7.x86_64
+---> Package dejavu-fonts-common.noarch 0:2.33-6.el7 will be installed
+---> Package jasper-libs.x86_64 0:1.900.1-33.el7 will be installed
+---> Package jbigkit-libs.x86_64 0:2.0-11.el7 will be installed
+---> Package libSM.x86_64 0:1.2.2-2.el7 will be installed
+---> Package libXfixes.x86_64 0:5.0.3-1.el7 will be installed
+---> Package libXft.x86_64 0:2.3.2-2.el7 will be installed
+---> Package libXpm.x86_64 0:3.5.12-1.el7 will be installed
+---> Package libglvnd-egl.x86_64 1:1.0.1-0.8.git5baa1e5.el7 will be installed
+--> Processing Dependency: libglvnd(x86-64) = 1:1.0.1-0.8.git5baa1e5.el7 for package: 1:libglvnd-egl-1.0.1-0.8.git5baa1e5.el7.x86_64
+--> Processing Dependency: mesa-libEGL(x86-64) >= 13.0.4-1 for package: 1:libglvnd-egl-1.0.1-0.8.git5baa1e5.el7.x86_64
+--> Processing Dependency: libGLdispatch.so.0()(64bit) for package: 1:libglvnd-egl-1.0.1-0.8.git5baa1e5.el7.x86_64
+---> Package libglvnd-glx.x86_64 1:1.0.1-0.8.git5baa1e5.el7 will be installed
+--> Processing Dependency: mesa-libGL(x86-64) >= 13.0.4-1 for package: 1:libglvnd-glx-1.0.1-0.8.git5baa1e5.el7.x86_64
+---> Package pango.x86_64 0:1.42.4-4.el7_7 will be installed
+--> Processing Dependency: libthai(x86-64) >= 0.1.9 for package: pango-1.42.4-4.el7_7.x86_64
+--> Processing Dependency: harfbuzz(x86-64) >= 1.4.2 for package: pango-1.42.4-4.el7_7.x86_64
+--> Processing Dependency: fribidi(x86-64) >= 1.0 for package: pango-1.42.4-4.el7_7.x86_64
+--> Processing Dependency: libthai.so.0(LIBTHAI_0.1)(64bit) for package: pango-1.42.4-4.el7_7.x86_64
+--> Processing Dependency: libthai.so.0()(64bit) for package: pango-1.42.4-4.el7_7.x86_64
+--> Processing Dependency: libharfbuzz.so.0()(64bit) for package: pango-1.42.4-4.el7_7.x86_64
+--> Processing Dependency: libfribidi.so.0()(64bit) for package: pango-1.42.4-4.el7_7.x86_64
+---> Package pixman.x86_64 0:0.34.0-1.el7 will be installed
+--> Running transaction check
+---> Package fribidi.x86_64 0:1.0.2-1.el7_7.1 will be installed
+---> Package harfbuzz.x86_64 0:1.7.5-2.el7 will be installed
+--> Processing Dependency: libgraphite2.so.3()(64bit) for package: harfbuzz-1.7.5-2.el7.x86_64
+---> Package libgfortran.x86_64 0:4.8.5-39.el7 will be installed
+--> Processing Dependency: libquadmath = 4.8.5-39.el7 for package: libgfortran-4.8.5-39.el7.x86_64
+--> Processing Dependency: libquadmath.so.0(QUADMATH_1.0)(64bit) for package: libgfortran-4.8.5-39.el7.x86_64
+--> Processing Dependency: libquadmath.so.0()(64bit) for package: libgfortran-4.8.5-39.el7.x86_64
+---> Package libglvnd.x86_64 1:1.0.1-0.8.git5baa1e5.el7 will be installed
+---> Package libthai.x86_64 0:0.1.14-9.el7 will be installed
+---> Package mesa-libEGL.x86_64 0:18.3.4-7.el7_8.1 will be installed
+--> Processing Dependency: mesa-libgbm = 18.3.4-7.el7_8.1 for package: mesa-libEGL-18.3.4-7.el7_8.1.x86_64
+--> Processing Dependency: libxshmfence.so.1()(64bit) for package: mesa-libEGL-18.3.4-7.el7_8.1.x86_64
+--> Processing Dependency: libwayland-server.so.0()(64bit) for package: mesa-libEGL-18.3.4-7.el7_8.1.x86_64
+--> Processing Dependency: libwayland-client.so.0()(64bit) for package: mesa-libEGL-18.3.4-7.el7_8.1.x86_64
+--> Processing Dependency: libglapi.so.0()(64bit) for package: mesa-libEGL-18.3.4-7.el7_8.1.x86_64
+--> Processing Dependency: libgbm.so.1()(64bit) for package: mesa-libEGL-18.3.4-7.el7_8.1.x86_64
+---> Package mesa-libGL.x86_64 0:18.3.4-7.el7_8.1 will be installed
+--> Processing Dependency: libXdamage.so.1()(64bit) for package: mesa-libGL-18.3.4-7.el7_8.1.x86_64
+--> Running transaction check
+---> Package graphite2.x86_64 0:1.3.10-1.el7_3 will be installed
+---> Package libXdamage.x86_64 0:1.1.4-4.1.el7 will be installed
+---> Package libquadmath.x86_64 0:4.8.5-39.el7 will be installed
+---> Package libwayland-client.x86_64 0:1.15.0-1.el7 will be installed
+---> Package libwayland-server.x86_64 0:1.15.0-1.el7 will be installed
+---> Package libxshmfence.x86_64 0:1.2-1.el7 will be installed
+---> Package mesa-libgbm.x86_64 0:18.3.4-7.el7_8.1 will be installed
+---> Package mesa-libglapi.x86_64 0:18.3.4-7.el7_8.1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=======================================================================================================================================================================================
+ Package                                                   Arch                        Version                                           Repository                               Size
+=======================================================================================================================================================================================
+Installing:
+ root-memstat                                              x86_64                      6.20.06-1.el7                                     tcs-epel                                 63 k
+Installing for dependencies:
+ atlas                                                     x86_64                      3.10.1-12.el7                                     base                                    4.5 M
+ cairo                                                     x86_64                      1.15.12-4.el7                                     base                                    741 k
+ dejavu-fonts-common                                       noarch                      2.33-6.el7                                        base                                     64 k
+ dejavu-sans-fonts                                         noarch                      2.33-6.el7                                        base                                    1.4 M
+ dwz                                                       x86_64                      0.11-3.el7                                        base                                     99 k
+ fontconfig                                                x86_64                      2.13.0-4.3.el7                                    base                                    254 k
+ fontpackages-filesystem                                   noarch                      1.44-8.el7                                        base                                    9.9 k
+ fribidi                                                   x86_64                      1.0.2-1.el7_7.1                                   base                                     79 k
+ gdk-pixbuf2                                               x86_64                      2.36.12-3.el7                                     base                                    570 k
+ giflib                                                    x86_64                      4.1.6-9.el7                                       base                                     40 k
+ gnu-free-fonts-common                                     noarch                      20120503-8.el7                                    base                                    127 k
+ gnu-free-mono-fonts                                       noarch                      20120503-8.el7                                    base                                    693 k
+ gnu-free-sans-fonts                                       noarch                      20120503-8.el7                                    base                                    1.3 M
+ gnu-free-serif-fonts                                      noarch                      20120503-8.el7                                    base                                    2.6 M
+ google-droid-sans-fonts                                   noarch                      20120715-12.el7                                   tcs-epel                                2.5 M
+ graphite2                                                 x86_64                      1.3.10-1.el7_3                                    base                                    115 k
+ gsl                                                       x86_64                      1.15-13.el7                                       base                                    884 k
+ harfbuzz                                                  x86_64                      1.7.5-2.el7                                       base                                    267 k
+ jasper-libs                                               x86_64                      1.900.1-33.el7                                    base                                    150 k
+ jbigkit-libs                                              x86_64                      2.0-11.el7                                        base                                     46 k
+ libAfterImage                                             x86_64                      1.20-21.el7                                       tcs-epel                                233 k
+ libICE                                                    x86_64                      1.0.9-9.el7                                       base                                     66 k
+ libSM                                                     x86_64                      1.2.2-2.el7                                       base                                     39 k
+ libXcursor                                                x86_64                      1.1.15-1.el7                                      base                                     30 k
+ libXdamage                                                x86_64                      1.1.4-4.1.el7                                     base                                     20 k
+ libXfixes                                                 x86_64                      5.0.3-1.el7                                       base                                     18 k
+ libXft                                                    x86_64                      2.3.2-2.el7                                       base                                     58 k
+ libXi                                                     x86_64                      1.7.9-1.el7                                       base                                     40 k
+ libXinerama                                               x86_64                      1.1.3-2.1.el7                                     base                                     14 k
+ libXmu                                                    x86_64                      1.1.2-2.el7                                       base                                     71 k
+ libXpm                                                    x86_64                      3.5.12-1.el7                                      base                                     55 k
+ libXrandr                                                 x86_64                      1.5.1-2.el7                                       base                                     27 k
+ libXrender                                                x86_64                      0.9.10-1.el7                                      base                                     26 k
+ libXt                                                     x86_64                      1.1.5-3.el7                                       base                                    173 k
+ libXxf86misc                                              x86_64                      1.0.3-7.1.el7                                     base                                     19 k
+ libXxf86vm                                                x86_64                      1.1.4-1.el7                                       base                                     18 k
+ libfontenc                                                x86_64                      1.1.3-3.el7                                       base                                     31 k
+ libgfortran                                               x86_64                      4.8.5-39.el7                                      base                                    300 k
+ libglvnd                                                  x86_64                      1:1.0.1-0.8.git5baa1e5.el7                        base                                     89 k
+ libglvnd-egl                                              x86_64                      1:1.0.1-0.8.git5baa1e5.el7                        base                                     44 k
+ libglvnd-glx                                              x86_64                      1:1.0.1-0.8.git5baa1e5.el7                        base                                    125 k
+ libjpeg-turbo                                             x86_64                      1.2.90-8.el7                                      base                                    135 k
+ libquadmath                                               x86_64                      4.8.5-39.el7                                      base                                    190 k
+ librsvg2                                                  x86_64                      2.40.20-1.el7                                     base                                    132 k
+ libthai                                                   x86_64                      0.1.14-9.el7                                      base                                    187 k
+ libtiff                                                   x86_64                      4.0.3-32.el7                                      base                                    171 k
+ libwayland-client                                         x86_64                      1.15.0-1.el7                                      base                                     33 k
+ libwayland-server                                         x86_64                      1.15.0-1.el7                                      base                                     39 k
+ libxshmfence                                              x86_64                      1.2-1.el7                                         base                                    7.2 k
+ libzstd                                                   x86_64                      1.4.5-3.el7                                       tcs-epel                                331 k
+ mesa-libEGL                                               x86_64                      18.3.4-7.el7_8.1                                  tcs-centos-updates                      109 k
+ mesa-libGL                                                x86_64                      18.3.4-7.el7_8.1                                  tcs-centos-updates                      165 k
+ mesa-libgbm                                               x86_64                      18.3.4-7.el7_8.1                                  tcs-centos-updates                       39 k
+ mesa-libglapi                                             x86_64                      18.3.4-7.el7_8.1                                  tcs-centos-updates                       46 k
+ pango                                                     x86_64                      1.42.4-4.el7_7                                    base                                    280 k
+ perl-srpm-macros                                          noarch                      1-8.el7                                           base                                    4.6 k
+ pixman                                                    x86_64                      0.34.0-1.el7                                      base                                    248 k
+ python-srpm-macros                                        noarch                      3-32.el7                                          base                                    8.4 k
+ redhat-rpm-config                                         noarch                      9.1.0-88.el7.centos                               base                                     81 k
+ root-cling                                                x86_64                      6.20.06-1.el7                                     tcs-epel                                 15 M
+ root-core                                                 x86_64                      6.20.06-1.el7                                     tcs-epel                                 41 M
+ root-fonts                                                noarch                      6.20.06-1.el7                                     tcs-epel                                475 k
+ root-graf                                                 x86_64                      6.20.06-1.el7                                     tcs-epel                                413 k
+ root-graf-asimage                                         x86_64                      6.20.06-1.el7                                     tcs-epel                                130 k
+ root-graf-gpad                                            x86_64                      6.20.06-1.el7                                     tcs-epel                                252 k
+ root-graf-postscript                                      x86_64                      6.20.06-1.el7                                     tcs-epel                                149 k
+ root-graf-x11                                             x86_64                      6.20.06-1.el7                                     tcs-epel                                119 k
+ root-graf3d                                               x86_64                      6.20.06-1.el7                                     tcs-epel                                219 k
+ root-gui                                                  x86_64                      6.20.06-1.el7                                     tcs-epel                                1.0 M
+ root-gui-ged                                              x86_64                      6.20.06-1.el7                                     tcs-epel                                330 k
+ root-hist                                                 x86_64                      6.20.06-1.el7                                     tcs-epel                                1.1 M
+ root-hist-painter                                         x86_64                      6.20.06-1.el7                                     tcs-epel                                233 k
+ root-icons                                                noarch                      6.20.06-1.el7                                     tcs-epel                                540 k
+ root-io                                                   x86_64                      6.20.06-1.el7                                     tcs-epel                                783 k
+ root-mathcore                                             x86_64                      6.20.06-1.el7                                     tcs-epel                                1.1 M
+ root-mathmore                                             x86_64                      6.20.06-1.el7                                     tcs-epel                                239 k
+ root-matrix                                               x86_64                      6.20.06-1.el7                                     tcs-epel                                405 k
+ root-minuit                                               x86_64                      6.20.06-1.el7                                     tcs-epel                                191 k
+ root-multiproc                                            x86_64                      6.20.06-1.el7                                     tcs-epel                                 63 k
+ root-net                                                  x86_64                      6.20.06-1.el7                                     tcs-epel                                265 k
+ root-physics                                              x86_64                      6.20.06-1.el7                                     tcs-epel                                140 k
+ root-tree                                                 x86_64                      6.20.06-1.el7                                     tcs-epel                                469 k
+ root-tree-dataframe                                       x86_64                      6.20.06-1.el7                                     tcs-epel                                288 k
+ root-tree-player                                          x86_64                      6.20.06-1.el7                                     tcs-epel                                444 k
+ root-vecops                                               x86_64                      6.20.06-1.el7                                     tcs-epel                                187 k
+ urw-base35-d050000l-fonts                                 noarch                      20170801-10.el7                                   base                                     75 k
+ urw-base35-fonts-common                                   noarch                      20170801-10.el7                                   base                                     19 k
+ urw-base35-standard-symbols-ps-fonts                      noarch                      20170801-10.el7                                   base                                     40 k
+ urw-base35-z003-fonts                                     noarch                      20170801-10.el7                                   base                                    275 k
+ xorg-x11-font-utils                                       x86_64                      1:7.5-21.el7                                      base                                    104 k
+ xorg-x11-fonts-ISO8859-1-75dpi                            noarch                      7.5-9.el7                                         base                                    933 k
+ xorg-x11-server-utils                                     x86_64                      7.7-20.el7                                        base                                    178 k
+ xxhash-libs                                               x86_64                      0.7.3-1.el7                                       tcs-epel                                 22 k
+
+Transaction Summary
+=======================================================================================================================================================================================
+Install  1 Package (+93 Dependent packages)
+
+Total download size: 87 M
+Installed size: 261 M
+Is this ok [y/d/N]: N
+Exiting on user command
+Your transaction was saved, rerun it with:
+ yum load-transaction /tmp/yum_save_tx.2020-07-09.17-57.9zVZ6s.yumtx
+[root@ds-postgresql416p ~]#
+
+
+
+...
+Installed:
+  root-memstat.x86_64 0:6.20.06-1.el7
+
+Dependency Installed:
+  atlas.x86_64 0:3.10.1-12.el7                                        cairo.x86_64 0:1.15.12-4.el7                             dejavu-fonts-common.noarch 0:2.33-6.el7
+  dejavu-sans-fonts.noarch 0:2.33-6.el7                               dwz.x86_64 0:0.11-3.el7                                  fontconfig.x86_64 0:2.13.0-4.3.el7
+  fontpackages-filesystem.noarch 0:1.44-8.el7                         fribidi.x86_64 0:1.0.2-1.el7_7.1                         gdk-pixbuf2.x86_64 0:2.36.12-3.el7
+  giflib.x86_64 0:4.1.6-9.el7                                         gnu-free-fonts-common.noarch 0:20120503-8.el7            gnu-free-mono-fonts.noarch 0:20120503-8.el7
+  gnu-free-sans-fonts.noarch 0:20120503-8.el7                         gnu-free-serif-fonts.noarch 0:20120503-8.el7             google-droid-sans-fonts.noarch 0:20120715-12.el7
+  graphite2.x86_64 0:1.3.10-1.el7_3                                   gsl.x86_64 0:1.15-13.el7                                 harfbuzz.x86_64 0:1.7.5-2.el7
+  jasper-libs.x86_64 0:1.900.1-33.el7                                 jbigkit-libs.x86_64 0:2.0-11.el7                         libAfterImage.x86_64 0:1.20-21.el7
+  libICE.x86_64 0:1.0.9-9.el7                                         libSM.x86_64 0:1.2.2-2.el7                               libXcursor.x86_64 0:1.1.15-1.el7
+  libXdamage.x86_64 0:1.1.4-4.1.el7                                   libXfixes.x86_64 0:5.0.3-1.el7                           libXft.x86_64 0:2.3.2-2.el7
+  libXi.x86_64 0:1.7.9-1.el7                                          libXinerama.x86_64 0:1.1.3-2.1.el7                       libXmu.x86_64 0:1.1.2-2.el7
+  libXpm.x86_64 0:3.5.12-1.el7                                        libXrandr.x86_64 0:1.5.1-2.el7                           libXrender.x86_64 0:0.9.10-1.el7
+  libXt.x86_64 0:1.1.5-3.el7                                          libXxf86misc.x86_64 0:1.0.3-7.1.el7                      libXxf86vm.x86_64 0:1.1.4-1.el7
+  libfontenc.x86_64 0:1.1.3-3.el7                                     libgfortran.x86_64 0:4.8.5-39.el7                        libglvnd.x86_64 1:1.0.1-0.8.git5baa1e5.el7
+  libglvnd-egl.x86_64 1:1.0.1-0.8.git5baa1e5.el7                      libglvnd-glx.x86_64 1:1.0.1-0.8.git5baa1e5.el7           libjpeg-turbo.x86_64 0:1.2.90-8.el7
+  libquadmath.x86_64 0:4.8.5-39.el7                                   librsvg2.x86_64 0:2.40.20-1.el7                          libthai.x86_64 0:0.1.14-9.el7
+  libtiff.x86_64 0:4.0.3-32.el7                                       libwayland-client.x86_64 0:1.15.0-1.el7                  libwayland-server.x86_64 0:1.15.0-1.el7
+  libxshmfence.x86_64 0:1.2-1.el7                                     libzstd.x86_64 0:1.4.5-3.el7                             mesa-libEGL.x86_64 0:18.3.4-7.el7_8.1
+  mesa-libGL.x86_64 0:18.3.4-7.el7_8.1                                mesa-libgbm.x86_64 0:18.3.4-7.el7_8.1                    mesa-libglapi.x86_64 0:18.3.4-7.el7_8.1
+  pango.x86_64 0:1.42.4-4.el7_7                                       perl-srpm-macros.noarch 0:1-8.el7                        pixman.x86_64 0:0.34.0-1.el7
+  python-srpm-macros.noarch 0:3-32.el7                                redhat-rpm-config.noarch 0:9.1.0-88.el7.centos           root-cling.x86_64 0:6.20.06-1.el7
+  root-core.x86_64 0:6.20.06-1.el7                                    root-fonts.noarch 0:6.20.06-1.el7                        root-graf.x86_64 0:6.20.06-1.el7
+  root-graf-asimage.x86_64 0:6.20.06-1.el7                            root-graf-gpad.x86_64 0:6.20.06-1.el7                    root-graf-postscript.x86_64 0:6.20.06-1.el7
+  root-graf-x11.x86_64 0:6.20.06-1.el7                                root-graf3d.x86_64 0:6.20.06-1.el7                       root-gui.x86_64 0:6.20.06-1.el7
+  root-gui-ged.x86_64 0:6.20.06-1.el7                                 root-hist.x86_64 0:6.20.06-1.el7                         root-hist-painter.x86_64 0:6.20.06-1.el7
+  root-icons.noarch 0:6.20.06-1.el7                                   root-io.x86_64 0:6.20.06-1.el7                           root-mathcore.x86_64 0:6.20.06-1.el7
+  root-mathmore.x86_64 0:6.20.06-1.el7                                root-matrix.x86_64 0:6.20.06-1.el7                       root-minuit.x86_64 0:6.20.06-1.el7
+  root-multiproc.x86_64 0:6.20.06-1.el7                               root-net.x86_64 0:6.20.06-1.el7                          root-physics.x86_64 0:6.20.06-1.el7
+  root-tree.x86_64 0:6.20.06-1.el7                                    root-tree-dataframe.x86_64 0:6.20.06-1.el7               root-tree-player.x86_64 0:6.20.06-1.el7
+  root-vecops.x86_64 0:6.20.06-1.el7                                  urw-base35-d050000l-fonts.noarch 0:20170801-10.el7       urw-base35-fonts-common.noarch 0:20170801-10.el7
+  urw-base35-standard-symbols-ps-fonts.noarch 0:20170801-10.el7       urw-base35-z003-fonts.noarch 0:20170801-10.el7           xorg-x11-font-utils.x86_64 1:7.5-21.el7
+  xorg-x11-fonts-ISO8859-1-75dpi.noarch 0:7.5-9.el7                   xorg-x11-server-utils.x86_64 0:7.7-20.el7                xxhash-libs.x86_64 0:0.7.3-1.el7
+
+Complete!
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# rpm -qi root-memstat
+Name        : root-memstat
+Version     : 6.20.06
+Release     : 1.el7
+Architecture: x86_64
+Install Date: Thu 09 Jul 2020 06:00:21 PM MSK
+Group       : Unspecified
+Size        : 82045
+License     : LGPLv2+
+Signature   : RSA/SHA256, Mon 15 Jun 2020 09:13:53 PM MSK, Key ID 6a2faea2352c64e5
+Source RPM  : root-6.20.06-1.el7.src.rpm
+Build Date  : Mon 15 Jun 2020 05:18:59 PM MSK
+Build Host  : buildvm-x86-03.iad2.fedoraproject.org
+Relocations : (not relocatable)
+Packager    : Fedora Project
+Vendor      : Fedora Project
+URL         : https://root.cern/
+Bug URL     : https://bugz.fedoraproject.org/root
+Summary     : Memory statistics tool for use with ROOT
+Description :
+This package contains the memory statistics tool for debugging memory
+leaks and such.
+[root@ds-postgresql416p ~]#
+
+
+[root@ds-postgresql416p ~]# yum history info
+Transaction ID : 32
+Begin time     : Thu Jul  9 17:59:59 2020
+Begin rpmdb    : 595:7240953342f29043534375beedd4504c4bde9f70
+End time       :            18:00:23 2020 (24 seconds)
+End rpmdb      : 689:32d0dcc2734b655ce5e0f68bb193e28ba58815b4
+User           : Belogrud Sergey Vladimirovich,BC Diapazone,2173 <bsv>
+Return-Code    : Success
+Command Line   : install root-memstat
+Transaction performed with:
+    Installed     rpm-4.11.3-35.el7.x86_64        @anaconda
+    Installed     yum-3.4.3-161.el7.centos.noarch @anaconda
+Packages Altered:
+    Dep-Install atlas-3.10.1-12.el7.x86_64                                  @base
+    Dep-Install cairo-1.15.12-4.el7.x86_64                                  @base
+    Dep-Install dejavu-fonts-common-2.33-6.el7.noarch                       @base
+    Dep-Install dejavu-sans-fonts-2.33-6.el7.noarch                         @base
+    Dep-Install dwz-0.11-3.el7.x86_64                                       @base
+    Dep-Install fontconfig-2.13.0-4.3.el7.x86_64                            @base
+    Dep-Install fontpackages-filesystem-1.44-8.el7.noarch                   @base
+    Dep-Install fribidi-1.0.2-1.el7_7.1.x86_64                              @base
+    Dep-Install gdk-pixbuf2-2.36.12-3.el7.x86_64                            @base
+    Dep-Install giflib-4.1.6-9.el7.x86_64                                   @base
+    Dep-Install gnu-free-fonts-common-20120503-8.el7.noarch                 @base
+    Dep-Install gnu-free-mono-fonts-20120503-8.el7.noarch                   @base
+    Dep-Install gnu-free-sans-fonts-20120503-8.el7.noarch                   @base
+    Dep-Install gnu-free-serif-fonts-20120503-8.el7.noarch                  @base
+    Dep-Install google-droid-sans-fonts-20120715-12.el7.noarch              @tcs-epel
+    Dep-Install graphite2-1.3.10-1.el7_3.x86_64                             @base
+    Dep-Install gsl-1.15-13.el7.x86_64                                      @base
+    Dep-Install harfbuzz-1.7.5-2.el7.x86_64                                 @base
+    Dep-Install jasper-libs-1.900.1-33.el7.x86_64                           @base
+    Dep-Install jbigkit-libs-2.0-11.el7.x86_64                              @base
+    Dep-Install libAfterImage-1.20-21.el7.x86_64                            @tcs-epel
+    Dep-Install libICE-1.0.9-9.el7.x86_64                                   @base
+    Dep-Install libSM-1.2.2-2.el7.x86_64                                    @base
+    Dep-Install libXcursor-1.1.15-1.el7.x86_64                              @base
+    Dep-Install libXdamage-1.1.4-4.1.el7.x86_64                             @base
+    Dep-Install libXfixes-5.0.3-1.el7.x86_64                                @base
+    Dep-Install libXft-2.3.2-2.el7.x86_64                                   @base
+    Dep-Install libXi-1.7.9-1.el7.x86_64                                    @base
+    Dep-Install libXinerama-1.1.3-2.1.el7.x86_64                            @base
+    Dep-Install libXmu-1.1.2-2.el7.x86_64                                   @base
+    Dep-Install libXpm-3.5.12-1.el7.x86_64                                  @base
+    Dep-Install libXrandr-1.5.1-2.el7.x86_64                                @base
+    Dep-Install libXrender-0.9.10-1.el7.x86_64                              @base
+    Dep-Install libXt-1.1.5-3.el7.x86_64                                    @base
+    Dep-Install libXxf86misc-1.0.3-7.1.el7.x86_64                           @base
+    Dep-Install libXxf86vm-1.1.4-1.el7.x86_64                               @base
+    Dep-Install libfontenc-1.1.3-3.el7.x86_64                               @base
+    Dep-Install libgfortran-4.8.5-39.el7.x86_64                             @base
+    Dep-Install libglvnd-1:1.0.1-0.8.git5baa1e5.el7.x86_64                  @base
+    Dep-Install libglvnd-egl-1:1.0.1-0.8.git5baa1e5.el7.x86_64              @base
+    Dep-Install libglvnd-glx-1:1.0.1-0.8.git5baa1e5.el7.x86_64              @base
+    Dep-Install libjpeg-turbo-1.2.90-8.el7.x86_64                           @base
+    Dep-Install libquadmath-4.8.5-39.el7.x86_64                             @base
+    Dep-Install librsvg2-2.40.20-1.el7.x86_64                               @base
+    Dep-Install libthai-0.1.14-9.el7.x86_64                                 @base
+    Dep-Install libtiff-4.0.3-32.el7.x86_64                                 @base
+    Dep-Install libwayland-client-1.15.0-1.el7.x86_64                       @base
+    Dep-Install libwayland-server-1.15.0-1.el7.x86_64                       @base
+    Dep-Install libxshmfence-1.2-1.el7.x86_64                               @base
+    Dep-Install libzstd-1.4.5-3.el7.x86_64                                  @tcs-epel
+    Dep-Install mesa-libEGL-18.3.4-7.el7_8.1.x86_64                         @tcs-centos-updates
+    Dep-Install mesa-libGL-18.3.4-7.el7_8.1.x86_64                          @tcs-centos-updates
+    Dep-Install mesa-libgbm-18.3.4-7.el7_8.1.x86_64                         @tcs-centos-updates
+    Dep-Install mesa-libglapi-18.3.4-7.el7_8.1.x86_64                       @tcs-centos-updates
+    Dep-Install pango-1.42.4-4.el7_7.x86_64                                 @base
+    Dep-Install perl-srpm-macros-1-8.el7.noarch                             @base
+    Dep-Install pixman-0.34.0-1.el7.x86_64                                  @base
+    Dep-Install python-srpm-macros-3-32.el7.noarch                          @base
+    Dep-Install redhat-rpm-config-9.1.0-88.el7.centos.noarch                @base
+    Dep-Install root-cling-6.20.06-1.el7.x86_64                             @tcs-epel
+    Dep-Install root-core-6.20.06-1.el7.x86_64                              @tcs-epel
+    Dep-Install root-fonts-6.20.06-1.el7.noarch                             @tcs-epel
+    Dep-Install root-graf-6.20.06-1.el7.x86_64                              @tcs-epel
+    Dep-Install root-graf-asimage-6.20.06-1.el7.x86_64                      @tcs-epel
+    Dep-Install root-graf-gpad-6.20.06-1.el7.x86_64                         @tcs-epel
+    Dep-Install root-graf-postscript-6.20.06-1.el7.x86_64                   @tcs-epel
+    Dep-Install root-graf-x11-6.20.06-1.el7.x86_64                          @tcs-epel
+    Dep-Install root-graf3d-6.20.06-1.el7.x86_64                            @tcs-epel
+    Dep-Install root-gui-6.20.06-1.el7.x86_64                               @tcs-epel
+    Dep-Install root-gui-ged-6.20.06-1.el7.x86_64                           @tcs-epel
+    Dep-Install root-hist-6.20.06-1.el7.x86_64                              @tcs-epel
+    Dep-Install root-hist-painter-6.20.06-1.el7.x86_64                      @tcs-epel
+    Dep-Install root-icons-6.20.06-1.el7.noarch                             @tcs-epel
+    Dep-Install root-io-6.20.06-1.el7.x86_64                                @tcs-epel
+    Dep-Install root-mathcore-6.20.06-1.el7.x86_64                          @tcs-epel
+    Dep-Install root-mathmore-6.20.06-1.el7.x86_64                          @tcs-epel
+    Dep-Install root-matrix-6.20.06-1.el7.x86_64                            @tcs-epel
+    Install     root-memstat-6.20.06-1.el7.x86_64                           @tcs-epel
+    Dep-Install root-minuit-6.20.06-1.el7.x86_64                            @tcs-epel
+    Dep-Install root-multiproc-6.20.06-1.el7.x86_64                         @tcs-epel
+    Dep-Install root-net-6.20.06-1.el7.x86_64                               @tcs-epel
+    Dep-Install root-physics-6.20.06-1.el7.x86_64                           @tcs-epel
+    Dep-Install root-tree-6.20.06-1.el7.x86_64                              @tcs-epel
+    Dep-Install root-tree-dataframe-6.20.06-1.el7.x86_64                    @tcs-epel
+    Dep-Install root-tree-player-6.20.06-1.el7.x86_64                       @tcs-epel
+    Dep-Install root-vecops-6.20.06-1.el7.x86_64                            @tcs-epel
+    Dep-Install urw-base35-d050000l-fonts-20170801-10.el7.noarch            @base
+    Dep-Install urw-base35-fonts-common-20170801-10.el7.noarch              @base
+    Dep-Install urw-base35-standard-symbols-ps-fonts-20170801-10.el7.noarch @base
+    Dep-Install urw-base35-z003-fonts-20170801-10.el7.noarch                @base
+    Dep-Install xorg-x11-font-utils-1:7.5-21.el7.x86_64                     @base
+    Dep-Install xorg-x11-fonts-ISO8859-1-75dpi-7.5-9.el7.noarch             @base
+    Dep-Install xorg-x11-server-utils-7.7-20.el7.x86_64                     @base
+    Dep-Install xxhash-libs-0.7.3-1.el7.x86_64                              @tcs-epel
+history info
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# yum history list 32
+ID     | Command line             | Date and time    | Action(s)      | Altered
+-------------------------------------------------------------------------------
+    32 | install root-memstat     | 2020-07-09 17:59 | Install        |   94
+history list
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# yum history undo 32
+...
+Removed:
+  atlas.x86_64 0:3.10.1-12.el7                           cairo.x86_64 0:1.15.12-4.el7                                        dejavu-fonts-common.noarch 0:2.33-6.el7
+  dejavu-sans-fonts.noarch 0:2.33-6.el7                  dwz.x86_64 0:0.11-3.el7                                             fontconfig.x86_64 0:2.13.0-4.3.el7
+  fontpackages-filesystem.noarch 0:1.44-8.el7            fribidi.x86_64 0:1.0.2-1.el7_7.1                                    gdk-pixbuf2.x86_64 0:2.36.12-3.el7
+  giflib.x86_64 0:4.1.6-9.el7                            gnu-free-fonts-common.noarch 0:20120503-8.el7                       gnu-free-mono-fonts.noarch 0:20120503-8.el7
+  gnu-free-sans-fonts.noarch 0:20120503-8.el7            gnu-free-serif-fonts.noarch 0:20120503-8.el7                        google-droid-sans-fonts.noarch 0:20120715-12.el7
+  graphite2.x86_64 0:1.3.10-1.el7_3                      gsl.x86_64 0:1.15-13.el7                                            harfbuzz.x86_64 0:1.7.5-2.el7
+  jasper-libs.x86_64 0:1.900.1-33.el7                    jbigkit-libs.x86_64 0:2.0-11.el7                                    libAfterImage.x86_64 0:1.20-21.el7
+  libICE.x86_64 0:1.0.9-9.el7                            libSM.x86_64 0:1.2.2-2.el7                                          libXcursor.x86_64 0:1.1.15-1.el7
+  libXdamage.x86_64 0:1.1.4-4.1.el7                      libXfixes.x86_64 0:5.0.3-1.el7                                      libXft.x86_64 0:2.3.2-2.el7
+  libXi.x86_64 0:1.7.9-1.el7                             libXinerama.x86_64 0:1.1.3-2.1.el7                                  libXmu.x86_64 0:1.1.2-2.el7
+  libXpm.x86_64 0:3.5.12-1.el7                           libXrandr.x86_64 0:1.5.1-2.el7                                      libXrender.x86_64 0:0.9.10-1.el7
+  libXt.x86_64 0:1.1.5-3.el7                             libXxf86misc.x86_64 0:1.0.3-7.1.el7                                 libXxf86vm.x86_64 0:1.1.4-1.el7
+  libfontenc.x86_64 0:1.1.3-3.el7                        libgfortran.x86_64 0:4.8.5-39.el7                                   libglvnd.x86_64 1:1.0.1-0.8.git5baa1e5.el7
+  libglvnd-egl.x86_64 1:1.0.1-0.8.git5baa1e5.el7         libglvnd-glx.x86_64 1:1.0.1-0.8.git5baa1e5.el7                      libjpeg-turbo.x86_64 0:1.2.90-8.el7
+  libquadmath.x86_64 0:4.8.5-39.el7                      librsvg2.x86_64 0:2.40.20-1.el7                                     libthai.x86_64 0:0.1.14-9.el7
+  libtiff.x86_64 0:4.0.3-32.el7                          libwayland-client.x86_64 0:1.15.0-1.el7                             libwayland-server.x86_64 0:1.15.0-1.el7
+  libxshmfence.x86_64 0:1.2-1.el7                        libzstd.x86_64 0:1.4.5-3.el7                                        mesa-libEGL.x86_64 0:18.3.4-7.el7_8.1
+  mesa-libGL.x86_64 0:18.3.4-7.el7_8.1                   mesa-libgbm.x86_64 0:18.3.4-7.el7_8.1                               mesa-libglapi.x86_64 0:18.3.4-7.el7_8.1
+  pango.x86_64 0:1.42.4-4.el7_7                          perl-srpm-macros.noarch 0:1-8.el7                                   pixman.x86_64 0:0.34.0-1.el7
+  python-srpm-macros.noarch 0:3-32.el7                   redhat-rpm-config.noarch 0:9.1.0-88.el7.centos                      root-cling.x86_64 0:6.20.06-1.el7
+  root-core.x86_64 0:6.20.06-1.el7                       root-fonts.noarch 0:6.20.06-1.el7                                   root-graf.x86_64 0:6.20.06-1.el7
+  root-graf-asimage.x86_64 0:6.20.06-1.el7               root-graf-gpad.x86_64 0:6.20.06-1.el7                               root-graf-postscript.x86_64 0:6.20.06-1.el7
+  root-graf-x11.x86_64 0:6.20.06-1.el7                   root-graf3d.x86_64 0:6.20.06-1.el7                                  root-gui.x86_64 0:6.20.06-1.el7
+  root-gui-ged.x86_64 0:6.20.06-1.el7                    root-hist.x86_64 0:6.20.06-1.el7                                    root-hist-painter.x86_64 0:6.20.06-1.el7
+  root-icons.noarch 0:6.20.06-1.el7                      root-io.x86_64 0:6.20.06-1.el7                                      root-mathcore.x86_64 0:6.20.06-1.el7
+  root-mathmore.x86_64 0:6.20.06-1.el7                   root-matrix.x86_64 0:6.20.06-1.el7                                  root-memstat.x86_64 0:6.20.06-1.el7
+  root-minuit.x86_64 0:6.20.06-1.el7                     root-multiproc.x86_64 0:6.20.06-1.el7                               root-net.x86_64 0:6.20.06-1.el7
+  root-physics.x86_64 0:6.20.06-1.el7                    root-tree.x86_64 0:6.20.06-1.el7                                    root-tree-dataframe.x86_64 0:6.20.06-1.el7
+  root-tree-player.x86_64 0:6.20.06-1.el7                root-vecops.x86_64 0:6.20.06-1.el7                                  urw-base35-d050000l-fonts.noarch 0:20170801-10.el7
+  urw-base35-fonts-common.noarch 0:20170801-10.el7       urw-base35-standard-symbols-ps-fonts.noarch 0:20170801-10.el7       urw-base35-z003-fonts.noarch 0:20170801-10.el7
+  xorg-x11-font-utils.x86_64 1:7.5-21.el7                xorg-x11-fonts-ISO8859-1-75dpi.noarch 0:7.5-9.el7                   xorg-x11-server-utils.x86_64 0:7.7-20.el7
+  xxhash-libs.x86_64 0:0.7.3-1.el7
+
+Complete!
+[root@ds-postgresql416p ~]#
+
+................................................................................
+
+#
+#	Idea No.3. In progress and I don't know about what it is.
+#	https://habr.com/ru/company/redhatrussia/blog/424367/
+#
+[root@ds-postgresql416p ~]# ls /etc/systemd/system/
+basic.target.wants             cvunlock.service      getty.target.wants       pgbouncer-s.service                     remote-fs.target.wants      vmtoolsd.service.requires
+collector-sidecar.service      default.target        local-fs.target.wants    pgbouncer-t.service                     sockets.target.wants
+commvault.Instance001.service  default.target.wants  mamonsu-5916.service     postgresql-12-candy-5916.service        sysinit.target.wants
+commvault.service              ds_agent.service.d    multi-user.target.wants  postgresql-12-candy-5916.service.wants  system-update.target.wants
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# systemd-cgls | grep -ie "rsyslog"
+│     └─31611 grep --color=auto -ie rsyslog
+  ├─rsyslog.service
+  │ └─7662 /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]#
+
+#
+#	Path     Tasks   %CPU   Memory  Input/s Output/s
+#
+[root@ds-postgresql416p ~]# systemd-cgtop -b | egrep -ie "rsyslog"
+/system.slice/rsyslog.service                             1      -    10.4M        -        -
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Thu Jul  9 18:40:13 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4300 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         0.4 396744  9176 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Thu Jul  9 19:26:12 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4308 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         0.5 396712 10248 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# 
+[root@ds-postgresql416p ~]# cat /sys/fs/cgroup/memory/system.slice/rsyslog.service/memory.swappiness
+1
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# cat /sys/fs/cgroup/memory/system.slice/rsyslog.service/memory.stat
+cache 466944
+rss 4444160
+rss_huge 0
+mapped_file 77824
+swap 0
+pgpgin 299386
+pgpgout 298187
+pgfault 53343
+pgmajfault 289
+inactive_anon 2142208
+active_anon 2306048
+inactive_file 229376
+active_file 233472
+unevictable 0
+hierarchical_memory_limit 31457280
+hierarchical_memsw_limit 9223372036854771712
+total_cache 466944
+total_rss 4444160
+total_rss_huge 0
+total_mapped_file 77824
+total_swap 0
+total_pgpgin 299386
+total_pgpgout 298187
+total_pgfault 53343
+total_pgmajfault 289
+total_inactive_anon 2142208
+total_active_anon 2306048
+total_inactive_file 229376
+total_active_file 233472
+total_unevictable 0
+[root@ds-postgresql416p ~]#
+
+#
+#	On other server target file is absent. And other directoryes are too.
+#	On this server cgroups doesn't turned on?
+#
+[root@ds-postgresql417p ~]# cat /sys/fs/cgroup/memory/system.slice/rsyslog.service/memory.stat
+cat: /sys/fs/cgroup/memory/system.slice/rsyslog.service/memory.stat: No such file or directory
+[root@ds-postgresql417p ~]#
+
+[root@ds-postgresql416p ~]# cat /proc/cgroups
+#subsys_name    hierarchy       num_cgroups     enabled
+cpuset  7       1       1
+cpu     4       1       1
+cpuacct 4       1       1
+memory  8       71      1
+devices 9       1       1
+freezer 2       1       1
+net_cls 3       1       1
+blkio   10      1       1
+perf_event      6       1       1
+hugetlb 5       1       1
+pids    11      1       1
+net_prio        3       1       1
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# systemctl -t slice
+UNIT                                                          LOAD   ACTIVE SUB    DESCRIPTION
+-.slice                                                       loaded active active Root Slice
+system-getty.slice                                            loaded active active system-getty.slice
+system-lvm2\x2dpvscan.slice                                   loaded active active system-lvm2\x2dpvscan.slice
+system-selinux\x2dpolicy\x2dmigrate\x2dlocal\x2dchanges.slice loaded active active system-selinux\x2dpolicy\x2dmigrate\x2dlocal\x2dchanges.slice
+system.slice                                                  loaded active active System Slice
+user-26.slice                                                 loaded active active User Slice of postgres
+user-525.slice                                                loaded active active User Slice of bsv
+user.slice                                                    loaded active active User and Session Slice
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+8 loaded units listed. Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# ls -Alh /sys/kernel/config/
+total 0
+[root@ds-postgresql416p ~]# yum list installed \*sysfs\*
+Installed Packages
+libsysfs.x86_64                                                                         2.1.0-16.el7                                                                          @anaconda
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# mount | grep -ie "cgroup"
+tmpfs on /sys/fs/cgroup type tmpfs (ro,nosuid,nodev,noexec,mode=755)
+cgroup on /sys/fs/cgroup/systemd type cgroup (rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd)
+cgroup on /sys/fs/cgroup/freezer type cgroup (rw,nosuid,nodev,noexec,relatime,freezer)
+cgroup on /sys/fs/cgroup/net_cls,net_prio type cgroup (rw,nosuid,nodev,noexec,relatime,net_prio,net_cls)
+cgroup on /sys/fs/cgroup/cpu,cpuacct type cgroup (rw,nosuid,nodev,noexec,relatime,cpuacct,cpu)
+cgroup on /sys/fs/cgroup/hugetlb type cgroup (rw,nosuid,nodev,noexec,relatime,hugetlb)
+cgroup on /sys/fs/cgroup/perf_event type cgroup (rw,nosuid,nodev,noexec,relatime,perf_event)
+cgroup on /sys/fs/cgroup/cpuset type cgroup (rw,nosuid,nodev,noexec,relatime,cpuset)
+cgroup on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
+cgroup on /sys/fs/cgroup/devices type cgroup (rw,nosuid,nodev,noexec,relatime,devices)
+cgroup on /sys/fs/cgroup/blkio type cgroup (rw,nosuid,nodev,noexec,relatime,blkio)
+cgroup on /sys/fs/cgroup/pids type cgroup (rw,nosuid,nodev,noexec,relatime,pids)
+[root@ds-postgresql416p ~]#
+
+................................................................................
+
+#
+#	Here exists audit=1
+#
+[root@ds-postgresql416p ~]# cat /proc/cmdline
+BOOT_IMAGE=/vmlinuz-3.10.0-957.12.1.el7.x86_64 root=/dev/mapper/vg_root-lvol0 ro crashkernel=auto rd.lvm.lv=vg_root/lvol0 net.ifnames=0 rhgb quiet transparent_hugepage=never audit=1
+[root@ds-postgresql416p ~]#
+
+#	But here - is not.
+[root@ds-postgresql417p ~]# cat /proc/cmdline
+BOOT_IMAGE=/vmlinuz-3.10.0-957.12.1.el7.x86_64 root=/dev/mapper/vg_root-lvol0 ro crashkernel=auto rd.lvm.lv=vg_root/lvol0 net.ifnames=0 rhgb quiet LANG=en_US.UTF-8 transparent_hugepage=never
+[root@ds-postgresql417p ~]#
+
+................................................................................
+#
+#	20200710
+#
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Fri Jul 10 11:06:16 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4220 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         1.4 396716 27264 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# cat
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Fri Jul 10 13:01:15 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4280 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         1.4 396716 28068 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# cat
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Fri Jul 10 13:39:00 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4288 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         1.7 396712 33848 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# cat
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Fri Jul 10 17:37:11 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4240 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         1.8 396712 35332 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# cat
+
+[root@ds-postgresql416p ~]# date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,tty,%mem,vsz,rss,comm,args
+Fri Jul 10 21:33:19 MSK 2020
+  PID  PPID USER      NI TT       %MEM    VSZ   RSS COMMAND         COMMAND
+    1     0 root       0 ?         0.2 489696  4320 systemd         /usr/lib/systemd/systemd --switched-root --system --deserialize 22
+ 7662     1 root       0 ?         1.7 396712 32316 rsyslogd        /usr/sbin/rsyslogd -n
+[root@ds-postgresql416p ~]# cat
+
+
+................................................................................
+
+#
+#	20200713
+#
+
+[root@ds-postgresql416p ~]# yum list installed rsyslog
+Installed Packages
+rsyslog.x86_64                                                                         8.24.0-34.el7                                                                          @anaconda
+[root@ds-postgresql416p ~]# yum update rsyslog
+Resolving Dependencies
+--> Running transaction check
+---> Package rsyslog.x86_64 0:8.24.0-34.el7 will be updated
+---> Package rsyslog.x86_64 0:8.24.0-52.el7_8.2 will be an update
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=======================================================================================================================================================================================
+ Package                                Arch                                  Version                                          Repository                                         Size
+=======================================================================================================================================================================================
+Updating:
+ rsyslog                                x86_64                                8.24.0-52.el7_8.2                                tcs-centos-updates                                621 k
+
+Transaction Summary
+=======================================================================================================================================================================================
+Upgrade  1 Package
+
+Total download size: 621 k
+Is this ok [y/d/N]: N
+Exiting on user command
+Your transaction was saved, rerun it with:
+ yum load-transaction /tmp/yum_save_tx.2020-07-13.12-08.ZWLdPW.yumtx
+[root@ds-postgresql416p ~]#
+
+
+................................................................................
+
+[root@ds-postgresql416p ~]# watch -n 600 '(date ; ps -p `pidof systemd`,`pidof rsyslogd` -o pid,ppid,user,nice,%mem,vsz,rss,comm,args) | tee -a /var/tmp/$(date +%Y%m%d).ps.rsyslog.sys
+temd.log'
+[root@ds-postgresql416p ~]#
+
+................................................................................
+#
+#	20200713 16:56
+#
+[root@ds-postgresql416p ~]# cat /sys/fs/cgroup/memory/system.slice/rsyslog.service/memory.stat
+cache 335872
+rss 28426240
+rss_huge 0
+mapped_file 249856
+swap 94986240
+pgpgin 371613987
+pgpgout 371606965
+pgfault 14905410
+pgmajfault 1663885
+inactive_anon 15450112
+active_anon 12980224
+inactive_file 151552
+active_file 180224
+unevictable 0
+hierarchical_memory_limit 31457280
+hierarchical_memsw_limit 9223372036854771712
+total_cache 335872
+total_rss 28426240
+total_rss_huge 0
+total_mapped_file 249856
+total_swap 94986240
+total_pgpgin 371613987
+total_pgpgout 371606965
+total_pgfault 14905410
+total_pgmajfault 1663885
+total_inactive_anon 15450112
+total_active_anon 12980224
+total_inactive_file 151552
+total_active_file 180224
+total_unevictable 0
+[root@ds-postgresql416p ~]#
+
+................................................................................
+#
+#	rsyslog was updated.
+#	From rsyslog-8.24.0-34.el7.x86_64 to rsyslog-8.24.0-52.el7_8.2.x86_64.
+#
+#	Before update in /var/log/messaged periodically met follow strings with failed messages.
+...
+Jul 13 16:43:01 ds-postgresql416p rsyslogd: sd_journal_get_cursor() failed: 'Cannot assign requested address'  [v8.24.0-34.el7]
+Jul 13 16:43:01 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+...
+Jul 13 16:49:33 ds-postgresql416p rsyslogd: sd_journal_get_cursor() failed: 'Cannot assign requested address'  [v8.24.0-34.el7]
+Jul 13 16:49:33 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+...
+Jul 13 16:56:03 ds-postgresql416p rsyslogd: sd_journal_get_cursor() failed: 'Cannot assign requested address'  [v8.24.0-34.el7]
+Jul 13 16:56:03 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-34.el7 try http://www.rsyslog.com/e/0 ]
+...
+Jul 13 16:58:31 ds-postgresql416p yum[3329]: Updated: rsyslog-8.24.0-52.el7_8.2.x86_64
+Jul 13 16:58:31 ds-postgresql416p systemd: Reloading.
+...
+Jul 13 16:58:32 ds-postgresql416p systemd: Stopping System Logging Service...
+Jul 13 16:58:33 ds-postgresql416p rsyslogd: [origin software="rsyslogd" swVersion="8.24.0-34.el7" x-pid="7662" x-info="http://www.rsyslog.com"] exiting on signal 15.
+Jul 13 16:58:33 ds-postgresql416p systemd: Stopped System Logging Service.
+Jul 13 16:58:33 ds-postgresql416p systemd: Starting System Logging Service...
+Jul 13 16:58:33 ds-postgresql416p rsyslogd: [origin software="rsyslogd" swVersion="8.24.0-52.el7_8.2" x-pid="3415" x-info="http://www.rsyslog.com"] start
+Jul 13 16:58:33 ds-postgresql416p systemd: Started System Logging Service.
+...
+Jul 13 17:02:01 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-52.el7_8.2 try http://www.rsyslog.com/e/0 ]
+Jul 13 17:02:01 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-52.el7_8.2 try http://www.rsyslog.com/e/0 ]
+Jul 13 17:02:01 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-52.el7_8.2 try http://www.rsyslog.com/e/0 ]
+Jul 13 17:02:01 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-52.el7_8.2 try http://www.rsyslog.com/e/0 ]
+Jul 13 17:02:01 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-52.el7_8.2 try http://www.rsyslog.com/e/0 ]
+Jul 13 17:02:01 ds-postgresql416p rsyslogd: imjournal: journal reloaded... [v8.24.0-52.el7_8.2 try http://www.rsyslog.com/e/0 ]
+...
+
+#	After update I see no more messages with word "failed".
+
+#
+#	After update was removed my Memory limit restrictions for Cgroup.
+#	The file was rewritten.
+#
+[root@ds-postgresql416p ~]# cat /usr/lib/systemd/system/rsyslog.service
+[Unit]
+Description=System Logging Service
+;Requires=syslog.socket
+Wants=network.target network-online.target
+After=network.target network-online.target
+Documentation=man:rsyslogd(8)
+Documentation=http://www.rsyslog.com/doc/
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/sysconfig/rsyslog
+ExecStart=/usr/sbin/rsyslogd -n $SYSLOGD_OPTIONS
+Restart=on-failure
+UMask=0066
+StandardOutput=null
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+;Alias=syslog.service
+[root@ds-postgresql416p ~]# stat /usr/lib/systemd/system/rsyslog.service
+  File: ‘/usr/lib/systemd/system/rsyslog.service’
+  Size: 465             Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 1086373     Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2020-07-13 16:58:32.116982154 +0300
+Modify: 2020-06-23 18:40:04.000000000 +0300
+Change: 2020-07-13 16:58:30.701958851 +0300
+ Birth: -
+[root@ds-postgresql416p ~]#
+
+................................................................................
+
+#
+#	Here is an article about memory leak bug in rsyslog, that was on the server.
+#
+#	https://bugzilla.redhat.com/show_bug.cgi?id=1663267
+#
+
+#	In this article mentioned version of systemd with memory leak and it was earler, than it installed on the server.
+#
+[root@ds-postgresql416p ~]# yum list installed systemd
+Installed Packages
+systemd.x86_64                                                                         219-62.el7_6.6                                                                          @updates
+[root@ds-postgresql416p ~]#
+
+................................................................................
+................................................................................
+#
+#	20200715
+#	Continue task with systemd.
+#
+
+[root@ds-postgresql416p ~]# yum list installed systemd
+Installed Packages
+systemd.x86_64                                                                         219-62.el7_6.6                                                                          @updates
+[root@ds-postgresql416p ~]# yum list available systemd
+Available Packages
+systemd.x86_64                                                                    219-73.el7_8.8                                                                     tcs-centos-updates
+[root@ds-postgresql416p ~]#
+
+
+[root@ds-postgresql416p ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:           1838        1267         146           0         424         403
+Swap:          2047         687        1360
+[root@ds-postgresql416p ~]#
+
+
+[root@ds-postgresql416p ~]# yum update systemd
+Resolving Dependencies
+--> Running transaction check
+---> Package systemd.x86_64 0:219-62.el7_6.6 will be updated
+--> Processing Dependency: systemd = 219-62.el7_6.6 for package: systemd-sysv-219-62.el7_6.6.x86_64
+---> Package systemd.x86_64 0:219-73.el7_8.8 will be an update
+--> Processing Dependency: systemd-libs = 219-73.el7_8.8 for package: systemd-219-73.el7_8.8.x86_64
+--> Running transaction check
+---> Package systemd-libs.x86_64 0:219-62.el7_6.6 will be updated
+---> Package systemd-libs.x86_64 0:219-73.el7_8.8 will be an update
+---> Package systemd-sysv.x86_64 0:219-62.el7_6.6 will be updated
+---> Package systemd-sysv.x86_64 0:219-73.el7_8.8 will be an update
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=======================================================================================================================================================================================
+ Package                                    Arch                                 Version                                        Repository                                        Size
+=======================================================================================================================================================================================
+Updating:
+ systemd                                    x86_64                               219-73.el7_8.8                                 tcs-centos-updates                               5.1 M
+Updating for dependencies:
+ systemd-libs                               x86_64                               219-73.el7_8.8                                 tcs-centos-updates                               416 k
+ systemd-sysv                               x86_64                               219-73.el7_8.8                                 tcs-centos-updates                                94 k
+
+Transaction Summary
+=======================================================================================================================================================================================
+Upgrade  1 Package (+2 Dependent packages)
+
+Total download size: 5.6 M
+Is this ok [y/d/N]: y
+Downloading packages:
+Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+(1/3): systemd-libs-219-73.el7_8.8.x86_64.rpm                                                                                                                   | 416 kB  00:00:00
+(2/3): systemd-sysv-219-73.el7_8.8.x86_64.rpm                                                                                                                   |  94 kB  00:00:00
+(3/3): systemd-219-73.el7_8.8.x86_64.rpm                                                                                                                        | 5.1 MB  00:00:00
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                   13 MB/s | 5.6 MB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : systemd-libs-219-73.el7_8.8.x86_64                                                                                                                                  1/6
+  Updating   : systemd-219-73.el7_8.8.x86_64                                                                                                                                       2/6
+  Updating   : systemd-sysv-219-73.el7_8.8.x86_64                                                                                                                                  3/6
+  Cleanup    : systemd-sysv-219-62.el7_6.6.x86_64                                                                                                                                  4/6
+  Cleanup    : systemd-219-62.el7_6.6.x86_64                                                                                                                                       5/6
+  Cleanup    : systemd-libs-219-62.el7_6.6.x86_64                                                                                                                                  6/6
+  Verifying  : systemd-219-73.el7_8.8.x86_64                                                                                                                                       1/6
+  Verifying  : systemd-libs-219-73.el7_8.8.x86_64                                                                                                                                  2/6
+  Verifying  : systemd-sysv-219-73.el7_8.8.x86_64                                                                                                                                  3/6
+  Verifying  : systemd-sysv-219-62.el7_6.6.x86_64                                                                                                                                  4/6
+  Verifying  : systemd-libs-219-62.el7_6.6.x86_64                                                                                                                                  5/6
+  Verifying  : systemd-219-62.el7_6.6.x86_64                                                                                                                                       6/6
+
+Updated:
+  systemd.x86_64 0:219-73.el7_8.8
+
+Dependency Updated:
+  systemd-libs.x86_64 0:219-73.el7_8.8                                                       systemd-sysv.x86_64 0:219-73.el7_8.8
+
+Complete!
+[root@ds-postgresql416p ~]#
+
+[root@ds-postgresql416p ~]# less /var/log/messages
+...
+Jul 15 17:08:59 ds-postgresql416p yum[12513]: Updated: systemd-libs-219-73.el7_8.8.x86_64
+Jul 15 17:08:59 ds-postgresql416p systemd: Closed udev Control Socket.
+Jul 15 17:08:59 ds-postgresql416p systemd: Closed udev Kernel Socket.
+Jul 15 17:08:59 ds-postgresql416p systemd: Stopping udev Kernel Device Manager...
+Jul 15 17:08:59 ds-postgresql416p systemd: Stopped udev Kernel Device Manager.
+Jul 15 17:08:59 ds-postgresql416p dbus[5447]: [system] Reloaded configuration
+Jul 15 17:08:59 ds-postgresql416p dbus[5447]: [system] Reloaded configuration
+...
+Jul 15 17:09:19 ds-postgresql416p yum[12513]: Updated: systemd-219-73.el7_8.8.x86_64
+Jul 15 17:09:19 ds-postgresql416p yum[12513]: Updated: systemd-sysv-219-73.el7_8.8.x86_64
+Jul 15 17:09:19 ds-postgresql416p systemd: Reloading.
+...
+
+................................................................................
+
+
+

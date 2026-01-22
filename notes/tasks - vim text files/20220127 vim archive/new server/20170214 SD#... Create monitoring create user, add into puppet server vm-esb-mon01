@@ -1,0 +1,43 @@
+
+
+
+[root@vm-esb-mon01 ~]# grep ci-admin /etc/{passwd,shadow}
+/etc/passwd:ci-admin:x:728:728:CI Admin:/home/ci-admin:/bin/bash
+/etc/shadow:ci-admin:$6$rw/Mo1x.$ZsilHpjfdTz/SLQzCqZivGKivbE7RdR7HIPBWcT3FLgj4ycFI8TVsYF2vOTNFgCaIYfbYCiQJ3M8K4EEMtI7M.:17112:0:99999:7:::
+[root@vm-esb-mon01 ~]# logout
+[bsv@vm-esb-mon01 ~]$ ssh root@vm-esb-ci01.ti.local
+The authenticity of host 'vm-esb-ci01.ti.local (10.218.50.28)' can't be established.
+ECDSA key fingerprint is 31:d0:60:d9:65:85:2c:70:8f:a4:13:46:fc:a2:d7:6e.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'vm-esb-ci01.ti.local,10.218.50.28' (ECDSA) to the list of known hosts.
+root@vm-esb-ci01.ti.local's password:
+Last login: Tue Feb  7 14:46:49 2017
+[root@vm-esb-ci01 ~]# groupadd -g 728 ci-admin && useradd -u 728 -g ci-admin -c "SD#202807" -m -s /bin/bash -G wheel -p '$6$rw/Mo1x.$ZsilHpjfdTz/SLQzCqZivGKivbE7RdR7HIPBWcT3FLgj4ycFI8TVsYF2vOTNFgCaIYfbYCiQJ3M8K4EEMtI7M.' ci-admin
+[root@vm-esb-ci01 ~]#
+
+[root@vm-esb-ci01 ~]# sudo -l -U ci-admin
+Matching Defaults entries for ci-admin on this host:
+    !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE
+    LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE", env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY",
+    secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User ci-admin may run the following commands on this host:
+    (ALL) ALL
+[root@vm-esb-ci01 ~]#
+
+[root@vm-esb-ci01 ~]# puppet agent -t
+Error: Could not request certificate: getaddrinfo: Name or service not known
+Exiting; failed to retrieve certificate and waitforcert is disabled
+[root@vm-esb-ci01 ~]#
+
+
+
+[root@puppet ~]# puppet cert list | grep vm-esb-ci01.ti.local
+  "vm-esb-ci01.ti.local"                (SHA256) F8:35:09:14:32:56:7D:B3:64:25:79:71:BE:34:FD:D2:7A:24:98:96:BD:91:9E:06:15:26:E4:DE:F1:8F:A1:07
+[root@puppet ~]# puppet cert sign vm-esb-ci01.ti.local
+Notice: Signed certificate request for vm-esb-ci01.ti.local
+Notice: Removing file Puppet::SSL::CertificateRequest vm-esb-ci01.ti.local at '/var/lib/puppet/ssl/ca/requests/vm-esb-ci01.ti.local.pem'
+[root@puppet ~]#
+
+
+

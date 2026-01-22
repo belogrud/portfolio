@@ -1,0 +1,742 @@
+
+[15:27:50 root@ds-gp-prod-sdw19 ~]# dmidecode -t system
+# dmidecode 3.1
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2.0 present.
+# SMBIOS implementations newer than version 3.1.1 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R740
+        Version: Not Specified
+        Serial Number: 6GLPYR2
+        UUID: 4c4c4544-0047-4c10-8050-b6c04f595232
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R740
+        Family: PowerEdge
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[15:28:01 root@ds-gp-prod-sdw19 ~]#
+
+
+
+[14:46:13 root@ds-gp-prod-sdw19 ~]# lsblk
+NAME            MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda               8:0    0 744.6G  0 disk
+├─sda1            8:1    0   200M  0 part /boot/efi
+├─sda2            8:2    0     1G  0 part /boot
+└─sda3            8:3    0 743.4G  0 part
+  ├─rootvg-root 253:0    0   150G  0 lvm  /
+  ├─rootvg-swap 253:1    0    16G  0 lvm  [SWAP]
+  ├─rootvg-opt  253:2    0    50G  0 lvm  /opt
+  ├─rootvg-var  253:3    0   100G  0 lvm  /var
+  └─rootvg-tmp  253:4    0     8G  0 lvm  /tmp
+nvme0n1         259:3    0   2.9T  0 disk
+└─nvme0n1p1     259:5    0   2.9T  0 part /data1
+nvme1n1         259:6    0   2.9T  0 disk
+└─nvme1n1p1     259:7    0   2.9T  0 part /data2
+nvme2n1         259:1    0   2.9T  0 disk
+└─nvme2n1p1     259:4    0   2.9T  0 part /data3
+nvme3n1         259:0    0   2.9T  0 disk
+└─nvme3n1p1     259:2    0   2.9T  0 part /data4
+[14:46:16 root@ds-gp-prod-sdw19 ~]# nvme list
+Node             SN                   Model                                    Namespace Usage                      Format           FW Rev
+---------------- -------------------- ---------------------------------------- --------- -------------------------- ---------------- --------
+/dev/nvme0n1           S3B1NA0JA01992 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme1n1           S3B1NA0JA02527 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme2n1           S3B1NA0JA02536 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme3n1           S3B1NA0JA02529 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+[14:46:45 root@ds-gp-prod-sdw19 ~]#
+
+................................................................................
+[14:54:21 root@ds-gp-prod-sdw19 ~]# lsof /data3 | head -n 5
+COMMAND    PID    USER   FD   TYPE DEVICE  SIZE/OFF       NODE NAME
+postgres 63180 gpadmin  cwd    DIR  259,4      4096 6450908828 /data3/mirror/gpseg62
+postgres 63181 gpadmin  cwd    DIR  259,4      4096 6450908828 /data3/mirror/gpseg62
+postgres 63181 gpadmin    3w   REG  259,4     40334 2148174572 /data3/mirror/gpseg62/pg_log/gpdb-2020-02-10_000000.csv
+postgres 63181 gpadmin    5w   REG  259,4     40334 2148174572 /data3/mirror/gpseg62/pg_log/gpdb-2020-02-10_000000.csv
+[14:54:45 root@ds-gp-prod-sdw19 ~]# lsof /data3 | wc -l
+6526
+[14:57:12 root@ds-gp-prod-sdw19 ~]# lsof /data3 | wc -l
+6526
+[15:25:32 root@ds-gp-prod-sdw19 ~]# kill -9 63180
+[15:25:38 root@ds-gp-prod-sdw19 ~]# kill -9 63181
+-bash: kill: (63181) - No such process
+[15:25:41 root@ds-gp-prod-sdw19 ~]# lsof /data3 | wc -l
+3490
+[15:25:46 root@ds-gp-prod-sdw19 ~]# lsof /data3 | head -n 5
+COMMAND    PID    USER   FD   TYPE DEVICE  SIZE/OFF       NODE NAME
+postgres 70679 gpadmin  cwd    DIR  259,4      4096 4306956448 /data3/primary/gpseg74
+postgres 70690 gpadmin  cwd    DIR  259,4      4096 4306956448 /data3/primary/gpseg74
+postgres 70690 gpadmin    4w   REG  259,4     54725      25122 /data3/primary/gpseg74/pg_log/gpdb-2020-02-10_000000.csv
+postgres 70690 gpadmin    5w   REG  259,4     54725      25122 /data3/primary/gpseg74/pg_log/gpdb-2020-02-10_000000.csv
+[15:25:59 root@ds-gp-prod-sdw19 ~]# kill -9 70679
+[15:26:06 root@ds-gp-prod-sdw19 ~]# lsof /data3 | wc -l
+0
+[15:26:13 root@ds-gp-prod-sdw19 ~]#
+................................................................................
+
+[15:26:49 root@ds-gp-prod-sdw19 ~]# umount /data3
+[15:26:59 root@ds-gp-prod-sdw19 ~]#
+
+[15:27:15 root@ds-gp-prod-sdw19 ~]# blkid
+/dev/sda1: SEC_TYPE="msdos" UUID="1C63-7C9B" TYPE="vfat" PARTLABEL="EFI System Partition" PARTUUID="0f2d8fc8-3859-4b89-9db1-508533a954a3"
+/dev/sda2: UUID="36387ae6-2e29-48d4-84ae-0bc443c33f4a" TYPE="ext4" PARTUUID="47a77e00-7e08-4c51-a2e4-b93ea38a556f"
+/dev/sda3: UUID="eueock-eOF1-G4ib-0i3D-JTsV-4s5K-AUkPZc" TYPE="LVM2_member" PARTUUID="dbdb66cb-373c-48fd-aaaa-97bf6b844636"
+/dev/mapper/rootvg-root: UUID="a90ab553-c7df-4ba8-80ca-f4bbd3de36a3" TYPE="ext4"
+/dev/mapper/rootvg-swap: UUID="e1e732af-543b-4955-899a-2ff9d65f33a6" TYPE="swap"
+/dev/nvme3n1: PTTYPE="gpt"
+/dev/nvme3n1p1: UUID="aa7c00ed-8f81-418f-874a-fd1c992dc9d3" TYPE="xfs" PARTLABEL="nvme04" PARTUUID="b6c09e5d-9231-4bcb-b9bf-0daffbb54223"
+/dev/nvme2n1: PTTYPE="gpt"
+/dev/nvme2n1p1: UUID="284fbe19-da30-4698-98dc-83727c07a21d" TYPE="xfs" PARTLABEL="nvme03" PARTUUID="b031d985-f9cb-4127-8650-8a2fcbd9cd1b"
+/dev/nvme0n1: PTTYPE="gpt"
+/dev/nvme0n1p1: UUID="91ac5919-2540-45a3-8204-41698b5c6e6b" TYPE="xfs" PARTLABEL="nvme01" PARTUUID="5d851949-25c6-4a9c-bfe3-61babbdd4e2b"
+/dev/nvme1n1: PTTYPE="gpt"
+/dev/nvme1n1p1: UUID="3c7d9f4f-7a11-433d-9a4c-a22358b176f0" TYPE="xfs" PARTLABEL="nvme02" PARTUUID="ae2f6284-d47a-4244-b4c7-20d551dfee9a"
+/dev/mapper/rootvg-opt: UUID="33430a4c-8270-4391-bd20-666b28c31a9a" TYPE="ext4"
+/dev/mapper/rootvg-var: UUID="e26d6043-e30f-4e02-b7fd-5fe20cb674db" TYPE="ext4"
+/dev/mapper/rootvg-tmp: UUID="b33e5f98-ed5a-401c-8018-4911b58ca195" TYPE="ext4"
+[15:27:18 root@ds-gp-prod-sdw19 ~]#
+
+[15:27:18 root@ds-gp-prod-sdw19 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Fri Dec 21 15:07:52 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/rootvg-root /                       ext4    defaults        1 1
+UUID=36387ae6-2e29-48d4-84ae-0bc443c33f4a /boot                   ext4    defaults        1 2
+UUID=1C63-7C9B          /boot/efi               vfat    defaults,uid=0,gid=0,umask=0077,shortname=winnt 0 0
+/dev/mapper/rootvg-opt  /opt                    ext4    defaults        1 2
+/dev/mapper/rootvg-tmp  /tmp                    ext4    defaults        1 2
+/dev/mapper/rootvg-var  /var                    ext4    defaults        1 2
+/dev/mapper/rootvg-swap swap                    swap    defaults        0 0
+PARTLABEL=nvme01 /data1 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+PARTLABEL=nvme02 /data2 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+PARTLABEL=nvme03 /data3 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+PARTLABEL=nvme04 /data4 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+fs-nfsdata:/afs_data_prod /mnt/afs_data_prod nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock 0 0
+[15:27:42 root@ds-gp-prod-sdw19 ~]#
+
+
+[15:28:01 root@ds-gp-prod-sdw19 ~]# nvme list
+Node             SN                   Model                                    Namespace Usage                      Format           FW Rev
+---------------- -------------------- ---------------------------------------- --------- -------------------------- ---------------- --------
+/dev/nvme0n1           S3B1NA0JA01992 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme1n1           S3B1NA0JA02527 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme2n1           S3B1NA0JA02536 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme3n1           S3B1NA0JA02529 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+[15:29:21 root@ds-gp-prod-sdw19 ~]# lsblk /dev/nvme[0-9]n1
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+nvme0n1     259:3    0  2.9T  0 disk
+└─nvme0n1p1 259:5    0  2.9T  0 part /data1
+nvme1n1     259:6    0  2.9T  0 disk
+└─nvme1n1p1 259:7    0  2.9T  0 part /data2
+nvme2n1     259:1    0  2.9T  0 disk
+└─nvme2n1p1 259:4    0  2.9T  0 part
+nvme3n1     259:0    0  2.9T  0 disk
+└─nvme3n1p1 259:2    0  2.9T  0 part /data4
+[15:29:45 root@ds-gp-prod-sdw19 ~]# ls /dev/nvme[0-9]
+/dev/nvme0  /dev/nvme1  /dev/nvme2  /dev/nvme3
+[15:30:33 root@ds-gp-prod-sdw19 ~]# parted /dev/nvme2 print
+Error: The device /dev/nvme2 is so small that it cannot possibly store a file system or partition table.  Perhaps you selected the wrong device?
+Warning: Error fsyncing/closing /dev/nvme2: Invalid argument
+Retry/Ignore? I
+[15:31:10 root@ds-gp-prod-sdw19 ~]# parted /dev/nvme2 print
+nvme2      nvme2n1    nvme2n1p1
+[15:31:10 root@ds-gp-prod-sdw19 ~]# parted /dev/nvme2n1 print
+Model: NVMe Device (nvme)
+Disk /dev/nvme2n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name    Flags
+ 1      1049kB  3201GB  3201GB  xfs          nvme03  lvm
+
+[15:31:21 root@ds-gp-prod-sdw19 ~]#
+
+
+[15:31:21 root@ds-gp-prod-sdw19 ~]# nvme format /dev/nvme2 -n 1 -r
+Success formatting namespace:1
+[15:31:55 root@ds-gp-prod-sdw19 ~]#
+
+[15:31:55 root@ds-gp-prod-sdw19 ~]# lsblk
+NAME            MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda               8:0    0 744.6G  0 disk
+├─sda1            8:1    0   200M  0 part /boot/efi
+├─sda2            8:2    0     1G  0 part /boot
+└─sda3            8:3    0 743.4G  0 part
+  ├─rootvg-root 253:0    0   150G  0 lvm  /
+  ├─rootvg-swap 253:1    0    16G  0 lvm  [SWAP]
+  ├─rootvg-opt  253:2    0    50G  0 lvm  /opt
+  ├─rootvg-var  253:3    0   100G  0 lvm  /var
+  └─rootvg-tmp  253:4    0     8G  0 lvm  /tmp
+nvme0n1         259:3    0   2.9T  0 disk
+└─nvme0n1p1     259:5    0   2.9T  0 part /data1
+nvme1n1         259:6    0   2.9T  0 disk
+└─nvme1n1p1     259:7    0   2.9T  0 part /data2
+nvme2n1         259:1    0   2.9T  0 disk
+└─nvme2n1p1     259:4    0   2.9T  0 part /data3
+nvme3n1         259:0    0   2.9T  0 disk
+└─nvme3n1p1     259:2    0   2.9T  0 part /data4
+[15:32:18 root@ds-gp-prod-sdw19 ~]# ls /data3
+ls: cannot access /data3/gpcheckperf: Structure needs cleaning
+gpcheckperf  mirror  primary
+[15:32:51 root@ds-gp-prod-sdw19 ~]# umount /data3
+[15:33:32 root@ds-gp-prod-sdw19 ~]# lsblk
+NAME            MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda               8:0    0 744.6G  0 disk
+├─sda1            8:1    0   200M  0 part /boot/efi
+├─sda2            8:2    0     1G  0 part /boot
+└─sda3            8:3    0 743.4G  0 part
+  ├─rootvg-root 253:0    0   150G  0 lvm  /
+  ├─rootvg-swap 253:1    0    16G  0 lvm  [SWAP]
+  ├─rootvg-opt  253:2    0    50G  0 lvm  /opt
+  ├─rootvg-var  253:3    0   100G  0 lvm  /var
+  └─rootvg-tmp  253:4    0     8G  0 lvm  /tmp
+nvme0n1         259:3    0   2.9T  0 disk
+└─nvme0n1p1     259:5    0   2.9T  0 part /data1
+nvme1n1         259:6    0   2.9T  0 disk
+└─nvme1n1p1     259:7    0   2.9T  0 part /data2
+nvme2n1         259:1    0   2.9T  0 disk
+└─nvme2n1p1     259:4    0   2.9T  0 part
+nvme3n1         259:0    0   2.9T  0 disk
+└─nvme3n1p1     259:2    0   2.9T  0 part /data4
+[15:33:35 root@ds-gp-prod-sdw19 ~]#
+
+[15:33:54 root@ds-gp-prod-sdw19 ~]# parted -s -a optimal /dev/nvme2n1 mklabel GPT print mkpart primary xfs 0% 100% name 1 'nvme03' print
+Model: NVMe Device (nvme)
+Disk /dev/nvme2n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: NVMe Device (nvme)
+Disk /dev/nvme2n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name    Flags
+ 1      1049kB  3201GB  3201GB  xfs          nvme03
+
+[15:35:12 root@ds-gp-prod-sdw19 ~]#
+
+[15:35:44 root@ds-gp-prod-sdw19 ~]# mkfs.xfs /dev/nvme2n1p1
+mkfs.xfs: /dev/nvme2n1p1 appears to contain an existing filesystem (xfs).
+mkfs.xfs: Use the -f option to force overwrite.
+[15:36:22 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme2n1p1
+meta-data=/dev/nvme2n1p1         isize=512    agcount=4, agsize=195350976 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=781403904, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=381544, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[15:36:32 root@ds-gp-prod-sdw19 ~]#
+
+
+[15:36:57 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data2     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part            xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[15:36:58 root@ds-gp-prod-sdw19 ~]#
+
+[15:36:58 root@ds-gp-prod-sdw19 ~]# mount /data3
+[15:37:22 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data2     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part /data3     xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[15:37:28 root@ds-gp-prod-sdw19 ~]# ls -alh /data3
+total 4.0K
+drwxr-xr-x   2 root root    6 Feb 10 15:36 .
+dr-xr-xr-x. 23 root root 4.0K Feb  7 21:59 ..
+[15:37:32 root@ds-gp-prod-sdw19 ~]# df -hT /data3
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/nvme2n1p1 xfs   3.0T   33M  3.0T   1% /data3
+[15:37:41 root@ds-gp-prod-sdw19 ~]#
+
+
+[15:39:28 root@ds-gp-prod-sdw19 ~]# nvme list
+Node             SN                   Model                                    Namespace Usage                      Format           FW Rev
+---------------- -------------------- ---------------------------------------- --------- -------------------------- ---------------- --------
+/dev/nvme0n1           S3B1NA0JA01992 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme1n1           S3B1NA0JA02527 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme2n1           S3B1NA0JA02536 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme3n1           S3B1NA0JA02529 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+[15:39:33 root@ds-gp-prod-sdw19 ~]#
+
+................................................................................
+................................................................................
+
+#
+#	20200211
+#
+
+[12:24:16 root@ds-gp-prod-sdw19 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Fri Dec 21 15:07:52 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/rootvg-root /                       ext4    defaults        1 1
+UUID=36387ae6-2e29-48d4-84ae-0bc443c33f4a /boot                   ext4    defaults        1 2
+UUID=1C63-7C9B          /boot/efi               vfat    defaults,uid=0,gid=0,umask=0077,shortname=winnt 0 0
+/dev/mapper/rootvg-opt  /opt                    ext4    defaults        1 2
+/dev/mapper/rootvg-tmp  /tmp                    ext4    defaults        1 2
+/dev/mapper/rootvg-var  /var                    ext4    defaults        1 2
+/dev/mapper/rootvg-swap swap                    swap    defaults        0 0
+PARTLABEL=nvme01 /data1 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+PARTLABEL=nvme02 /data2 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+PARTLABEL=nvme03 /data3 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+PARTLABEL=nvme04 /data4 xfs allocsize=16m,nodev,noatime,nobarrier,inode64 0 0
+fs-nfsdata:/afs_data_prod /mnt/afs_data_prod nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock 0 0
+[12:25:31 root@ds-gp-prod-sdw19 ~]# nvme list
+Node             SN                   Model                                    Namespace Usage                      Format           FW Rev
+---------------- -------------------- ---------------------------------------- --------- -------------------------- ---------------- --------
+/dev/nvme0n1           S3B1NA0JA01992 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme1n1           S3B1NA0JA02527 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme2n1           S3B1NA0JA02536 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+/dev/nvme3n1           S3B1NA0JA02529 Dell Express Flash PM1725a 3.2TB AIC     1           3.20  TB /   3.20  TB    512   B +  0 B   1.1.2
+[12:25:39 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data2     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part /data3     xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[12:45:47 root@ds-gp-prod-sdw19 ~]# umount /data2
+[12:46:20 root@ds-gp-prod-sdw19 ~]# umount /data3
+[12:46:42 root@ds-gp-prod-sdw19 ~]# parted -s -a optimal /dev/nvme1n1 mklabel GPT print mkpart primary xfs 0% 100% name 1 'nvme03' print
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name    Flags
+ 1      1049kB  3201GB  3201GB  xfs          nvme03
+
+[12:47:30 root@ds-gp-prod-sdw19 ~]# parted -s -a optimal /dev/nvme2n1 mklabel GPT print mkpart primary xfs 0% 100% name 1 'nvme02' print
+Model: NVMe Device (nvme)
+Disk /dev/nvme2n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: NVMe Device (nvme)
+Disk /dev/nvme2n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name    Flags
+ 1      1049kB  3201GB  3201GB  xfs          nvme02
+
+[12:47:59 root@ds-gp-prod-sdw19 ~]# mkfs.xfs /dev/nvme1n1p1
+mkfs.xfs: /dev/nvme1n1p1 appears to contain an existing filesystem (xfs).
+mkfs.xfs: Use the -f option to force overwrite.
+[12:48:41 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme1n1p1
+meta-data=/dev/nvme1n1p1         isize=512    agcount=4, agsize=195350976 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=781403904, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=381544, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[12:48:53 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme2n1p1
+mkfs.xfs: /dev/nvme2n1p1 contains a mounted filesystem
+Usage: mkfs.xfs
+/* blocksize */         [-b log=n|size=num]
+/* metadata */          [-m crc=0|1,finobt=0|1,uuid=xxx]
+/* data subvol */       [-d agcount=n,agsize=n,file,name=xxx,size=num,
+                            (sunit=value,swidth=value|su=num,sw=num|noalign),
+                            sectlog=n|sectsize=num
+/* force overwrite */   [-f]
+/* inode size */        [-i log=n|perblock=n|size=num,maxpct=n,attr=0|1|2,
+                            projid32bit=0|1]
+/* no discard */        [-K]
+/* log subvol */        [-l agnum=n,internal,size=num,logdev=xxx,version=n
+                            sunit=value|su=num,sectlog=n|sectsize=num,
+                            lazy-count=0|1]
+/* label */             [-L label (maximum 12 characters)]
+/* naming */            [-n log=n|size=num,version=2|ci,ftype=0|1]
+/* no-op info only */   [-N]
+/* prototype file */    [-p fname]
+/* quiet */             [-q]
+/* realtime subvol */   [-r extsize=num,size=num,rtdev=xxx]
+/* sectorsize */        [-s log=n|size=num]
+/* version */           [-V]
+                        devicename
+<devicename> is required unless -d name=xxx is given.
+<num> is xxx (bytes), xxxs (sectors), xxxb (fs blocks), xxxk (xxx KiB),
+      xxxm (xxx MiB), xxxg (xxx GiB), xxxt (xxx TiB) or xxxp (xxx PiB).
+<value> is xxx (512 byte blocks).
+[12:49:00 root@ds-gp-prod-sdw19 ~]# umount /dev/nvme2n1p1
+[12:49:32 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme2n1p1
+meta-data=/dev/nvme2n1p1         isize=512    agcount=4, agsize=195350976 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=781403904, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=381544, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[12:49:49 root@ds-gp-prod-sdw19 ~]#
+[12:49:55 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part            xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part            xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[12:50:03 root@ds-gp-prod-sdw19 ~]# mount /data2
+[12:50:09 root@ds-gp-prod-sdw19 ~]# mount /data3
+[12:50:13 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data3     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part /data2     xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[12:50:15 root@ds-gp-prod-sdw19 ~]#
+
+................................................................................
+
+[12:54:55 root@ds-gp-prod-sdw19 ~]# umount /data1
+[14:38:26 root@ds-gp-prod-sdw19 ~]# umount /data4
+[14:38:55 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part            xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data3     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part /data2     xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part            xfs           2.9T
+[14:39:00 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme0n1p1
+meta-data=/dev/nvme0n1p1         isize=512    agcount=4, agsize=195350976 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=781403904, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=381544, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[14:39:33 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme3n1p1
+meta-data=/dev/nvme3n1p1         isize=512    agcount=4, agsize=195350976 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=781403904, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=381544, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[14:39:55 root@ds-gp-prod-sdw19 ~]# mount /data1
+[14:39:59 root@ds-gp-prod-sdw19 ~]# mount /data4
+[14:40:01 root@ds-gp-prod-sdw19 ~]# df -hT /data1 /data4
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/nvme0n1p1 xfs   3.0T   33M  3.0T   1% /data1
+/dev/nvme3n1p1 xfs   3.0T   33M  3.0T   1% /data4
+[14:40:08 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data3     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part /data2     xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[14:40:15 root@ds-gp-prod-sdw19 ~]#
+
+................................................................................
+
+#
+#	20200226
+#	I returned back partitions /data2 /data3 ot approppriate nvme cards.
+#
+
+[s.belogrud@TCS4357]# ssh bsv@ds-gp-prod-sdw19
+Last login: Tue Feb 11 12:24:03 2020 from 172.16.28.74
+[bsv@ds-gp-prod-sdw19 ~]$ sudo -i
+[sudo] password for bsv:
+[19:04:20 root@ds-gp-prod-sdw19 ~]# df -hT
+Filesystem                Type      Size  Used Avail Use% Mounted on
+/dev/mapper/rootvg-root   ext4      148G   19G  123G  13% /
+devtmpfs                  devtmpfs  378G     0  378G   0% /dev
+tmpfs                     tmpfs     378G  8.0K  378G   1% /dev/shm
+tmpfs                     tmpfs     378G  1.2G  376G   1% /run
+tmpfs                     tmpfs     378G     0  378G   0% /sys/fs/cgroup
+/dev/sda2                 ext4      976M  112M  798M  13% /boot
+/dev/sda1                 vfat      200M  9.6M  191M   5% /boot/efi
+/dev/mapper/rootvg-opt    ext4       50G  6.1G   41G  13% /opt
+/dev/mapper/rootvg-var    ext4       99G  6.0G   88G   7% /var
+/dev/mapper/rootvg-tmp    ext4      7.8G   39M  7.3G   1% /tmp
+mfs#10.216.7.1:9421       fuse      1.4P  928T  480T  66% /mnt/backup
+fs-nfsdata:/afs_data_prod nfs       4.5T  3.6T  979G  79% /mnt/afs_data_prod
+tmpfs                     tmpfs      76G     0   76G   0% /run/user/6007
+/dev/nvme2n1p1            xfs       3.0T  2.1T  904G  70% /data2
+/dev/nvme1n1p1            xfs       3.0T  2.1T  905G  70% /data3
+/dev/nvme0n1p1            xfs       3.0T  2.1T  901G  70% /data1
+/dev/nvme3n1p1            xfs       3.0T  2.1T  900G  70% /data4
+tmpfs                     tmpfs      76G     0   76G   0% /run/user/525
+[19:04:24 root@ds-gp-prod-sdw19 ~]# umount /data2 /data3
+[19:06:30 root@ds-gp-prod-sdw19 ~]# parted -s -a optimal /dev/nvme1n1 mklabel GPT print mkpart primary xfs 0% 100% name 1 'nvme02' print
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name    Flags
+ 1      1049kB  3201GB  3201GB  xfs          nvme02
+
+[19:07:10 root@ds-gp-prod-sdw19 ~]# parted -s -a optimal /dev/nvme2n1 mklabel GPT print mkpart primary xfs 0% 100% name 1 'nvme03' print
+Model: NVMe Device (nvme)
+Disk /dev/nvme2n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: NVMe Device (nvme)
+Disk /dev/nvme2n1: 3201GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name    Flags
+ 1      1049kB  3201GB  3201GB  xfs          nvme03
+
+[19:07:32 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme1n1p1
+meta-data=/dev/nvme1n1p1         isize=512    agcount=4, agsize=195350976 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=781403904, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=381544, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[19:08:13 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme2n1p1
+mkfs.xfs: /dev/nvme2n1p1 contains a mounted filesystem
+Usage: mkfs.xfs
+/* blocksize */         [-b log=n|size=num]
+/* metadata */          [-m crc=0|1,finobt=0|1,uuid=xxx]
+/* data subvol */       [-d agcount=n,agsize=n,file,name=xxx,size=num,
+                            (sunit=value,swidth=value|su=num,sw=num|noalign),
+                            sectlog=n|sectsize=num
+/* force overwrite */   [-f]
+/* inode size */        [-i log=n|perblock=n|size=num,maxpct=n,attr=0|1|2,
+                            projid32bit=0|1]
+/* no discard */        [-K]
+/* log subvol */        [-l agnum=n,internal,size=num,logdev=xxx,version=n
+                            sunit=value|su=num,sectlog=n|sectsize=num,
+                            lazy-count=0|1]
+/* label */             [-L label (maximum 12 characters)]
+/* naming */            [-n log=n|size=num,version=2|ci,ftype=0|1]
+/* no-op info only */   [-N]
+/* prototype file */    [-p fname]
+/* quiet */             [-q]
+/* realtime subvol */   [-r extsize=num,size=num,rtdev=xxx]
+/* sectorsize */        [-s log=n|size=num]
+/* version */           [-V]
+                        devicename
+<devicename> is required unless -d name=xxx is given.
+<num> is xxx (bytes), xxxs (sectors), xxxb (fs blocks), xxxk (xxx KiB),
+      xxxm (xxx MiB), xxxg (xxx GiB), xxxt (xxx TiB) or xxxp (xxx PiB).
+<value> is xxx (512 byte blocks).
+[19:08:29 root@ds-gp-prod-sdw19 ~]# umount /dev/nvme2n1p1
+[19:09:05 root@ds-gp-prod-sdw19 ~]# mkfs.xfs -f /dev/nvme2n1p1
+meta-data=/dev/nvme2n1p1         isize=512    agcount=4, agsize=195350976 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=781403904, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=381544, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[19:09:15 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data2     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part            xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[19:09:23 root@ds-gp-prod-sdw19 ~]# mount /data3
+[19:09:46 root@ds-gp-prod-sdw19 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        744.6G
+├─sda1          part /boot/efi  vfat          200M
+├─sda2          part /boot      ext4            1G
+└─sda3          part            LVM2_member 743.4G
+  ├─rootvg-root lvm  /          ext4          150G
+  ├─rootvg-swap lvm  [SWAP]     swap           16G
+  ├─rootvg-opt  lvm  /opt       ext4           50G
+  ├─rootvg-var  lvm  /var       ext4          100G
+  └─rootvg-tmp  lvm  /tmp       ext4            8G
+nvme0n1         disk                          2.9T
+└─nvme0n1p1     part /data1     xfs           2.9T
+nvme1n1         disk                          2.9T
+└─nvme1n1p1     part /data2     xfs           2.9T
+nvme2n1         disk                          2.9T
+└─nvme2n1p1     part /data3     xfs           2.9T
+nvme3n1         disk                          2.9T
+└─nvme3n1p1     part /data4     xfs           2.9T
+[19:09:47 root@ds-gp-prod-sdw19 ~]#
+
+
+................................................................................
+
+
+
+
+
+
+
+
+

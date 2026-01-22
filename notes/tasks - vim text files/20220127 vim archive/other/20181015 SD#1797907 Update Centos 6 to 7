@@ -1,0 +1,709 @@
+
+
+
+Error:  Multilib version problems found. This often means that the root
+       cause is something else and multilib version checking is just
+       pointing out that there is a problem. Eg.:
+
+         1. You have an upgrade for krb5-libs which is missing some
+            dependency that another package requires. Yum is trying to
+            solve this by installing an older version of krb5-libs of the
+            different architecture. If you exclude the bad architecture
+            yum will tell you what the root cause is (which package
+            requires what). You can try redoing the upgrade with
+            --exclude krb5-libs.otherarch ... this should give you an error
+            message showing the root cause of the problem.
+
+         2. You have multiple architectures of krb5-libs installed, but
+            yum can only see an upgrade for one of those arcitectures.
+            If you don't want/need both architectures anymore then you
+            can remove the one with the missing update and everything
+            will work.
+
+         3. You have duplicate versions of krb5-libs installed already.
+            You can use "yum check" to get yum show these errors.
+
+       ...you can also use --setopt=protected_multilib=false to remove
+       this checking, however this is almost never the correct thing to
+       do as something else is very likely to go wrong (often causing
+       much more problems).
+
+       Protected multilib versions: krb5-libs-1.10.3-65.el6.i686 != krb5-libs-1.10.3-57.el6.x86_64
+Error: Protected multilib versions: nss-softokn-freebl-3.14.3-23.3.el6_8.i686 != nss-softokn-freebl-3.14.3-23.el6_7.x86_64
+ You could try using --skip-broken to work around the problem
+
+[root@ds-zeppelin01p ~]# cat /etc/redhat-release
+CentOS release 6.5 (Final)
+[root@ds-zeppelin01p ~]#
+
+...........................................................................
+
+[root@ds-zeppelin01p ~]# yum list installed krb5-libs
+Loaded plugins: etckeeper, fastestmirror, security
+Loading mirror speeds from cached hostfile
+Installed Packages
+krb5-libs.i686                                                                                1.10.3-57.el6                                                                              @tcs-centos-6-os-x86_64
+krb5-libs.x86_64                                                                              1.10.3-57.el6                                                                              @tcs-centos-6-os-x86_64
+krb5-libs.x86_64                                                                              1.10.3-65.el6                                                                              installed
+[root@ds-zeppelin01p ~]# yum list installed krb5-libs nss-softokn-freebl
+Loaded plugins: etckeeper, fastestmirror, security
+Loading mirror speeds from cached hostfile
+Installed Packages
+krb5-libs.i686                                                                                  1.10.3-57.el6                                                                            @tcs-centos-6-os-x86_64
+krb5-libs.x86_64                                                                                1.10.3-57.el6                                                                            @tcs-centos-6-os-x86_64
+krb5-libs.x86_64                                                                                1.10.3-65.el6                                                                            installed
+nss-softokn-freebl.i686                                                                         3.14.3-23.el6_7                                                                          @tcs-centos-6-os-x86_64
+nss-softokn-freebl.x86_64                                                                       3.14.3-23.el6_7                                                                          @tcs-centos-6-os-x86_64
+nss-softokn-freebl.x86_64                                                                       3.14.3-23.3.el6_8                                                                        installed
+[root@ds-zeppelin01p ~]#
+
+...........................................................................
+
+[root@ds-zeppelin01p ~]# yum remove krb5-libs.i686 nss-softokn-freebl.i686
+...
+Removed:
+  krb5-libs.i686 0:1.10.3-57.el6                                                                    nss-softokn-freebl.i686 0:3.14.3-23.el6_7
+
+Dependency Removed:
+  elfutils-libelf.i686 0:0.164-2.el6        elfutils-libelf-devel.i686 0:0.164-2.el6    glibc.i686 0:2.12-1.192.el6              keyutils-libs.i686 0:1.4-5.el6       libcom_err.i686 0:1.41.12-22.el6
+  libgsasl.i686 0:1.4.0-4.el6               libgsasl-devel.i686 0:1.4.0-4.el6           libidn.i686 0:1.18-2.el6                 libntlm.i686 0:1.0-3.el6             libselinux.i686 0:2.0.94-7.el6
+  libstdc++.i686 0:4.4.7-18.el6             llvm-devel.x86_64 0:3.4.2-4.el6             llvm-ocaml-devel.x86_64 0:3.4.2-4.el6    llvm-static.x86_64 0:3.4.2-4.el6     ncurses-devel.i686 0:5.7-4.20090207.el6
+  ncurses-libs.i686 0:5.7-4.20090207.el6    ocaml.x86_64 0:3.11.2-5.el6                 openssl.i686 0:1.0.1e-57.el6             readline-devel.x86_64 0:6.0-4.el6    readline-static.x86_64 0:6.0-4.el6
+  saslwrapper.i686 0:0.14-1.el6             saslwrapper-devel.i686 0:0.14-1.el6         zlib.i686 0:1.2.3-29.el6
+
+Complete!
+[root@ds-zeppelin01p ~]#
+
+
+[root@ds-zeppelin01p ~]# yum update
+...
+Total                                                                                                                                                                            22 MB/s | 652 MB     00:29
+Running rpm_check_debug
+Running Transaction Test
+
+
+Transaction Check Error:
+  file /usr/lib64/libkadm5clnt_mit.so.8.0 from install of libkadm5-1.10.3-65.el6.x86_64 conflicts with file from package krb5-libs-1.10.3-57.el6.x86_64
+  file /usr/lib64/libkadm5srv_mit.so.8.0 from install of libkadm5-1.10.3-65.el6.x86_64 conflicts with file from package krb5-libs-1.10.3-57.el6.x86_64
+
+Error Summary
+-------------
+
+[root@ds-zeppelin01p ~]#
+
+
+[root@ds-zeppelin01p ~]# yum update krb5-libs
+...
+Transaction Check Error:
+  package krb5-libs-1.10.3-65.el6.x86_64 is already installed
+
+Error Summary
+-------------
+
+[root@ds-zeppelin01p ~]#
+
+[root@ds-zeppelin01p ~]# yum remove krb5-libs-1.10.3-57.el6
+
+
+...........................................................................
+
+[root@ds-zeppelin01p ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.28.33/24 brd 10.216.28.255 scope global bond0.1628
+    inet 10.217.65.26/24 brd 10.217.65.255 scope global bond0.1765
+[root@ds-zeppelin01p ~]# ip route
+10.217.65.0/24 dev bond0.1765  proto kernel  scope link  src 10.217.65.26
+10.216.28.0/24 dev bond0.1628  proto kernel  scope link  src 10.216.28.33
+169.254.0.0/16 dev bond0  scope link  metric 1006
+169.254.0.0/16 dev bond0.1628  scope link  metric 1007
+169.254.0.0/16 dev bond0.1765  scope link  metric 1008
+default via 10.216.28.254 dev bond0.1628
+[root@ds-zeppelin01p ~]#
+
+...........................................................................
+
+
+[root@ds-zeppelin01p ~]# ls -A1 /etc/sysconfig/network-scripts/ifcfg-*
+/etc/sysconfig/network-scripts/ifcfg-bond0
+/etc/sysconfig/network-scripts/ifcfg-bond0.1628
+/etc/sysconfig/network-scripts/ifcfg-bond0.1765
+/etc/sysconfig/network-scripts/ifcfg-em1
+/etc/sysconfig/network-scripts/ifcfg-em2
+/etc/sysconfig/network-scripts/ifcfg-em3
+/etc/sysconfig/network-scripts/ifcfg-em4
+/etc/sysconfig/network-scripts/ifcfg-lo
+[root@ds-zeppelin01p ~]#
+
+[root@ds-zeppelin01p ~]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ; echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+TYPE=Bond
+BONDING_MASTER=yes
+BOOTPROTO=none
+ONBOOT=yes
+BONDING_OPTS="mode=active-backup miimon=100"
+NM_CONTROLLED=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond0.1628
+DEVICE=bond0.1628
+NAME=bond0.1628
+ONPARENT=yes
+BOOTPROTO=none
+ONBOOT=yes
+IPV6INIT=no
+IPADDR=10.216.28.33
+NETMASK=255.255.255.0
+GATEWAY=10.216.28.254
+#DNS1=10.216.42.5
+#DNS2=10.216.40.4
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+VLAN=yes
+NM_CONTROLLED=no
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-bond0.1765
+DEVICE=bond0.1765
+NAME=bond0.1765
+ONPARENT=yes
+BOOTPROTO=none
+ONBOOT=yes
+IPV6INIT=no
+IPADDR=10.217.65.26
+NETMASK=255.255.255.0
+VLAN=yes
+NM_CONTROLLED=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+DEVICE=em1
+TYPE=Ethernet
+ONBOOT=yes
+BOOTPROTO=none
+NM_CONTROLLED=no
+TYPE=Ethernet
+MASTER=bond0
+SLAVE=yes
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+DEVICE=em2
+TYPE=Ethernet
+ONBOOT=yes
+BOOTPROTO=none
+NM_CONTROLLED=no
+TYPE=Ethernet
+MASTER=bond0
+SLAVE=yes
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+DEVICE=em3
+HWADDR=18:66:DA:56:C3:3C
+TYPE=Ethernet
+UUID=0be3f601-b531-4be3-b72c-4e1336846e3d
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+DEVICE=em4
+HWADDR=18:66:DA:56:C3:3E
+TYPE=Ethernet
+UUID=e17544d4-c315-47a3-8e0f-5598f3cb28e1
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+[root@ds-zeppelin01p ~]#
+
+...........................................................................
+
+[root@ds-zeppelin01p ~]# cat /etc/redhat-release
+CentOS release 6.10 (Final)
+[root@ds-zeppelin01p ~]#
+
+...........................................................................
+
+#
+#	
+#	Белогруд Сергей [3:03 PM]
+#	Павел привет.
+#	По SD#1797907 для сервера ds-zeppelin01p нужен доступ в Интернет.
+#	Доступ нужен для обновления версии ОС.
+#	После успешного обновления, доступ можно будет убрать.
+#	
+#	
+#	Жерелин Павел [3:39 PM]
+#	Готово, должен появиться
+#	напиши, пожалуйста, как закончишь с ним
+#	
+#	Белогруд Сергей [3:42 PM]
+#	Да, доступ появился.
+#	Спасибо
+
+[root@ds-zeppelin01p ~]# mkdir work/20181015-1541
+[root@ds-zeppelin01p ~]# cd !$
+cd work/20181015-1541
+[root@ds-zeppelin01p 20181015-1541]# http_proxy=proxy.tcsbank.ru:8080 wget http://dev.centos.org/centos/6/upg/x86_64/Packages/preupgrade-assistant-1.0.2-33.0.3.el6.centos.x86_64.rpm http://dev.centos.org/cent
+os/6/upg/x86_64/Packages/preupgrade-assistant-contents-0.5.13-1.0.5.el6.centos.noarch.rpm http://dev.centos.org/centos/6/upg/x86_64/Packages/preupgrade-assistant-ui-1.0.2-33.0.3.el6.centos.x86_64.rpm http://d
+ev.centos.org/centos/6/upg/x86_64/Packages/redhat-upgrade-tool-0.7.22-3.el6.centos.noarch.rpm
+...
+
+[root@ds-zeppelin01p 20181015-1541]# ll
+total 7916
+-rw-r--r-- 1 root root  449596 Jul 28  2014 preupgrade-assistant-1.0.2-33.0.3.el6.centos.x86_64.rpm
+-rw-r--r-- 1 root root  604616 Jul 28  2014 preupgrade-assistant-contents-0.5.13-1.0.5.el6.centos.noarch.rpm
+-rw-r--r-- 1 root root 6955552 Jul 28  2014 preupgrade-assistant-ui-1.0.2-33.0.3.el6.centos.x86_64.rpm
+-rw-r--r-- 1 root root   87388 Jul 28  2014 redhat-upgrade-tool-0.7.22-3.el6.centos.noarch.rpm
+[root@ds-zeppelin01p 20181015-1541]# yum localinstall preupgrade-assistant-*
+...
+Installed:
+  preupgrade-assistant.x86_64 0:1.0.2-33.0.3.el6.centos            preupgrade-assistant-contents.noarch 0:0.5.13-1.0.5.el6.centos            preupgrade-assistant-ui.x86_64 0:1.0.2-33.0.3.el6.centos
+
+Dependency Installed:
+  libgcrypt-devel.x86_64 0:1.4.5-12.el6_8       libgpg-error-devel.x86_64 0:1.7-4.el6       libxslt-devel.x86_64 0:1.1.26-2.el6_3.1       mod_wsgi.x86_64 0:3.2-7.el6       openscap.x86_64 0:1.2.13-2.el6
+
+Complete!
+[root@ds-zeppelin01p 20181015-1541]#
+
+[root@ds-zeppelin01p 20181015-1541]# preupg
+Preupg tool doesn't do the actual upgrade.
+Please ensure you have backed up your system and/or data in the event of a failed upgrade
+ that would require a full re-install of the system from installation media.
+Do you want to continue? y/n
+y
+Gathering logs used by preupgrade assistant:
+All installed packages : 01/11 ...finished (time 00:00s)
+All changed files      : 02/11 ...running
+...
+094/095 ...done    (NIS server MAXUID and MAXGID limits check)
+095/095 ...done    (NIS server config file back-up)
+Assessment finished (time 08:10s)
+I/O warning : failed to load external entity "/usr/share/openscap/xsl/security-guide.xsl"
+compilation error: file /usr/share/preupgrade/xsl/preup.xsl line 40 element import
+xsl:import : unable to load /usr/share/openscap/xsl/security-guide.xsl
+I/O warning : failed to load external entity "/usr/share/openscap/xsl/oval-report.xsl"
+compilation error: file /usr/share/preupgrade/xsl/preup.xsl line 41 element import
+xsl:import : unable to load /usr/share/openscap/xsl/oval-report.xsl
+I/O warning : failed to load external entity "/usr/share/openscap/xsl/sce-report.xsl"
+compilation error: file /usr/share/preupgrade/xsl/preup.xsl line 42 element import
+xsl:import : unable to load /usr/share/openscap/xsl/sce-report.xsl
+OpenSCAP Error:: Could not parse XSLT file '/usr/share/preupgrade/xsl/preup.xsl' [oscapxml.c:416]
+Unable to open file /root/preupgrade/result.html
+Usage: preupg [options]
+
+preupg: error: [Errno 2] No such file or directory: '/root/preupgrade/result.html'
+[root@ds-zeppelin01p 20181015-1541]#
+
+
+...........................................................................
+
+#	export http_proxy=http://proxy.tcsbank.ru:8080
+
+[root@ds-zeppelin01p 20181015-1541]# export http_proxy=http://proxy.tcsbank.ru:8080
+[root@ds-zeppelin01p 20181015-1541]# rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7
+
+[root@ds-zeppelin01p 20181015-1541]# yum localinstall redhat-upgrade-tool-0.7.22-3.el6.centos.noarch.rpm
+
+[root@ds-zeppelin01p 20181015-1541]# centos-upgrade-tool-cli --network 7 --instrepo=http://mirror.centos.org/centos/7/os/x86_64/
+Continue with the upgrade [Y/N]? Y
+getting boot images...
+
+Downloading failed: invalid data in .treeinfo: No section: 'checksums'
+[root@ds-zeppelin01p 20181015-1541]#
+
+...........................................................................
+...........................................................................
+
+[root@ds-zeppelin01p 20181015-1541]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Fri Oct 21 15:45:47 2016
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+UUID=013eb8c4-6533-4608-9752-3b68183bcc5a /                       ext4    defaults        1 1
+UUID=cfa1ac4e-b085-4e1d-855c-4e856d8c883a /opt                    ext4    defaults        1 2
+tmpfs                   /dev/shm                tmpfs   size=90%        0 0
+devpts                  /dev/pts                devpts  gid=5,mode=620  0 0
+sysfs                   /sys                    sysfs   defaults        0 0
+proc                    /proc                   proc    defaults        0 0
+v6250-ds:/vol/sas_distr_sata    /mnt/distr       nfs     rw,rsize=32768,wsize=32768,bg,intr,hard,tcp     0       0
+fs-nfsmb:/zeppelin_exchange /mnt/zeppelin-exchange      nfs     rw,rsize=32768,wsize=32768,bg,intr,hard,tcp     0       0
+#v6250-ds:/vol/zeppelin_exchange /mnt/zeppelin-exchange nfs     rw,rsize=32768,wsize=32768,bg,intr,hard,tcp     0       0
+mfsmount        /mnt/backup_ds fuse mfsmaster=10.216.2.41,mfssubfolder=/zeppelin_backups/zeppelin_backups_ds
+mfsmount        /mnt/backups fuse mfsmaster=10.216.2.41,mfssubfolder=/zeppelin/main
+#fas3210a-m1-nfs:/vol/m1_sas_backup      /mnt/sas_backup_m1      nfs     rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp,intr,nolock 0       0
+
+#772122
+#ha-sas-drbd01p-metro:/mnt/drbd0/tf_usr/data/all_tmp    /mnt/all_tmp nfs  ro,rsize=32768,wsize=32768,bg,intr,hard,tcp   0 0
+#ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data/tf_usr/data/all_tmp     /mnt/all_tmp nfs  ro,rsize=32768,wsize=32768,bg,intr,hard,tcp   0 0
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data    /mnt/all_tmp2 nfs  ro,rsize=32768,wsize=32768,bg,intr,hard,tcp   0 0
+#850356
+v6250-m1-nfs2:/vol/tgt_exchange /mnt/tgt-exchange nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+# SD#897280
+v6250-m1-nfs2:/vol/integration_fs/integration3/luxoft/TRANSPORT/domru/outbox    /mnt/domru      nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+v6250-m1:/vol/tableau_reports /mnt/tableau_reports nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+v6250-m1:/vol/zeppelin_data     /mnt/zeppelin_data nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+v6250-m1:/vol/bi_rep  /mnt/bi_rep nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data/tf_usr/data/all_tmp /mnt/all_tmp nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+[root@ds-zeppelin01p 20181015-1541]#
+
+[root@ds-zeppelin01p 20181015-1541]# df -hT
+Filesystem           Type   Size  Used Avail Use% Mounted on
+/dev/sda1            ext4    69G   42G   25G  63% /
+tmpfs                tmpfs  455G  8.0K  455G   1% /dev/shm
+/dev/sda2            ext4   481G   66G  391G  15% /opt
+v6250-ds:/vol/sas_distr_sata
+                     nfs    1.5T  659G  878G  43% /mnt/distr
+fs-nfsmb:/zeppelin_exchange
+                     nfs    150G   18G  133G  12% /mnt/zeppelin-exchange
+mfs#10.216.2.41:9421 fuse   220T   72G  220T   1% /mnt/backup_ds
+mfs#10.216.2.41:9421 fuse   220T   76G  220T   1% /mnt/backups
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data
+                     nfs    6.6T  3.0T  3.7T  45% /mnt/all_tmp2
+v6250-m1-nfs2:/vol/tgt_exchange
+                     nfs     11G  1.5G  9.1G  14% /mnt/tgt-exchange
+v6250-m1-nfs2:/vol/integration_fs/integration3/luxoft/TRANSPORT/domru/outbox
+                     nfs    6.4T  4.6T  1.8T  72% /mnt/domru
+v6250-m1:/vol/tableau_reports
+                     nfs     12G   11G  1.2G  90% /mnt/tableau_reports
+v6250-m1:/vol/zeppelin_data
+                     nfs     34G   13G   22G  37% /mnt/zeppelin_data
+v6250-m1:/vol/bi_rep nfs     48G   19G   30G  39% /mnt/bi_rep
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data/tf_usr/data/all_tmp
+                     nfs    6.6T  3.0T  3.7T  45% /mnt/all_tmp
+[root@ds-zeppelin01p 20181015-1541]#
+
+...........................................................................
+
+[root@ds-zeppelin01p 20181015-1541]# yum history
+Loaded plugins: etckeeper, fastestmirror, security
+ID     | Login user               | Date and time    | Action(s)      | Altered
+-------------------------------------------------------------------------------
+   178 | Belogrud ... <bsv>       | 2018-10-15 16:12 | Install        |    1
+   177 | Belogrud ... <bsv>       | 2018-10-15 15:43 | Install        |    8 EE
+   176 | Belogrud ... <bsv>       | 2018-10-15 12:53 | Downgrade      |    1 EE
+   175 | Belogrud ... <bsv>       | 2018-10-15 12:52 | Update         |    1 EE
+   174 | Belogrud ... <bsv>       | 2018-10-15 12:39 | Downgrade      |    1 EE
+   173 | Belogrud ... <bsv>       | 2018-10-15 12:35 | I, O, U        |  522 EE
+   172 | Belogrud ... <bsv>       | 2018-10-15 12:34 | Erase          |    7 EE
+   171 | Belogrud ... <bsv>       | 2018-10-15 12:28 | Erase          |   25 EE
+   170 | Belogrud ... <bsv>       | 2018-10-15 12:21 | Downgrade      |    1 EE
+   169 | Belogrud ... <bsv>       | 2018-10-15 12:21 | I, U           |   53
+   168 | Belogrud ... <bsv>       | 2018-10-15 12:21 | Install        |    2 EE
+   167 | Belogrud ... <bsv>       | 2018-10-15 12:21 | I, U           |    8 EE
+   166 | Belogrud ... <bsv>       | 2018-10-15 12:18 | Obsoleting     |    4 EE
+   165 | SAS ... <sas-admin>      | 2018-10-02 13:38 | Install        |    1
+   164 | SAS ... <sas-admin>      | 2018-09-25 15:22 | Update         |    1
+   163 | Leonov Alexey <a.leonov> | 2018-09-15 09:37 | Erase          |    1
+   162 | Leonov Alexey <a.leonov> | 2018-09-15 09:28 | Install        |    1
+   161 | Leonov Alexey <a.leonov> | 2018-09-14 17:06 | Install        |    1
+   160 | Leonov Alexey <a.leonov> | 2018-09-14 17:05 | Erase          |    1
+   159 | Leonov Alexey <a.leonov> | 2018-09-14 17:05 | Install        |    1
+history list
+[root@ds-zeppelin01p 20181015-1541]#
+
+[root@ds-zeppelin01p 20181015-1541]# yum history undo 178
+[root@ds-zeppelin01p 20181015-1541]# yum history undo 177
+
+
+
+[root@ds-zeppelin01p 20181015-1541]# yum history undo 173
+Loaded plugins: etckeeper, fastestmirror, security
+Undoing transaction 173, from Mon Oct 15 12:35:24 2018
+...
+Failed to downgrade: yum-plugin-security-1.1.30-14.el6.noarch
+Failed to downgrade: yum-utils-1.1.30-14.el6.noarch
+Failed to downgrade: zip-3.0-1.el6.x86_64
+Skipping the running kernel: kernel-2.6.32-754.6.3.el6.centos.plus.x86_64
+Error: No package(s) available to install
+[root@ds-zeppelin01p 20181015-1541]#
+
+...........................................................................
+
+
+[root@ds-zeppelin01p 20181015-1541]# tar -cf /opt/20181015-1738.backup.home.tar /home/akozachek /home/dovchinnikov /home/g.bezrukikh /home/hadoop /home/infa /home/kodoop /home/mbelous /home/nessus /home/plm /home/qom /home/sas-admin /home/spa /home/zeppelin /home/zeppelin-test
+tar: Removing leading `/' from member names
+tar: Removing leading `/' from hard link targets
+tar: /home/zeppelin/.pm2/rpc.sock: socket ignored
+tar: /home/zeppelin/.pm2/pub.sock: socket ignored
+[root@ds-zeppelin01p 20181015-1541]#
+
+
+[root@ds-zeppelin01p 20181015-1541]# ls -Alh /opt/20181015-1738.backup.home.tar
+-rw-r--r-- 1 root root 11G Oct 15 17:45 /opt/20181015-1738.backup.home.tar
+[root@ds-zeppelin01p 20181015-1541]#
+
+...........................................................................
+...........................................................................
+...........................................................................
+
+[root@ds-zeppelin01p 20181015-1541]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R630
+        Version: Not Specified
+        Serial Number: 55HN8D2
+        UUID: 4C4C4544-0035-4810-804E-B5C04F384432
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R630
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-zeppelin01p 20181015-1541]#
+
+
+...........................................................................
+
+[root@ds-zeppelin01p 20181015-1541]# yum install openscap
+
+[root@ds-zeppelin01p 20181015-1541]# cat > /etc/yum.repos.d/upgradetool.repo
+[upg]
+name=CentOS-$releasever - Upgrade Tool
+baseurl=http://dev.centos.org/centos/6/upg/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+[root@ds-zeppelin01p 20181015-1541]#
+
+[root@ds-zeppelin01p 20181015-1541]# vim /etc/yum.repos.d/upgradetool.repo
+[root@ds-zeppelin01p 20181015-1541]# cat !$
+cat /etc/yum.repos.d/upgradetool.repo
+[upg]
+name=CentOS-$releasever - Upgrade Tool
+baseurl=http://dev.centos.org/centos/6/upg/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+proxy=http://proxy.tcsbank.ru:8080
+[root@ds-zeppelin01p 20181015-1541]#
+
+
+[root@ds-zeppelin01p 20181015-1541]# yum -y install redhat-upgrade-tool preupgrade-assistant-contents
+
+#
+#	The same thing, as it was before.
+#
+[root@ds-zeppelin01p 20181015-1541]# preupg
+Preupg tool doesn't do the actual upgrade.
+Please ensure you have backed up your system and/or data in the event of a failed upgrade
+ that would require a full re-install of the system from installation media.
+Do you want to continue? y/n
+y
+Gathering logs used by preupgrade assistant:
+All installed packages : 01/11 ...finished (time 00:00s)
+...
+095/096 ...done    (NIS server MAXUID and MAXGID limits check)
+096/096 ...done    (NIS server config file back-up)
+Assessment finished (time 06:59s)
+I/O warning : failed to load external entity "/usr/share/openscap/xsl/security-guide.xsl"
+compilation error: file /usr/share/preupgrade/xsl/preup.xsl line 40 element import
+xsl:import : unable to load /usr/share/openscap/xsl/security-guide.xsl
+I/O warning : failed to load external entity "/usr/share/openscap/xsl/oval-report.xsl"
+compilation error: file /usr/share/preupgrade/xsl/preup.xsl line 41 element import
+xsl:import : unable to load /usr/share/openscap/xsl/oval-report.xsl
+I/O warning : failed to load external entity "/usr/share/openscap/xsl/sce-report.xsl"
+compilation error: file /usr/share/preupgrade/xsl/preup.xsl line 42 element import
+xsl:import : unable to load /usr/share/openscap/xsl/sce-report.xsl
+OpenSCAP Error:: Could not parse XSLT file '/usr/share/preupgrade/xsl/preup.xsl' [oscapxml.c:416]
+Unable to open file /root/preupgrade/result.html
+Usage: preupg [options]
+
+preupg: error: [Errno 2] No such file or directory: '/root/preupgrade/result.html'
+[root@ds-zeppelin01p 20181015-1541]#
+
+#	Another googled link.
+#	https://wiki.centos.org/TipsAndTricks/CentOSUpgradeTool
+
+
+[root@ds-zeppelin01p 20181015-1541]# yum remove openscap
+
+[root@ds-zeppelin01p 20181015-1541]# yum --showduplicates list openscap
+
+[root@ds-zeppelin01p 20181015-1541]# yum install openscap-1.0.8-1.0.1.el6.centos.x86_64
+
+[root@ds-zeppelin01p 20181015-1541]# yum -y install redhat-upgrade-tool preupgrade-assistant-contents
+
+#
+#	I've tried to run it again.
+#	At this time it was finished successfuly.
+#
+[root@ds-zeppelin01p 20181015-1541]# preupg
+Preupg tool doesn't do the actual upgrade.
+Please ensure you have backed up your system and/or data in the event of a failed upgrade
+ that would require a full re-install of the system from installation media.
+Do you want to continue? y/n
+y
+Gathering logs used by preupgrade assistant:
+All installed packages : 01/11 ...finished (time 00:00s)
+...
+|General                                                                                   |needs_action      |
+|Removed .so libs                                                                          |needs_action      |
+|Content for enabling and disabling services based on CentOS 6 system                      |needs_action      |
+|User modification in /etc/rc.local and /etc/rc.d/rc.local                                 |needs_action      |
+|cgroups configuration compatibility check                                                 |needs_action      |
+---------------------------------------------------------------------------------------------------------------
+Tarball with results is stored here /root/preupgrade-results/preupg_results-181017121453.tar.gz .
+The latest assessment is stored in directory /root/preupgrade .
+Summary information:
+We found some potential in-place upgrade risks.
+Read the file /root/preupgrade/result.html for more details.
+Upload results to UI by command:
+e.g. preupg -u http://127.0.0.1:8099/submit/ -r /root/preupgrade-results/preupg_results-*.tar.gz .
+[root@ds-zeppelin01p 20181015-1541]#
+
+[root@ds-zeppelin01p 20181015-1541]# lsblk
+NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda      8:0    0 558.4G  0 disk
+├─sda1   8:1    0  70.1G  0 part /
+└─sda2   8:2    0 488.3G  0 part /opt
+[root@ds-zeppelin01p 20181015-1541]#
+
+
+
+[root@ds-zeppelin01p 20181015-1541]# centos-upgrade-tool-cli --network 7 --instrepo=http://mirror.centos.org/centos/7/os/x86_64/
+setting up repos...
+YumRepo Error: All mirror URLs are not using ftp, http[s] or file.
+ Eg. Invalid release/repo/arch combination/
+removing mirrorlist with no valid mirrors: /var/tmp/system-upgrade/base/mirrorlist.txt
+cloudera-manager                                                                                                                                                                         |  951 B     00:00
+cmdline-instrepo                                                                                                                                                                         | 3.6 kB     00:00
+YumRepo Error: All mirror URLs are not using ftp, http[s] or file.
+ Eg. Invalid release/repo/arch combination/
+removing mirrorlist with no valid mirrors: /var/tmp/system-upgrade/extras/mirrorlist.txt
+lizardfs                                                                                                                                                                                 | 2.9 kB     00:00
+puppetlabs-deps                                                                                                                                                                          | 2.5 kB     00:00
+puppetlabs-products                                                            
+...
+INPLACERISK: SLIGHT: /usr/lib/ruby/site_ruby/1.8/augeas.rb is owned by an RPM package that was not signed by CentOS.
+INPLACERISK: NONE: Custom selinux configuration has been saved and it will be restored by a postupgrade script after the system upgrade.
+Continue with the upgrade [Y/N]? Y
+getting boot images...
+
+Downloading failed: invalid data in .treeinfo: No section: 'checksums'
+[root@ds-zeppelin01p 20181015-1541]# 
+
+[root@ds-zeppelin01p 20181015-1541]# ls -Alh /etc/yum.repos.d/
+total 96K
+-rw-r--r--  1 root root 2.0K Jun 26 17:52 CentOS-Base.repo
+-rw-r--r--  1 root root  647 Jun 26 17:52 CentOS-Debuginfo.repo
+-rw-r--r--  1 root root  289 Jun 26 17:52 CentOS-fasttrack.repo
+-rw-r--r--  1 root root  630 Jun 26 17:52 CentOS-Media.repo
+-rw-r--r--  1 root root 8.7K Jun 26 17:52 CentOS-Vault.repo
+-rw-r--r--  1 root root  211 Oct 24  2016 cloudera-manager.repo
+-rw-r--r--  1 root root  195 Jul 20  2016 cloudera-manager.repo.~1~
+-rw-r--r--  1 root root  114 Sep 25 15:18 lizardfs.repo
+-rw-r--r--  1 root root 1.4K Feb  2  2017 puppet.repo
+-rw-r--r--. 1 root root  143 Oct 21  2016 tcs-centos-6-os-x86_64.repo
+-rw-r--r--  1 root root  143 Dec  7  2017 tcs-centos-6-updates-x86_64.repo
+-rw-r--r--  1 root root  181 Oct 15 12:20 tcs-centos-base.repo
+-rw-r--r--  1 root root  195 Oct 15 12:20 tcs-centos-centosplus.repo
+-rw-r--r--  1 root root  189 Oct 15 12:20 tcs-centos-extras.repo
+-rw-r--r--  1 root root  192 Oct 15 12:20 tcs-centos-updates.repo
+-rw-r--r--  1 root root  193 Oct 15 12:20 tcs-dell-dsu-os_dep.repo
+-rw-r--r--  1 root root  188 Oct 15 12:20 tcs-dell-dsu-os_indep.repo
+-rw-r--r--  1 root root  266 Feb  2  2017 tcs-dell-dsu.repo
+-rw-r--r--  1 root root  199 Oct 15 12:20 tcs-epel.repo
+-rw-r--r--  1 root root  188 Oct 15 12:20 tcs-puppet-5.repo
+-rw-r--r--  1 root root  179 Oct 15 12:18 tcs-puppetlabs.repo
+-rw-r--r--  1 root root  204 Oct 17 11:46 upgradetool.repo
+[root@ds-zeppelin01p 20181015-1541]# mkdir -p ~/work/20181017-1453
+[root@ds-zeppelin01p 20181015-1541]# mv /etc/yum.repos.d/cloudera-manager.repo* !$/
+mv /etc/yum.repos.d/cloudera-manager.repo* ~/work/20181017-1453/
+[root@ds-zeppelin01p 20181015-1541]# mv /etc/yum.repos.d/lizardfs.repo ~/work/20181017-1453/
+[root@ds-zeppelin01p 20181015-1541]# mv /etc/yum.repos.d/puppet.repo ~/work/20181017-1453/
+[root@ds-zeppelin01p 20181015-1541]#
+
+[root@ds-zeppelin01p 20181015-1541]# tail -n 1 /etc/yum.conf
+proxy=http://proxy.tcsbank.ru:8080
+[root@ds-zeppelin01p 20181015-1541]#
+
+[root@ds-zeppelin01p 20181015-1541]# preupg -l
+CentOS6_7
+[root@ds-zeppelin01p 20181015-1541]#
+
+centos-upgrade-tool-cli --network 7 --instrepo=http://mirror.centos.org/centos/7/os/x86_64
+
+#
+#	Still nothing... same error...
+#	https://tekeye.uk/archive/vps/centos-6-to-centos-7-upgrade
+#
+
+...........................................................................
+...........................................................................
+...........................................................................
+...........................................................................
+...........................................................................
+
+#
+#	OS was reinstalled.
+#
+
+[root@ds-zeppelin01p ~]# vim /etc/yum.conf
+[root@ds-zeppelin01p ~]# tail -n1 /etc/yum.conf
+proxy=http://proxy.tcsbank.ru:8080
+[root@ds-zeppelin01p ~]#
+
+[root@ds-zeppelin01p ~]# yum repolist
+Loaded plugins: fastestmirror, langpacks
+base                                                                                                                                                                                     | 3.6 kB  00:00:00
+extras                                                                                                                                                                                   | 3.4 kB  00:00:00
+updates                                                                                                                                                                                  | 3.4 kB  00:00:00
+(1/4): base/7/x86_64/group_gz                                                                                                                                                            | 166 kB  00:00:00
+(2/4): extras/7/x86_64/primary_db                                                                                                                                                        | 204 kB  00:00:00
+(3/4): base/7/x86_64/primary_db                                                                                                                                                          | 5.9 MB  00:00:00
+(4/4): updates/7/x86_64/primary_db                                                                                                                                                       | 6.0 MB  00:00:08
+Determining fastest mirrors
+ * base: centos-mirror.rbc.ru
+ * extras: centos-mirror.rbc.ru
+ * updates: centos-mirror.rbc.ru
+repo id                                                                                             repo name                                                                                             status
+base/7/x86_64                                                                                       CentOS-7 - Base                                                                                       9,911
+extras/7/x86_64                                                                                     CentOS-7 - Extras                                                                                       432
+updates/7/x86_64                                                                                    CentOS-7 - Updates                                                                                    1,561
+repolist: 11,904
+[root@ds-zeppelin01p ~]#
+
+[root@ds-zeppelin01p ~]# yum update
+
+
+[root@ds-zeppelin01p ~]# cat /etc/redhat-release
+CentOS Linux release 7.5.1804 (Core)
+[root@ds-zeppelin01p ~]#
+
+[root@ds-zeppelin01p ~]# yum check-update
+Loaded plugins: fastestmirror, langpacks
+Loading mirror speeds from cached hostfile
+ * base: centos-mirror.rbc.ru
+ * extras: centos-mirror.rbc.ru
+ * updates: centos-mirror.rbc.ru
+[root@ds-zeppelin01p ~]#
+

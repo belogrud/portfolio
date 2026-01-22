@@ -1,0 +1,84 @@
+
+................................................................................
+
+[root@m1-gw-app01 ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+inet_protocols = all
+You have new mail in /var/spool/mail/root
+[root@m1-gw-app01 ~]#
+
+[root@m1-gw-app01 ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.17...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 ds-msk-mail1301.tcsbank.ru Microsoft ESMTP MAIL Service ready at Thu, 12 Jan 2017 17:29:06 +0300
+^[^]
+telnet> quit
+Connection closed.
+[root@m1-gw-app01 ~]#
+
+[root@m1-gw-app01 ~]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 6.4 (Santiago)
+[root@m1-gw-app01 ~]#
+
+................................................................................
+
+#
+#   Follow paragraf was taken from one of my previously made configs.
+#
+[root@vm-o2g01p ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-o2g01p
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@vm-o2g01p ~]#
+
+................................................................................
+
+[root@m1-gw-app01 ~]# hostname
+m1-gw-app01.ti.local
+[root@m1-gw-app01 ~]#
+................................................................................
+
+[root@m1-gw-app01 ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = m1-gw-app01
+mydomain = ti.local
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@m1-gw-app01 ~]#
+
+[root@m1-gw-app01 ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@m1-gw-app01 ~]#
+
+
+[root@m1-gw-app01 ~]# tail -f /var/log/maillog
+Jan 12 18:36:12 m1-gw-app01 postfix/postfix-script[65024]: stopping the Postfix mail system
+Jan 12 18:36:12 m1-gw-app01 postfix/postfix-script[65027]: waiting for the Postfix mail system to terminate
+Jan 12 18:36:12 m1-gw-app01 postfix/master[3234]: terminating on signal 15
+Jan 12 18:36:14 m1-gw-app01 postfix/postfix-script[65104]: starting the Postfix mail system
+Jan 12 18:36:14 m1-gw-app01 postfix/master[65105]: daemon started -- version 2.6.6, configuration /etc/postfix
+Jan 12 18:36:17 m1-gw-app01 postfix/pickup[65107]: 36DF8A0649: uid=0 from=<root>
+Jan 12 18:36:17 m1-gw-app01 postfix/cleanup[65116]: 36DF8A0649: message-id=<20170112143617.36DF8A0649@m1-gw-app01>
+Jan 12 18:36:17 m1-gw-app01 postfix/qmgr[65108]: 36DF8A0649: from=<root@m1-gw-app01.ti.local>, size=828, nrcpt=1 (queue active)
+Jan 12 18:36:17 m1-gw-app01 postfix/smtp[65118]: 36DF8A0649: to=<root@m1-gw-app01.ti.local>, orig_to=<root>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=15, delays=15/0.01/0.01/0.1, dsn=2.6.0, status=sent (250 2.6.0 <20170112143617.36DF8A0649@m1-gw-app01> [InternalId=3624952411560, Hostname=m1-msk-mail1302.tcsbank.ru] Queued mail for delivery)
+Jan 12 18:36:17 m1-gw-app01 postfix/qmgr[65108]: 36DF8A0649: removed
+^C
+[root@m1-gw-app01 ~]#
+
+[root@m1-gw-app01 ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+[root@m1-gw-app01 ~]# tail -f /var/log/maillog
+Jan 12 18:36:17 m1-gw-app01 postfix/pickup[65107]: 36DF8A0649: uid=0 from=<root>
+Jan 12 18:36:17 m1-gw-app01 postfix/cleanup[65116]: 36DF8A0649: message-id=<20170112143617.36DF8A0649@m1-gw-app01>
+Jan 12 18:36:17 m1-gw-app01 postfix/qmgr[65108]: 36DF8A0649: from=<root@m1-gw-app01.ti.local>, size=828, nrcpt=1 (queue active)
+Jan 12 18:36:17 m1-gw-app01 postfix/smtp[65118]: 36DF8A0649: to=<root@m1-gw-app01.ti.local>, orig_to=<root>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=15, delays=15/0.01/0.01/0.1, dsn=2.6.0, status=sent (250 2.6.0 <20170112143617.36DF8A0649@m1-gw-app01> [InternalId=3624952411560, Hostname=m1-msk-mail1302.tcsbank.ru] Queued mail for delivery)
+Jan 12 18:36:17 m1-gw-app01 postfix/qmgr[65108]: 36DF8A0649: removed
+Jan 12 18:37:18 m1-gw-app01 postfix/pickup[65107]: B1940A064A: uid=0 from=<root>
+Jan 12 18:37:18 m1-gw-app01 postfix/cleanup[65116]: B1940A064A: message-id=<20170112143718.B1940A064A@m1-gw-app01>
+Jan 12 18:37:18 m1-gw-app01 postfix/qmgr[65108]: B1940A064A: from=<root@m1-gw-app01.ti.local>, size=524, nrcpt=1 (queue active)
+Jan 12 18:37:18 m1-gw-app01 postfix/smtp[65118]: B1940A064A: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=0.17, delays=0.01/0/0.01/0.14, dsn=2.6.0, status=sent (250 2.6.0 <20170112143718.B1940A064A@m1-gw-app01> [InternalId=3624952412067, Hostname=ds-msk-mail1301.tcsbank.ru] Queued mail for delivery)
+Jan 12 18:37:18 m1-gw-app01 postfix/qmgr[65108]: B1940A064A: removed
+
+

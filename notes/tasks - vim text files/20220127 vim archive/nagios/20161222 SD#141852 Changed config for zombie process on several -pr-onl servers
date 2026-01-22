@@ -1,0 +1,68 @@
+
+
+[root@vm-vol-nag4-tst objects]# for var1 in m1-pr-onl01 m1-pr-onl02 ds-pr-onl01 m1-pr-onlacq01 ds-pr-onlacq01 ; do pynag list filename where object_type=host and host_name="${var1}" --quiet ; done /usr/local/nagios/etc/objects/servers/dc-m1/linux/processing/online/m1-pr-onl01.cfg
+/usr/local/nagios/etc/objects/servers/dc-m1/linux/processing/online/m1-pr-onl02.cfg
+/usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-pr-onl01.cfg
+/usr/local/nagios/etc/objects/servers/dc-m1/linux/processing/online/m1-pr-onlacq01.cfg
+/usr/local/nagios/etc/objects/servers/dc-ds/linux/processing/ds-pr-onlacq01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+define service{
+    use                           generic-service-check-zombie-procs
+    host_name               m1-pr-onl01
+    service_description           Check Zombie procs
+    check_command           check_nrpe!check_zombie_procs
+    contact_groups          processing-admins
+    notifications_enabled   1
+    contacts                      processing_duty_sms
+}
+
+normal_check_interval           1
+max_check_attempts              1
+notification_interval           5
+
+define service{
+    use                             generic-service-check-zombie-procs
+    host_name                       ds-pr-onl01
+    service_description             Check Zombie procs
+    check_command                   check_nrpe!check_zombie_procs
+    contact_groups                  empty-group
+    notifications_enabled           1
+    contacts                        m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email
+    normal_check_interval           1
+    max_check_attempts              1
+    notification_interval           5
+}
+
+
+[root@vm-vol-nag4-tst objects]# for var1 in m1-pr-onl01 m1-pr-onl02 ds-pr-onl01 m1-pr-onlacq01 ds-pr-onlacq01 ; do vim "+/check_zombie_procs" $(pynag list filename where object_type=host and host_name="${var1}" --quiet) ; done
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                  Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#141852. Changed configuration of check_zombie_procs." servers/dc-m1/linux/processing/online/m1-pr-onl01.cfg servers/dc-m1/linux/processing/online/m1-pr-onl02.cfg servers/dc-ds/linux/ds-pr-onl01.cfg servers/dc-m1/linux/processing/online/m1-pr-onlacq01.cfg servers/dc-ds/linux/processing/ds-pr-onlacq01.cfg
+Running configuration check...
+ OK.
+[master 99e2ca9] SD#141852. Changed configuration of check_zombie_procs.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 5 files changed, 25 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 29, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (16/16), done.
+Writing objects: 100% (16/16), 1.65 KiB, done.
+Total 16 (delta 13), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   a30103b..99e2ca9  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+

@@ -1,0 +1,143 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   885604
+Название    №885604
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  30.05.2016 14:33
+Дата регистрации    30.05.2016 14:33
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день!
+В рамках задачи по настройке мониторинга Nagios №837467 были заведены группы по рассылки e-mail и смс данного мониторинга.
+Просьба исключить номер 79031310922 из отправки СМС и заменить группу рассылки e-mail cards24x7 на paym_services.
+
+С уважением,
+
+Денис Глухов
+Заместитель руководителя отдела
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Глухов Денис
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Глухов Денис
+Контактный e-mail   d.glukhov@tinkoff.ru
+Контактные телефоны 79036763679, 2221
+
+................................................................................
+................................................................................
+
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email address1 filename where address1__contains="79031310922"
+contact_name         email                address1             filename
+--------------------------------------------------------------------------------
+processing_duty_sms  cards_24x7@tinkoff.ru 79031310922          /usr/local/nagios/etc/objects/contacts/processing_duty.cfg
+y.derbasov_sms       y.derbasov@tcsbank.ru 79031310922          /usr/local/nagios/etc/objects/contacts/y.debrasov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+
+[root@vm-vol-nag4-tst objects]# vim ./servers/vmware/vm-dbamon01.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             AG - Send mkd monitoring view
+        check_command                   check_nrpe!tcs_send_mkd_monitoring_view
+        first_notification_delay        0
+        contacts                        cards_24x7_email,d.glukhov_sms,d.glukhov_email,y.derbasov_sms,y.derbasov_email
+        contact_groups                  empty-group
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        check_period                    mkd-mon
+}
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="paym"
+contact_name         filename
+--------------------------------------------------------------------------------
+paym_acquiring_email /usr/local/nagios/etc/objects/contacts/paym_acquiring.cfg
+paym_nfc_email       /usr/local/nagios/etc/objects/contacts/paym_nfc.cfg
+paym_ops_email       /usr/local/nagios/etc/objects/contacts/paym_ops.cfg
+paym_sme_email       /usr/local/nagios/etc/objects/contacts/paym_sme.cfg
+----------4 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where contact_name__contains="paym"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+paym_acquiring_email paym_acquiring@tinkoff.ru /usr/local/nagios/etc/objects/contacts/paym_acquiring.cfg
+paym_nfc_email       paym_nfc@tinkoff.ru  /usr/local/nagios/etc/objects/contacts/paym_nfc.cfg
+paym_ops_email       paym_ops@tinkoff.ru  /usr/local/nagios/etc/objects/contacts/paym_ops.cfg
+paym_sme_email       paym_sme@tinkoff.ru  /usr/local/nagios/etc/objects/contacts/paym_sme.cfg
+----------4 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="paym_services"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+cat objects/contacts/paym_services.cfg
+define contact{
+        contact_name                    paym_services_email
+        use                             generic-contact
+        alias                           Payment Services
+        email                           paym_services@tinkoff.ru
+}
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#885604. Change contacts in service \"AG - Send mkd monitoring view\"." objects/contacts/paym_services.cfg objects/servers/vmware/vm-dbamon01.cfg
+[master 886a576] SD#885604. Change contacts in service "AG - Send mkd monitoring view".
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 7 insertions(+), 1 deletions(-)
+ create mode 100644 objects/contacts/paym_services.cfg
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# git pull
+Already up-to-date.
+[root@vm-vol-nag4-tst etc]# git push
+Counting objects: 14, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 795 bytes, done.
+Total 8 (delta 6), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   0015028..886a576  master -> master
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# service nagios reload
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst etc]# service nagios checkconfig
+Running configuration check...
+ OK.
+[root@vm-vol-nag4-tst etc]#
+
+
+
+
+
+
+
+

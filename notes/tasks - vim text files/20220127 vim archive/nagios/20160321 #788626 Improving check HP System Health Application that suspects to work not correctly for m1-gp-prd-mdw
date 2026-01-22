@@ -1,0 +1,189 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   788626
+Название    №788626
+Приоритет   Низкий
+Класс обслуживания  9x5
+Дата и время обращения  18.03.2016 12:01
+Дата регистрации    18.03.2016 12:01
+Тип запроса Nagios запрос
+Категория
+Критичность 3 - Высокая
+Срочность   Высокая
+Описание запроса
+** PROBLEM Service Alert: m1-gp-prd-mdw/HP System Health Application is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: HP System Health Application
+Host: m1-gp-prd-mdw
+Address: 10.216.26.11
+State: CRITICAL
+
+Date/Time: Fri Mar 18 12:01:26 MSK 2016
+
+Additional Info:
+
+CRITICAL - could not contact snmp agent, wrong device
+Текущее состояние   Принят на обработку
+Автор   system
+Ответственный за запрос Белогруд Сергей / unix-admins
+
+................................................................................
+
+Дата
+Комментарий Автор
+18.03.2016 20:09    Текущие настройки это:
+
+check_interval: 1 час (60 минут).
+max_check_attempts: 3 попытки.
+retry_interval: каждая попытка через 2 минуты.
+
+[root@vm-vol-nag01t nagios]# pynag livestatus --get services --filter "host_name = m1-gp-prd-mdw" --filter "description = HP System Health Application" --columns "host_name description max_check_attempts check_interval retry_interval"
+host_name description max_check_attempts check_interval retry_interval
+--------------------------------------------------------------------------------
+m1-gp-prd-mdw HP System Health Application 3 60.0 2.0
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+Нужно подумать, что и на сколько поменять.  Белогруд Сергей В
+18.03.2016 15:44    Коллеги, поднимите, пжслт, таймаут у этой проверки  Павлов Дмитрий
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag01t nagios]# grep -ire hpasm /etc/nagios/objects/commands.cfg                                                                                                                        command_name check_hpasm
+    command_line $USER1$/check_hpasm --hostname $HOSTADDRESS$ --community tcspub --perfdata=short
+    command_name check_hpasm_heavy
+    command_line $USER1$/check_hpasm_heavy --hostname $HOSTADDRESS$ --community tcspub --perfdata=short
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# pynag list host_name filename where host_name=m1-gp-prd-mdw
+host_name            filename
+--------------------------------------------------------------------------------
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+m1-gp-prd-mdw        /etc/nagios/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-mdw.cfg
+----------11 objects matches search condition-----------------------------------
+[root@vm-vol-nag01t nagios]#
+
+define service{
+    use                      hp-health-service
+    host_name                m1-gp-prd-mdw
+    service_description      HP System Health Application
+    check_command            check_hpasm_heavy
+}
+
+
+[root@vm-vol-nag01t nagios]# ls -A1 /usr/lib64/nagios/plugins/check_hpasm*
+/usr/lib64/nagios/plugins/check_hpasm
+/usr/lib64/nagios/plugins/check_hpasm_heavy
+/usr/lib64/nagios/plugins/check_hpasm_heavy_orig
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+Дата
+Комментарий Автор
+21.03.2016 12:57    Работы по заявке проведены. Белогруд Сергей В
+21.03.2016 12:44
+From: Leonov Aleksey Vladimirovich
+Sent: Monday, March 21, 2016 12:22 PM
+To: Belogrud Sergey Vladimirovich
+Cc: Pavlov Dmitriy Stanislavovich
+Subject: RE: Что бы мы могли предложить страждущим?
+
+нашел проблемку. поправил. смотрим/наблюдаем.
+
+From: Leonov Aleksey Vladimirovich
+Sent: Monday, March 21, 2016 11:29 AM
+To: Belogrud Sergey Vladimirovich
+Cc: Pavlov Dmitriy Stanislavovich
+Subject: RE: Что бы мы могли предложить страждущим?
+
+надо подебажить проверку, может я чего то не учел.
+
+From: Belogrud Sergey Vladimirovich
+Sent: Monday, March 21, 2016 11:29 AM
+To: Leonov Aleksey Vladimirovich
+Cc: Pavlov Dmitriy Stanislavovich
+Subject: RE: Что бы мы могли предложить страждущим?
+
+Да вот и я думаю, что не поможет.
+
+
+>   From: Leonov Aleksey Vladimirovich
+Sent: Monday, March 21, 2016 11:25 AM
+To: Belogrud Sergey Vladimirovich
+Subject: RE: Что бы мы могли предложить страждущим?
+
+>   Доброго!
+
+>   вообще, там уже стоит check_hpasm_heavy, которая должна отлавливать обрыв по таймауту, и корректно его отрабатывать. но, почему то, не делает этого. увеличивать таймаут смысла нет – максимальное время исполнения запроса забито в конфиг нагиос – 60 секунд.
+
+
+From: Leonov Aleksey Vladimirovich
+Sent: Monday, March 21, 2016 11:28 AM
+To: Belogrud Sergey Vladimirovich
+Cc: Pavlov Dmitriy Stanislavovich
+Subject: RE: Что бы мы могли предложить страждущим?
+
+Доброго времени суток.
+
+а при чем здесь интервал?
+
+From: Belogrud Sergey Vladimirovich
+Sent: Monday, March 21, 2016 11:27 AM
+To: Leonov Aleksey Vladimirovich
+Cc: Pavlov Dmitriy Stanislavovich
+Subject: RE: Что бы мы могли предложить страждущим?
+
+Добрый день.
+
+Лёха?
+?
+
+Мне, например, не кажется, что увеличение значения параметра check_interval с одного часа до большего времени, окажется полезным.
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, March 18, 2016 8:12 PM
+To: Leonov Aleksey Vladimirovich
+Subject: Что бы мы могли предложить страждущим?
+
+Доброе время суток!
+
+Что бы мы могли предложить по энтому поводу?
+Белогруд Сергей В
+18.03.2016 20:09    Текущие настройки это:
+
+check_interval: 1 час (60 минут).
+max_check_attempts: 3 попытки.
+retry_interval: каждая попытка через 2 минуты.
+
+[root@vm-vol-nag01t nagios]# pynag livestatus --get services --filter "host_name = m1-gp-prd-mdw" --filter "description = HP System Health Application" --columns "host_name description max_check_attempts check_interval retry_interval"
+host_name description max_check_attempts check_interval retry_interval
+--------------------------------------------------------------------------------
+m1-gp-prd-mdw HP System Health Application 3 60.0 2.0
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+Нужно подумать, что и на сколько поменять.  Белогруд Сергей В
+18.03.2016 15:44    Коллеги, поднимите, пжслт, таймаут у этой проверки  Павлов Дмитрий
+
+................................................................................
+

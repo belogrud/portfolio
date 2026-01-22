@@ -1,0 +1,780 @@
+
+
+................................................................................
+
+Задачу на unix-admins.
+Просьба подготовить 4 сервера для бекапов Greenplum:
+-        2 в М1, 2 в ДС
+-        Включить в интерконнекты ГП
+-        все четыре машины должны видеть друг друга
+-        Также нужен доступ в/из общебанковской продуктовой сети и тестовой и девелоперской сетей Greenplum (по аналогии как сейчас сделано с ds-gp-prd-nfs, m1-gp-prd-nfs)
+-        Хостнеймы: [ds,m1]-gp-prd-bkp[1,2]
+-        Два диска под ОС в зеркале (/)
+-        SSD Подключить напрямую как /ssd1, /ssd2 (ФС – XFS)
+-        10 дисков по 8 Тб объединить в RAID5 и примонтировать в /data с ФС XFS со следующими настройками: rw,noexec,nodev,noatime,nodiratime,largeio,inode64,barrier=0
+-        Redhat 6.5
+-        Мониторинг – стандартный (CPU, memory, free space)
+-        Завести пользователя sas-admin со стандартным паролем и беспарольным sudo
+
+
+
+С уважением,
+Дмитрий Павлов
+Руководитель группы администрирования DWH
+
+................................................................................
+
+[support@centos00 ~]$ host m1-gp-prd-nfs
+m1-gp-prd-nfs.tcsbank.ru has address 10.216.4.40
+[support@centos00 ~]$ host ds-gp-prd-nfs
+ds-gp-prd-nfs.tcsbank.ru has address 10.216.2.40
+[support@centos00 ~]$
+
+................................................................................
+
+................................................................................
+
+#   1. Tuffin access from Dell OME.
+#   2. Discover, add servers into Dell OME.
+#   3. Update firmware, apply configuration on servers.
+
+................................................................................
+#   1. Create access from Dell OME server to these servers (tuffin and network admis).
+#   2. In Dell OME find and discovery servers.
+#   2.1. Update firmware on servers.
+#   2.2. Apply common configuration for iDRAC (access via domain authorization).
+#   2.3. Change root password for iDRAC.
+#   2.4. Create raid array configuration.
+#   3. Find free ip-addresses via vm-pinger and fix it for defined serves.
+#   3.1.    Create task to write DNS names for A and PTR zones for choosen ip-addresses.
+#   4. Create Service Desk task for network admins to configure switch for appropriate ports and give vlan's.
+#   5. Run deployment tool "F10" and start manual installation.
+#   6. Login on installed server with its console as root and test and add network configs.
+#   7. Login on serves via ssh and disable firewald.
+#   8. Add repositories. Configure it to work.
+#   9. Install puppet.
+#   10. Add servers into puppet. Apply manifests.
+#   11. Create users, that will use this server (lzn and other).
+#   12. Install software for monitoring (idrac and so on).
+#   13. Nagios monitoring configure.
+#   14. Update information in racktables about servers.
+
+................................................................................
+
+
+................................................................................
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, March 03, 2017 5:51 PM
+To: helpdesk_in
+Cc: win-admins; Pavlov Dmitriy Stanislavovich
+Subject: RE: Создать DNS записи
+
+Добрый день.
+
+Заявку на администраторов MS Windows.
+
+По ходу выполнения задачи SD#239071 необходимо создать в DNS зоне tcsbank.ru записи A- и PTR- для новых серверов.
+m1-gp-prd-bkp1              10.216.4.41
+m1-gp-prd-bkp2              10.216.4.42
+
+ds-gp-prd-bkp1               10.216.2.41
+ds-gp-prd-bkp2               10.216.2.42
+
+
+Сергей Белогруд
+Старший системный администратор
+Тел.: +7 495 648-10-00, доб. 2173
+
+................................................................................
+................................................................................
+
+m1-gp-prd-bkp1              10.216.4.41 CXD6RG2.mgmt.tcsbank.ru
+m1-gp-prd-bkp2              10.216.4.42 CXFDRG2.mgmt.tcsbank.ru
+
+ds-gp-prd-bkp1              10.216.2.41 CXH6RG2.mgmt.tcsbank.ru
+ds-gp-prd-bkp2              10.216.2.42 CXHBRG2.mgmt.tcsbank.ru
+
+................................................................................
+................................................................................
+................................................................................
+
+#
+#   20170309
+#   Continuing work.
+#
+
+[root@m1-gp-prd-bkp1 network-scripts]# find /etc/sysconfig/network-scripts \( -name ifcfg-bond\* -o -name ifcfg-em\* \) -exec echo \; -exec echo {} \; -exec cat {} \;
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+DEVICE=em4
+TYPE=Ethernet
+UUID=38753d29-ba5c-4a9d-af7b-2b1c5f6b6d6b
+ONBOOT=no
+NM_CONTROLLED=yes
+HWADDR=24:6E:96:31:E2:4D
+IPV6INIT=no
+NAME="System em4"
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+DEVICE=em1
+TYPE=Ethernet
+UUID=10ae3d22-6d4b-48a4-b3b0-e1f82289722b
+ONBOOT=yes
+NM_CONTROLLED=yes
+IPV6INIT=no
+NAME="System em1"
+HWADDR=24:6E:96:31:E2:48
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=yes
+SLAVE=yes
+MASTER=bond0
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE="bond0"
+BOOTPROTO=none
+IPADDR=10.216.4.41
+PREFIX=24
+GATEWAY=10.216.4.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+BONDING_OPTS="mode=1 miimon=100"
+ONBOOT=yes
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+DEVICE=em3
+TYPE=Ethernet
+UUID=f58a47f2-39fa-496c-993c-11f61679ce17
+ONBOOT=no
+NM_CONTROLLED=yes
+HWADDR=24:6E:96:31:E2:4C
+IPV6INIT=no
+NAME="System em3"
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+DEVICE=em2
+TYPE=Ethernet
+UUID=63ec17ac-9073-40b0-bc74-bd557d1450fb
+ONBOOT=yes
+NM_CONTROLLED=yes
+IPV6INIT=no
+NAME="System em2"
+HWADDR=24:6E:96:31:E2:4A
+IPV4_FAILURE_FATAL=yes
+SLAVE=yes
+MASTER=bond0
+[root@m1-gp-prd-bkp1 network-scripts]#
+
+
+
+[root@m1-gp-prd-bkp1 network-scripts]# service network status
+Configured devices:
+lo bond0 em1 em2 em3 em4
+Currently active devices:
+lo em1
+[root@m1-gp-prd-bkp1 network-scripts]# service network restart
+Shutting down interface em1:  /etc/sysconfig/network-scripts/ifdown-eth: line 116: /sys/class/net/bond0/bonding/slaves: No such file or directory
+                                                           [  OK  ]
+Shutting down loopback interface:                          [  OK  ]
+Bringing up loopback interface:                            [  OK  ]
+Bringing up interface bond0:  Determining if ip address 10.216.4.41 is already in use for device bond0...
+                                                           [  OK  ]
+[root@m1-gp-prd-bkp1 network-scripts]# ifconfig
+bond0     Link encap:Ethernet  HWaddr 24:6E:96:31:E2:48
+          inet addr:10.216.4.41  Bcast:10.216.4.255  Mask:255.255.255.0
+          inet6 addr: fe80::266e:96ff:fe31:e248/64 Scope:Link
+          UP BROADCAST RUNNING MASTER MULTICAST  MTU:1500  Metric:1
+          RX packets:119790 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:35929 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:9329410 (8.8 MiB)  TX bytes:3163686 (3.0 MiB)
+
+em1       Link encap:Ethernet  HWaddr 24:6E:96:31:E2:48
+          UP BROADCAST RUNNING SLAVE MULTICAST  MTU:1500  Metric:1
+          RX packets:119790 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:35929 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:9329410 (8.8 MiB)  TX bytes:3163686 (3.0 MiB)
+
+em2       Link encap:Ethernet  HWaddr 24:6E:96:31:E2:48
+          UP BROADCAST RUNNING SLAVE MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+
+[root@m1-gp-prd-bkp1 network-scripts]#
+
+
+[root@m1-gp-prd-bkp1 network-scripts]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+6: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.4.41/24 brd 10.216.4.255 scope global bond0
+[root@m1-gp-prd-bkp1 network-scripts]# ethtool em1
+Settings for em1:
+        Supported ports: [ FIBRE ]
+        Supported link modes:   10000baseT/Full
+        Supported pause frame use: No
+        Supports auto-negotiation: No
+        Advertised link modes:  10000baseT/Full
+        Advertised pause frame use: No
+        Advertised auto-negotiation: No
+        Speed: 10000Mb/s
+        Duplex: Full
+        Port: Other
+        PHYAD: 0
+        Transceiver: external
+        Auto-negotiation: off
+        Supports Wake-on: umbg
+        Wake-on: g
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: yes
+[root@m1-gp-prd-bkp1 network-scripts]# ethtool em2
+Settings for em2:
+        Supported ports: [ FIBRE ]
+        Supported link modes:   10000baseT/Full
+        Supported pause frame use: No
+        Supports auto-negotiation: No
+        Advertised link modes:  10000baseT/Full
+        Advertised pause frame use: No
+        Advertised auto-negotiation: No
+        Speed: 10000Mb/s
+        Duplex: Full
+        Port: Other
+        PHYAD: 0
+        Transceiver: external
+        Auto-negotiation: off
+        Supports Wake-on: umbg
+        Wake-on: g
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: yes
+[root@m1-gp-prd-bkp1 network-scripts]#
+
+[root@m1-gp-prd-bkp1 network-scripts]# ip route
+10.216.4.0/24 dev bond0  proto kernel  scope link  src 10.216.4.41
+169.254.0.0/16 dev bond0  scope link  metric 1006
+default via 10.216.4.254 dev bond0
+[root@m1-gp-prd-bkp1 network-scripts]#
+
+................................................................................
+................................................................................
+
+#
+#   20170314
+#
+
+[root@m1-gp-prd-bkp1 ~]# lsblk
+NAME                              MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sdd                                 8:48   0  65.5T  0 disk
+sdc                                 8:32   0 278.9G  0 disk
+├─sdc1                              8:33   0   500M  0 part
+├─sdc2                              8:34   0    40M  0 part
+├─sdc3                              8:35   0     2G  0 part
+├─sdc4                              8:36   0   500M  0 part /boot
+└─sdc5                              8:37   0 275.9G  0 part
+  ├─vg_m1gpprdbkp1-lv_root (dm-0) 253:0    0    50G  0 lvm  /
+  ├─vg_m1gpprdbkp1-lv_swap (dm-1) 253:1    0     4G  0 lvm  [SWAP]
+  └─vg_m1gpprdbkp1-lv_opt (dm-2)  253:2    0 221.9G  0 lvm  /opt
+sdb                                 8:16   0 372.6G  0 disk
+sda                                 8:0    0 372.6G  0 disk
+[root@m1-gp-prd-bkp1 ~]#
+
+
+[root@m1-gp-prd-bkp1 ~]# yum localinstall http://repo-linux/others/xfsprogs/xfsprogs-3.1.1-6.el6.x86_64.rpm
+Loaded plugins: etckeeper, product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Setting up Local Package Process
+xfsprogs-3.1.1-6.el6.x86_64.rpm                                                                                                                                                      | 723 kB     00:00
+Examining /var/tmp/yum-root-D4Rb0L/xfsprogs-3.1.1-6.el6.x86_64.rpm: xfsprogs-3.1.1-6.el6.x86_64
+Marking /var/tmp/yum-root-D4Rb0L/xfsprogs-3.1.1-6.el6.x86_64.rpm to be installed
+Resolving Dependencies
+--> Running transaction check
+---> Package xfsprogs.x86_64 0:3.1.1-6.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+============================================================================================================================================================================================================
+ Package                                     Arch                                      Version                                        Repository                                                       Size
+============================================================================================================================================================================================================
+Installing:
+ xfsprogs                                    x86_64                                    3.1.1-6.el6                                    /xfsprogs-3.1.1-6.el6.x86_64                                    3.2 M
+
+Transaction Summary
+============================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total size: 3.2 M
+Installed size: 3.2 M
+Is this ok [y/N]: y
+Downloading Packages:
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+etckeeper: pre transaction commit
+  Installing : xfsprogs-3.1.1-6.el6.x86_64                                                                                                                                                              1/1
+etckeeper: post transaction commit
+  Verifying  : xfsprogs-3.1.1-6.el6.x86_64                                                                                                                                                              1/1
+
+Installed:
+  xfsprogs.x86_64 0:3.1.1-6.el6
+
+Complete!
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# mkdir /data
+
+[root@m1-gp-prd-bkp1 ~]# parted -a optimal /dev/sdd mklabel GPT print mkpart primary xfs 0% 100% print
+Model: DELL PERC H730P Mini (scsi)
+Disk /dev/sdd: 72.0TB
+Sector size (logical/physical): 512B/4096B
+Partition Table: gpt
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: DELL PERC H730P Mini (scsi)
+Disk /dev/sdd: 72.0TB
+Sector size (logical/physical): 512B/4096B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  72.0TB  72.0TB               primary
+
+Information: You may need to update /etc/fstab.
+
+[root@m1-gp-prd-bkp1 ~]#
+
+
+[root@m1-gp-prd-bkp1 ~]# lsblk
+NAME                              MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sdd                                 8:48   0  65.5T  0 disk
+└─sdd1                              8:49   0  65.5T  0 part
+sdc                                 8:32   0 278.9G  0 disk
+├─sdc1                              8:33   0   500M  0 part
+├─sdc2                              8:34   0    40M  0 part
+├─sdc3                              8:35   0     2G  0 part
+├─sdc4                              8:36   0   500M  0 part /boot
+└─sdc5                              8:37   0 275.9G  0 part
+  ├─vg_m1gpprdbkp1-lv_root (dm-0) 253:0    0    50G  0 lvm  /
+  ├─vg_m1gpprdbkp1-lv_swap (dm-1) 253:1    0     4G  0 lvm  [SWAP]
+  └─vg_m1gpprdbkp1-lv_opt (dm-2)  253:2    0 221.9G  0 lvm  /opt
+sdb                                 8:16   0 372.6G  0 disk
+sda                                 8:0    0 372.6G  0 disk
+[root@m1-gp-prd-bkp1 ~]#
+
+
+#mkfs.xfs -b 4096 -d su=64k,sw=9 /dev/mydevice
+
+[root@m1-gp-prd-bkp1 ~]# mkfs.xfs -b 4096 -d su=64k,sw=9 /dev/sdd1
+unknown option -b 4096
+Usage: mkfs.xfs
+/* blocksize */         [-b log=n|size=num]
+/* data subvol */       [-d agcount=n,agsize=n,file,name=xxx,size=num,
+                            (sunit=value,swidth=value|su=num,sw=num),
+                            sectlog=n|sectsize=num
+/* inode size */        [-i log=n|perblock=n|size=num,maxpct=n,attr=0|1|2]
+/* log subvol */        [-l agnum=n,internal,size=num,logdev=xxx,version=n
+                            sunit=value|su=num,sectlog=n|sectsize=num,
+                            lazy-count=0|1]
+/* label */             [-L label (maximum 12 characters)]
+/* naming */            [-n log=n|size=num,version=2|ci]
+/* prototype file */    [-p fname]
+/* quiet */             [-q]
+/* realtime subvol */   [-r extsize=num,size=num,rtdev=xxx]
+/* sectorsize */        [-s log=n|size=num]
+/* version */           [-V]
+                        devicename
+<devicename> is required unless -d name=xxx is given.
+<num> is xxx (bytes), xxxs (sectors), xxxb (fs blocks), xxxk (xxx KiB),
+      xxxm (xxx MiB), xxxg (xxx GiB), xxxt (xxx TiB) or xxxp (xxx PiB).
+<value> is xxx (512 byte blocks).
+[root@m1-gp-prd-bkp1 ~]# mkfs.xfs -d su=64k,sw=9 /dev/sdd1
+mkfs.xfs: Specified data stripe unit 128 is not the same as the volume stripe unit 8
+meta-data=/dev/sdd1              isize=256    agcount=66, agsize=268435424 blks
+         =                       sectsz=512   attr=2
+data     =                       bsize=4096   blocks=17580293632, imaxpct=1
+         =                       sunit=16     swidth=144 blks
+naming   =version 2              bsize=4096   ascii-ci=0
+log      =internal log           bsize=4096   blocks=521728, version=2
+         =                       sectsz=512   sunit=16 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@m1-gp-prd-bkp1 ~]#
+
+
+[root@m1-gp-prd-bkp1 ~]# mount /data
+[root@m1-gp-prd-bkp1 ~]# tail -n 1 /etc/fstab
+/dev/sdd1       /data   xfs     rw,noexec,nodev,noatime,nodiratime,largeio,inode64,barrier=0 1 2
+[root@m1-gp-prd-bkp1 ~]# df -hT
+Filesystem                         Type   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1gpprdbkp1-lv_root ext4    50G  2.4G   45G   5% /
+tmpfs                              tmpfs   63G     0   63G   0% /dev/shm
+/dev/sdc4                          ext2   485M   32M  428M   7% /boot
+/dev/mapper/vg_m1gpprdbkp1-lv_opt  xfs    222G   33M  222G   1% /opt
+/dev/sdd1                          xfs     66T   35M   66T   1% /data
+[root@m1-gp-prd-bkp1 ~]#
+
+................................................................................
+
+#
+#   20170315
+#
+
+[root@m1-gp-prd-bkp1 ~]# mkdir /ssd1 /ssd2
+
+[root@m1-gp-prd-bkp1 ~]# ls /ssd*
+/ssd1:
+
+/ssd2:
+[root@m1-gp-prd-bkp1 ~]# parted -a optimal /dev/sda mklabel GPT print mkpart primary xfs 0% 100% print
+Model: TOSHIBA PX04SMB040 (scsi)
+Disk /dev/sda: 400GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: TOSHIBA PX04SMB040 (scsi)
+Disk /dev/sda: 400GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End    Size   File system  Name     Flags
+ 1      1049kB  400GB  400GB               primary
+
+Information: You may need to update /etc/fstab.
+
+[root@m1-gp-prd-bkp1 ~]# parted -a optimal /dev/sdb mklabel GPT print mkpart primary xfs 0% 100% print
+Model: TOSHIBA PX04SMB040 (scsi)
+Disk /dev/sdb: 400GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: TOSHIBA PX04SMB040 (scsi)
+Disk /dev/sdb: 400GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End    Size   File system  Name     Flags
+ 1      1049kB  400GB  400GB               primary
+
+Information: You may need to update /etc/fstab.
+
+[root@m1-gp-prd-bkp1 ~]#
+
+
+[root@m1-gp-prd-bkp1 ~]# mkfs.xfs /dev/sda1
+meta-data=/dev/sda1              isize=256    agcount=4, agsize=24419392 blks
+         =                       sectsz=512   attr=2
+data     =                       bsize=4096   blocks=97677568, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0
+log      =internal log           bsize=4096   blocks=47694, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@m1-gp-prd-bkp1 ~]# mkfs.xfs /dev/sdb1
+meta-data=/dev/sdb1              isize=256    agcount=4, agsize=24419392 blks
+         =                       sectsz=512   attr=2
+data     =                       bsize=4096   blocks=97677568, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0
+log      =internal log           bsize=4096   blocks=47694, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# tail -n 2 /etc/fstab
+/dev/sda1       /ssd1   xfs     rw,noatime,inode64,allocsize=16m,discard 1 2
+/dev/sdb1       /ssd2   xfs     rw,noatime,inode64,allocsize=16m,discard 1 2
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# mount -v /ssd1
+/dev/sda1 on /ssd1 type xfs (rw,noatime,inode64,allocsize=16m,discard)
+mount: /ssd1 does not contain SELinux labels.
+       You just mounted an file system that supports labels which does not
+       contain labels, onto an SELinux box. It is likely that confined
+       applications will generate AVC messages and not be allowed access to
+       this file system.  For more details see restorecon(8) and mount(8).
+[root@m1-gp-prd-bkp1 ~]# mount
+/dev/mapper/vg_m1gpprdbkp1-lv_root on / type ext4 (rw)
+proc on /proc type proc (rw)
+sysfs on /sys type sysfs (rw)
+devpts on /dev/pts type devpts (rw,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw,rootcontext="system_u:object_r:tmpfs_t:s0")
+/dev/sdc4 on /boot type ext2 (rw)
+/dev/mapper/vg_m1gpprdbkp1-lv_opt on /opt type xfs (rw)
+none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
+/dev/sdd1 on /data type xfs (rw,noexec,nodev,noatime,nodiratime,largeio,inode64,barrier=0)
+/dev/sda1 on /ssd1 type xfs (rw,noatime,inode64,allocsize=16m,discard)
+[root@m1-gp-prd-bkp1 ~]# mount -v /ssd2
+/dev/sdb1 on /ssd2 type xfs (rw,noatime,inode64,allocsize=16m,discard)
+mount: /ssd2 does not contain SELinux labels.
+       You just mounted an file system that supports labels which does not
+       contain labels, onto an SELinux box. It is likely that confined
+       applications will generate AVC messages and not be allowed access to
+       this file system.  For more details see restorecon(8) and mount(8).
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# df -hT
+Filesystem                         Type   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1gpprdbkp1-lv_root ext4    50G  2.4G   45G   5% /
+tmpfs                              tmpfs   63G     0   63G   0% /dev/shm
+/dev/sdc4                          ext2   485M   32M  428M   7% /boot
+/dev/mapper/vg_m1gpprdbkp1-lv_opt  xfs    222G   33M  222G   1% /opt
+/dev/sdd1                          xfs     66T   35M   66T   1% /data
+/dev/sda1                          xfs    373G   33M  373G   1% /ssd1
+/dev/sdb1                          xfs    373G   33M  373G   1% /ssd2
+[root@m1-gp-prd-bkp1 ~]#
+
+
+................................................................................
+
+[root@m1-gp-prd-bkp1 ~]# getenforce
+Enforcing
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# vim /etc/selinux/config
+[root@m1-gp-prd-bkp1 ~]# cat !$
+cat /etc/selinux/config
+
+# This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+#     enforcing - SELinux security policy is enforced.
+#     permissive - SELinux prints warnings instead of enforcing.
+#     disabled - No SELinux policy is loaded.
+#SELINUX=enforcing
+SELINUX=disabled
+# SELINUXTYPE= can take one of these two values:
+#     targeted - Targeted processes are protected,
+#     mls - Multi Level Security protection.
+SELINUXTYPE=targeted
+
+
+[root@m1-gp-prd-bkp1 ~]#
+
+
+................................................................................
+
+[root@m1-gp-prd-bkp1 ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED
+2    ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+3    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+4    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:22
+5    REJECT     all  --  0.0.0.0/0            0.0.0.0/0           reject-with icmp-host-prohibited
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+1    REJECT     all  --  0.0.0.0/0            0.0.0.0/0           reject-with icmp-host-prohibited
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@m1-gp-prd-bkp1 ~]# service iptables stop
+iptables: Setting chains to policy ACCEPT: filter          [  OK  ]
+iptables: Flushing firewall rules:                         [  OK  ]
+iptables: Unloading modules:                               [  OK  ]
+[root@m1-gp-prd-bkp1 ~]# chkconfig iptables off
+
+
+................................................................................
+
+[root@m1-gp-prd-bkp1 ~]# echo "options ipv6 disable=1" > /etc/modprobe.d/disable-ipv6.conf        [root@m1-gp-prd-bkp1 ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# mkdir -p ~/work/20170315-1745
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/hw-lin-template.cfg !$/
+cp ~bsv/work/templates/hw-lin-template.cfg ~/work/20170315-1745/
+[root@vm-vol-nag4-tst objects]# cp
+
+[root@vm-vol-nag4-tst objects]# cp ~/work/20170315-1745/{hw-lin-template,m1-gp-prd-bkp1}.cfg
+
+[root@vm-vol-nag4-tst objects]# vim -o /root/work/20170315-1745/m1-gp-prd-bkp1.cfg -o servers/dc-ds/linux/ds-exasol01p.cfg
+
+[root@m1-gp-prd-bkp1 ~]# tail -n 3 /etc/nrpe.d/check_disks.cfg
+command[check_data_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /data
+command[check_ssd1_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /ssd1
+command[check_ssd2_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /ssd2
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# curl repo-linux/tcs-dell-dsu-rhel6.repo.sh | sh
+[root@m1-gp-prd-bkp1 ~]# yum install srvadmin-idracadm7 srvadmin-idracadm dcism
+[root@m1-gp-prd-bkp1 ~]# yum install srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp
+
+[root@m1-gp-prd-bkp1 ~]# logout
+Connection to m1-gp-prd-bkp1 closed.
+                                                                                                 ✔
+──────────────────────────────────────────────────────────────────────────────────────────────────
+[2017-03-15 18:10.22]  ~
+[s.belogrud.tcs4500] ➤ ssh root@m1-gp-prd-bkp1
+Last login: Wed Mar 15 18:18:30 2017 from tcs4500.tcsbank.ru
+[root@m1-gp-prd-bkp1 ~]# racadm getniccfg | head
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.9.164
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.9.254
+
+IPv6 settings:
+[root@m1-gp-prd-bkp1 ~]#
+
+
+[root@m1-gp-prd-bkp1 ~]# cat > /etc/snmp/snmpd.conf
+# com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser default tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+[root@m1-gp-prd-bkp1 ~]#
+
+
+[root@m1-gp-prd-bkp1 ~]# service snmpd restart
+Stopping snmpd:                                            [FAILED]
+Starting snmpd:                                            [  OK  ]
+[root@m1-gp-prd-bkp1 ~]# service snmpd status
+snmpd (pid  8468) is running...
+[root@m1-gp-prd-bkp1 ~]# snmpwalk -v 2c -c tcspub localhost 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-gp-prd-bkp1.tcsbank.ru 2.6.32-431.el6.x86_64 #1 SMP Sun Nov 10 22:19:54 EST 2013 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (4794) 0:00:47.94
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-gp-prd-bkp1.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (1) 0:00:00.01
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDMIBObjects.3.1.1
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+6: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.4.41/24 brd 10.216.4.255 scope global bond0
+[root@m1-gp-prd-bkp1 ~]# snmpwalk -v 2c -c tcspub 10.216.4.41 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-gp-prd-bkp1.tcsbank.ru 2.6.32-431.el6.x86_64 #1 SMP Sun Nov 10 22:19:54 EST 2013 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (20890) 0:03:28.90
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-gp-prd-bkp1.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (1) 0:00:00.01
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDMIBObjects.3.1.1
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# service dataeng start
+Starting Systems Management Data Engine:
+Starting dsm_sa_datamgrd:                                  [  OK  ]
+Starting dsm_sa_eventmgrd:                                 [  OK  ]
+Starting dsm_sa_snmpd:                                     [  OK  ]
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# cat > /etc/nrpe.d/check_openmanage.cfg
+command[check_openmanage]=/usr/lib64/nagios/plugins/check_openmanage -p
+[root@m1-gp-prd-bkp1 ~]# service nrpe restart
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+[root@m1-gp-prd-bkp1 ~]#
+
+cluster1 [root@n0011 ~]# scp /usr/lib64/nagios/plugins/check_openmanage m1-gp-prd-bkp1:
+root@m1-gp-prd-bkp1's password:
+check_openmanage                                                                                                                                                          100%  185KB 184.8KB/s   00:00
+cluster1 [root@n0011 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# cp ~/check_openmanage /usr/lib64/nagios/plugins/
+[root@m1-gp-prd-bkp1 ~]# /usr/lib64/nagios/plugins/check_openmanage -p
+ERROR: Dell OpenManage Server Administrator (OMSA) is not installed
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# yum install srvadmin-all
+
+[root@m1-gp-prd-bkp1 ~]# /usr/lib64/nagios/plugins/check_openmanage -p
+Storage Error! No controllers found|T0_System_Board_Inlet=32C;42;47 T1_System_Board_Exhaust=49C;70;75 T2_CPU1=50C;87;92 T3_CPU2=64C;87;92 W2_System_Board_Pwr_Consumption=280W;896;980 A0_PS1_Current_1=0.6A;0;0 A1_PS2_Current_2=0.6A;0;0 V27_PS1_Voltage_1=230V;0;0 V28_PS2_Voltage_2=230V;0;0 F0_System_Board_Fan1=7080rpm;0;0 F1_System_Board_Fan2=6960rpm;0;0 F2_System_Board_Fan3=6960rpm;0;0 F3_System_Board_Fan4=6840rpm;0;0 F4_System_Board_Fan5=6960rpm;0;0 F5_System_Board_Fan6=7080rpm;0;0
+[root@m1-gp-prd-bkp1 ~]#
+
+
+[root@vm-vol-nag4-prod ~]# /usr/lib64/nagios/plugins/check_openmanage -H 10.216.4.41 -C tcspub -P 2c -p
+Storage Error! No controllers found|T0_System_Board_Inlet=31C;42;47 T1_System_Board_Exhaust=49C;70;75 T2_CPU1=51C;87;92 T3_CPU2=64C;87;92 W2_System_Board_Pwr_Consumption=280W;0;0 A0_PS1_Current_1=0.6A;0;0 A1_PS2_Current_2=0.6A;0;0 V27_PS1_Voltage_1=230V;0;0 V28_PS2_Voltage_2=230V;0;0 F0_System_Board_Fan1=6840rpm;0;0 F1_System_Board_Fan2=6720rpm;0;0 F2_System_Board_Fan3=6600rpm;0;0 F3_System_Board_Fan4=6600rpm;0;0 F4_System_Board_Fan5=6720rpm;0;0 F5_System_Board_Fan6=6720rpm;0;0
+[root@vm-vol-nag4-prod ~]#
+
+#
+#   After servers rebooted check become Ok!
+#   Bitch!
+#
+
+[root@vm-vol-nag4-prod ~]# /usr/lib64/nagios/plugins/check_openmanage -H 10.216.4.41 -C tcspub -P 2c -p
+OK - System: 'PowerEdge R730xd', SN: 'CXD6RG2', 128 GB ram (8 dimms), 2 logical drives, 14 physical drives|T0_System_Board_Inlet=30C;42;47 T1_System_Board_Exhaust=49C;70;75 T2_CPU1=51C;87;92 T3_CPU2=64C;87;92 W2_System_Board_Pwr_Consumption=280W;0;0 A0_PS1_Current_1=0.6A;0;0 A1_PS2_Current_2=0.6A;0;0 V27_PS1_Voltage_1=230V;0;0 V28_PS2_Voltage_2=230V;0;0 F0_System_Board_Fan1=6600rpm;0;0 F1_System_Board_Fan2=6480rpm;0;0 F2_System_Board_Fan3=6480rpm;0;0 F3_System_Board_Fan4=6360rpm;0;0 F4_System_Board_Fan5=6480rpm;0;0 F5_System_Board_Fan6=6600rpm;0;0
+[root@vm-vol-nag4-prod ~]#
+
+[root@vm-vol-nag4-tst objects]# git add servers/dc-ds/linux/ds-gp-prd-bkp1.cfg servers/dc-ds/linux/ds-gp-prd-bkp2.cfg servers/dc-m1/linux/m1-gp-prd-bkp1.cfg servers/dc-m1/linux/m1-gp-prd-bkp2.cfg
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#239071. Added into monitoring four new hosts." servers/dc-ds/linux/ds-gp-prd-bkp1.cfg servers/dc-ds/linux/ds-gp-prd-bkp2.cfg servers/dc-m1/linux/m1-gp-prd-bkp1.cfg servers/dc-m1/linux/m1-gp-prd-bkp2.cfg
+[master 617e5ce] SD#239071. Added into monitoring four new hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 4 files changed, 281 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-ds/linux/ds-gp-prd-bkp1.cfg
+ create mode 100644 objects/servers/dc-ds/linux/ds-gp-prd-bkp2.cfg
+ create mode 100644 objects/servers/dc-m1/linux/m1-gp-prd-bkp1.cfg
+ create mode 100644 objects/servers/dc-m1/linux/m1-gp-prd-bkp2.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 19, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (12/12), done.
+Writing objects: 100% (12/12), 1.48 KiB, done.
+Total 12 (delta 10), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   930dccd..617e5ce  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+

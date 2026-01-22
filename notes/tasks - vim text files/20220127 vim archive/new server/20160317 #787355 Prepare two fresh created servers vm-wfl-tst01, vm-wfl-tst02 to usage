@@ -1,0 +1,186 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   787355
+Название    №787355
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  17.03.2016 13:53
+Дата регистрации    17.03.2016 13:53
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день, коллеги.
+
+Просьба создать виртуальные машины в тестовом окружении шины:
+
+vm-wfl-tst01
+vm-wfl-tst02
+
+2CPU
+RAM:8Gb
+HDD:40Gb
+OS: CentOS.
+
+Юзер (rtsuser) необходим такой же, как и на vm-esb-tst01, с правами судо.
+Дополнительно необходим юзер wfl.
+
+Цель: перенос логеров с Integration BUS для высвобождения ресурсов IIB.
+Мониторинг на данном этапе не нужен.
+Владелец среды esb-admins.
+Все остальное будем согласовывать по мере необходимости.
+
+Спасибо.
+
+С уважением,
+
+Алексей
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Баландин Алексей
+Соглашение  - Каталог сервисов
+Сервис  99. Другое
+Контактное лицо Баландин Алексей
+Контактный e-mail   a.v.balandin@tinkoff.ru
+Контактные телефоны 79032008565, 2557
+
+................................................................................
+
+[root@puppet ~]# puppet cert list --all | egrep -e "vm-wfl-tst01|vm-wfl-tst02"
++ "vm-wfl-tst01.tcsbank.ru"              (SHA256) 65:9C:DB:79:6E:C3:42:23:67:AB:3D:3C:7F:32:BF:BD:FE:C5:A4:F3:AB:B5:51:A4:23:A3:DD:20:7A:6B:5B:18
++ "vm-wfl-tst02.tcsbank.ru"              (SHA256) 95:A2:7A:5F:BE:0C:5E:41:CD:FC:2C:A9:34:AA:20:10:EB:5A:DB:B1:71:8B:02:0F:F2:05:CB:E8:7F:F9:78:58
+[root@puppet ~]#
+[root@puppet ~]# puppet cert list --all | egrep -e "vm-wfl-tst01|vm-wfl-tst02" | cut -d ' ' -f -2
++ "vm-wfl-tst01.tcsbank.ru"
++ "vm-wfl-tst02.tcsbank.ru"
+[root@puppet ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-esb-tst01 ~]# grep rtsuser /etc/{passwd,shadow}
+/etc/passwd:rtsuser:x:509:509:rtsuser:/home/rtsuser:/bin/bash
+/etc/shadow:rtsuser:$6$EluL3v47$3Ja2nuvr1eWz3EJWPa1vc35dw.HUM24RoTrH1z9qmE4prGQ5otLw8PJ6BJ01d.QKppr7woIHZ2t45XFxMbSa2.:16848:1:90:7:::
+[root@vm-esb-tst01 ~]#
+
+................................................................................
+
+[root@vm-wfl-tst01 ~]# groupadd -g 509 rtsuser && useradd -u 509 -g rtsuser -c "SD#787355" -G wheel -s /bin/bash -p '$6$EluL3v47$3Ja2nuvr1eWz3EJWPa1vc35dw.HUM24RoTrH1z9qmE4prGQ5otLw8PJ6BJ01d.QKppr7woIHZ2t45XFxMbSa2.' rtsuser
+[root@vm-wfl-tst01 ~]# id rtsuser
+uid=509(rtsuser) gid=509(rtsuser) groups=509(rtsuser),10(wheel)
+[root@vm-wfl-tst01 ~]#
+[root@vm-wfl-tst01 ~]# sudo -l -U rtsuser
+Matching Defaults entries for rtsuser on this host:
+    requiretty, !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG
+    LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User rtsuser may run the following commands on this host:
+    (ALL) ALL
+[root@vm-wfl-tst01 ~]#
+
+
+[root@vm-wfl-tst02 ~]# groupadd -g 509 rtsuser && useradd -u 509 -g rtsuser -c "SD#787355" -G wheel -s /bin/bash -p '$6$EluL3v47$3Ja2nuvr1eWz3EJWPa1vc35dw.HUM24RoTrH1z9qmE4prGQ5otLw8PJ6BJ01d.QKppr7woIHZ2t45XFxMbSa2.' rtsuser
+[root@vm-wfl-tst02 ~]# id rtsuser
+uid=509(rtsuser) gid=509(rtsuser) groups=509(rtsuser),10(wheel)
+[root@vm-wfl-tst02 ~]# sudo -l -U rtsuser
+Matching Defaults entries for rtsuser on this host:
+    requiretty, !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG
+    LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User rtsuser may run the following commands on this host:
+    (ALL) ALL
+[root@vm-wfl-tst02 ~]#
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+17.03.2016 18:07    Учётная запись на серверах создана.
+
+[root@vm-wfl-tst01 ~]# id rtsuser
+uid=509(rtsuser) gid=509(rtsuser) groups=509(rtsuser),10(wheel)
+[root@vm-wfl-tst01 ~]#
+
+[root@vm-wfl-tst02 ~]# id rtsuser
+uid=509(rtsuser) gid=509(rtsuser) groups=509(rtsuser),10(wheel)
+[root@vm-wfl-tst02 ~]#
+Белогруд Сергей В
+17.03.2016 17:53    В puppet серверы добавлены.
+
+[root@puppet ~]# puppet cert list --all | egrep -e "vm-wfl-tst01|vm-wfl-tst02" | cut -d ' ' -f -2
++ "vm-wfl-tst01.tcsbank.ru"
++ "vm-wfl-tst02.tcsbank.ru"
+[root@puppet ~]#
+
+В nagios настройки не созданы.
+Согласно тексту заявки: "Мониторинг на данном этапе не нужен.".
+Белогруд Сергей В
+17.03.2016 16:35    ВМ создал:
+vm-wfl-tst01 / 10.216.33.59
+vm-wfl-tst02 / 10.216.33.60
+
+Записи в DNS добавил
+
+@unix-admins
+- добавить в Puppet
+- добавить в Nagios
+- выдать доступы по SSH Бегизардов Павел
+
+................................................................................
+................................................................................
+
+#
+#   Thu Mar 24 15:26:28 MSK 2016
+#
+
+Ia8eeW6a
+
+[support@centos00 20160315-1129]$ grub-crypt
+Password:
+Retype password:
+$6$3qUuW501Bw.IdF20$Y4Y.WIobhXBb0rcsXWnBN0gcQH0coO1cOESEL6h5cwtvK/dSZETu.EHGjrh3T4TX7NuPw5.HXlgAEWAOD292z.
+[support@centos00 20160315-1129]$
+
+[root@vm-wfl-tst01 ~]# groupadd -g 4052 wfl && useradd -u 4052 -g wfl -c "SD#787355" -s /bin/bash -p '$6$3qUuW501Bw.IdF20$Y4Y.WIobhXBb0rcsXWnBN0gcQH0coO1cOESEL6h5cwtvK/dSZETu.EHGjrh3T4TX7NuPw5.HXlgAEWAOD292z.' wfl
+[root@vm-wfl-tst01 ~]# id wfl
+uid=4052(wfl) gid=4052(wfl) groups=4052(wfl)
+[root@vm-wfl-tst01 ~]#
+
+[root@vm-wfl-tst02 ~]# groupadd -g 4052 wfl && useradd -u 4052 -g wfl -c "SD#787355" -s /bin/bash -p '$6$3qUuW501Bw.IdF20$Y4Y.WIobhXBb0rcsXWnBN0gcQH0coO1cOESEL6h5cwtvK/dSZETu.EHGjrh3T4TX7NuPw5.HXlgAEWAOD292z.' wfl
+[root@vm-wfl-tst02 ~]# id wfl
+uid=4052(wfl) gid=4052(wfl) groups=4052(wfl)
+[root@vm-wfl-tst02 ~]#
+
+................................................................................
+
+Дата
+Комментарий Автор
+24.03.2016 15:34    Учётная запись wfl создана.
+Реквизиты доступа отправлены письмом автору.
+Права sudo не предоставлены, как я это понял из текста заявки.
+
+[root@vm-wfl-tst01 ~]# id wfl
+uid=4052(wfl) gid=4052(wfl) groups=4052(wfl)
+[root@vm-wfl-tst01 ~]#
+
+[root@vm-wfl-tst02 ~]# id wfl
+uid=4052(wfl) gid=4052(wfl) groups=4052(wfl)
+[root@vm-wfl-tst02 ~]#
+Белогруд Сергей В
+24.03.2016 08:15    Сергей, создай, пожалуйста, пользователя wfl, согласно завке.
+Спасибо.    Кирсанов Сергей
+17.03.2016 18:10    Назначить заявку на автора для проверки проведённых работ.  Белогруд Сергей В
+
+................................................................................
+
+

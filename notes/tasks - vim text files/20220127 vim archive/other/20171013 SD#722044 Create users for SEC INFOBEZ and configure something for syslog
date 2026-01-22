@@ -1,0 +1,271 @@
+
+
+................................................................................
+
+
+groupadd -g 4138 s.shemyakin && useradd -u 4138 -g s.shemyakin -c "SD#722044. Shemyakin Sergey Sergeevich" -m -s /bin/bash s.shemyakin
+
+
+[root@vm-syslog01 ~]# passwd s.shemyakin
+Changing password for user s.shemyakin.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@vm-syslog01 ~]# chage -d 0 !$
+chage -d 0 s.shemyakin
+[root@vm-syslog01 ~]#
+
+[s.belogrud@TCS4357]# pwgen -c -n -s -C 10 1
+Rk3w021fr8
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[root@vm-syslog01 ~]# groupadd -g 4139 s.koltypina && useradd -u 4139 -g s.koltypina -c "SD#722044. Shemyakin SergeySergeevich" -m -s /bin/bash s.koltypina
+[root@vm-syslog01 ~]# passwd s.koltypina
+Changing password for user s.koltypina.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@vm-syslog01 ~]# chage -d 0 s.koltypina
+[root@vm-syslog01 ~]#
+
+[s.belogrud@TCS4357]# pwgen -c -n -s -C 10 1
+t154Zg1K9E
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+
+[root@vm-syslog01 ~]# sed '/^#.*/d' /etc/rsyslog.conf
+
+
+
+$ModLoad imuxsock.so    # provides support for local system logging (e.g. via logger command)
+$ModLoad imklog.so      # provides kernel logging support (previously done by rklogd)
+
+
+$MainMsgQueueSize 4000000
+$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+$ActionQueueDequeueBatchSize 1000
+$MainMsgQueueDequeueBatchSize 200000
+
+
+
+
+
+if \
+        $fromhost-ip == '127.0.0.1' \
+        and \
+               $syslogseverity <= '6' \
+        and ( \
+                        $syslogfacility-text != 'mail' \
+                and \
+                        $syslogfacility-text != 'authpriv' \
+                and \
+                        $syslogfacility-text != 'cron' \
+        ) \
+then    /var/log/messages
+
+if \
+        $fromhost-ip == '127.0.0.1' \
+                and \
+        $syslogfacility-text == 'authpriv' \
+then    /var/log/secure
+
+if \
+        $fromhost-ip == '127.0.0.1' \
+                and \
+        $syslogfacility-text == 'mail' \
+then    -/var/log/maillog
+
+
+if \
+        $fromhost-ip == '127.0.0.1' \
+                and \
+        $syslogfacility-text == 'cron' \
+then    /var/log/cron
+
+
+if \
+        $fromhost-ip == '127.0.0.1' \
+                and \
+        (\
+                $syslogfacility-text == 'uucp' \
+                        or \
+                $syslogfacility-text == 'news' \
+        )\
+                and \
+        $syslogseverity-text == 'crit' \
+then    /var/log/spooler
+
+if \
+        $fromhost-ip == '127.0.0.1' \
+                and \
+        $syslogfacility-text == 'local7' \
+then    /var/log/boot.log
+
+$template DYNmessages,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/messages"
+$template DYNsecure,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/secure"
+$template DYNmaillog,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/maillog"
+$template DYNcron,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/cron"
+$template DYNspooler,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/spooler"
+$template DYNboot,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/boot.log"
+$template DYNaudit,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/audit.log"
+$template DYNallinone,"/var/log/servers/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/allinone.log"
+$template DYNoracle,"/mnt/oracle_logs_for_archive/%HOSTNAME%/%$YEAR%/%$MONTH%/%$DAY%/oracle.log"
+$template DYNdsilb01vl1900,"/var/log/servers/ds-ilb01-vl1900/%$YEAR%/%$MONTH%/%$DAY%/ds-ilb01-vl1900.log"
+$template DYNm1ilb01vl1900,"/var/log/servers/m1-ilb01-vl1900/%$YEAR%/%$MONTH%/%$DAY%/m1-ilb01-vl1900.log"
+$template GRAYLOGRFC5424,"<%PRI%>%PROTOCOL-VERSION% %TIMESTAMP:::date-rfc3339% %HOSTNAME% %APP-NAME% %PROCID% %MSGID% %STRUCTURED-DATA% %msg%\n"
+
+if \
+        $fromhost-ip == '10.219.0.250' \
+then    ?DYNm1ilb01vl1900
+
+if \
+        $fromhost-ip == '10.219.0.251' \
+then    ?DYNdsilb01vl1900
+
+if \
+        ( \
+                $fromhost-ip == '10.217.50.11' \
+                        or \
+                $fromhost-ip == '10.217.50.23' \
+                        or \
+                $fromhost-ip == '10.217.50.22' \
+                        or \
+                $fromhost-ip == '10.217.50.13' \
+                        or \
+                $fromhost-ip == '10.217.50.14' \
+                        or \
+                $fromhost-ip == '10.217.50.24' \
+                        or \
+                $fromhost-ip == '10.217.50.19' \
+                        or \
+                $fromhost-ip == '10.217.50.30' \
+                        or \
+                $fromhost-ip == '10.217.50.29' \
+                        or \
+                $fromhost-ip == '10.217.50.20' \
+                        or \
+                $fromhost-ip == '10.217.50.33' \
+                        or \
+                $fromhost-ip == '10.217.50.32' \
+                        or \
+                $fromhost-ip == '10.217.50.45' \
+                        or \
+                $fromhost-ip == '10.217.50.49' \
+                        or \
+                $fromhost-ip == '10.217.50.46' \
+                        or \
+                $fromhost-ip == '10.217.50.113' \
+                        or \
+                $fromhost-ip == '10.217.50.115' \
+                        or \
+                $fromhost-ip == '10.217.50.116' \
+        ) \
+                        and \
+                $syslogseverity == '7' \
+                        and \
+                $syslogfacility == '1' \
+then    ?DYNoracle
+
+
+if \
+        ( \
+                $fromhost-ip == '10.217.64.11' \
+                        or \
+                $fromhost-ip == '10.217.64.10' \
+                        or \
+                $fromhost-ip == '10.217.64.49' \
+                        or \
+                $fromhost-ip == '10.217.64.48' \
+                        or \
+                $fromhost-ip == '10.219.10.89' \
+                        or \
+                $fromhost-ip == '10.219.10.86' \
+                        or \
+                $fromhost-ip == '10.219.8.86' \
+                        or \
+                $fromhost-ip == '10.219.10.80' \
+                        or \
+                $fromhost-ip == '10.219.8.80' \
+                        or \
+                $fromhost-ip == '10.219.10.81' \
+                        or \
+                $fromhost-ip == '10.219.8.81' \
+                        or \
+                $fromhost-ip == '10.217.67.9' \
+                        or \
+                $fromhost-ip == '10.217.67.8' \
+                        or \
+                $fromhost-ip == '10.217.32.7' \
+                        or \
+                $fromhost-ip == '10.217.32.5' \
+                        or \
+                $fromhost-ip == '10.217.32.6' \
+                        or \
+                $fromhost-ip == '10.219.11.40' \
+                        or \
+                $fromhost-ip == '10.219.9.40' \
+        ) \
+then    ?DYNallinone
+
+
+if \
+        $fromhost-ip != '127.0.0.1' \
+                        and \
+                $syslogseverity <= '6' \
+                        and \
+        ( \
+                $syslogfacility-text != 'mail' \
+                        and \
+                $syslogfacility-text != 'authpriv' \
+                        and \
+                $syslogfacility-text != 'cron' \
+                        and \
+                $syslogfacility-text != 'local6' \
+        ) \
+then ?DYNmessages
+
+if $fromhost-ip != '127.0.0.1' and $syslogfacility-text == 'authpriv' then ?DYNsecure
+
+if $fromhost-ip != '127.0.0.1' and $syslogfacility-text == 'mail' then -?DYNmaillog
+
+if $fromhost-ip != '127.0.0.1' and $syslogfacility-text == 'cron' then ?DYNcron
+
+if $fromhost-ip != '127.0.0.1' and ( $syslogfacility-text == 'uucp' or $syslogfacility-text == 'news' ) and $syslogseverity-text == 'crit' then ?DYNspooler
+
+if $fromhost-ip != '127.0.0.1' and $syslogfacility-text == 'local6' then ?DYNaudit
+if $fromhost-ip != '127.0.0.1' and $syslogfacility-text == 'local7' then ?DYNboot
+
+
+$ModLoad imudp.so
+$UDPServerRun 514
+
+$ModLoad imtcp.so
+$InputTCPServerRun 514
+
+$ModLoad ommail
+$ActionMailSMTPServer localhost
+$ActionMailFrom rsyslog@tcsbank.ru
+$ActionMailTo unix-admins@tcsbank.ru
+
+$template mailSubject,"Account expiration detected on %hostname%"
+$template mailBody,"RSYSLOG Alert\r\nmsg='%msg%'"
+
+$ActionMailSubject mailSubject
+$ActionExecOnlyOnceEveryInterval 5
+
+if $msg contains 'will expire in' then :ommail:;mailBody
+
+
+[root@vm-syslog01 ~]#
+
+
+................................................................................
+................................................................................
+
+
+
+

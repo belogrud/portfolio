@@ -1,0 +1,528 @@
+
+
+
+................................................................................
+
+[root@vm-pr-sqube01p ~]# lsblk
+NAME              MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                 8:0    0   20G  0 disk
+├─sda1              8:1    0  256M  0 part /boot
+└─sda2              8:2    0 19.8G  0 part
+  └─vg_root-lvol0 253:0    0 19.8G  0 lvm  /
+  sdb                 8:16   0  200G  0 disk
+  sr0                11:0    1 1024M  0 rom
+  [root@vm-pr-sqube01p ~]# blkid
+  /dev/sda1: UUID="f558dac6-0cbf-4049-b349-be4aa894c26b" TYPE="xfs"
+  /dev/sda2: UUID="w2Ih9A-tm1U-akCc-KFu8-C8la-qS6s-42dV8k" TYPE="LVM2_member"
+  /dev/mapper/vg_root-lvol0: UUID="6a1d42a4-c690-4783-8284-a1290ec27017" TYPE="xfs"
+  [root@vm-pr-sqube01p ~]# ls /etc/lvm/
+  archive/       backup/        cache/         lvm.conf       lvmlocal.conf  profile/
+  [root@vm-pr-sqube01p ~]# 
+
+
+................................................................................
+
+[root@vm-pr-sqube01p ~]# yes | parted -s -a optimal /dev/sdb mklabel msdos mkpart primary 0% 100% set 1 lvm on
+[root@vm-pr-sqube01p ~]# lsblk
+NAME              MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                 8:0    0   20G  0 disk
+├─sda1              8:1    0  256M  0 part /boot
+└─sda2              8:2    0 19.8G  0 part
+  └─vg_root-lvol0 253:0    0 19.8G  0 lvm  /
+sdb                 8:16   0  200G  0 disk
+└─sdb1              8:17   0  200G  0 part
+sr0                11:0    1 1024M  0 rom
+[root@vm-pr-sqube01p ~]# pvcreate /dev/sdb1
+  Physical volume "/dev/sdb1" successfully created.
+[root@vm-pr-sqube01p ~]#
+
+
+................................................................................
+
+[root@vm-pr-sqube01p ~]# vgcreate vg_var-lvol0 /dev/sdb1
+  Volume group "vg_var-lvol0" successfully created
+[root@vm-pr-sqube01p ~]#
+
+
+[root@vm-pr-sqube01p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_var-lvol0
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  1
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               <200.00 GiB
+  PE Size               4.00 MiB
+  Total PE              51199
+  Alloc PE / Size       0 / 0
+  Free  PE / Size       51199 / <200.00 GiB
+  VG UUID               QQDLBm-z7hq-ufyo-fhjo-uD7j-OOKt-Bi9lU4
+
+  --- Volume group ---
+  VG Name               vg_root
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  2
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                1
+  Open LV               1
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               <19.75 GiB
+  PE Size               4.00 MiB
+  Total PE              5055
+  Alloc PE / Size       5055 / <19.75 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               xmh2h7-S5rT-Uv5e-yg6M-SSyn-3XJk-jpWKRR
+
+[root@vm-pr-sqube01p ~]# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/vg_root/lvol0
+  LV Name                lvol0
+  VG Name                vg_root
+  LV UUID                jWobuq-GlUo-a9YK-EJjm-iGq2-3wxc-bYd1Ug
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2016-09-15 11:33:52 +0300
+  LV Status              available
+  # open                 1
+  LV Size                <19.75 GiB
+  Current LE             5055
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:0
+
+[root@vm-pr-sqube01p ~]# 
+
+
+[root@vm-pr-sqube01p ~]# vgremove vg_var-lvol0
+  Volume group "vg_var-lvol0" successfully removed
+[root@vm-pr-sqube01p ~]# vgcreate vg_var /dev/sdb1
+  Volume group "vg_var" successfully created
+[root@vm-pr-sqube01p ~]#
+
+
+[root@vm-pr-sqube01p ~]# lvcreate -l 100%VG vg_var -n lvol0
+  Logical volume "lvol0" created.
+[root@vm-pr-sqube01p ~]#
+
+[root@vm-pr-sqube01p ~]# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/vg_root/lvol0
+  LV Name                lvol0
+  VG Name                vg_root
+  LV UUID                jWobuq-GlUo-a9YK-EJjm-iGq2-3wxc-bYd1Ug
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2016-09-15 11:33:52 +0300
+  LV Status              available
+  # open                 1
+  LV Size                <19.75 GiB
+  Current LE             5055
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:0
+
+  --- Logical volume ---
+  LV Path                /dev/vg_var/lvol0
+  LV Name                lvol0
+  VG Name                vg_var
+  LV UUID                Psu06q-B5BN-c5Z9-oSFX-Y0LC-IEX6-aU5DGM
+  LV Write Access        read/write
+  LV Creation host, time vm-pr-sqube01p.tcsbank.ru, 2017-11-20 17:21:31 +0300
+  LV Status              available
+  # open                 0
+  LV Size                <200.00 GiB
+  Current LE             51199
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:1
+
+[root@vm-pr-sqube01p ~]#
+
+[root@vm-pr-sqube01p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_root
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  2
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                1
+  Open LV               1
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               <19.75 GiB
+  PE Size               4.00 MiB
+  Total PE              5055
+  Alloc PE / Size       5055 / <19.75 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               xmh2h7-S5rT-Uv5e-yg6M-SSyn-3XJk-jpWKRR
+
+  --- Volume group ---
+  VG Name               vg_var
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  2
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                1
+  Open LV               0
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               <200.00 GiB
+  PE Size               4.00 MiB
+  Total PE              51199
+  Alloc PE / Size       51199 / <200.00 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               r9vJc4-ROS5-TmNJ-sEaB-5TTI-NvIm-scs8Ze
+
+[root@vm-pr-sqube01p ~]#
+
+
+[root@vm-pr-sqube01p ~]# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sda2
+  VG Name               vg_root
+  PV Size               <19.75 GiB / not usable 3.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              5055
+  Free PE               0
+  Allocated PE          5055
+  PV UUID               w2Ih9A-tm1U-akCc-KFu8-C8la-qS6s-42dV8k
+
+  --- Physical volume ---
+  PV Name               /dev/sdb1
+  VG Name               vg_var
+  PV Size               <200.00 GiB / not usable 3.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              51199
+  Free PE               0
+  Allocated PE          51199
+  PV UUID               3z1Qxx-I1Bn-JO6S-sBt0-yyGy-2Fyr-qWdZU2
+
+[root@vm-pr-sqube01p ~]#
+
+[root@vm-pr-sqube01p ~]# lsblk
+NAME              MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                 8:0    0   20G  0 disk
+├─sda1              8:1    0  256M  0 part /boot
+└─sda2              8:2    0 19.8G  0 part
+  └─vg_root-lvol0 253:0    0 19.8G  0 lvm  /
+sdb                 8:16   0  200G  0 disk
+└─sdb1              8:17   0  200G  0 part
+  └─vg_var-lvol0  253:1    0  200G  0 lvm
+sr0                11:0    1 1024M  0 rom
+[root@vm-pr-sqube01p ~]#
+
+[root@vm-pr-sqube01p ~]# blkid
+/dev/sda1: UUID="f558dac6-0cbf-4049-b349-be4aa894c26b" TYPE="xfs"
+/dev/sda2: UUID="w2Ih9A-tm1U-akCc-KFu8-C8la-qS6s-42dV8k" TYPE="LVM2_member"
+/dev/mapper/vg_root-lvol0: UUID="6a1d42a4-c690-4783-8284-a1290ec27017" TYPE="xfs"
+/dev/sdb1: UUID="3z1Qxx-I1Bn-JO6S-sBt0-yyGy-2Fyr-qWdZU2" TYPE="LVM2_member"
+[root@vm-pr-sqube01p ~]# mkfs.xfs /dev/mapper/vg_var-lvol0
+meta-data=/dev/mapper/vg_var-lvol0 isize=512    agcount=4, agsize=13106944 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=52427776, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=25599, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@vm-pr-sqube01p ~]#
+
+
+[root@vm-pr-sqube01p ~]# blkid
+/dev/sda1: UUID="f558dac6-0cbf-4049-b349-be4aa894c26b" TYPE="xfs"
+/dev/sda2: UUID="w2Ih9A-tm1U-akCc-KFu8-C8la-qS6s-42dV8k" TYPE="LVM2_member"
+/dev/mapper/vg_root-lvol0: UUID="6a1d42a4-c690-4783-8284-a1290ec27017" TYPE="xfs"
+/dev/sdb1: UUID="3z1Qxx-I1Bn-JO6S-sBt0-yyGy-2Fyr-qWdZU2" TYPE="LVM2_member"
+/dev/mapper/vg_var-lvol0: UUID="0c67f26d-370d-4c27-88a3-993f9a7b3561" TYPE="xfs"
+[root@vm-pr-sqube01p ~]#
+
+
+[root@vm-pr-sqube01p ~]# vim /etc/fstab
+
+[root@vm-pr-sqube01p ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Thu Sep 15 11:33:57 2016
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/vg_root-lvol0 /                       xfs     defaults        0 0
+/swap                     swap                    swap    sw              0 0
+UUID=f558dac6-0cbf-4049-b349-be4aa894c26b /boot                   xfs     defaults        0 0
+/dev/mapper/vg_var-lvol0        /var1   xfs     defaults        1 2
+
+[root@vm-pr-sqube01p ~]#
+
+
+[root@vm-pr-sqube01p ~]# mkdir /var1
+[root@vm-pr-sqube01p ~]# mount /var1
+[root@vm-pr-sqube01p ~]# df -hT
+Filesystem                Type      Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0 xfs        20G  2.1G   18G  11% /
+devtmpfs                  devtmpfs  7.8G     0  7.8G   0% /dev
+tmpfs                     tmpfs     7.8G     0  7.8G   0% /dev/shm
+tmpfs                     tmpfs     7.8G  8.6M  7.8G   1% /run
+tmpfs                     tmpfs     7.8G     0  7.8G   0% /sys/fs/cgroup
+/dev/sda1                 xfs       253M  115M  139M  46% /boot
+tmpfs                     tmpfs     1.6G     0  1.6G   0% /run/user/0
+/dev/mapper/vg_var-lvol0  xfs       200G   33M  200G   1% /var1
+[root@vm-pr-sqube01p ~]#
+
+................................................................................
+
+[root@vm-pr-sqube01p ~]# cp -ri /var/* /var1/
+[root@vm-pr-sqube01p ~]# df -h /var /var1
+Filesystem                 Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0   20G  2.1G   18G  11% /
+/dev/mapper/vg_var-lvol0   200G  135M  200G   1% /var1
+[root@vm-pr-sqube01p ~]# du -sh /var
+88M     /var
+[root@vm-pr-sqube01p ~]# du -sh /var1
+100M    /var1
+[root@vm-pr-sqube01p ~]#
+
+
+
+................................................................................
+
+
+
+[root@vm-pr-sqube01p ~]# shopt -s dotglob
+
+[root@vm-pr-sqube01p ~]# yes | cp -fri /var/* /var1/
+
+
+[root@vm-pr-sqube01p ~]# du -sh /var /var1
+88M     /var
+100M    /var1
+[root@vm-pr-sqube01p ~]# ls -Alh /var
+total 16K
+drwxr-xr-x.  2 root root    6 Nov  5  2016 adm
+drwxr-xr-x.  5 root root   41 Nov  5  2016 cache
+drwxr-xr-x.  2 root root    6 Oct 20 00:03 crash
+drwxr-xr-x.  3 root root   32 Oct 30 17:55 db
+drwxr-xr-x.  3 root root   17 Nov  5  2016 empty
+drwxr-xr-x.  2 root root    6 Nov  5  2016 games
+drwxr-xr-x.  2 root root    6 Nov  5  2016 gopher
+drwxr-xr-x.  3 root root   17 Aug  4 02:38 kerberos
+drwxr-xr-x. 32 root root 4.0K Oct 30 17:57 lib
+drwxr-xr-x.  2 root root    6 Nov  5  2016 local
+lrwxrwxrwx.  1 root root   11 Sep 15  2016 lock -> ../run/lock
+drwxr-xr-x.  7 root root 4.0K Nov 20 17:13 log
+lrwxrwxrwx.  1 root root   10 Dec 15  2016 mail -> spool/mail
+drwxr-xr-x.  2 root root    6 Nov  5  2016 nis
+drwxr-xr-x.  2 root root    6 Nov  5  2016 opt
+drwxr-xr-x.  2 root root    6 Nov  5  2016 preserve
+lrwxrwxrwx.  1 root root    6 Sep 15  2016 run -> ../run
+drwxr-xr-x.  9 root root   94 Nov  5  2016 spool
+drwxrwxrwt.  5 root root 4.0K Nov 20 16:40 tmp
+-rw-r--r--.  1 root root  163 Dec 15  2016 .updated
+drwxr-xr-x.  2 root root    6 Nov  5  2016 yp
+[root@vm-pr-sqube01p ~]# ls -Alh /var1
+total 12K
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 adm
+drwxr-xr-x.  5 root root   44 Nov 20 17:35 cache
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 crash
+drwxr-xr-x.  3 root root   34 Nov 20 17:35 db
+drwxr-xr-x.  3 root root   18 Nov 20 17:35 empty
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 games
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 gopher
+drwxr-xr-x.  3 root root   18 Nov 20 17:35 kerberos
+drwxr-xr-x. 32 root root 4.0K Nov 20 17:35 lib
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 local
+lrwxrwxrwx.  1 root root   11 Nov 20 17:45 lock -> ../run/lock
+drwxr-xr-x.  7 root root 4.0K Nov 20 17:35 log
+lrwxrwxrwx.  1 root root   10 Nov 20 17:45 mail -> spool/mail
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 nis
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 opt
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 preserve
+lrwxrwxrwx.  1 root root    6 Nov 20 17:45 run -> ../run
+drwxr-xr-x.  9 root root  101 Nov 20 17:35 spool
+drwxr-xr-t.  5 root root  241 Nov 20 17:35 tmp
+-rw-r--r--.  1 root root  163 Nov 20 17:45 .updated
+drwxr-xr-x.  2 root root    6 Nov 20 17:35 yp
+[root@vm-pr-sqube01p ~]#
+
+
+................................................................................
+
+#
+#	In vmware console
+#	Boot in single mode.
+#	Made cp from /var to /var1 again
+#	mv /var /var.old
+#	mv /var1 /var
+#	Edit /etc/fstab to mount /var
+#	reboot server
+
+................................................................................
+
+
+[s.belogrud@TCS4357]# ssh root@vm-pr-sqube01p
+Last login: Mon Nov 20 17:04:01 2017
+[root@vm-pr-sqube01p ~]# df -h
+Filesystem                 Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0   20G  2.1G   18G  11% /
+devtmpfs                   7.8G     0  7.8G   0% /dev
+tmpfs                      7.8G     0  7.8G   0% /dev/shm
+tmpfs                      7.8G  8.5M  7.8G   1% /run
+tmpfs                      7.8G     0  7.8G   0% /sys/fs/cgroup
+/dev/sda1                  253M   97M  156M  39% /boot
+/dev/mapper/vg_var-lvol0   200G  199M  200G   1% /var
+tmpfs                      1.6G     0  1.6G   0% /run/user/0
+[root@vm-pr-sqube01p ~]# lsblk
+NAME              MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                 8:0    0   20G  0 disk
+├─sda1              8:1    0  256M  0 part /boot
+└─sda2              8:2    0 19.8G  0 part
+  └─vg_root-lvol0 253:0    0 19.8G  0 lvm  /
+sdb                 8:16   0  200G  0 disk
+└─sdb1              8:17   0  200G  0 part
+  └─vg_var-lvol0  253:1    0  200G  0 lvm  /var
+sr0                11:0    1 1024M  0 rom
+[root@vm-pr-sqube01p ~]#
+
+[root@vm-pr-sqube01p ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Thu Sep 15 11:33:57 2016
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/vg_root-lvol0 /                       xfs     defaults        0 0
+/swap                     swap                    swap    sw              0 0
+UUID=f558dac6-0cbf-4049-b349-be4aa894c26b /boot                   xfs     defaults        0 0
+/dev/mapper/vg_var-lvol0        /var    xfs     defaults        1 2
+
+[root@vm-pr-sqube01p ~]#
+
+
+[root@vm-pr-sqube01p ~]# rmdir /var1
+[root@vm-pr-sqube01p ~]# tar czf /tmp/var.old.tgz /var.old/
+tar: Removing leading `/' from member names
+tar: Removing leading `/' from hard link targets
+tar: /var.old/lib/gssproxy/default.sock: socket ignored
+tar: /var.old/spool/postfix/private/tlsmgr: socket ignored
+tar: /var.old/spool/postfix/private/rewrite: socket ignored
+tar: /var.old/spool/postfix/private/bounce: socket ignored
+tar: /var.old/spool/postfix/private/defer: socket ignored
+tar: /var.old/spool/postfix/private/trace: socket ignored
+tar: /var.old/spool/postfix/private/verify: socket ignored
+tar: /var.old/spool/postfix/private/proxymap: socket ignored
+tar: /var.old/spool/postfix/private/proxywrite: socket ignored
+tar: /var.old/spool/postfix/private/smtp: socket ignored
+tar: /var.old/spool/postfix/private/relay: socket ignored
+tar: /var.old/spool/postfix/private/error: socket ignored
+tar: /var.old/spool/postfix/private/retry: socket ignored
+tar: /var.old/spool/postfix/private/discard: socket ignored
+tar: /var.old/spool/postfix/private/local: socket ignored
+tar: /var.old/spool/postfix/private/virtual: socket ignored
+tar: /var.old/spool/postfix/private/lmtp: socket ignored
+tar: /var.old/spool/postfix/private/anvil: socket ignored
+tar: /var.old/spool/postfix/private/scache: socket ignored
+tar: /var.old/spool/postfix/public/pickup: socket ignored
+tar: /var.old/spool/postfix/public/cleanup: socket ignored
+tar: /var.old/spool/postfix/public/qmgr: socket ignored
+tar: /var.old/spool/postfix/public/flush: socket ignored
+tar: /var.old/spool/postfix/public/showq: socket ignored
+[root@vm-pr-sqube01p ~]# ls -Alh /tmp/var.old.tgz
+-rw-r--r--. 1 root root 22M Nov 20 18:06 /tmp/var.old.tgz
+[root@vm-pr-sqube01p ~]# rm -rf /var.old/
+[root@vm-pr-sqube01p ~]#
+
+[root@vm-pr-sqube01p ~]# df -hT
+Filesystem                Type      Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0 xfs        20G  2.1G   18G  11% /
+devtmpfs                  devtmpfs  7.8G     0  7.8G   0% /dev
+tmpfs                     tmpfs     7.8G     0  7.8G   0% /dev/shm
+tmpfs                     tmpfs     7.8G  8.5M  7.8G   1% /run
+tmpfs                     tmpfs     7.8G     0  7.8G   0% /sys/fs/cgroup
+/dev/sda1                 xfs       253M  115M  139M  46% /boot
+/dev/mapper/vg_var-lvol0  xfs       200G  135M  200G   1% /var
+tmpfs                     tmpfs     1.6G     0  1.6G   0% /run/user/0
+[root@vm-pr-sqube01p ~]# telnet repo-linux 80
+Trying 10.216.42.6...
+Connected to repo-linux.
+Escape character is '^]'.
+^]
+
+telnet> quit
+Connection closed.
+[root@vm-pr-sqube01p ~]#
+
+................................................................................
+
+[root@vm-pr-sqube01p ~]# reboot
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to vm-pr-sqube01p closed by remote host.
+Connection to vm-pr-sqube01p closed.
+[s.belogrud@TCS4357]# ssh root@vm-pr-sqube01p
+Last login: Mon Nov 20 17:52:58 2017 from tcs4500.tcsbank.ru
+[root@vm-pr-sqube01p ~]# yum repolist
+base                                                                                          | 3.6 kB  00:00:00
+epel                                                                                          | 4.3 kB  00:00:00
+extras                                                                                        | 3.4 kB  00:00:00
+updates                                                                                       | 3.4 kB  00:00:00
+(1/7): base/7/x86_64/group_gz                                                                 | 156 kB  00:00:00
+(2/7): epel/x86_64/group_gz                                                                   | 170 kB  00:00:00
+(3/7): epel/x86_64/updateinfo                                                                 | 821 kB  00:00:00
+(4/7): base/7/x86_64/primary_db                                                               | 5.7 MB  00:00:00
+(5/7): epel/x86_64/primary_db                                                                 | 4.8 MB  00:00:00
+(6/7): extras/7/x86_64/primary_db                                                             | 130 kB  00:00:00
+(7/7): updates/7/x86_64/primary_db                                                            | 3.6 MB  00:00:00
+repo id                                 repo name                                                              status
+base/7/x86_64                           CentOS-7 - Base                                                         9,591
+epel/x86_64                             Extra Packages for Enterprise Linux 7 - x86_64                         11,904
+extras/7/x86_64                         CentOS-7 - Extras                                                         282
+updates/7/x86_64                        CentOS-7 - Updates                                                      1,086
+repolist: 22,863
+[root@vm-pr-sqube01p ~]#
+
+
+................................................................................
+
+
+[root@vm-pr-sqube01p ~]# groupadd -g 1119 a.kosyrev && useradd -u 1119 -g a.kosyrev -c "SD#839592. Kosyrev Aleksey Al
+eksandrovich" -m -s /bin/bash -G wheel -p '$6$/dQAs5Uc$k.NC02gXgTYu8zDNuL6prZWkpPUE40CacA42iipQO8MHTdZpBP.RgGdOW5RjYe
+Vnr5p4hmD7fjwf/Vt7KipsE1' a.kosyrev
+[root@vm-pr-sqube01p ~]#
+
+
+
+
+
+

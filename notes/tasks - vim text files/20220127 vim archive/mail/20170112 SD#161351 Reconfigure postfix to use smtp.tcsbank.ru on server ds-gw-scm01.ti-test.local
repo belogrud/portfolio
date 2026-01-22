@@ -1,0 +1,292 @@
+
+................................................................................
+
+[root@ds-gw-scm01 ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+inet_protocols = all
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# hostname
+ds-gw-scm01.ti-test.local
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = ds-gw-scm01
+mydomain = ti-test.local
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# host smtp.tcsbank.ru
+smtp.tcsbank.ru is an alias for smtp.gtm.tcsbank.ru.
+^C[root@ds-gw-scm01 ~]#
+
+
+[root@ds-gw-scm01 ~]# service postfix reload
+Reloading postfix:                                         [  OK  ]
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# cat /etc/resolv.conf
+options timeout:15
+options timeout:15
+nameserver 10.218.49.10
+nameserver 10.216.42.5
+search tcsbank.ru
+domain tcsbank.ru
+[root@ds-gw-scm01 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UNKNOWN qlen 1000
+    inet 10.218.53.21/24 brd 10.218.53.255 scope global eth0
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UNKNOWN qlen 1000
+    inet 10.218.53.21/24 brd 10.218.53.255 scope global eth0
+[root@ds-gw-scm01 ~]#
+[root@ds-gw-scm01 ~]# dig @10.218.49.10 smtp.tcsbank.ru.
+
+; <<>> DiG 9.7.3-P3-RedHat-9.7.3-8.P3.el6 <<>> @10.218.49.10 smtp.tcsbank.ru.
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 37925
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;smtp.tcsbank.ru.               IN      A
+
+;; ANSWER SECTION:
+smtp.tcsbank.ru.        3286    IN      CNAME   smtp.gtm.tcsbank.ru.
+
+;; Query time: 10 msec
+;; SERVER: 10.218.49.10#53(10.218.49.10)
+;; WHEN: Thu Jan 12 17:52:43 2017
+;; MSG SIZE  rcvd: 56
+
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# dig @10.218.49.10 -t any smtp.gtm.tcsbank.ru.
+
+; <<>> DiG 9.7.3-P3-RedHat-9.7.3-8.P3.el6 <<>> @10.218.49.10 -t any smtp.gtm.tcsbank.ru.
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 56197
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;smtp.gtm.tcsbank.ru.           IN      ANY
+
+;; Query time: 3 msec
+;; SERVER: 10.218.49.10#53(10.218.49.10)
+;; WHEN: Thu Jan 12 17:53:34 2017
+;; MSG SIZE  rcvd: 37
+
+[root@ds-gw-scm01 ~]#
+
+................................................................................
+
+[root@vm-postfix01 postfix]# dig @10.218.48.10 -t any smtp.tcsbank.ru.
+
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.17.rc1.el6 <<>> @10.218.48.10 -t any smtp.tcsbank.ru.
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 35856
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;smtp.tcsbank.ru.               IN      ANY
+
+;; ANSWER SECTION:
+smtp.tcsbank.ru.        3600    IN      CNAME   smtp.gtm.tcsbank.ru.
+
+;; ADDITIONAL SECTION:
+smtp.gtm.tcsbank.ru.    1       IN      A       10.219.0.17
+
+;; Query time: 12 msec
+;; SERVER: 10.218.48.10#53(10.218.48.10)
+;; WHEN: Thu Jan 12 17:57:41 2017
+;; MSG SIZE  rcvd: 72
+
+[root@vm-postfix01 postfix]#
+
+
+[root@ds-gw-scm01 ~]# dig @10.218.48.10 -t any smtp.tcsbank.ru
+
+; <<>> DiG 9.7.3-P3-RedHat-9.7.3-8.P3.el6 <<>> @10.218.48.10 -t any smtp.tcsbank.ru
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 47476
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;smtp.tcsbank.ru.               IN      ANY
+
+;; ANSWER SECTION:
+smtp.tcsbank.ru.        3560    IN      CNAME   smtp.gtm.tcsbank.ru.
+
+;; ADDITIONAL SECTION:
+smtp.gtm.tcsbank.ru.    1       IN      A       10.219.0.17
+
+;; Query time: 4 msec
+;; SERVER: 10.218.48.10#53(10.218.48.10)
+;; WHEN: Thu Jan 12 17:58:21 2017
+;; MSG SIZE  rcvd: 72
+
+[root@ds-gw-scm01 ~]#
+
+................................................................................
+
+#
+#   As Shinkarev said, I've added two dns-servers.
+#
+[root@ds-gw-scm01 ~]# cat /etc/resolv.conf
+options timeout:15
+options timeout:15
+nameserver 10.218.49.10
+nameserver 10.218.48.10
+nameserver 10.218.52.10
+search tcsbank.ru
+domain tcsbank.ru
+[root@ds-gw-scm01 ~]#
+
+................................................................................
+[root@ds-gw-scm01 ~]# host -v smtp.tcsbank.ru
+Trying "smtp.tcsbank.ru"
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 19193
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;smtp.tcsbank.ru.               IN      A
+
+;; ANSWER SECTION:
+smtp.tcsbank.ru.        1543    IN      CNAME   smtp.gtm.tcsbank.ru.
+
+Received 56 bytes from 10.218.49.10#53 in 15 ms
+Trying "smtp.gtm.tcsbank.ru"
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 45313
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;smtp.gtm.tcsbank.ru.           IN      AAAA
+
+;; ANSWER SECTION:
+smtp.gtm.tcsbank.ru.    0       IN      CNAME   smtp.gtm.tinkoff.ru.
+
+Received 68 bytes from 10.218.48.10#53 in 14 ms
+Trying "smtp.gtm.tcsbank.ru"
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 793
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;smtp.gtm.tcsbank.ru.           IN      MX
+
+;; ANSWER SECTION:
+smtp.gtm.tcsbank.ru.    0       IN      CNAME   smtp.gtm.tinkoff.ru.
+
+Received 68 bytes from 10.218.48.10#53 in 2 ms
+[root@ds-gw-scm01 ~]#
+................................................................................
+
+[root@ds-gw-scm01 ~]# service postfix reload
+Reloading postfix:                                         [  OK  ]
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+[root@ds-gw-scm01 ~]# tail -f /var/log/maillog
+Jan 12 18:22:26 ds-gw-scm01 postfix/qmgr[29197]: 8D7F0800DE: removed
+Jan 12 18:22:26 ds-gw-scm01 postfix/qmgr[29197]: 56588801AF: removed
+Jan 12 18:22:26 ds-gw-scm01 postfix/qmgr[29197]: 732B28010E: removed
+Jan 12 18:22:26 ds-gw-scm01 postfix/qmgr[29197]: 59DBE80054: removed
+Jan 12 18:22:26 ds-gw-scm01 postfix/qmgr[29197]: B875080057: removed
+Jan 12 18:22:45 ds-gw-scm01 postfix/pickup[29196]: 891B180057: uid=0 from=<root>
+Jan 12 18:22:45 ds-gw-scm01 postfix/cleanup[29222]: 891B180057: message-id=<20170112152245.891B180057@ds-gw-scm01>
+Jan 12 18:22:45 ds-gw-scm01 postfix/qmgr[29197]: 891B180057: from=<root@ds-gw-scm01.ti-test.local>, size=534, nrcpt=1 (queue active)
+Jan 12 18:22:45 ds-gw-scm01 postfix/smtp[29200]: 891B180057: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=0.21, delays=0.05/0/0.01/0.14, dsn=2.6.0, status=sent (250 2.6.0 <20170112152245.891B180057@ds-gw-scm01> [InternalId=3629247374496, Hostname=m1-msk-mail1302.tcsbank.ru] Queued mail for delivery)
+Jan 12 18:22:45 ds-gw-scm01 postfix/qmgr[29197]: 891B180057: removed
+^C
+[root@ds-gw-scm01 ~]#
+
+[root@ds-gw-scm01 ~]# mailq
+Mail queue is empty
+[root@ds-gw-scm01 ~]#
+
+[root@m1-ins-postfix01p ~]# mkdir -p ~/work/20170112-1845
+[root@m1-ins-postfix01p ~]# cp /etc/postfix/transport !$/
+cp /etc/postfix/transport ~/work/20170112-1845/
+[root@m1-ins-postfix01p ~]#
+
+[root@m1-ins-postfix01p ~]# cat  /etc/postfix/transport
+tinkoffinsurance.ru      smtp:smtp.tcsbank.ru
+tcsbank.ru               smtp:smtp.tcsbank.ru
+tinkoff.ru               smtp:smtp.tcsbank.ru
+[root@m1-ins-postfix01p ~]#
+[root@m1-ins-postfix01p ~]# postmap /etc/postfix/transport
+
+[root@m1-ins-postfix01p ~]# tail -n 1 /etc/postfix/main.cf
+relayhost = [smtp.tcsbank.ru]
+[root@m1-ins-postfix01p ~]#
+
+[root@m1-ins-postfix01p ~]# service postfix reload
+Reloading postfix:                                         [  OK  ]
+[root@m1-ins-postfix01p ~]#
+
+[root@m1-ins-postfix01p ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@m1-ins-postfix01p ~]#
+
+[root@m1-ins-postfix01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+
+Jan 12 18:49:55 m1-ins-postfix01p postfix/pickup[30889]: 36B8A1C007F: uid=0 from=<root>
+Jan 12 18:49:55 m1-ins-postfix01p postfix/cleanup[30915]: 36B8A1C007F: message-id=<20170112154955.36B8A1C007F@email2.tinkoffinsurance.ru>
+Jan 12 18:49:55 m1-ins-postfix01p opendkim[3210]: 226_37._domainkey.email2.tinkoffinsurance.ru: key data is not secure: /etc/opendkim/keys/tinkoffinsurance-ru.private is in group 494 which has mult
+iple users (e.g., "postfix")
+Jan 12 18:49:55 m1-ins-postfix01p opendkim[3210]: 36B8A1C007F: DKIM-Signature field added (s=226_37, d=email2.tinkoffinsurance.ru)
+Jan 12 18:49:55 m1-ins-postfix01p postfix/qmgr[30890]: 36B8A1C007F: from=<root@email2.tinkoffinsurance.ru>, size=602, nrcpt=1 (queue active)
+Jan 12 18:49:55 m1-ins-postfix01p postfix/smtp[30918]: 36B8A1C007F: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=0.25, delays=0.09/0.01/0.01/0.15, dsn=2.6.0, status=sent
+ (250 2.6.0 <20170112154955.36B8A1C007F@email2.tinkoffinsurance.ru> [InternalId=3629247382958, Hostname=m1-msk-mail1302.tcsbank.ru] Queued mail for delivery)
+Jan 12 18:49:55 m1-ins-postfix01p postfix/qmgr[30890]: 36B8A1C007F: removed
+
+................................................................................
+................................................................................
+
+[root@ds-ins-postfix01p ~]# cat /etc/postfix/transport
+tinkoffinsurance.ru      smtp:f5-mail-lb.ti.local
+tcsbank.ru               smtp:f5-mail-lb.ti.local
+tinkoff.ru               smtp:f5-mail-lb.ti.local
+[root@ds-ins-postfix01p ~]# mkdir -p ~/work/20170112-1859
+[root@ds-ins-postfix01p ~]# cp /etc/postfix/transport !$/
+cp /etc/postfix/transport ~/work/20170112-1859/
+[root@ds-ins-postfix01p ~]#
+
+[root@ds-ins-postfix01p ~]# postmap /etc/postfix/transport
+
+[root@ds-ins-postfix01p ~]# tail -n 1 /etc/postfix/main.cf
+relayhost = [smtp.tcsbank.ru]
+[root@ds-ins-postfix01p ~]#
+
+[root@ds-ins-postfix01p ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@ds-ins-postfix01p ~]#
+
+[root@ds-ins-postfix01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+
+Jan 12 19:04:06 ds-ins-postfix01p postfix/pickup[1676]: 425C91C007B: uid=0 from=<root>
+Jan 12 19:04:06 ds-ins-postfix01p postfix/cleanup[1706]: 425C91C007B: message-id=<20170112160406.425C91C007B@email2.tinkoffinsurance.ru>
+Jan 12 19:04:06 ds-ins-postfix01p opendkim[1740]: 226_37._domainkey.email2.tinkoffinsurance.ru: key data is not secure: /etc/opendkim/keys/tinkoffinsurance-ru.private is in group 494 which has mult
+iple users (e.g., "postfix")
+Jan 12 19:04:06 ds-ins-postfix01p opendkim[1740]: 425C91C007B: DKIM-Signature field added (s=226_37, d=email2.tinkoffinsurance.ru)
+Jan 12 19:04:06 ds-ins-postfix01p postfix/qmgr[1677]: 425C91C007B: from=<root@email2.tinkoffinsurance.ru>, size=602, nrcpt=1 (queue active)
+Jan 12 19:04:06 ds-ins-postfix01p postfix/smtp[1679]: 425C91C007B: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=0.24, delays=0.08/0/0.02/0.14, dsn=2.6.0, status=sent (25
+0 2.6.0 <20170112160406.425C91C007B@email2.tinkoffinsurance.ru> [InternalId=3633542333949, Hostname=ds-msk-mail1301.tcsbank.ru] Queued mail for delivery)
+Jan 12 19:04:06 ds-ins-postfix01p postfix/qmgr[1677]: 425C91C007B: removed
+
+
+

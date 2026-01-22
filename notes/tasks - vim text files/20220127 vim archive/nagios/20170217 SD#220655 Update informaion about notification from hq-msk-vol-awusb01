@@ -1,0 +1,223 @@
+
+
+[root@vm-vol-nag4-tst objects]# vim +view /usr/local/nagios/etc/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
+
+define host{
+    use                             linux-server
+    host_name                       hq-msk-vol-awusb01
+    address                         172.16.1.33
+}
+define service{
+    use                           generic-service-ping
+    host_name                       hq-msk-vol-awusb01
+    contacts                s.khokhlachev_email,p.begizardov_email
+    service_description             PING
+    check_command                   check_ping!100.0,20%!500.0,60%
+    check_period                    8x5
+    notification_period         8x5
+}
+define service{
+    use                             generic-service
+    host_name                       hq-msk-vol-awusb01
+    contacts                s.khokhlachev_email,p.begizardov_email
+    service_description             AnywhereUSB
+    check_command                   check_tcp!3422
+    check_period                    8x5
+    notification_period         8x5
+}
+
+
+[root@vm-vol-nag4-tst objects]# pynag list members filename where contactgroup_name__contains="vmware" --quiet
+s.khokhlachev_email,s.khokhlachev_sms, p.begizardov_email,p.begizardov_sms /usr/local/nagios/etc/objects/groups/contact-group/vmware-admins.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+define host{
+    name                            generic-printer
+    use                             generic-host
+    notification_period             workhours
+    notification_options            d,r
+    contact_groups                  printer-admins, servicedesk-duty-critical-group
+    hostgroups                      network-printers
+    register                        0
+}
+
+define host{
+    name                            printer
+    use                             generic-host
+    notification_period             8x5
+    contact_groups                  printer-admins, servicedesk-duty-critical-group
+    register                        0
+}
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# cat $(find contacts/ -iname *barkov*)
+define contact{
+        contact_name            s.barkov_email
+        use                     generic-contact
+        alias                   Barkov Semen Vladimirovich
+        email                   s.barkov@tcsbank.ru
+}
+
+define contact{
+        contact_name            s.barkov_sms
+        use                     generic-contact-critical
+        alias                   Barkov Semen Vladimirovich
+        email                   s.barkov@tcsbank.ru
+        address1                79169598099
+}
+define contact {
+        contact_name                    s.barkov_telegram
+        alias                           Barkov Semen Vladimirovich
+        service_notification_options    u,c,r
+        service_notification_period     24x7
+        service_notification_commands   notify-service-by-tg
+        host_notification_period        24x7
+        host_notification_commands      notify-host-by-tg
+        host_notification_options       d,r
+        _TELEGRAM_ID                    216596900
+}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# cat /usr/local/nagios/etc/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
+define host{
+    use                             linux-server
+    host_name                       hq-msk-vol-awusb01
+    address                         172.16.1.33
+    contact_groups                  vmware-admins
+    contacts                        s.khokhlachev_email,s.khokhlachev_sms, p.begizardov_email,p.begizardov_sms, s.barkov_email, s.barkov_sms
+}
+define service{
+        use                             generic-service-ping
+    host_name                       hq-msk-vol-awusb01
+    service_description             PING
+    check_command                   check_ping!100.0,20%!500.0,60%
+    contact_groups                  vmware-admins
+    contacts                        s.khokhlachev_email,s.khokhlachev_sms, p.begizardov_email,p.begizardov_sms, s.barkov_email, s.barkov_sms
+}
+define service{
+    use                             generic-service
+    host_name                       hq-msk-vol-awusb01
+    service_description             AnywhereUSB
+    check_command                   check_tcp!3422
+    contact_groups                  vmware-admins
+    contacts                        s.khokhlachev_email,s.khokhlachev_sms, p.begizardov_email,p.begizardov_sms, s.barkov_email, s.barkov_sms
+}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                         Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+ot@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#220655. Updated information about receivers of notification, check period, notification period." servers/dc-m1/hq-msk-vol-awusb01.cfg
+[master a41aa21] SD#220655. Updated information about receivers of notification, check period, notification period.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 7 insertions(+), 7 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 685 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   ec5fe53..a41aa21  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#220655. Changed template to generic because it has not linux inside. It's a pure hardware device." servers/dc-m1/hq-msk-vol-awusb01.cfg
+[master 6edf9c4] SD#220655. Changed template to generic because it has not linux inside. It's a pure hardware device.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 577 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   a41aa21..6edf9c4  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 2 -p servers/dc-m1/hq-msk-vol-awusb01.cfg
+commit 6edf9c4a5cc1c712a74646155bbf10b5227c825c
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Fri Feb 17 17:20:32 2017 +0300
+
+    SD#220655. Changed template to generic because it has not linux inside. It's a pure hardware device.
+
+diff --git a/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg b/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
+index fccfc19..de5f8aa 100644
+--- a/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
++++ b/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
+@@ -1,5 +1,5 @@
+ define host{
+-    use                             linux-server
++    use                             generic-host
+     host_name                       hq-msk-vol-awusb01
+     address                         172.16.1.33
+     contact_groups                  vmware-admins
+
+commit a41aa21224497b70b25011d9ad7677e32dce99d5
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Fri Feb 17 17:16:33 2017 +0300
+
+    SD#220655. Updated information about receivers of notification, check period, notification period.
+
+diff --git a/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg b/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
+index 0f7591f..fccfc19 100644
+--- a/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
++++ b/objects/servers/dc-m1/hq-msk-vol-awusb01.cfg
+@@ -2,22 +2,22 @@ define host{
+     use                             linux-server
+     host_name                       hq-msk-vol-awusb01
+     address                         172.16.1.33
++    contact_groups                  vmware-admins
++    contacts                        s.khokhlachev_email,s.khokhlachev_sms, p.begizardov_email,p.begizardov_sms, s.barkov_email, s.barkov_sms
+ }
+ define service{
+-       use                           generic-service-ping
++       use                             generic-service-ping
+     host_name                       hq-msk-vol-awusb01
+-    contacts                       s.khokhlachev_email,p.begizardov_email
+     service_description             PING
+     check_command                   check_ping!100.0,20%!500.0,60%
+-    check_period                   8x5
+-    notification_period            8x5
++    contact_groups                  vmware-admins
++    contacts                        s.khokhlachev_email,s.khokhlachev_sms, p.begizardov_email,p.begizardov_sms, s.barkov_email, s.barkov_sms
+ }
+ define service{
+     use                             generic-service
+     host_name                       hq-msk-vol-awusb01
+-    contacts                       s.khokhlachev_email,p.begizardov_email
+     service_description             AnywhereUSB
+     check_command                   check_tcp!3422
+-    check_period                   8x5
+-    notification_period            8x5
++    contact_groups                  vmware-admins
++    contacts                        s.khokhlachev_email,s.khokhlachev_sms, p.begizardov_email,p.begizardov_sms, s.barkov_email, s.barkov_sms
+ }
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+

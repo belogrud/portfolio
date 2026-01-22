@@ -1,0 +1,406 @@
+
+
+...........................................................................
+
+[s.belogrud@TCS4357]# cp /drives/c/Users/s.belogrud/Downloads/clamav-master\@b4ac4548e2e.zip /drives/c/share/
+
+[support@centos 20190320-1619]$ pwd
+/home/support/work/20190320-1619
+[support@centos 20190320-1619]$
+
+...........................................................................
+
+
+
+
+
+
+[support@centos 20190320-1619]$ mkdir -p roles/clamav
+[support@centos 20190320-1619]$ cd roles/clamav
+[support@centos clamav]$ unzip ../../clamav-master@b4ac4548e2e.zip
+Archive:  ../../clamav-master@b4ac4548e2e.zip
+b4ac4548e2e46e5de304fe9800b0cfd8cff95179
+  inflating: README.md
+   creating: defaults/
+  inflating: defaults/main.yml
+   creating: meta/
+  inflating: meta/main.yml
+  inflating: requirements.yml
+   creating: tasks/
+  inflating: tasks/logs.yml
+  inflating: tasks/main.yml
+   creating: templates/
+   creating: templates/etc/
+   creating: templates/etc/clamav/
+  inflating: templates/etc/clamav/freshclam.conf.j2
+   creating: templates/etc/logrotate.d/
+  inflating: templates/etc/logrotate.d/clamav.logrotate.j2
+[support@centos clamav]$
+
+[support@centos clamav]$ cd ../..
+
+[support@centos 20190320-1619]$ ll
+total 16
+-rwxrwxr-x. 1 support support 4791 Mar 20 16:20 clamav-master@b4ac4548e2e.zip
+-rw-rw-r--. 1 support support   24 Mar 20 19:27 list_of_hosts
+drwxrwxr-x. 2 support support  112 Mar 21 11:27 output
+-rw-rw-r--. 1 support support   50 Mar 20 19:31 playbook.yml
+drwxrwxr-x. 3 support support   20 Mar 21 11:25 roles
+[support@centos 20190320-1619]$
+
+[support@centos 20190320-1619]$ cat playbook.yml
+- hosts: all
+  become: true
+  roles:
+    - clamav
+[support@centos 20190320-1619]$
+
+[support@centos 20190320-1619]$ ansible-playbook playbook.yml -i list_of_hosts --become --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'" --check | tee -a ./output/$(date +%Y%m%d-%H%M).playbook.txt
+ERROR! the role 'graylog-collector-sidecar' was not found in /home/support/work/20190320-1619/roles:/home/support/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:/home/support/work/20190320-1619/roles:/home/support/work/20190320-1619
+
+The error appears to have been in '/home/support/work/20190320-1619/roles/clamav/meta/main.yml': line 31, column 5, but may
+be elsewhere in the file depending on the exact syntax problem.
+
+The offending line appears to be:
+
+dependencies:
+  - src: https://stash.tcsbank.ru/scm/ans_int/graylog-collector-sidecar.git
+    ^ here
+[support@centos 20190320-1619]$
+
+[support@centos 20190320-1619]$ vim -c ":set nu" /home/support/work/20190320-1619/roles/clamav/meta/main.yml
+
+  1 ---
+  2 galaxy_info:
+  3   author: definitelynotgeerlingguy
+  4   description: ClamAV installation and configuration.
+  5   company: "Midwestern Mac, LLC"
+  6   license: "license (BSD, MIT)"
+  7   min_ansible_version: 2.4
+  8   platforms:
+  9   - name: EL
+ 10     versions:
+ 11       - 6
+ 12       - 7
+ 13   - name: Ubuntu
+ 14     versions:
+ 15       - trusty
+ 16       - xenial
+ 17       - bionic
+ 18   - name: Debian
+ 19     versions:
+ 20       - jessie
+ 21       - stretch
+ 22   galaxy_tags:
+ 23     - networking
+ 24     - cloud
+ 25     - security
+ 26     - antivirus
+ 27     - antimalware
+ 28     - scan
+ 29 
+ 30 dependencies:
+ 31   - src: https://stash.tcsbank.ru/scm/ans_int/graylog-collector-sidecar.git
+ 32     version: "master"
+ 33     scm: git
+ 34     name: graylog-collector-sidecar
+
+
+[support@centos 20190320-1619]$ git clone https://stash.tcsbank.ru/scm/ans_int/graylog-collector-sidecar.git
+Cloning into 'graylog-collector-sidecar'...
+remote: Counting objects: 130, done.
+remote: Compressing objects: 100% (109/109), done.
+remote: Total 130 (delta 60), reused 0 (delta 0)
+Receiving objects: 100% (130/130), 14.34 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (60/60), done.
+[support@centos 20190320-1619]$ ll
+total 16
+-rwxrwxr-x.  1 support support 4791 Mar 20 16:20 clamav-master@b4ac4548e2e.zip
+drwxrwxr-x. 10 support support  134 Mar 21 11:30 graylog-collector-sidecar
+-rw-rw-r--.  1 support support   24 Mar 20 19:27 list_of_hosts
+drwxrwxr-x.  2 support support  112 Mar 21 11:27 output
+-rw-rw-r--.  1 support support   50 Mar 20 19:31 playbook.yml
+drwxrwxr-x.  3 support support   20 Mar 21 11:25 roles
+[support@centos 20190320-1619]$ ll graylog-collector-sidecar/
+total 4
+drwxrwxr-x. 2 support support   22 Mar 21 11:30 defaults
+drwxrwxr-x. 2 support support   22 Mar 21 11:30 handlers
+drwxrwxr-x. 2 support support   22 Mar 21 11:30 meta
+-rw-rw-r--. 1 support support 1441 Mar 21 11:30 README.md
+drwxrwxr-x. 2 support support   74 Mar 21 11:30 tasks
+drwxrwxr-x. 2 support support   38 Mar 21 11:30 templates
+drwxrwxr-x. 2 support support   39 Mar 21 11:30 tests
+drwxrwxr-x. 2 support support   22 Mar 21 11:30 vars
+[support@centos 20190320-1619]$
+
+
+[support@centos 20190320-1619]$ mv graylog-collector-sidecar/ roles/
+[support@centos 20190320-1619]$ ll roles/
+total 0
+drwxrwxr-x.  6 support support 105 Mar 21 11:25 clamav
+drwxrwxr-x. 10 support support 134 Mar 21 11:30 graylog-collector-sidecar
+[support@centos 20190320-1619]$
+
+
+[support@centos 20190320-1619]$ ansible-playbook playbook.yml -i list_of_hosts --become --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'" --check | tee -a ./output/$(date +%Y%m%d-%H%M).playbook.txt
+
+PLAY [all] *******************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************************************************************
+ok: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : set_fact] **********************************************************************************************************************************************************
+ok: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : Setting graylog server url (prod)] *********************************************************************************************************************************
+skipping: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : Setting graylog server url (test)] *********************************************************************************************************************************
+ok: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : Initialize an empty list for our strings] **************************************************************************************************************************
+skipping: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : Append string to list] *********************************************************************************************************************************************
+
+TASK [graylog-collector-sidecar : Concatenate the graylog tags] **************************************************************************************************************************************
+skipping: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : Ensures /etc/graylog/collector-sidecar/ dir exists] ****************************************************************************************************************
+ok: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : generate the configuration of graylog-sidecar] *********************************************************************************************************************
+ok: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : include_tasks] *****************************************************************************************************************************************************
+included: /home/support/work/20190320-1619/roles/graylog-collector-sidecar/tasks/RedHat_install.yml for ds-prt-prod-api11
+
+TASK [graylog-collector-sidecar : Initialize an empty var for sidecar current version] ***************************************************************************************************************
+ok: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : Check sidecar current version] *************************************************************************************************************************************
+skipping: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : populate service facts] ********************************************************************************************************************************************
+skipping: [ds-prt-prod-api11]
+
+TASK [graylog-collector-sidecar : Initialize an empty var for sidecar current service status] ********************************************************************************************************
+fatal: [ds-prt-prod-api11]: FAILED! => {"msg": "The task includes an option with an undefined variable. The error was: 'dict object' has no attribute 'services'\n\nThe error appears to have been in '/home/support/work/20190320-1619/roles/graylog-collector-sidecar/tasks/RedHat_install.yml': line 17, column 3, but may\nbe elsewhere in the file depending on the exact syntax problem.\n\nThe offending line appears to be:\n\n\n- name: Initialize an empty var for sidecar current service status\n  ^ here\n"}
+        to retry, use: --limit @/home/support/work/20190320-1619/playbook.retry
+
+PLAY RECAP *******************************************************************************************************************************************************************************************
+ds-prt-prod-api11          : ok=7    changed=0    unreachable=0    failed=1   
+
+[support@centos 20190320-1619]$
+
+...........................................................................
+
+#
+#	To compare with a host, where clamav already had been installed.
+#
+[root@m1-prt-prod-api01 ~]# ls -Alh /etc/clamav/
+total 4.0K
+-r--r--r-- 1 clamav_tinkoff clamav_tinkoff 222 Sep 21 00:21 freshclam.conf
+[root@m1-prt-prod-api01 ~]#
+
+
+[root@m1-prt-prod-api01 ~]# cat /etc/clamav/freshclam.conf
+DatabaseDirectory /var/lib/clamav
+UpdateLogFile /var/log/clamav/freshclam.log
+LogTime true
+LogVerbose true
+LogSyslog true
+DatabaseOwner clamav_tinkoff
+DNSDatabaseInfo clamavdb.tcsbank.ru
+DatabaseMirror clamavdb.tcsbank.ru
+[root@m1-prt-prod-api01 ~]#
+
+[root@m1-prt-prod-api01 ~]# ls -Alh /etc/graylog/collector-sidecar/
+total 16K
+-rw-r--r-- 1 root root   36 Sep 21 00:21 collector-id
+-rw-r--r-- 1 root root  667 Mar 18 22:05 collector_sidecar.yml
+-rw-rw-r-- 1 root root  668 May 30  2018 collector_sidecar.yml.rpmnew
+drwxrwxr-x 2 root root 4.0K Oct  2 14:51 generated
+[root@m1-prt-prod-api01 ~]#
+
+[root@m1-prt-prod-api01 ~]# cat /etc/graylog/collector-sidecar/collector_sidecar.yml
+---
+server_url: https://ha-graylog.tcsbank.ru/api/
+update_interval: 10
+tls_skip_verify: true
+send_status: true
+list_log_files:
+node_id: m1-prt-prod-api01.tcsbank.ru
+collector_id: file:/etc/graylog/collector-sidecar/collector-id
+log_path: /var/log/graylog/collector-sidecar
+log_rotation_time: 86400
+log_max_age: 604800
+tags:
+    - m1-prt-prod-api01
+backends:
+    - name: nxlog
+      enabled: false
+      binary_path: /usr/bin/nxlog
+      configuration_path: /etc/graylog/collector-sidecar/generated/nxlog.conf
+    - name: filebeat
+      enabled: true
+      binary_path: /usr/bin/filebeat
+      configuration_path: /etc/graylog/collector-sidecar/generated/filebeat.yml
+You have mail in /var/spool/mail/root
+[root@m1-prt-prod-api01 ~]#
+
+
+[root@m1-prt-prod-api01 ~]# cat /etc/graylog/collector-sidecar/generated/filebeat.yml
+filebeat:
+  prospectors:
+  - encoding: plain
+    exclude_files: []
+    fields:
+      collector_node_id: m1-prt-prod-api01.tcsbank.ru
+      gl2_source_collector: 8fea1035-ed45-49d8-b027-f048522453d6
+      type: log
+    ignore_older: 0
+    paths:
+    - /var/log/clamav/clamd.log
+    scan_frequency: 10s
+    tail_files: true
+    type: log
+  - encoding: plain
+    exclude_files: []
+    fields:
+      collector_node_id: m1-prt-prod-api01.tcsbank.ru
+      gl2_source_collector: 8fea1035-ed45-49d8-b027-f048522453d6
+      type: log
+    ignore_older: 0
+    paths:
+    - /var/log/clamav/freshclam.log
+    scan_frequency: 10s
+    tail_files: true
+    type: log
+output:
+  logstash:
+    hosts:
+    - ha-graylog.tcsbank.ru:12628
+path:
+  data: /var/cache/graylog/collector-sidecar/filebeat/data
+  logs: /var/log/graylog/collector-sidecar
+tags:
+- m1-prt-prod-api01
+- clamav
+[root@m1-prt-prod-api01 ~]#
+
+#
+#	As it was written for cron, the ClamAV will run one time per week in 1.30 AM.
+#
+[root@m1-prt-prod-api01 ~]# cat /var/spool/cron/root
+# Lines below here are managed by Salt, do not edit
+# SALT_CRON_IDENTIFIER:python /etc/zabbix/plugins/api_executors_values.py>>/var/log/zabbix/zabbix_sender.log
+*/1 * * * * python /etc/zabbix/plugins/api_executors_values.py>>/var/log/zabbix/zabbix_sender.log
+# SALT_CRON_IDENTIFIER:python /etc/zabbix/plugins/api_executors_keys.py>>/var/log/zabbix/zabbix_sender.log
+*/10 * * * * python /etc/zabbix/plugins/api_executors_keys.py>>/var/log/zabbix/zabbix_sender.log
+# SALT_CRON_IDENTIFIER:collect_connections
+* * * * * /root/bin/connectlog
+# SALT_CRON_IDENTIFIER:check salt-minion
+* */2 * * * if ! ps aux | grep salt-minion| grep -v grep; then /sbin/service salt-minion restart && /usr/sbin/service salt-minion restart; fi > /dev/null
+#Ansible: ClamAV UPDATE&RUN
+30 1 * * 7 sudo /usr/bin/freshclam --config-file=/etc/clamav/freshclam.conf ; sudo /usr/bin/clamscan --database=/var/lib/clamav --exclude-dir='^/sys|^/proc|^/dev|^/bin|^/sbin' --infected --recursive=true --remove=false -l /var/log/clamav/clamav.log --exclude-dir='^/mnt/pfm_images|^/mnt/pfm_images/operations|^/mnt/mortgage|^/mnt/swift_documents|^/mnt/applicant_photo|^/mnt/sme_docs_api|^/mnt/cards_images|^/mnt/insurance|^/mnt/os_dump|^/mnt/recognition|^/mnt/all_pdf|^/mnt/all_pdf2|^/mnt/integration_recognition|^/mnt/application_selfie|^/mnt/client_avatars|^/mnt/integration_recognition2' /
+[root@m1-prt-prod-api01 ~]#
+
+
+[root@m1-prt-prod-api01 ~]# ls /var/log/clamav/
+clamav.log  clamav.log-20190217.gz  clamav.log-20190224.gz  clamav.log-20190303.gz  clamav.log-20190310.gz  clamav.log-20190317  freshclam.log
+[root@m1-prt-prod-api01 ~]#
+
+[root@m1-prt-prod-api01 ~]# service collector-sidecar status
+Running
+[root@m1-prt-prod-api01 ~]#
+
+[root@m1-prt-prod-api01 ~]# ps aux | grep -ie "sideca[r]"
+root      9590  0.0  0.0 805828 13716 ?        Sl   Mar18   1:21 /usr/bin/graylog-collector-sidecar
+root      9613  0.0  0.1 697804 24888 ?        Sl   Mar18   0:25 /usr/bin/filebeat -c /etc/graylog/collector-sidecar/generated/filebeat.yml
+[root@m1-prt-prod-api01 ~]#
+
+
+[root@m1-prt-prod-api01 ~]# telnet ha-graylog.tcsbank.ru 443
+Trying 10.216.40.170...
+Connected to ha-graylog.tcsbank.ru.
+Escape character is '^]'.
+^]
+
+telnet> quit
+Connection closed.
+[root@m1-prt-prod-api01 ~]#
+
+...........................................................................
+
+[root@m1-prt-prod-api01 ~]# /usr/bin/freshclam --config-file=/etc/clamav/freshclam.conf
+ERROR: Can't open /var/log/clamav/freshclam.log in append mode (check permissions!).
+ERROR: Problem with internal logger (UpdateLogFile = /var/log/clamav/freshclam.log).
+[root@m1-prt-prod-api01 ~]#
+
+[root@m1-prt-prod-api01 ~]# chmod 777 /var/log/clamav/freshclam.log
+You have mail in /var/spool/mail/root
+[root@m1-prt-prod-api01 ~]# /usr/bin/freshclam --config-file=/etc/clamav/freshclam.conf
+Thu Mar 21 12:26:44 2019 -> *Current working dir is /var/lib/clamav
+Thu Mar 21 12:26:44 2019 -> *Max retries == 3
+Thu Mar 21 12:26:44 2019 -> ClamAV update process started at Thu Mar 21 12:26:44 2019
+Thu Mar 21 12:26:44 2019 -> *Using IPv6 aware code
+Thu Mar 21 12:26:44 2019 -> *Querying clamavdb.tcsbank.ru
+Thu Mar 21 12:26:44 2019 -> ^Can't query clamavdb.tcsbank.ru
+Thu Mar 21 12:26:44 2019 -> ^Invalid DNS reply. Falling back to HTTP mode.
+Thu Mar 21 12:26:44 2019 -> *If-Modified-Since: Wed, 07 Jun 2017 21:38:10 GMT
+Thu Mar 21 12:26:44 2019 -> Reading CVD header (main.cvd): Thu Mar 21 12:26:44 2019 -> *Connected to clamavdb.tcsbank.ru (IP: 10.216.42.6).
+Thu Mar 21 12:26:44 2019 -> *Trying to retrieve CVD header of http://clamavdb.tcsbank.ru/main.cvd
+Thu Mar 21 12:26:44 2019 -> OK
+Thu Mar 21 12:26:44 2019 -> main.cvd is up to date (version: 58, sigs: 4566249, f-level: 60, builder: sigmgr)
+Thu Mar 21 12:26:44 2019 -> *If-Modified-Since: Tue, 10 Jul 2018 20:52:06 GMT
+Thu Mar 21 12:26:44 2019 -> Reading CVD header (daily.cvd): Thu Mar 21 12:26:44 2019 -> *Connected to clamavdb.tcsbank.ru (IP: 10.216.42.6).
+Thu Mar 21 12:26:44 2019 -> *Trying to retrieve CVD header of http://clamavdb.tcsbank.ru/daily.cvd
+Thu Mar 21 12:26:44 2019 -> OK
+Thu Mar 21 12:26:45 2019 -> *Retrieving http://clamavdb.tcsbank.ru/daily-24742.cdiff
+Thu Mar 21 12:26:45 2019 -> *Trying to download http://clamavdb.tcsbank.ru/daily-24742.cdiff (IP: 10.216.42.6)
+Thu Mar 21 12:26:45 2019 -> ^getfile: daily-24742.cdiff not found on clamavdb.tcsbank.ru (IP: 10.216.42.6)
+Thu Mar 21 12:26:45 2019 -> ^getpatch: Can't download daily-24742.cdiff from clamavdb.tcsbank.ru
+Thu Mar 21 12:26:45 2019 -> *Retrieving http://clamavdb.tcsbank.ru/daily-24742.cdiff
+Thu Mar 21 12:26:45 2019 -> *Ignoring mirror 10.216.42.6 (due to previous errors)
+Thu Mar 21 12:26:45 2019 -> ^getpatch: Can't download daily-24742.cdiff from clamavdb.tcsbank.ru
+Thu Mar 21 12:26:45 2019 -> *Retrieving http://clamavdb.tcsbank.ru/daily-24742.cdiff
+Thu Mar 21 12:26:45 2019 -> *Ignoring mirror 10.216.42.6 (due to previous errors)
+Thu Mar 21 12:26:45 2019 -> ^getpatch: Can't download daily-24742.cdiff from clamavdb.tcsbank.ru
+Thu Mar 21 12:26:45 2019 -> ^Incremental update failed, trying to download daily.cvd
+Thu Mar 21 12:26:45 2019 -> *Whitelisting short-term blacklisted mirrors
+Thu Mar 21 12:26:45 2019 -> *Retrieving http://clamavdb.tcsbank.ru/daily.cvd
+Thu Mar 21 12:26:45 2019 -> *Trying to download http://clamavdb.tcsbank.ru/daily.cvd (IP: 10.216.42.6)
+Thu Mar 21 12:26:45 2019 -> Downloading daily.cvd [100%]
+Thu Mar 21 12:26:47 2019 -> *Loading signatures from daily.cvd
+Thu Mar 21 12:27:10 2019 -> *Properly loaded 1526391 signatures from new daily.cvd
+Thu Mar 21 12:27:11 2019 -> daily.cvd updated (version: 25395, sigs: 1526391, f-level: 63, builder: raynman)
+Thu Mar 21 12:27:11 2019 -> *If-Modified-Since: Mon, 09 Jul 2018 23:36:55 GMT
+Thu Mar 21 12:27:11 2019 -> Reading CVD header (bytecode.cvd): Thu Mar 21 12:27:11 2019 -> *Connected to clamavdb.tcsbank.ru (IP: 10.216.42.6).
+Thu Mar 21 12:27:11 2019 -> *Trying to retrieve CVD header of http://clamavdb.tcsbank.ru/bytecode.cvd
+Thu Mar 21 12:27:11 2019 -> OK
+Thu Mar 21 12:27:11 2019 -> *Retrieving http://clamavdb.tcsbank.ru/bytecode-325.cdiff
+Thu Mar 21 12:27:11 2019 -> *Trying to download http://clamavdb.tcsbank.ru/bytecode-325.cdiff (IP: 10.216.42.6)
+Thu Mar 21 12:27:11 2019 -> ^getfile: bytecode-325.cdiff not found on clamavdb.tcsbank.ru (IP: 10.216.42.6)
+Thu Mar 21 12:27:11 2019 -> ^getpatch: Can't download bytecode-325.cdiff from clamavdb.tcsbank.ru
+Thu Mar 21 12:27:11 2019 -> *Retrieving http://clamavdb.tcsbank.ru/bytecode-325.cdiff
+Thu Mar 21 12:27:11 2019 -> *Ignoring mirror 10.216.42.6 (due to previous errors)
+Thu Mar 21 12:27:11 2019 -> ^getpatch: Can't download bytecode-325.cdiff from clamavdb.tcsbank.ru
+Thu Mar 21 12:27:11 2019 -> *Retrieving http://clamavdb.tcsbank.ru/bytecode-325.cdiff
+Thu Mar 21 12:27:11 2019 -> *Ignoring mirror 10.216.42.6 (due to previous errors)
+Thu Mar 21 12:27:11 2019 -> ^getpatch: Can't download bytecode-325.cdiff from clamavdb.tcsbank.ru
+Thu Mar 21 12:27:11 2019 -> ^Incremental update failed, trying to download bytecode.cvd
+Thu Mar 21 12:27:11 2019 -> *Whitelisting short-term blacklisted mirrors
+Thu Mar 21 12:27:11 2019 -> *Retrieving http://clamavdb.tcsbank.ru/bytecode.cvd
+Thu Mar 21 12:27:11 2019 -> *Trying to download http://clamavdb.tcsbank.ru/bytecode.cvd (IP: 10.216.42.6)
+Thu Mar 21 12:27:11 2019 -> Downloading bytecode.cvd [100%]
+Thu Mar 21 12:27:11 2019 -> *Loading signatures from bytecode.cvd
+Thu Mar 21 12:27:11 2019 -> *Properly loaded 94 signatures from new bytecode.cvd
+Thu Mar 21 12:27:11 2019 -> bytecode.cvd updated (version: 328, sigs: 94, f-level: 63, builder: neo)
+Thu Mar 21 12:27:15 2019 -> Database updated (6092734 signatures) from clamavdb.tcsbank.ru (IP: 10.216.42.6)
+[root@m1-prt-prod-api01 ~]#
+
+...........................................................................
+
+
+

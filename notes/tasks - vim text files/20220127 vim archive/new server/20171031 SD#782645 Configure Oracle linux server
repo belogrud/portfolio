@@ -1,0 +1,619 @@
+
+
+................................................................................
+
+#
+#	This bitch doesn't work thrue proxy.
+#	I cannot install puppet without access to Oracle Linux repositoryes.
+#
+
+#
+#	Directly from repo-linux I can get access to required repository server.
+#	It's become true after Solomkin grant appropriate allowance on its proxy.
+#
+[root@ds-repo01 ~]# curl -x http://mwg.gtm.tcsbank.ru:8080 http://yum.oracle.com/repo/OracleLinux/OL7/UEKR4/x86_64/repodata/repomd.xml | head
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+103  1240  103  1240    0     0  13891      0 --:--:-- --:--:-- --:--:-- 14588
+<?xml version="1.0" encoding="UTF-8"?>
+<repomd xmlns="http://linux.duke.edu/metadata/repo">
+  <data type="other">
+    <location href="repodata/other.xml.gz"/>
+    <checksum type="sha">d66e2ba734d43d22fbee80b993d8fb4b120887b6</checksum>
+    <timestamp>1508898432</timestamp>
+    <open-checksum type="sha">055a157d487006801ea91c340f6b1f871046a494</open-checksum>
+  </data>
+  <data type="filelists">
+    <location href="repodata/filelists.xml.gz"/>
+You have new mail in /var/spool/mail/root
+[root@ds-repo01 ~]#
+
+
+#
+#	But I still cannot get access via our proxy to Oracle repos.
+#
+[root@vm-acme-mon01 ~]# curl -v -x http://repo-linux.tcsbank.ru:80 http://yum.oracle.com/repo/OracleLinux/OL7/UEKR4/x86_64/repodata/repomd.xml
+* About to connect() to proxy repo-linux.tcsbank.ru port 80 (#0)
+*   Trying 10.216.42.6...
+* Connected to repo-linux.tcsbank.ru (10.216.42.6) port 80 (#0)
+> GET http://yum.oracle.com/repo/OracleLinux/OL7/UEKR4/x86_64/repodata/repomd.xml HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: yum.oracle.com
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+>
+< HTTP/1.1 401 authenticationrequired
+< Server: nginx/1.4.4
+< Date: Tue, 31 Oct 2017 09:14:09 GMT
+< Content-Type: text/html
+< Content-Length: 1884
+< Connection: keep-alive
+< Cache-Control: no-cache
+< WWW-Authenticate: NTLM
+< WWW-Authenticate: Basic realm="McAfee Web Gateway"
+<
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<!-- FileName: index.html
+     Language: [en]
+-->
+<!--Head-->
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta http-equiv="X-UA-Compatible" content="IE=7" />
+  <title>McAfee Web Gateway - Notification</title>
+  <script src="/mwg-internal/de5fs23hu73ds/files/javascript/sw.js" type="text/javascript" ></script>
+  <link rel="stylesheet" href="/mwg-internal/de5fs23hu73ds/files/default/stylesheet.css" />
+</head>
+<!--/Head-->
+<!--Body-->
+<body onload="swOnLoad();">
+  <table class='bodyTable'>
+    <tr>
+      <td class='bodyData' background='/mwg-internal/de5fs23hu73ds/files/default/img/bg_body.gif'>
+<!--Logo-->
+<table class='logoTable'>
+  <tr>
+    <td class='logoData'>
+      <a href='http://www.mcafee.com'>
+        <img src='/mwg-internal/de5fs23hu73ds/files/default/img/logo_mwg.png'></a>
+    </td>
+  </tr>
+</table>
+<!--/Logo-->
+<!--Contents-->
+
+<!--/Contents-->
+<!--Policy-->
+<table class='policyTable'>
+  <tr>
+    <td class='policyHeading'>
+      <hr>
+      Company Acceptable Use Policy
+    </td>
+  </tr>
+  <tr>
+    <td class='policyData'>
+      This is an optional acceptable use disclaimer that appears on every page. You may change the wording or remove this section entirely in index.html.
+    </td>
+  </tr>
+</table>
+<!--/Policy-->
+<!--Foot-->
+<table class='footTable'>
+  <tr>
+    <td class='helpDeskData' background='/mwg-internal/de5fs23hu73ds/files/default/img/bg_navbar.jpg'>
+      For assistance, please contact your system administrator.
+    </td>
+  </tr>
+  <tr>
+    <td class='footData'>
+      generated <span id="time">2017-10-31 12:14:09</span> by McAfee Web Gateway
+      <br />
+      curl/7.29.0
+    </td>
+  </tr>
+</table>
+<!--/Foot-->
+      </td>
+    </tr>
+  </table>
+</body>
+<!--/Body-->
+</html>
+* Connection #0 to host repo-linux.tcsbank.ru left intact
+[root@vm-acme-mon01 ~]#
+
+................................................................................
+
+[root@vm-acme-mon01 ~]# curl -x http://repo-linux.tcsbank.ru:80 http://yum.oracle.com/repo/OracleLinux/OL7/UEKR4/x86_64/repodata/repomd.xml | grep McAfee
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1884  100  1884    0     0   102k      0 --:--:-- --:--:-- --:--:--  108k
+  <title>McAfee Web Gateway - Notification</title>
+      generated <span id="time">2017-10-31 12:28:06</span> by McAfee Web Gateway
+[root@vm-acme-mon01 ~]#
+
+
+................................................................................
+
+[root@vm-acme-mon01 ~]# telnet mwg.gtm.tcsbank.ru 8080
+Trying 10.218.6.51...
+Connected to mwg.gtm.tcsbank.ru.
+Escape character is '^]'.
+}{^]
+
+telnet> quit
+Connection closed.
+[root@vm-acme-mon01 ~]# telnet repo-linux.tcsbank.ru 80
+Trying 10.216.42.6...
+Connected to repo-linux.tcsbank.ru.
+Escape character is '^]'.
+^]
+
+telnet> quit
+Connection closed.
+[root@vm-acme-mon01 ~]#
+
+................................................................................
+
+#
+#	I've asked Solomkin direct access from server to proxy.
+#
+
+[root@vm-acme-mon01 ~]# curl -x http://mwg.gtm.tcsbank.ru:8080 http://yum.oracle.com/repo/OracleLinux/OL7/UEKR4/x86_64/repodata/repomd.xml | head
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1240  100  1240    0     0   7204      0 --:--:-- --:--:-- --:--:--  7251
+<?xml version="1.0" encoding="UTF-8"?>
+<repomd xmlns="http://linux.duke.edu/metadata/repo">
+  <data type="other">
+    <location href="repodata/other.xml.gz"/>
+    <checksum type="sha">d66e2ba734d43d22fbee80b993d8fb4b120887b6</checksum>
+    <timestamp>1508898432</timestamp>
+    <open-checksum type="sha">055a157d487006801ea91c340f6b1f871046a494</open-checksum>
+  </data>
+  <data type="filelists">
+    <location href="repodata/filelists.xml.gz"/>
+[root@vm-acme-mon01 ~]#
+
+................................................................................
+
+#
+#	Only two section were enabled by default.
+#
+[root@vm-acme-mon01 ~]# vim /etc/yum.repos.d/public-yum-ol7.repo
+[ol7_latest]
+name=Oracle Linux $releasever Latest ($basearch)
+baseurl=http://yum.oracle.com/repo/OracleLinux/OL7/latest/$basearch/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=1
+proxy=http://mwg.gtm.tcsbank.ru:8080
+...
+
+[ol7_UEKR4]
+name=Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux $releasever ($basearch)
+baseurl=http://yum.oracle.com/repo/OracleLinux/OL7/UEKR4/$basearch/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=1
+proxy=http://mwg.gtm.tcsbank.ru:8080
+
+...
+
+
+#
+#	Now I can get approppreated packages and its relative.
+#
+[root@vm-acme-mon01 ~]# yum repolist
+Loaded plugins: ulninfo
+ol7_UEKR4                                                                                                                                                                                                          | 1.2 kB  00:00:00
+ol7_latest                                                                                                                                                                                                         | 1.4 kB  00:00:00
+tcs-puppetlabs-el-products                                                                                                                                                                                         | 2.5 kB  00:00:00
+(1/5): ol7_latest/x86_64/group                                                                                                                                                                                     | 681 kB  00:00:00
+(2/5): ol7_UEKR4/x86_64/updateinfo                                                                                                                                                                                 | 130 kB  00:00:00
+(3/5): ol7_latest/x86_64/updateinfo                                                                                                                                                                                | 1.6 MB  00:00:00
+(4/5): ol7_UEKR4/x86_64/primary                                                                                                                                                                                    |  23 MB  00:00:06
+(5/5): ol7_latest/x86_64/primary                                                                                                                                                                                   |  30 MB  00:00:08
+ol7_UEKR4                                                                                                                                                                                                                         471/471
+ol7_latest                                                                                                                                                                                                                    23117/23117
+repo id                                                                                       repo name                                                                                                                             status
+ol7_UEKR4/x86_64                                                                              Latest Unbreakable Enterprise Kernel Release 4 for Oracle Linux 7Server (x86_64)                                                         471
+ol7_latest/x86_64                                                                             Oracle Linux 7Server Latest (x86_64)                                                                                                  23,117
+tcs-puppetlabs-el-products/7Server/x86_64                                                     Puppet Labs Products El 7Server - x86_64                                                                                                  17
+repolist: 23,605
+[root@vm-acme-mon01 ~]#
+
+................................................................................
+
+[root@vm-acme-mon01 ~]# yum install http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+%s/yum.puppetlabs.com/repo-linux.tcsbank.ru\/puppetlabs\/yum/gc
+
+[root@vm-acme-mon01 ~]# mkdir -p ~/work/20171031-1831
+[root@vm-acme-mon01 ~]# mv /etc/yum.repos.d/tcs-puppetlabs-el.repo !$/
+mv /etc/yum.repos.d/tcs-puppetlabs-el.repo ~/work/20171031-1831/
+[root@vm-acme-mon01 ~]#
+
+[root@vm-acme-mon01 ~]# yum install puppet
+
+
+................................................................................
+
+[root@vm-acme-mon01 ~]# systemctl start puppet
+[root@vm-acme-mon01 ~]# systemctl enable puppet
+
+................................................................................
+
+[root@puppet modules]# for var1 in vm-acme-mon01.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addgroup name=${var1} group=all-servers ; done
+
+vm-acme-mon01.tcsbank.ru
+Node groups successfully edited for vm-acme-mon01.tcsbank.ru!
+[root@puppet modules]#
+[root@puppet modules]# for var1 in vm-acme-mon01.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:classes name=${var1} classes="etckeeper,tcs_repos::epel,tcs_repos::puppet" ;
+ done
+
+vm-acme-mon01.tcsbank.ru
+Node classes successfully edited for vm-acme-mon01.tcsbank.ru!
+[root@puppet modules]# for var1 in vm-acme-mon01.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addclass name=${var1} class="tcs_nrpe" ; done
+
+vm-acme-mon01.tcsbank.ru
+Node classes successfully edited for vm-acme-mon01.tcsbank.ru!
+[root@puppet modules]# grep -ire aronch accounts/
+accounts/manifests/avaya.pp:  group { 'a.aronchikov':
+accounts/manifests/avaya.pp:  user { 'a.aronchikov':
+accounts/manifests/avaya.pp:    home             => '/home/a.aronchikov',
+accounts/manifests/avaya.pp:    comment          => 'Aronchikov Andrey,BC Diapazone,2139',
+accounts/manifests/avaya.pp:    require          => Group['a.aronchikov'],
+[root@puppet modules]# vim accounts/manifests/avaya.pp
+[root@puppet modules]# rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production nodeclass:list | grep -ie "accounts" | egrep "aronch"
+[root@puppet modules]# rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production nodeclass:list | grep -ie "accounts" | egrep "avaya"
+accounts::avaya
+[root@puppet modules]# for var1 in vm-acme-mon01.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addclass name=${var1} class="accounts::avaya" ; done
+
+vm-acme-mon01.tcsbank.ru
+Node classes successfully edited for vm-acme-mon01.tcsbank.ru!
+[root@puppet modules]#
+
+................................................................................
+
+[root@vm-acme-mon01 ~]# yum install nfs-utils
+
+[root@vm-acme-mon01 ~]# mkdir /opt/acme_mon_opt
+
+[root@vm-acme-mon01 ~]# mount -v /opt/acme_mon_opt/
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.67.8 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.67.8 prog 100005 vers 3 prot TCP port 4046
+[root@vm-acme-mon01 ~]# df -hT !$
+df -hT /opt/acme_mon_opt/
+Filesystem                 Type  Size  Used Avail Use% Mounted on
+v6250-m1:/vol/acme_mon_opt nfs   300G  192K  300G   1% /opt/acme_mon_opt
+[root@vm-acme-mon01 ~]#
+
+................................................................................
+
+
+[root@vm-acme-mon01 ~]# showmount -e ds-hadoop-cs01p.tcsbank.ru
+Export list for ds-hadoop-cs01p.tcsbank.ru:
+/ *
+[root@vm-acme-mon01 ~]# mkdir /mnt/hdfs-prod
+[root@vm-acme-mon01 ~]#
+
+[root@vm-acme-mon01 ~]# vim /etc/fstab
+[root@vm-acme-mon01 ~]# mount -v /mnt/hdfs-prod
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.218.64.10'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.218.64.10 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.218.64.10 prog 100005 vers 3 prot TCP port 4242
+[root@vm-acme-mon01 ~]# df -hT !$
+df -hT /mnt/hdfs-prod
+Filesystem                   Type  Size  Used Avail Use% Mounted on
+ds-hadoop-cs01p.tcsbank.ru:/ nfs   1.6P 1007T  541T  66% /mnt/hdfs-prod
+[root@vm-acme-mon01 ~]#
+
+................................................................................
+
+[root@vm-acme-mon01 ~]# tail /etc/fstab
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/vg_root-lvol0 /                       xfs     defaults        0 0
+/dev/mapper/vg_var-lvol0  /var                    xfs     defaults        0 0
+UUID=bfbad39c-40f5-4863-95c4-6e265d84f6e1 /boot                   xfs     defaults        0 0
+
+v6250-m1:/vol/acme_mon_opt      /opt/acme_mon_opt       nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard      0 0
+
+ds-hadoop-cs01p.tcsbank.ru:/    /mnt/hdfs-prod          nfs     ro,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+[root@vm-acme-mon01 ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+
+#
+#	20171109
+#	Continue server configuration.
+#	But it's already new server. Reinstalled with new OS. Less version than before.
+#
+[root@vm-acme-mon01 yum.repos.d]# cat /etc/system-release
+Oracle Linux Server release 7.2
+[root@vm-acme-mon01 yum.repos.d]#
+
+#	I did same as in the first time.
+#	Have installed vim editor because it was absent...
+#	And remove original repository file.
+
+#	Had found one difficult.
+#	After server was rebooted, there was not mounted any nfs resources at all.
+#	It was because of appropriate services were not started!
+#	It was a bug related with ipv6.
+#
+
+[root@vm-acme-mon01 ~]# mount -v /opt/acme_mon_opt/
+A dependency job for rpc-statd.service failed. See 'journalctl -xe' for details.
+^C
+[root@vm-acme-mon01 ~]# journalctl -xe
+--
+-- The result is dependency.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Job rpc-statd.service/start failed with result 'dependency'.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Starting RPCbind Server Activation Socket.
+-- Subject: Unit rpcbind.socket has begun start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.socket has begun starting up.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Starting Preprocess NFS configuration...
+-- Subject: Unit nfs-config.service has begun start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit nfs-config.service has begun starting up.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru polkitd[10655]: Unregistered Authentication Agent for unix-process:10775:101373 (system bus name :1.21, object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8) (disconn
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Version 1.3.0 starting
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Flags: TI-RPC
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, udp): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, tcp): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Started Preprocess NFS configuration.
+-- Subject: Unit nfs-config.service has finished start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit nfs-config.service has finished starting up.
+--
+-- The start-up result is done.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, udp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, tcp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: failed to create RPC listeners, exiting
+...skipping...
+--
+-- The result is dependency.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Job rpc-statd.service/start failed with result 'dependency'.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Starting RPCbind Server Activation Socket.
+-- Subject: Unit rpcbind.socket has begun start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.socket has begun starting up.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Starting Preprocess NFS configuration...
+-- Subject: Unit nfs-config.service has begun start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit nfs-config.service has begun starting up.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru polkitd[10655]: Unregistered Authentication Agent for unix-process:10775:101373 (system bus name :1.21, object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8) (disconn
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Version 1.3.0 starting
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Flags: TI-RPC
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, udp): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, tcp): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru systemd[1]: Started Preprocess NFS configuration.
+-- Subject: Unit nfs-config.service has finished start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit nfs-config.service has finished starting up.
+--
+-- The start-up result is done.
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, udp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, tcp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: failed to create RPC listeners, exiting
+
+[root@vm-acme-mon01 ~]#
+
+
+
+[root@vm-acme-mon01 ~]# service rpcbind status
+Redirecting to /bin/systemctl status  rpcbind.service
+● rpcbind.service - RPC bind service
+   Loaded: loaded (/usr/lib/systemd/system/rpcbind.service; indirect; vendor preset: enabled)
+   Active: inactive (dead)
+[root@vm-acme-mon01 ~]# service rpcbind start
+Redirecting to /bin/systemctl start  rpcbind.service
+A dependency job for rpcbind.service failed. See 'journalctl -xe' for details.
+[root@vm-acme-mon01 ~]# journalctl -xe
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, udp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, tcp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: failed to create RPC listeners, exiting
+Nov 09 17:49:48 vm-acme-mon01.tcsbank.ru ntpd[720]: 0.0.0.0 c612 02 freq_set kernel 0.921 PPM
+Nov 09 17:49:48 vm-acme-mon01.tcsbank.ru ntpd[720]: 0.0.0.0 c615 05 clock_sync
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru polkitd[10655]: Registered Authentication Agent for unix-process:10807:120606 (system bus name :1.22 [/usr/bin/pkttyagent --notify-fd 5 --fallback], object path /org/freedesktop/PolicyKit1/Auth
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: rpcbind.socket failed to listen on sockets: Address family not supported by protocol
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Failed to listen on RPCbind Server Activation Socket.
+-- Subject: Unit rpcbind.socket has failed
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.socket has failed.
+--
+-- The result is failed.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Dependency failed for RPC bind service.
+-- Subject: Unit rpcbind.service has failed
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.service has failed.
+--
+-- The result is dependency.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Job rpcbind.service/start failed with result 'dependency'.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Starting RPCbind Server Activation Socket.
+-- Subject: Unit rpcbind.socket has begun start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.socket has begun starting up.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru polkitd[10655]: Unregistered Authentication Agent for unix-process:10807:120606 (system bus name :1.22, object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8) (disconn
+...skipping...
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, udp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: Failed to register (statd, 1, tcp6): svc_reg() err: RPC: Remote system error - Network is unreachable
+Nov 09 17:47:59 vm-acme-mon01.tcsbank.ru rpc.statd[10782]: failed to create RPC listeners, exiting
+Nov 09 17:49:48 vm-acme-mon01.tcsbank.ru ntpd[720]: 0.0.0.0 c612 02 freq_set kernel 0.921 PPM
+Nov 09 17:49:48 vm-acme-mon01.tcsbank.ru ntpd[720]: 0.0.0.0 c615 05 clock_sync
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru polkitd[10655]: Registered Authentication Agent for unix-process:10807:120606 (system bus name :1.22 [/usr/bin/pkttyagent --notify-fd 5 --fallback], object path /org/freedesktop/PolicyKit1/Auth
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: rpcbind.socket failed to listen on sockets: Address family not supported by protocol
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Failed to listen on RPCbind Server Activation Socket.
+-- Subject: Unit rpcbind.socket has failed
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.socket has failed.
+--
+-- The result is failed.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Dependency failed for RPC bind service.
+-- Subject: Unit rpcbind.service has failed
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.service has failed.
+--
+-- The result is dependency.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Job rpcbind.service/start failed with result 'dependency'.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru systemd[1]: Starting RPCbind Server Activation Socket.
+-- Subject: Unit rpcbind.socket has begun start-up
+-- Defined-By: systemd
+-- Support: http://lists.freedesktop.org/mailman/listinfo/systemd-devel
+--
+-- Unit rpcbind.socket has begun starting up.
+Nov 09 17:51:12 vm-acme-mon01.tcsbank.ru polkitd[10655]: Unregistered Authentication Agent for unix-process:10807:120606 (system bus name :1.22, object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8) (disconn
+Waiting for data... (interrupt to abort)
+[root@vm-acme-mon01 ~]#
+
+
+[root@vm-acme-mon01 ~]# less /var/log/messages
+...
+Nov  9 17:47:59 vm-acme-mon01 rpc.statd[10782]: failed to create RPC listeners, exiting
+Nov  9 17:49:48 vm-acme-mon01 ntpd[720]: 0.0.0.0 c612 02 freq_set kernel 0.921 PPM
+Nov  9 17:49:48 vm-acme-mon01 ntpd[720]: 0.0.0.0 c615 05 clock_sync
+Nov  9 17:51:12 vm-acme-mon01 systemd: rpcbind.socket failed to listen on sockets: Address family not supported by protocol
+Nov  9 17:51:12 vm-acme-mon01 systemd: Failed to listen on RPCbind Server Activation Socket.
+Nov  9 17:51:12 vm-acme-mon01 systemd: Dependency failed for RPC bind service.
+Nov  9 17:51:12 vm-acme-mon01 systemd: Job rpcbind.service/start failed with result 'dependency'.
+Nov  9 17:51:12 vm-acme-mon01 systemd: Starting RPCbind Server Activation Socket.
+...
+
+
+#
+#	Resolution was found.
+#	https://access.redhat.com/solutions/2798411
+#
+#	
+#	Issue
+#	On RHEL7.3 GA systems with ipv6 disabled, rpcbind fails to start.
+#	#systemctl status rpcbind.socket shows error Failed to listen on RPCbind Server Activation Socket.
+#	Resolution
+#	Rebuild the initramfs: # dracut -v -f to incorporate the changes made to /etc/sysctl.conf
+#	It is necessary to rebuild the initramfs when ever there are modifications made to /etc/sysctl.conf.
+#	Following the rebuild of the initramfs please reboot the system in order for the systemd response to take effect.
+#	For additional reading please read When is it necessary to rebuild the initramfs?
+#	
+
+#
+#	Follow is what I did to fix this bitch.
+#
+[root@vm-acme-mon01 ~]# vim /etc/sysctl.conf
+[root@vm-acme-mon01 ~]# cat /etc/sysctl.conf
+# System default settings live in /usr/lib/sysctl.d/00-system.conf.
+# To override those settings, enter new settings here, or in an /etc/sysctl.d/<name>.conf file
+#
+# For more information, see sysctl.conf(5) and sysctl.d(5).
+net.ipv6.conf.all.disable_ipv6 = 1
+[root@vm-acme-mon01 ~]#
+
+
+[root@vm-acme-mon01 ~]# dracut -v -f
+Executing: /usr/sbin/dracut -v -f
+dracut module 'busybox' will not be installed, because command 'busybox' could not be found!
+dracut module 'crypt' will not be installed, because command 'cryptsetup' could not be found!
+dracut module 'dmraid' will not be installed, because command 'dmraid' could not be found!
+dracut module 'mdraid' will not be installed, because command 'mdadm' could not be found!
+dracut module 'multipath' will not be installed, because command 'multipath' could not be found!
+dracut module 'cifs' will not be installed, because command 'mount.cifs' could not be found!
+dracut module 'iscsi' will not be installed, because command 'iscsistart' could not be found!
+dracut module 'iscsi' will not be installed, because command 'iscsi-iname' could not be found!
+dracut module 'busybox' will not be installed, because command 'busybox' could not be found!
+dracut module 'crypt' will not be installed, because command 'cryptsetup' could not be found!
+dracut module 'dmraid' will not be installed, because command 'dmraid' could not be found!
+dracut module 'mdraid' will not be installed, because command 'mdadm' could not be found!
+dracut module 'multipath' will not be installed, because command 'multipath' could not be found!
+dracut module 'cifs' will not be installed, because command 'mount.cifs' could not be found!
+dracut module 'iscsi' will not be installed, because command 'iscsistart' could not be found!
+dracut module 'iscsi' will not be installed, because command 'iscsi-iname' could not be found!
+*** Including module: bash ***
+*** Including module: nss-softokn ***
+*** Including module: i18n ***
+*** Including module: network ***
+*** Including module: ifcfg ***
+*** Including module: drm ***
+*** Including module: plymouth ***
+*** Including module: dm ***
+Skipping udev rule: 64-device-mapper.rules
+Skipping udev rule: 60-persistent-storage-dm.rules
+Skipping udev rule: 55-dm.rules
+*** Including module: kernel-modules ***
+*** Including module: lvm ***
+Skipping udev rule: 64-device-mapper.rules
+Skipping udev rule: 56-lvm.rules
+Skipping udev rule: 60-persistent-storage-lvm.rules
+*** Including module: rootfs-block ***
+*** Including module: terminfo ***
+*** Including module: udev-rules ***
+Skipping udev rule: 40-redhat-cpu-hotplug.rules
+Skipping udev rule: 91-permissions.rules
+*** Including module: biosdevname ***
+*** Including module: systemd ***
+*** Including module: usrmount ***
+*** Including module: base ***
+*** Including module: fs-lib ***
+*** Including module: shutdown ***
+*** Including modules done ***
+*** Installing kernel module dependencies and firmware ***
+*** Installing kernel module dependencies and firmware done ***
+*** Resolving executable dependencies ***
+*** Resolving executable dependencies done***
+*** Hardlinking files ***
+*** Hardlinking files done ***
+*** Stripping files ***
+*** Stripping files done ***
+*** Generating early-microcode cpio image contents ***
+*** Constructing GenuineIntel.bin ****
+*** No early-microcode cpio image needed ***
+*** Store current command line parameters ***
+*** Creating image file ***
+*** Creating image file done ***
+*** Creating initramfs image file '/boot/initramfs-3.8.13-98.7.1.el7uek.x86_64.img' done ***
+[root@vm-acme-mon01 ~]#
+
+[root@vm-acme-mon01 ~]# systemctl reboot
+Connection to vm-acme-mon01 closed by remote host.
+Connection to vm-acme-mon01 closed.
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+
+
+
+

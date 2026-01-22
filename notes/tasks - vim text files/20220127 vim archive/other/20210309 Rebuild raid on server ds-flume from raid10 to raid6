@@ -1,0 +1,882 @@
+
+
+
+
+
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+Last login: Tue Mar  9 13:24:49 2021 from tcs4357.tcsbank.ru
+[bsv@ds-flume01p ~]$ sudo -i
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                                       TYPE  MOUNTPOINT FSTYPE        SIZE
+sda                                        disk                         278.9G
+├─sda1                                     part  /boot      ext4            1G
+└─sda2                                     part             LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0)             lvm   /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1)             lvm   [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)              lvm   /var       ext4        240.8G
+sdb                                        disk                           2.9T
+└─361866da0571e8d0027da5b5d8bf951be (dm-2) mpath                          2.9T
+sdc                                        disk             vfat            1M
+[root@ds-flume01p ~]# pvs
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sda2  vg_base lvm2 a--  277.87g    0
+[root@ds-flume01p ~]# vgs
+  VG      #PV #LV #SN Attr   VSize   VFree
+  vg_base   1   3   0 wz--n- 277.87g    0
+[root@ds-flume01p ~]# lvs
+  LV          VG      Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  LogVol_root vg_base -wi-ao----  29.30g
+  LogVol_swap vg_base -wi-ao----   7.81g
+  LogVol_var  vg_base -wi-ao---- 240.76g
+[root@ds-flume01p ~]# parted -s -a optimal /dev/sdb mklabel msdos mkpart primary 0% 100% set 1 lvm on
+Error: partition length of 6246365184 sectors exceeds the msdos-partition-table-imposed maximum of 4294967295
+[root@ds-flume01p ~]# parted -s -a optimal /dev/sdb mklabel GPT mkpart primary 0% 100% set 1 lvm on
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.9T
+└─sdb1                         part                          2.9T
+[root@ds-flume01p ~]# parted /dev/sdb print
+Model: DELL PERC H730 Mini (scsi)
+Disk /dev/sdb: 3198GB
+Sector size (logical/physical): 512B/4096B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  3198GB  3198GB               primary  lvm
+
+[root@ds-flume01p ~]# pvcreate /ev/sdb1
+  Device /ev/sdb1 not found (or ignored by filtering).
+[root@ds-flume01p ~]# pvcreate /dev/sdb1
+  Device /dev/sdb1 not found (or ignored by filtering).
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.9T
+└─sdb1                         part                          2.9T
+[root@ds-flume01p ~]# 
+
+
+
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                                       TYPE  MOUNTPOINT FSTYPE        SIZE
+sda                                        disk                         278.9G
+├─sda1                                     part  /boot      ext4            1G
+└─sda2                                     part             LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0)             lvm   /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1)             lvm   [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)              lvm   /var       ext4        240.8G
+sdb                                        disk                           2.9T
+└─361866da0571e8d0027da5b5d8bf951be (dm-2) mpath                          2.9T
+sdc                                        disk             vfat            1M
+[root@ds-flume01p ~]#
+
+
+[root@ds-flume01p ~]# pvcreate /dev/sdb1
+  Device /dev/sdb1 not found (or ignored by filtering).
+[root@ds-flume01p ~]# 
+
+[root@ds-flume01p ~]# ls -Alh /dev/sd*
+brw-rw---- 1 root disk 8,  0 Mar  9  2021 /dev/sda
+brw-rw---- 1 root disk 8,  1 Mar  9 16:23 /dev/sda1
+brw-rw---- 1 root disk 8,  2 Mar  9  2021 /dev/sda2
+brw-rw---- 1 root disk 8, 16 Mar  9 16:32 /dev/sdb
+brw-rw---- 1 root disk 8, 17 Mar  9 16:31 /dev/sdb1
+[root@ds-flume01p ~]#
+
+
+[root@ds-flume01p ~]# ls -Alh /dev/mapper/
+total 0
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 361866da0571e8d0027da5b5d8bf951be -> ../dm-2
+crw-rw---- 1 root root 10, 58 Mar  9 16:23 control
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_root -> ../dm-0
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_swap -> ../dm-1
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_var -> ../dm-3
+[root@ds-flume01p ~]# dmsetup remove -f 361866da0571e8d0027da5b5d8bf951be
+[root@ds-flume01p ~]# ls -Alh /dev/mapper/
+total 0
+crw-rw---- 1 root root 10, 58 Mar  9 16:23 control
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_root -> ../dm-0
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_swap -> ../dm-1
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_var -> ../dm-3
+[root@ds-flume01p ~]#
+
+
+
+
+[root@ds-flume01p ~]# pvcreate /dev/sdb1
+  Physical volume "/dev/sdb1" successfully created
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# vgcreate vg_data /dev/sdb1
+  Volume group "vg_data" successfully created
+[root@ds-flume01p ~]# lvcreate -l 100%VG vg_data -n lv
+  Logical volume "lv" created
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.9T
+└─sdb1                         part            LVM2_member   2.9T
+  └─vg_data-lv (dm-2)          lvm                           2.9T
+[root@ds-flume01p ~]#
+
+
+[root@ds-flume01p ~]# mkfs.ext4 /dev/mapper/vg_data-lv
+mke2fs 1.41.12 (17-May-2010)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=1 blocks, Stripe width=0 blocks
+195198976 inodes, 780794880 blocks
+39039744 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=4294967296
+23828 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848, 512000000, 550731776, 644972544
+
+Writing inode tables: done
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+This filesystem will be automatically checked every 36 mounts or
+180 days, whichever comes first.  Use tune2fs -c or -i to override.
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# vim /etc/fstab
+[root@ds-flume01p ~]# tail -n 1 /etc/fstab
+
+[root@ds-flume01p ~]# tail -n 3 /etc/fstab
+# https://jira.tcsbank.ru/browse/IN-789
+/dev/mapper/vg_data-lv  /data                   ext4    defaults        1 2
+
+[root@ds-flume01p ~]# mount /data
+[root@ds-flume01p ~]# df -hT /data
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_data-lv
+                     ext4  2.9T   72M  2.8T   1% /data
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.9T
+└─sdb1                         part            LVM2_member   2.9T
+  └─vg_data-lv (dm-2)          lvm  /data      ext4          2.9T
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE /dev/sdb
+NAME                  TYPE MOUNTPOINT FSTYPE       SIZE
+sdb                   disk                         2.9T
+└─sdb1                part            LVM2_member  2.9T
+  └─vg_data-lv (dm-2) lvm  /data      ext4         2.9T
+[root@ds-flume01p ~]#
+
+................................................................................
+
+[root@ds-flume01p ~]# ntpq -nc pe
+No association ID's returned
+[root@ds-flume01p ~]# service ntpd status
+ntpd (pid  4134) is running...
+[root@ds-flume01p ~]# vim -R /etc/ntp.conf
+[root@ds-flume01p ~]# service ntpd restart
+Shutting down ntpd:                                        [  OK  ]
+Starting ntpd:                                             [  OK  ]
+[root@ds-flume01p ~]# ntpq -nc pe
+No association ID's returned
+[root@ds-flume01p ~]# host ntp01.tcsbank.ru
+;; connection timed out; trying next origin
+[root@ds-flume01p ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+10.216.28.15    ds-flume01p.tcsbank.ru  ds-flume01p
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+search tcsbank.ru
+
+
+# No nameservers found; try putting DNS servers into your
+# ifcfg files in /etc/sysconfig/network-scripts like so:
+#
+# DNS1=xxx.xxx.xxx.xxx
+# DNS2=xxx.xxx.xxx.xxx
+# DOMAIN=lab.foo.com bar.foo.com
+[root@ds-flume01p ~]# service NetworkManager status
+NetworkManager (pid  3991) is running...
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# ls -Alh /etc/sysconfig/network-scripts/ifcfg-*
+-rw-r--r--. 1 root root  98 Jun 27  2016 /etc/sysconfig/network-scripts/ifcfg-bond0
+-rw-r--r--. 1 root root 144 Dec  5  2019 /etc/sysconfig/network-scripts/ifcfg-bond0.1628
+-rw-r--r--  1 root root 144 Dec 11  2019 /etc/sysconfig/network-scripts/ifcfg-bond0.1865
+-rw-r--r--. 1 root root 135 Jun 27  2016 /etc/sysconfig/network-scripts/ifcfg-em1
+-rw-r--r--. 1 root root 135 Jun 27  2016 /etc/sysconfig/network-scripts/ifcfg-em2
+-rw-r--r--. 1 root root 135 Jun 27  2016 /etc/sysconfig/network-scripts/ifcfg-em3
+-rw-r--r--. 1 root root 135 Jun 27  2016 /etc/sysconfig/network-scripts/ifcfg-em4
+-rw-r--r--. 1 root root 254 Jul 22  2014 /etc/sysconfig/network-scripts/ifcfg-lo
+-rw-r--r--. 1 root root 143 Jun 27  2016 /etc/sysconfig/network-scripts/ifcfg-p3p1
+-rw-r--r--. 1 root root 143 Jun 27  2016 /etc/sysconfig/network-scripts/ifcfg-p3p2
+[root@ds-flume01p ~]# ip a | grep -w inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.28.15/24 brd 10.216.28.255 scope global bond0.1628
+[root@ds-flume01p ~]# cat /etc/sysconfig/network-scripts/ifcfg-bond0.1628
+DEVICE="bond0.1628"
+TYPE=Vlan
+VLAN=yes
+BOOTPROTO=static
+IPADDR=10.216.28.15
+NETMASK=255.255.255.0
+GATEWAY=10.216.28.254
+ONBOOT=yes
+IPV6INIT=no
+
+[root@ds-flume01p ~]# cat /etc/sysconfig/network-scripts/ifcfg-bond0.1865
+DEVICE="bond0.1865"
+TYPE=Vlan
+VLAN=yes
+BOOTPROTO=static
+IPADDR=10.218.65.49
+NETMASK=255.255.255.0
+#GATEWAY=10.218.65.254
+ONBOOT=no
+IPV6INIT=no
+
+[root@ds-flume01p ~]#
+
+................................................................................
+
+[root@ds-flume01p ~]# vim /etc/sysconfig/network-scripts/ifcfg-bond0.1628
+[root@ds-flume01p ~]# service NetworkManager reload
+Usage: /etc/init.d/NetworkManager {start|stop|status|restart|condrestart}
+[root@ds-flume01p ~]# service NetworkManager restart
+Stopping NetworkManager daemon:                            [  OK  ]
+Setting network parameters...                              [  OK  ]
+Starting NetworkManager daemon:                            [  OK  ]
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+search tcsbank.ru
+
+
+# No nameservers found; try putting DNS servers into your
+# ifcfg files in /etc/sysconfig/network-scripts like so:
+#
+# DNS1=xxx.xxx.xxx.xxx
+# DNS2=xxx.xxx.xxx.xxx
+# DOMAIN=lab.foo.com bar.foo.com
+[root@ds-flume01p ~]# stat /etc/resolv.conf
+  File: `/etc/resolv.conf'
+  Size: 246             Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d    Inode: 809310      Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2021-03-09 17:19:31.714413833 +0300
+Modify: 2021-03-09 17:19:31.641414271 +0300
+Change: 2021-03-09 17:19:31.641414271 +0300
+[root@ds-flume01p ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.6 (Santiago)
+[root@ds-flume01p ~]#
+
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+Last login: Tue Mar  9 16:24:51 2021 from 172.16.28.74
+[bsv@ds-flume01p ~]$ sudo -i
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.9T
+└─sdb1                         part            LVM2_member   2.9T
+  └─vg_data-lv (dm-2)          lvm  /data      ext4          2.9T
+[root@ds-flume01p ~]# umount /data
+umount: /data: device is busy.
+        (In some cases useful info about processes that use
+         the device is found by lsof(8) or fuser(1))
+[root@ds-flume01p ~]# lsof /data
+COMMAND    PID     USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+mc      191283 datagate  cwd    DIR  253,2     4096    2 /data
+bash    191285 datagate  cwd    DIR  253,2     4096    2 /data
+[root@ds-flume01p ~]# kill -9 191283 191285
+[root@ds-flume01p ~]# umount /data
+umount: /data: device is busy.
+        (In some cases useful info about processes that use
+         the device is found by lsof(8) or fuser(1))
+[root@ds-flume01p ~]# lsof /data
+[root@ds-flume01p ~]# umount /data
+umount: /data: device is busy.
+        (In some cases useful info about processes that use
+         the device is found by lsof(8) or fuser(1))
+[root@ds-flume01p ~]# umount -l -f /data
+[root@ds-flume01p ~]# vim /etc/fstab
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sdc                            disk                          2.2T
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+[root@ds-flume01p ~]# multipath -ll
+[root@ds-flume01p ~]# ls -Alh /dev/mapper/
+total 0
+crw-rw---- 1 root root 10, 58 Mar  9 16:23 control
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_root -> ../dm-0
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_swap -> ../dm-1
+lrwxrwxrwx 1 root root      7 Mar  9 16:23 vg_base-LogVol_var -> ../dm-3
+lrwxrwxrwx 1 root root      7 Mar  9 16:56 vg_data-lv -> ../dm-2
+[root@ds-flume01p ~]# dmsetup remove -f vg_data-lv
+device-mapper: resume ioctl on vg_data-lv failed: Invalid argument
+device-mapper: remove ioctl on vg_data-lv failed: Device or resource busy
+Command failed
+[root@ds-flume01p ~]# dmsetup remove -f dm-2
+device-mapper: table ioctl on dm-2 failed: No such device or address
+device-mapper: reload ioctl on dm-2 failed: No such device or address
+device-mapper: remove ioctl on dm-2 failed: No such device or address
+Command failed
+[root@ds-flume01p ~]#
+
+................................................................................
+
+[root@ds-flume01p ~]#
+Broadcast message from root@ds-flume01p.tcsbank.ru
+        (/dev/tty1) at 11:30 ...
+
+The system is going down for reboot NOW!
+Connection to ds-flume01p closed by remote host.
+Connection to ds-flume01p closed.
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+Last login: Wed Mar 10 11:11:07 2021 from tcs4357.tcsbank.ru
+[bsv@ds-flume01p ~]$ sudo -i
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+search tcsbank.ru
+
+
+# No nameservers found; try putting DNS servers into your
+# ifcfg files in /etc/sysconfig/network-scripts like so:
+#
+# DNS1=xxx.xxx.xxx.xxx
+# DNS2=xxx.xxx.xxx.xxx
+# DOMAIN=lab.foo.com bar.foo.com
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                                       TYPE  MOUNTPOINT FSTYPE        SIZE
+sda                                        disk                         278.9G
+├─sda1                                     part  /boot      ext4            1G
+└─sda2                                     part             LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0)             lvm   /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1)             lvm   [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)              lvm   /var       ext4        240.8G
+sdb                                        disk                           2.2T
+└─361866da0571e8d0027db67d3e7836a7e (dm-2) mpath                          2.2T
+[root@ds-flume01p ~]# dmsetup remove -f 361866da0571e8d0027db67d3e7836a7e
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.2T
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# parted -s -a optimal /dev/sdb mklabel GPT mkpart primary 0% 100% set 1 lvm on
+[root@ds-flume01p ~]# pvcreate /dev/sdb1
+  Physical volume "/dev/sdb1" successfully created
+[root@ds-flume01p ~]# vgcreate vg_data /dev/sdb1
+  Volume group "vg_data" successfully created
+[root@ds-flume01p ~]# lvcreate -l 100%VG vg_data -n lv
+  Logical volume "lv" created
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.2T
+└─sdb1                         part            LVM2_member   2.2T
+  └─vg_data-lv (dm-2)          lvm                           2.2T
+[root@ds-flume01p ~]# mkfs.ext4 /dev/mapper/vg_data-lv
+mke2fs 1.41.12 (17-May-2010)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=1 blocks, Stripe width=0 blocks
+146399232 inodes, 585595904 blocks
+29279795 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=4294967296
+17871 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848, 512000000, 550731776
+
+Writing inode tables: done
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+This filesystem will be automatically checked every 28 mounts or
+180 days, whichever comes first.  Use tune2fs -c or -i to override.
+[root@ds-flume01p ~]# vim /etc/fstab
+[root@ds-flume01p ~]# tail -n 1 /etc/fstab
+
+[root@ds-flume01p ~]# tail -n 2 /etc/fstab
+/dev/mapper/vg_data-lv  /data                   ext4    defaults        1 2
+
+[root@ds-flume01p ~]# mount /data
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-3)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.2T
+└─sdb1                         part            LVM2_member   2.2T
+  └─vg_data-lv (dm-2)          lvm  /data      ext4          2.2T
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# vim /etc/NetworkManager/NetworkManager.conf
+[root@ds-flume01p ~]# vim /etc/resolv.conf
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+domain tcsbank.ru
+search tcsbank.ru
+[root@ds-flume01p ~]# cat /etc/NetworkManager/NetworkManager.conf
+[main]
+plugins=ifcfg-rh
+dns=none
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# reboot
+
+Broadcast message from bsv@ds-flume01p.tcsbank.ru
+        (/dev/pts/0) at 11:46 ...
+
+The system is going down for reboot NOW!
+[root@ds-flume01p ~]# logout
+[bsv@ds-flume01p ~]$ logout
+Connection to ds-flume01p closed.
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+Last login: Wed Mar 10 11:34:37 2021 from 172.16.28.74
+[bsv@ds-flume01p ~]$ sudo -i
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+search tcsbank.ru
+
+
+# No nameservers found; try putting DNS servers into your
+# ifcfg files in /etc/sysconfig/network-scripts like so:
+#
+# DNS1=xxx.xxx.xxx.xxx
+# DNS2=xxx.xxx.xxx.xxx
+# DOMAIN=lab.foo.com bar.foo.com
+[root@ds-flume01p ~]# vim /etc/resolv.conf
+[root@ds-flume01p ~]# service NetworkManager status
+NetworkManager (pid  4019) is running...
+[root@ds-flume01p ~]# service NetworkManager stop
+Stopping NetworkManager daemon: Connection reset by 10.216.28.15 port 22
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+ssh: connect to host ds-flume01p port 22: Connection timed out
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+Last login: Wed Mar 10 11:49:39 2021 from 172.16.28.74
+[bsv@ds-flume01p ~]$ sudo -i
+[root@ds-flume01p ~]# ls -Alh /etc/resolv.conf
+-rw-r--r-- 1 root root 246 Mar 10 11:57 /etc/resolv.conf
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+search tcsbank.ru
+
+
+# No nameservers found; try putting DNS servers into your
+# ifcfg files in /etc/sysconfig/network-scripts like so:
+#
+# DNS1=xxx.xxx.xxx.xxx
+# DNS2=xxx.xxx.xxx.xxx
+# DOMAIN=lab.foo.com bar.foo.com
+[root@ds-flume01p ~]# vim /etc/resolv.conf.manually-configured
+[root@ds-flume01p ~]# rm /etc/resolv.conf
+rm: remove regular file `/etc/resolv.conf'? y
+[root@ds-flume01p ~]# ln -s /etc/resolv.conf.manually-configured /etc/resolv.conf
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+domain tcsbank.ru
+search tcsbank.ru
+
+[root@ds-flume01p ~]#
+
+#	From server console.
+#
+service NetworkManager stop
+chkconfig NetworkManager off
+#
+#	Then, write correct /etc/resolv.conf.
+reboot
+
+
+[root@ds-flume01p ~]# rm /etc/resolv.conf.manually-configured
+rm: remove regular file `/etc/resolv.conf.manually-configured'? y
+[root@ds-flume01p ~]# rm /etc/resolv.conf
+rm: remove symbolic link `/etc/resolv.conf'? y
+[root@ds-flume01p ~]# vim /tmp/resolve.conf
+[root@ds-flume01p ~]# logout
+[bsv@ds-flume01p ~]$ logout
+Connection to ds-flume01p closed.
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+Last login: Wed Mar 10 12:04:11 2021 from 172.16.28.74
+[bsv@ds-flume01p ~]$ sudo -i
+[root@ds-flume01p ~]# cat /etc/resolv.conf
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+search tcsbank.ru
+[root@ds-flume01p ~]# cat /etc/resolv
+resolv.conf   resolve.conf
+[root@ds-flume01p ~]# cat /etc/resolve.conf
+nameserver 10.219.50.4
+nameserver 10.219.50.5
+domain tcsbank.ru
+search tcsbank.ru
+
+[root@ds-flume01p ~]# rm /etc/resolve.conf
+rm: remove regular file `/etc/resolve.conf'? y
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# host ntp01.tcsbank.ru
+ntp01.tcsbank.ru is an alias for dc-c1-lo0.tcsbank.ru.
+dc-c1-lo0.tcsbank.ru has address 172.20.16.193
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# host ntp01.tcsbank.ru
+ntp01.tcsbank.ru is an alias for dc-c1-lo0.tcsbank.ru.
+dc-c1-lo0.tcsbank.ru has address 172.20.16.193
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-5)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.2T
+└─sdb1                         part            LVM2_member   2.2T
+[root@ds-flume01p ~]# vim /etc/fstab
+[root@ds-flume01p ~]# mount /data
+mount: /dev/mapper/vg_data-lv already mounted or /data busy
+mount: according to mtab, /dev/mapper/vg_data-lv is already mounted on /data
+[root@ds-flume01p ~]# ls -Alh /data
+total 16K
+drwx------ 2 root root 16K Mar 10 11:39 lost+found
+[root@ds-flume01p ~]# umount /data
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# ls -Alh /data
+total 0
+[root@ds-flume01p ~]# mount /data
+[root@ds-flume01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                           TYPE MOUNTPOINT FSTYPE        SIZE
+sda                            disk                        278.9G
+├─sda1                         part /boot      ext4            1G
+└─sda2                         part            LVM2_member 277.9G
+  ├─vg_base-LogVol_root (dm-0) lvm  /          ext4         29.3G
+  ├─vg_base-LogVol_swap (dm-1) lvm  [SWAP]     swap          7.8G
+  └─vg_base-LogVol_var (dm-5)  lvm  /var       ext4        240.8G
+sdb                            disk                          2.2T
+└─sdb1                         part            LVM2_member   2.2T
+[root@ds-flume01p ~]# df -hT /data
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_data-lv
+                     ext4  2.2T   73M  2.1T   1% /data
+[root@ds-flume01p ~]# pvs
+  PV                                                                 VG      Fmt  Attr PSize   PFree
+  /dev/disk/by-id/lvm-pv-uuid-2Eq4Mh-h3HL-xdeD-xqnN-tZT6-0c7e-dUmU6g vg_data lvm2 a--    2.18t    0
+  /dev/sda2                                                          vg_base lvm2 a--  277.87g    0
+[root@ds-flume01p ~]# lvs
+  LV          VG      Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  LogVol_root vg_base -wi-ao----  29.30g
+  LogVol_swap vg_base -wi-ao----   7.81g
+  LogVol_var  vg_base -wi-ao---- 240.76g
+  lv          vg_data -wi-ao----   2.18t
+[root@ds-flume01p ~]# vgs
+  VG      #PV #LV #SN Attr   VSize   VFree
+  vg_base   1   3   0 wz--n- 277.87g    0
+  vg_data   1   1   0 wz--n-   2.18t    0
+[root@ds-flume01p ~]# lsblk
+NAME                           MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda                              8:0    0 278.9G  0 disk
+├─sda1                           8:1    0     1G  0 part /boot
+└─sda2                           8:2    0 277.9G  0 part
+  ├─vg_base-LogVol_root (dm-0) 253:0    0  29.3G  0 lvm  /
+  ├─vg_base-LogVol_swap (dm-1) 253:1    0   7.8G  0 lvm  [SWAP]
+  └─vg_base-LogVol_var (dm-5)  253:5    0 240.8G  0 lvm  /var
+sdb                              8:16   0   2.2T  0 disk
+└─sdb1                           8:17   0   2.2T  0 part
+[root@ds-flume01p ~]# multipath -ll
+361866da0571e8d0027db67d3e7836a7e dm-2 DELL,PERC H730 Mini
+size=2.2T features='0' hwhandler='0' wp=rw
+`-+- policy='round-robin 0' prio=1 status=active
+  `- 0:2:1:0 sdb 8:16 active ready running
+[root@ds-flume01p ~]# mount
+/dev/mapper/vg_base-LogVol_root on / type ext4 (rw)
+proc on /proc type proc (rw)
+sysfs on /sys type sysfs (rw)
+devpts on /dev/pts type devpts (rw,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw)
+/dev/sda1 on /boot type ext4 (rw)
+/dev/mapper/vg_base-LogVol_var on /var type ext4 (rw)
+none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
+cm_processes on /var/run/cloudera-scm-agent/process type tmpfs (rw,mode=0751)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/blkio type cgroup (rw,blkio)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/cpuacct type cgroup (rw,cpuacct)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/cpu type cgroup (rw,cpu)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/memory type cgroup (rw,memory)
+/dev/mapper/vg_data-lv on /data type ext4 (rw)
+[root@ds-flume01p ~]#
+
+[root@ds-flume01p ~]# ls -Alh /dev/mapper/
+total 0
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 361866da0571e8d0027db67d3e7836a7e -> ../dm-2
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 361866da0571e8d0027db67d3e7836a7ep1 -> ../dm-3
+crw-rw---- 1 root root 10, 58 Mar 10 12:11 control
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_root -> ../dm-0
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_swap -> ../dm-1
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_var -> ../dm-5
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_data-lv -> ../dm-4
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# dmsetup info -c
+Name                                Maj Min Stat Open Targ Event  UUID
+vg_base-LogVol_var                  253   5 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerF1lKrc8Y184g3t0MW7iYK8UBGUIXfesfu
+vg_base-LogVol_swap                 253   1 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFRMjQcSbH6sqnPddNfWO7VwLhy2muPjOO
+vg_base-LogVol_root                 253   0 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFIO7VW1F40idtTwHBzpBOvhjJUaC7zzL6
+vg_data-lv                          253   4 L--w    1    1      0 LVM-lTiux9trlOeWiO2qtOVQOGOHIulV6REgqqrrR38DS13f4HOIRsv77Kf6Z4PKYhbO
+361866da0571e8d0027db67d3e7836a7ep1 253   3 L--w    1    1      0 part1-mpath-361866da0571e8d0027db67d3e7836a7e
+361866da0571e8d0027db67d3e7836a7e   253   2 L--w    1    1      1 mpath-361866da0571e8d0027db67d3e7836a7e
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# find /dev/ -name "dm-*" -exec readlink -n {} \; -exec echo " -->" {} \;
+../../dm-5 --> /dev/disk/by-id/dm-uuid-LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerF1lKrc8Y184g3t0MW7iYK8UBGUIXfesfu
+../../dm-5 --> /dev/disk/by-id/dm-name-vg_base-LogVol_var
+../../dm-4 --> /dev/disk/by-id/dm-uuid-LVM-lTiux9trlOeWiO2qtOVQOGOHIulV6REgqqrrR38DS13f4HOIRsv77Kf6Z4PKYhbO
+../../dm-4 --> /dev/disk/by-id/dm-name-vg_data-lv
+../../dm-3 --> /dev/disk/by-id/dm-uuid-part1-mpath-361866da0571e8d0027db67d3e7836a7e
+../../dm-3 --> /dev/disk/by-id/dm-name-361866da0571e8d0027db67d3e7836a7ep1
+../../dm-2 --> /dev/disk/by-id/dm-uuid-mpath-361866da0571e8d0027db67d3e7836a7e
+../../dm-2 --> /dev/disk/by-id/dm-name-361866da0571e8d0027db67d3e7836a7e
+../../dm-1 --> /dev/disk/by-id/dm-uuid-LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFRMjQcSbH6sqnPddNfWO7VwLhy2muPjOO
+../../dm-1 --> /dev/disk/by-id/dm-name-vg_base-LogVol_swap
+../../dm-0 --> /dev/disk/by-id/dm-uuid-LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFIO7VW1F40idtTwHBzpBOvhjJUaC7zzL6
+../../dm-0 --> /dev/disk/by-id/dm-name-vg_base-LogVol_root
+[root@ds-flume01p ~]# dmsetup remove -f 361866da0571e8d0027db67d3e7836a7e
+
+Message from syslogd@ds-flume01p at Mar 10 12:32:16 ...
+ kernel:journal commit I/O error
+device-mapper: remove ioctl on 361866da0571e8d0027db67d3e7836a7e failed: Device or resource busy
+Command failed
+[root@ds-flume01p ~]# dmsetup remove -f 361866da0571e8d0027db67d3e7836a7ep1
+device-mapper: remove ioctl on 361866da0571e8d0027db67d3e7836a7ep1 failed: Device or resource busy
+Command failed
+[root@ds-flume01p ~]#
+
+
+
+[root@ds-flume01p ~]# lsof /data
+COMMAND   PID     USER   FD   TYPE DEVICE  SIZE/OFF     NODE NAME
+python  16051 datagate    4u   REG  253,4 273928048 30146599 /data/tmp/bpm/hive/.74307610-7044-433e-a9f8-e3b6632b1154
+python  16051 datagate    6u   REG  253,4         0 30146588 /data/tmp/bpm/ch_error/.1204b3ec-9583-4b45-9a22-f003588843e6
+python  16052 datagate    4u   REG  253,4 445544069 30146567 /data/tmp/bpm/hive/.5e444094-ddfb-43d2-aca1-07baa9645007
+python  16052 datagate    6u   REG  253,4         0 30146583 /data/tmp/bpm/ch_error/.8346ce7b-1b9f-4f01-bca2-604fa8d06866
+python  16053 datagate    4u   REG  253,4 658884733 30146598 /data/tmp/bpm/hive/.ee550d5c-bff9-4972-8928-a56f29fe4486
+python  16053 datagate    6u   REG  253,4         0 30146587 /data/tmp/bpm/ch_error/.2f1aaa9d-05e4-4821-ba5d-6b858549f56f
+python  16054 datagate    4u   REG  253,4 317793870 30146569 /data/tmp/bpm/hive/.ec9d2bfc-d503-4206-9745-60acce2c0ce4
+python  16054 datagate    6u   REG  253,4         0 30146585 /data/tmp/bpm/ch_error/.0088f474-0798-49e2-9c46-155604013cec
+python  16055 datagate    4u   REG  253,4  42018266 30146601 /data/tmp/bpm/hive/.6411b592-a2f4-46e9-9f88-8b7711ea6c62
+python  16055 datagate    6u   REG  253,4         0 30146593 /data/tmp/bpm/ch_error/.e6a31a87-d696-418e-be22-aa8f84fb183a
+python  16056 datagate    4u   REG  253,4 340840229 30146574 /data/tmp/bpm/hive/.45746a87-ebd5-4bde-8a47-804baddbd690
+python  16056 datagate    6u   REG  253,4         0 30146590 /data/tmp/bpm/ch_error/.3a8a65ef-2cbe-4afc-8ffa-78b3f718b7be
+python  16057 datagate    4u   REG  253,4 458710065 30146578 /data/tmp/bpm/hive/.1d5f2fd7-fcc4-4f63-8a38-da1553d3dbe9
+python  16057 datagate    6u   REG  253,4         0 30146594 /data/tmp/bpm/ch_error/.cda969af-b318-4c52-a9ec-56828a3d7b6d
+python  16058 datagate    4u   REG  253,4 479064040 30146573 /data/tmp/bpm/hive/.76afd9cd-56dc-40a0-99ce-07d5dd2c25b8
+python  16058 datagate    6u   REG  253,4         0 30146589 /data/tmp/bpm/ch_error/.86725a42-799c-4b9f-a439-7602bb39c971
+python  16059 datagate    4u   REG  253,4 460071559 30146580 /data/tmp/bpm/hive/.b110aa58-f030-42a9-8439-d5051e005359
+python  16059 datagate    6u   REG  253,4         0 30146596 /data/tmp/bpm/ch_error/.8f215c92-7d72-48c1-b737-0083e3b2b4c0
+python  16060 datagate    4u   REG  253,4 429864038 30146568 /data/tmp/bpm/hive/.223213f0-cdaa-4f68-858e-183230a40a46
+python  16060 datagate    6u   REG  253,4         0 30146584 /data/tmp/bpm/ch_error/.eb9e171d-be6e-4bd0-aa45-4a8da0a4285e
+python  16061 datagate    4u   REG  253,4 380334427 30146575 /data/tmp/bpm/hive/.578a8341-515e-4990-89b2-7f5d37d2ba54
+python  16061 datagate    6u   REG  253,4         0 30146591 /data/tmp/bpm/ch_error/.f781a59d-1748-4a4a-9848-beeda1dc66ac
+python  16062 datagate    4u   REG  253,4 339401854 30146576 /data/tmp/bpm/hive/.400629de-ebbb-4341-8b81-556ebda7e382
+python  16062 datagate    6u   REG  253,4         0 30146592 /data/tmp/bpm/ch_error/.71d4ccb0-6a52-4ee0-9ba8-edda72c5544c
+python  16063 datagate    4u   REG  253,4 198780181 30146600 /data/tmp/bpm/hive/.ab91f466-a23d-4ff8-9e95-082a9b0ed90b
+python  16063 datagate    6u   REG  253,4         0 30146582 /data/tmp/bpm/ch_error/.feece874-f7a6-43cc-9373-2d53877e695c
+python  16064 datagate    4u   REG  253,4 498155755 30146570 /data/tmp/bpm/hive/.f4c8c986-64c5-47f0-a873-fbafd5e7b383
+python  16064 datagate    6u   REG  253,4         0 30146586 /data/tmp/bpm/ch_error/.1d27e38c-581e-4851-bf24-658e63953e98
+python  16065 datagate    4u   REG  253,4 313096715 30146579 /data/tmp/bpm/hive/.60d0d249-a75f-46f7-9d4c-1298a0aba95c
+python  16065 datagate    6u   REG  253,4         0 30146595 /data/tmp/bpm/ch_error/.669ad118-c4c8-4a23-99d6-8863f0bfbd19
+bash    16284 datagate  cwd    DIR  253,4      4096 30146561 /data/tmp
+bash    54792     nifi  cwd    DIR  253,4      4096        2 /data
+[root@ds-flume01p ~]# pkill -9 -f "python"
+[root@ds-flume01p ~]# lsof /data
+COMMAND   PID     USER   FD   TYPE DEVICE SIZE/OFF     NODE NAME
+bash    16284 datagate  cwd    DIR  253,4     4096 30146561 /data/tmp
+bash    54792     nifi  cwd    DIR  253,4     4096        2 /data
+[root@ds-flume01p ~]# kill -9 16284
+[root@ds-flume01p ~]# kill -9 54792
+[root@ds-flume01p ~]# lsof /data
+[root@ds-flume01p ~]# umount /data
+umount: /data: device is busy.
+        (In some cases useful info about processes that use
+         the device is found by lsof(8) or fuser(1))
+[root@ds-flume01p ~]# umount -l -f /data
+[root@ds-flume01p ~]# ls -Alh /dev/mapper/
+total 0
+lrwxrwxrwx 1 root root      7 Mar 10 12:32 361866da0571e8d0027db67d3e7836a7e -> ../dm-2
+lrwxrwxrwx 1 root root      7 Mar 10 12:33 361866da0571e8d0027db67d3e7836a7ep1 -> ../dm-3
+crw-rw---- 1 root root 10, 58 Mar 10 12:11 control
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_root -> ../dm-0
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_swap -> ../dm-1
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_var -> ../dm-5
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_data-lv -> ../dm-4
+[root@ds-flume01p ~]# dmsetup remove -f 361866da0571e8d0027db67d3e7836a7e
+[root@ds-flume01p ~]# dmsetup remove -f 361866da0571e8d0027db67d3e7836a7ep1
+device-mapper: remove ioctl on 361866da0571e8d0027db67d3e7836a7ep1 failed: Device or resource busy
+Command failed
+[root@ds-flume01p ~]# ls -Alh /dev/mapper/
+total 0
+lrwxrwxrwx 1 root root      7 Mar 10 12:42 361866da0571e8d0027db67d3e7836a7ep1 -> ../dm-3
+crw-rw---- 1 root root 10, 58 Mar 10 12:11 control
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_root -> ../dm-0
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_swap -> ../dm-1
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_var -> ../dm-5
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_data-lv -> ../dm-4
+[root@ds-flume01p ~]# mount
+/dev/mapper/vg_base-LogVol_root on / type ext4 (rw)
+proc on /proc type proc (rw)
+sysfs on /sys type sysfs (rw)
+devpts on /dev/pts type devpts (rw,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw)
+/dev/sda1 on /boot type ext4 (rw)
+/dev/mapper/vg_base-LogVol_var on /var type ext4 (rw)
+none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
+cm_processes on /var/run/cloudera-scm-agent/process type tmpfs (rw,mode=0751)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/blkio type cgroup (rw,blkio)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/cpuacct type cgroup (rw,cpuacct)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/cpu type cgroup (rw,cpu)
+cm_cgroups on /var/run/cloudera-scm-agent/cgroups/memory type cgroup (rw,memory)
+sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw)
+nfsd on /proc/fs/nfsd type nfsd (rw)
+[root@ds-flume01p ~]# dmsetup remove -f vg_data-lv
+device-mapper: remove ioctl on vg_data-lv failed: Device or resource busy
+Command failed
+[root@ds-flume01p ~]# dmsetup remove -f 361866da0571e8d0027db67d3e7836a7ep1
+[root@ds-flume01p ~]# ls -Alh /dev/mapper/
+total 0
+crw-rw---- 1 root root 10, 58 Mar 10 12:11 control
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_root -> ../dm-0
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_swap -> ../dm-1
+lrwxrwxrwx 1 root root      7 Mar 10 12:11 vg_base-LogVol_var -> ../dm-5
+lrwxrwxrwx 1 root root      7 Mar 10 12:43 vg_data-lv -> ../dm-4
+[root@ds-flume01p ~]# df -hT /data
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_base-LogVol_root
+                     ext4   29G   17G   11G  63% /
+[root@ds-flume01p ~]# mount /data
+mount: /dev/mapper/vg_data-lv already mounted or /data busy
+[root@ds-flume01p ~]# dmsetup remove -f vg_data-lv
+device-mapper: remove ioctl on vg_data-lv failed: Device or resource busy
+Command failed
+[root@ds-flume01p ~]# dmsetup info -c
+Name                Maj Min Stat Open Targ Event  UUID
+vg_base-LogVol_var  253   5 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerF1lKrc8Y184g3t0MW7iYK8UBGUIXfesfu
+vg_base-LogVol_swap 253   1 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFRMjQcSbH6sqnPddNfWO7VwLhy2muPjOO
+vg_base-LogVol_root 253   0 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFIO7VW1F40idtTwHBzpBOvhjJUaC7zzL6
+vg_data-lv          253   4 L--w    1    1      0 LVM-lTiux9trlOeWiO2qtOVQOGOHIulV6REgqqrrR38DS13f4HOIRsv77Kf6Z4PKYhbO
+[root@ds-flume01p ~]# reboot
+
+Broadcast message from bsv@ds-flume01p.tcsbank.ru
+        (/dev/pts/0) at 12:45 ...
+
+The system is going down for reboot NOW!
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# logout
+[bsv@ds-flume01p ~]$ logout
+Connection to ds-flume01p closed.
+[s.belogrud@TCS4357]# ssh bsv@ds-flume01p
+Last login: Wed Mar 10 12:12:52 2021 from tcs4357.tcsbank.ru
+[bsv@ds-flume01p ~]$ sudo -i
+[root@ds-flume01p ~]# dmsetup info -c
+Name                                Maj Min Stat Open Targ Event  UUID
+vg_base-LogVol_var                  253   5 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerF1lKrc8Y184g3t0MW7iYK8UBGUIXfesfu
+vg_base-LogVol_swap                 253   1 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFRMjQcSbH6sqnPddNfWO7VwLhy2muPjOO
+vg_base-LogVol_root                 253   0 L--w    1    1      0 LVM-3E6gC6hp6ipFqyjaooCuE4OCc2uCuerFIO7VW1F40idtTwHBzpBOvhjJUaC7zzL6
+vg_data-lv                          253   4 L--w    1    1      0 LVM-lTiux9trlOeWiO2qtOVQOGOHIulV6REgqqrrR38DS13f4HOIRsv77Kf6Z4PKYhbO
+361866da0571e8d0027db67d3e7836a7ep1 253   3 L--w    1    1      0 part1-mpath-361866da0571e8d0027db67d3e7836a7e
+361866da0571e8d0027db67d3e7836a7e   253   2 L--w    1    1      1 mpath-361866da0571e8d0027db67d3e7836a7e
+[root@ds-flume01p ~]# lsblk
+NAME                           MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sdb                              8:16   0   2.2T  0 disk
+└─sdb1                           8:17   0   2.2T  0 part
+sda                              8:0    0 278.9G  0 disk
+├─sda1                           8:1    0     1G  0 part /boot
+└─sda2                           8:2    0 277.9G  0 part
+  ├─vg_base-LogVol_root (dm-0) 253:0    0  29.3G  0 lvm  /
+  ├─vg_base-LogVol_swap (dm-1) 253:1    0   7.8G  0 lvm  [SWAP]
+  └─vg_base-LogVol_var (dm-5)  253:5    0 240.8G  0 lvm  /var
+sdc                              8:32   1     1M  0 disk /tmp/SECUPD
+[root@ds-flume01p ~]# ls -Alh /data/
+total 24K
+drwx------  2 root root  16K Mar 10 11:39 lost+found
+drwxrwxr-x 26 nifi nifi 4.0K Mar 10 12:26 nifi_prod
+drwxrwxrwx  3 root root 4.0K Mar 10 12:26 tmp
+[root@ds-flume01p ~]# touch /data/test.tmp
+[root@ds-flume01p ~]# rm /data/test.tmp
+rm: remove regular empty file `/data/test.tmp'? y
+[root@ds-flume01p ~]#
+[root@ds-flume01p ~]# dmsetup table
+vg_base-LogVol_var: 0 504913920 linear 8:2 2048
+vg_base-LogVol_swap: 0 16384000 linear 8:2 566355968
+vg_base-LogVol_root: 0 61440000 linear 8:2 504915968
+vg_data-lv: 0 4684767232 linear 253:3 2048
+361866da0571e8d0027db67d3e7836a7ep1: 0 4684771328 linear 253:2 2048
+361866da0571e8d0027db67d3e7836a7e: 0 4684775424 multipath 0 0 1 1 round-robin 0 1 1 8:16 1
+[root@ds-flume01p ~]#
+
+
+................................................................................
+

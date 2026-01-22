@@ -1,0 +1,160 @@
+
+
+
+................................................................................
+
+
+
+[root@vm-vol-nag4-tst objects]# for var1 in vm-kafka-stp0{1..3}p ds-kafka-int0{1..3}p m1-kafka-int0{1..3}p vm-vol-kafka-int-arbiter01p vm-wmq-app01 ; do pynag list filename where object_type=host and host_nam
+e__contains="${var1}" --quiet ; done
+/usr/local/nagios/etc/objects/servers/vmware/vm-kafka-stp01p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-kafka-stp02p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-kafka-stp03p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/ds-kafka-int01p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/ds-kafka-int02p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/ds-kafka-int03p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/m1-kafka-int01p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/m1-kafka-int02p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/m1-kafka-int03p.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-wmq-app01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+vm-kafka-stp01p.tcsbank.ru
+vm-kafka-stp02p.tcsbank.ru
+vm-kafka-stp03p.tcsbank.ru
+ds-kafka-int01p.tcsbank.ru
+ds-kafka-int02p.tcsbank.ru
+ds-kafka-int03p.tcsbank.ru
+m1-kafka-int01p.tcsbank.ru
+m1-kafka-int02p.tcsbank.ru
+m1-kafka-int03p.tcsbank.ru
+vm-vol-kafka-int-arbiter01p.tcsbank.ru
+
+
+................................................................................
+
+#
+#	/usr/local/nagios/etc/objects/servers/vmware/vm-wmq-app01.cfg
+#
+
+define service{
+    use                      generic-service
+    host_name                vm-wmq-app01
+    service_description      CPU Utilization
+    check_interval           1
+    max_check_attempts       1
+    check_command            check_nrpe!check_cpu
+    contact_groups           esb-admins-email
+}
+
+................................................................................
+
+
+[root@vm-wmq-app01 ~]# /opt/TCS/scripts/nagios/plugins/check_cpu_stats.sh --help
+
+check_cpu_stats.sh Revision 2.1.1 - CPU Utilization check script for Nagios
+
+Usage: check_cpu_stats.sh -w -c (-i -n)
+
+        -w  Warning level in % for cpu iowait
+        -c  Crical level in % for cpu iowait
+  -i  Interval in seconds for iostat (default : 1)
+  -n  Number report for iostat (default : 3)
+        -h  Show this page
+
+Usage: check_cpu_stats.sh
+Usage: check_cpu_stats.sh --help
+
+
+This plugin will check cpu utilization (user,system,iowait,idle in %)
+
+[root@vm-wmq-app01 ~]# /opt/TCS/scripts/nagios/plugins/check_cpu_stats.sh -w 80 -c 90
+/opt/TCS/scripts/nagios/plugins/check_cpu_stats.sh: line 173: [: 13: unary operator expected
+CPU STATISTICS OK : user=15.83% system=15.08% iowait=13.57% idle=55.53% nice=0.00% steal=0.00% | CpuUser=15.83;CpuSystem=15.08;CpuIoWait=13.57;CpuIdle=55.53;CpuNice=0.00;CpuSteal=0.00;80;
+[root@vm-wmq-app01 ~]#
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#1157275. Was made some changes in checks. Added one and one config for a host was created." servers/vmware/vm-kafka-stp0{1..3}p.cfg servers/vmware/ds-kafka-int0{1..3}p.cfg servers/vmware/m1-kafka-int0{1..3}p.cfg servers/vmware/vm-vol-kafka-int-arbiter01p.cfg
+[master da4676a] SD#1157275. Was made some changes in checks. Added one and one config for a host was created.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 10 files changed, 127 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/vmware/vm-vol-kafka-int-arbiter01p.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+#
+#	20180327
+#
+define service{
+    use                      generic-service-nfs-volume
+    host_name                vm-kafka-stp01p
+    service_description      kafka_data_Volume_nfs
+    check_command            check_nrpe!check_disk_size!25%!15%!/mnt/kafka_data
+}
+
+
+
+/etc/nrpe.d/check_disks.cfg
+...
+command[check_disk_size]=/usr/lib64/nagios/plugins/check_disk -w $ARG1$ -c $ARG2$ -p $ARG3$
+
+    contact_groups                  +esb-admins
+
+    contact_groups           	    esb-admins
+
+    servicegroups                   NFS_VOLUME_SIZE
+
+define service{
+    use                      generic-service-nfs-volume
+    host_name                vm-kafka-stp01p
+    service_description      kafka_data_Volume_nfs
+    check_command            check_disk_size!25%!15%!/mnt/kafka_data
+    contact_groups           esb-admins
+}
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# tail servers/vmware/vm-kafka-stp01p.cfg
+    check_command                   check_disk_size!25%!15%!/mnt/kafka_data
+    contact_groups                  esb-admins
+}
+define service{
+    use                             generic-service
+    host_name                       vm-kafka-stp01p
+    service_description             Check running process zookeeper
+    check_command                   check_process_name!zookeeper
+    contact_groups                  esb-admins
+}
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# for var1 in vm-kafka-stp0{1..3}p ds-kafka-int0{1..3}p m1-kafka-int0{1..3}p ; do vim $(pynag list filename where object_type=host and host_name__contains="${var1}" --quiet) ;done
+
+................................................................................
+
+#
+#	20180402
+#
+
+ kafka broker
+
+kafka/server.properties
+
+define service{
+    use                             generic-service
+    host_name                       vm-kafka-stp02p
+    service_description             Check running process kafka broker
+    check_command                   check_process_name!kafka/server.properties
+    contact_groups                  esb-admins
+}
+
+
+................................................................................
+
+
+

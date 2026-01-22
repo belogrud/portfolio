@@ -1,0 +1,2518 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   654282
+Название    №654282
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  09.12.2015 09:56
+Дата регистрации    09.12.2015 09:56
+Тип запроса Инцидент
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги,
+
+у нас есть небольшая проблема. Связана она с настройками LLDP на серверах.
+У Juniper Qfabric есть bug:
+[cid:image001.png@01D13267.84E167C0]
+
+И вот у нас происходит утечка памяти на m1-qf, NW-NG-0 node-group.
+Dec 09 09:18:07 host-name NW-NG-0 /kernel: Process (47223,lldpd) has exceeded 85% of RLIMIT_DATA: used 61680 KB Max 65536 KB
+
+Так как процесс lldp влияет только на dcbx, который влияет на FCOE, а FCOE не подан на данную node-group, то в данном конкретном случае эта утечка нам ничем не грозит.
+Когда память дотечёт до конца выделенного пула - процесс lldp будет просто перезапущен, я его даже могу перезапустить самостоятельно.
+Но проблема, связаная с настройками lldp на серверах есть. И если такой проблемный сервер появится на node-group с fcoe - мы можем получить сбой.
+Надо на всех серверах проверить, чтобы в lldp-tlv передавался только один management address.
+К NW-NG-0 подключены следующие устройства.
+С F5 и коммутаторами мы разберёмся, а вас я прошу проверить настройки на серверах:
+nikon@M1-QF01> show lldp neighbors | match Rack-V322-[45]
+Rack-V322-5:xe-0/0/41.0 NW-NG-0:ae5.0 00:1b:8f:db:cc:00 TenGigabitEthernet5/5 DC-C1.tcsbank.ru
+Rack-V322-4:xe-0/0/41.0 NW-NG-0:ae5.0 00:1b:8f:db:cc:00 TenGigabitEthernet6/5 DC-C1.tcsbank.ru
+Rack-V322-4:xe-0/0/38.0 NW-NG-0:ae4.0 00:22:55:f4:0b:06 -B- M1-QF DC-C2.tcsbank.ru
+Rack-V322-4:xe-0/0/9.0 - 2c:27:d7:53:b0:d8 eth4 m1-db-dev
+Rack-V322-5:xe-0/0/9.0 - 2c:27:d7:53:b0:d8 eth6 m1-db-dev
+Rack-V322-4:xe-0/0/0.0 - 2c:27:d7:53:b1:e0 eth5 smdw
+Rack-V322-5:xe-0/0/0.0 - 2c:27:d7:53:b1:e0 2c:27:d7:53:b1:e0
+Rack-V322-4:xe-0/0/0.0 - 2c:27:d7:53:b1:e4 2c:27:d7:53:b1:e4
+Rack-V322-5:xe-0/0/9.0 - 2c:27:d7:53:b4:68 2c:27:d7:53:b4:68
+Rack-V322-5:xe-0/0/6.0 - 2c:27:d7:53:b8:c0 2c:27:d7:53:b8:c0
+Rack-V322-4:xe-0/0/7.0 - 2c:27:d7:53:bb:30 2c:27:d7:53:bb:30
+Rack-V322-5:xe-0/0/7.0 - 2c:27:d7:53:d0:10 2c:27:d7:53:d0:10
+Rack-V322-4:xe-0/0/12.0 - 2c:27:d7:54:08:10 2c:27:d7:54:08:10
+Rack-V322-5:xe-0/0/2.0 - 2c:27:d7:54:08:14 2c:27:d7:54:08:14
+Rack-V322-4:xe-0/0/6.0 - 2c:27:d7:54:0a:10 2c:27:d7:54:0a:10
+Rack-V322-4:xe-0/0/10.0 - 2c:27:d7:54:42:b8 eth0 m1-db01-prod.tcsbank.ru
+Rack-V322-5:xe-0/0/10.0 - 2c:27:d7:54:42:b8 eth2 m1-db01-prod.tcsbank.ru
+Rack-V322-5:xe-0/0/10.0 - 2c:27:d7:54:44:00 2c:27:d7:54:44:00
+Rack-V322-4:xe-0/0/7.0 - 3c:4a:92:e4:cb:94 eth4 m1-db06-prod.tcsbank.ru
+Rack-V322-5:xe-0/0/7.0 - 3c:4a:92:e4:cb:94 eth5 m1-db06-prod.tcsbank.ru
+Rack-V322-4:xe-0/0/46.0 NW-NG-0:ae10.0 54:e0:32:8d:d8:80 xe-0/1/0.0 M1-SW03
+Rack-V322-5:xe-0/0/46.0 NW-NG-0:ae10.0 54:e0:32:8d:d8:80 xe-1/1/0.0 M1-SW03
+Rack-V322-5:xe-0/0/16.0 - 74:46:a0:f3:de:8c eth6 m1-db08-stb
+Rack-V322-4:xe-0/0/16.0 - 74:46:a0:f3:de:8c eth4 m1-db08-stb
+Rack-V322-4:xe-0/0/29.0 NW-NG-0:ae12.0 84:b5:9c:68:c7:c0 -B- m1-qf Rack-V322-4:xe-0/0/29 m1-mx01
+Rack-V322-5:xe-0/0/30.0 NW-NG-0:ae12.0 84:b5:9c:68:c7:c0 -B- m1-qf Rack-V322-5:xe-0/0/30 m1-mx01
+Rack-V322-5:xe-0/0/26.0 NW-NG-0:ae12.0 84:b5:9c:68:c7:c0 -B- m1-qf Rack-V322-5:xe-0/0/26 m1-mx01
+Rack-V322-5:xe-0/0/27.0 NW-NG-0:ae12.0 84:b5:9c:68:c7:c0 -B- m1-qf Rack-V322-5:xe-0/0/27 m1-mx01
+Rack-V322-4:xe-0/0/25.0 NW-NG-0:ae12.0 84:b5:9c:68:c7:c0 -B- m1-qf Rack-V322-4:xe-0/0/25 m1-mx01
+Rack-V322-5:xe-0/0/29.0 NW-NG-0:ae13.0 84:b5:9c:68:d7:c0 -B- m1-qf Rack-V322-5:xe-0/0/29 m1-mx02
+Rack-V322-4:xe-0/0/30.0 NW-NG-0:ae13.0 84:b5:9c:68:d7:c0 -B- m1-qf Rack-V322-4:xe-0/0/30 m1-mx02
+Rack-V322-4:xe-0/0/26.0 NW-NG-0:ae13.0 84:b5:9c:68:d7:c0 -B- m1-qf Rack-V322-4:xe-0/0/26 m1-mx02
+Rack-V322-5:xe-0/0/25.0 NW-NG-0:ae13.0 84:b5:9c:68:d7:c0 -B- m1-qf Rack-V322-5:xe-0/0/25 m1-mx02
+Rack-V322-4:xe-0/0/27.0 NW-NG-0:ae13.0 84:b5:9c:68:d7:c0 -B- m1-qf Rack-V322-4:xe-0/0/27 m1-mx02
+Rack-V322-4:xe-0/0/13.0 - 90:e2:ba:3d:98:c6 90:e2:ba:3d:98:c6
+Rack-V322-4:xe-0/0/14.0 - 90:e2:ba:3d:9a:2e 90:e2:ba:3d:9a:2e
+Rack-V322-5:xe-0/0/6.0 - ac:16:2d:b0:37:f0 eth6 m1-db02-prod.tcsbank.ru
+Rack-V322-4:xe-0/0/6.0 - ac:16:2d:b0:37:f0 eth4 m1-db02-prod.tcsbank.ru
+Rack-V322-4:xe-0/0/8.0 - ac:16:2d:b8:07:08 eth6 m1-asterisk01.tcsbank.ru
+Rack-V322-4:xe-0/0/15.0 - ac:16:2d:b8:07:08 eth0 m1-asterisk01.tcsbank.ru
+Rack-V322-5:xe-0/0/15.0 - ac:16:2d:b8:07:08 eth1 m1-asterisk01.tcsbank.ru
+Rack-V322-4:xe-0/0/15.0 - ac:16:2d:b8:07:09 ac:16:2d:b8:07:09
+Rack-V322-5:xe-0/0/15.0 - ac:16:2d:b8:07:0d ac:16:2d:b8:07:0d
+Rack-V322-4:xe-0/0/43.0 NW-NG-0:ae1.0 ac:4b:c8:2e:1e:00 xe-0/1/0.0 M1-SW01
+Rack-V322-5:xe-0/0/43.0 NW-NG-0:ae1.0 ac:4b:c8:2e:1e:00 xe-1/1/0.0 M1-SW01
+Rack-V322-5:xe-0/0/42.0 NW-NG-0:ae0.0 b0:a8:6e:05:77:80 -B- ae1:m1-qf(Rack-V322-5:xe-0/0/42) M1-SW02
+Rack-V322-4:xe-0/0/42.0 NW-NG-0:ae0.0 b0:a8:6e:05:77:80 -B- ae1:m1-qf(Rack-V322-4:xe-0/0/42) M1-SW02
+Rack-V322-5:xe-0/0/16.0 - d4:c9:ef:75:2c:e9 d4:c9:ef:75:2c:e9
+Rack-V322-4:xe-0/0/16.0 - d4:c9:ef:75:3c:29 d4:c9:ef:75:3c:29
+Rack-V322-4:xe-0/0/45.0 NW-NG-0:ae3.0 128.0.128.34 Rack-E06:xe-0/0/45.0 DS-QF01
+Rack-V322-5:xe-0/0/45.0 NW-NG-0:ae3.0 128.0.128.34 Rack-E07:xe-0/0/45.0 DS-QF01
+Rack-V322-4:xe-0/0/39.0 NW-NG-0:ae3.0 128.0.128.34 Rack-E06:xe-0/0/37.0 DS-QF01
+Rack-V322-5:xe-0/0/39.0 NW-NG-0:ae3.0 128.0.128.34 Rack-E07:xe-0/0/37.0 DS-QF01
+Rack-V322-4:xe-0/0/32.0 NW-NG-0:ae15.0 f5-fqaw-lhlq 2.1
+Rack-V322-5:xe-0/0/32.0 NW-NG-0:ae15.0 f5-fqaw-lhlq 2.2 M1-ELB01.tinkoff.ru
+
+
+С уважением,
+
+Андрей Никоненко
+Заместитель руководителя отдела
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Никоненко Андрей
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Никоненко Андрей
+Контактный e-mail   a.nikonenko@tinkoff.ru
+Контактные телефоны 79166717433, 2023
+
+................................................................................
+
+
+Дата
+Комментарий Автор
+09.12.2015 18:11    Пока не понял, что сделать, чтобы "проверить, чтобы в lldp-tlv передавался только один management address.".
+
+http://xgu.ru/wiki/LLDP
+http://linux.die.net/man/8/lldptool
+
+Есть идеи?  Белогруд Сергей В
+
+................................................................................
+
+#   Here is how to get list of network interfaces, available on server.
+[root@m1-db08-stb ~]# ls -A1 /sys/class/net/
+bond0
+bond1
+bond2
+bonding_masters
+eth0
+eth0.1755
+eth1
+eth2
+eth3
+eth4
+eth4.1748
+eth4.1750
+eth4.1764
+eth4.1768
+eth5
+eth6
+eth6.1749
+eth6.1750
+eth6.1764
+eth6.1768
+eth7
+lo
+[root@m1-db08-stb ~]#
+
+................................................................................
+
+
+[root@m1-db08-stb ~]# lldptool -t -i eth4 -V mngAddr
+[root@m1-db08-stb ~]# lldptool -t -i eth6 -V mngAddr
+[root@m1-db08-stb ~]#
+
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do nc -w 2 ${var1} 22 <<< ' ' 1>/dev/null ; if [ $? -eq 0 ] ; then echo "${var1} tcp port 22 is open" ; else echo "${var1} tcp port 22 is closed" ; fi ; done
+dc-c1
+dc-c2
+m1-db-dev
+m1-db01-prod
+m1-db06-prod
+m1-sw03
+m1-db08-stb
+m1-mx01
+m1-mx02
+m1-db02-prod
+m1-asterisk01
+m1-sw01
+m1-sw02
+m1-elb01
+dc-c1 tcp port 22 is closed
+dc-c2 tcp port 22 is closed
+m1-db-dev tcp port 22 is open
+m1-db01-prod tcp port 22 is open
+m1-db06-prod tcp port 22 is open
+m1-sw03 tcp port 22 is open
+m1-db08-stb tcp port 22 is open
+m1-mx01 tcp port 22 is open
+m1-mx02 tcp port 22 is open
+m1-db02-prod tcp port 22 is open
+m1-asterisk01 tcp port 22 is open
+m1-sw01 tcp port 22 is open
+m1-sw02 tcp port 22 is open
+m1-elb01 tcp port 22 is open
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do SSHPASS="$(pass common/linux)" ; echo ; echo ${var1} ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ' )" ; done ; SSHPASS=''
+m1-db-dev
+m1-db01-prod
+m1-db06-prod
+m1-sw03
+m1-db08-stb
+m1-mx01
+m1-mx02
+m1-db02-prod
+m1-asterisk01
+m1-sw01
+m1-sw02
+m1-elb01
+
+m1-db-dev
+[sudo] password for bsv:
+m1-db-dev
+Connection to m1-db-dev closed.
+
+m1-db01-prod
+[sudo] password for bsv:
+m1-db01-prod
+Connection to m1-db01-prod closed.
+
+m1-db06-prod
+[sudo] password for bsv:
+m1-db06-prod
+Connection to m1-db06-prod closed.
+
+m1-sw03
+Unauthorized access is prohibited! Please contact your administrator if you believe you have the right to use the system. When you try to unauthorized access, you are violating laws of the Russian Federation, and your actions will be prosecuted!
+Permission denied, please try again.
+
+m1-db08-stb
+[sudo] password for bsv:
+m1-db08-stb
+Connection to m1-db08-stb closed.
+
+m1-mx01
+Unauthorized access is prohibited! Please contact your administrator if you believe you have the right to use the system. When you try to unauthorized access, you are violating laws of the Russian Federation, and your actions will be prosecuted!
+Permission denied, please try again.
+
+m1-mx02
+Unauthorized access is prohibited! Please contact your administrator if you believe you have the right to use the system. When you try to unauthorized access, you are violating laws of the Russian Federation, and your actions will be prosecuted!
+Permission denied, please try again.
+
+m1-db02-prod
+[sudo] password for bsv:
+m1-db02-prod
+Connection to m1-db02-prod closed.
+
+m1-asterisk01
+[sudo] password for bsv:
+m1-asterisk01.tcsbank.ru
+Connection to m1-asterisk01 closed.
+
+m1-sw01
+Unauthorized access is prohibited! Please contact your administrator if you believe you have the right to use the system. When you try to unauthorized access, you are violating laws of the Russian Federation, and your actions will be prosecuted!
+Permission denied, please try again.
+
+m1-sw02
+Unauthorized access is prohibited! Please contact your administrator if you believe you have the right to use the system. When you try to unauthorized access, you are violating laws of the Russian Federation, and your actions will be prosecuted!
+Permission denied, please try again.
+
+m1-elb01
+[support@centos00 ~]$
+
+................................................................................
+
+[root@m1-db-dev ~]# rpm -q lldpd
+lldpd-0.7.3-1.1.x86_64
+[root@m1-db-dev ~]# rpm -ql lldpd
+/etc/rc.d/init.d/lldpd
+/etc/sysconfig/lldpd
+/usr/lib64/liblldpctl.so.0
+/usr/lib64/liblldpctl.so.0.3.0
+/usr/sbin/lldpcli
+/usr/sbin/lldpctl
+/usr/sbin/lldpd
+/usr/share/doc/lldpd
+/usr/share/doc/lldpd/ChangeLog
+/usr/share/doc/lldpd/NEWS
+/usr/share/doc/lldpd/README.md
+/usr/share/man/man8/lldpcli.8.gz
+/usr/share/man/man8/lldpctl.8.gz
+/usr/share/man/man8/lldpd.8.gz
+/var/run/lldpd
+[root@m1-db-dev ~]#
+
+
+
+#   This means, if management ip-address not special configured, then have used only first one.
+https://vincentbernat.github.io/lldpd/usage.html
+and
+man lldpd
+
+     -m management
+             Specify the management addresses of this system. As for inter-
+             faces (described below), this option can use wildcards and
+             inversions.  Without this option, the first IPv4 and the first
+             IPv6 are used. If an exact IP address is provided, it is used
+             as a management address without any check. If only negative
+             patterns are provided, only one IPv4 and one IPv6 addresses are
+             chosen. Otherwise, many of them can be selected. If you want to
+             blacklist IPv6 addresses, you can use !*:*.
+
+[root@m1-db-dev ~]# ps axu | grep lldp
+root      1654  0.0  0.0 103300   880 pts/1    S+   11:42   0:00 grep lldp
+root      9632  0.0  0.0  93544   580 ?        Ss   Jan16   2:46 /usr/sbin/lldpd
+_lldpd    9635  0.0  0.0  93544   552 ?        S    Jan16   4:21 /usr/sbin/lldpd
+[root@m1-db-dev ~]# cat /etc/sysconfig/lldpd
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""
+[root@m1-db-dev ~]#
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ for var1 in m1-db-dev ; do SSHPASS="$(pass common/linux)" ; echo ; echo ${var1} ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname; service lldpd status ' )" ; done ; SSHPASS=''
+
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ for var1 in $(cat) ; do SSHPASS="$(pass common/linux)" ; echo ; echo ${var1} ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname; rpm -qa | grep lldp ' )" ; done ; SSHPASS=''
+m1-db-dev
+m1-db01-prod
+m1-db06-prod
+m1-db08-stb
+m1-db02-prod
+m1-asterisk01
+
+m1-db-dev
+[sudo] password for bsv:
+m1-db-dev
+lldpd-0.7.3-1.1.x86_64
+Connection to m1-db-dev closed.
+
+m1-db01-prod
+[sudo] password for bsv:
+m1-db01-prod
+lldpd-0.7.3-1.1.x86_64
+Connection to m1-db01-prod closed.
+
+m1-db06-prod
+[sudo] password for bsv:
+m1-db06-prod
+lldpd-0.7.3-1.1.x86_64
+Connection to m1-db06-prod closed.
+
+m1-db08-stb
+[sudo] password for bsv:
+m1-db08-stb
+lldpad-0.9.46-2.el6.x86_64
+lldpd-0.7.3-1.1.x86_64
+lldpad-libs-0.9.46-2.el6.x86_64
+Connection to m1-db08-stb closed.
+
+m1-db02-prod
+[sudo] password for bsv:
+m1-db02-prod
+lldpd-0.7.3-1.1.x86_64
+Connection to m1-db02-prod closed.
+
+m1-asterisk01
+[sudo] password for bsv:
+m1-asterisk01.tcsbank.ru
+lldpd-0.7.3-1.1.x86_64
+Connection to m1-asterisk01 closed.
+[support@centos00 ~]$
+
+
+
+[support@centos00 ~]$ for var1 in $(cat) ; do SSHPASS="$(pass common/linux)" ; echo ; echo ${var1} ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname; service lldpd status ' )" ; done ; SSHPASS=''
+m1-db-dev
+m1-db01-prod
+m1-db06-prod
+m1-db08-stb
+m1-db02-prod
+m1-asterisk01
+
+m1-db-dev
+[sudo] password for bsv:
+m1-db-dev
+lldpd (pid  9632) is running...
+Connection to m1-db-dev closed.
+
+m1-db01-prod
+[sudo] password for bsv:
+m1-db01-prod
+lldpd (pid  3576) is running...
+Connection to m1-db01-prod closed.
+
+m1-db06-prod
+[sudo] password for bsv:
+m1-db06-prod
+lldpd (pid  4900) is running...
+Connection to m1-db06-prod closed.
+
+m1-db08-stb
+[sudo] password for bsv:
+m1-db08-stb
+lldpd (pid  7910) is running...
+Connection to m1-db08-stb closed.
+
+m1-db02-prod
+[sudo] password for bsv:
+m1-db02-prod
+lldpd (pid  5672) is running...
+Connection to m1-db02-prod closed.
+
+m1-asterisk01
+[sudo] password for bsv:
+m1-asterisk01.tcsbank.ru
+lldpd (pid  2018) is running...
+Connection to m1-asterisk01 closed.
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ for var1 in $(cat) ; do SSHPASS="$(pass common/linux)" ; echo ; echo ${var1} ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname; service lldpd status ; cat /etc/sysconfig/lldpd ' )" ; done ; SSHPASS=''
+m1-db-dev
+m1-db01-prod
+m1-db06-prod
+m1-db08-stb
+m1-db02-prod
+m1-asterisk01
+
+m1-db-dev
+[sudo] password for bsv:
+m1-db-dev
+lldpd (pid  9632) is running...
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""
+Connection to m1-db-dev closed.
+
+m1-db01-prod
+[sudo] password for bsv:
+m1-db01-prod
+lldpd (pid  3576) is running...
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""
+Connection to m1-db01-prod closed.
+
+m1-db06-prod
+[sudo] password for bsv:
+m1-db06-prod
+lldpd (pid  4900) is running...
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""
+Connection to m1-db06-prod closed.
+
+m1-db08-stb
+[sudo] password for bsv:
+m1-db08-stb
+lldpd (pid  7910) is running...
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""
+Connection to m1-db08-stb closed.
+
+m1-db02-prod
+[sudo] password for bsv:
+m1-db02-prod
+lldpd (pid  5672) is running...
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""
+Connection to m1-db02-prod closed.
+
+m1-asterisk01
+[sudo] password for bsv:
+m1-asterisk01.tcsbank.ru
+lldpd (pid  2018) is running...
+## Path: Network/Discovery
+## Description: lldpd configuration
+## Type: string(-x,-c,-s,-e,-f)
+## Default: ""
+## ServiceRestart: lldpd
+# Parameters for lldpd. See the manual page for the
+# accepted parameters.
+LLDPD_OPTIONS=""
+Connection to m1-asterisk01 closed.
+[support@centos00 ~]$
+
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+10.12.2015 12:06    На серверах
+m1-db-dev
+m1-db01-prod
+m1-db06-prod
+m1-db08-stb
+m1-db02-prod
+m1-asterisk01
+признаков присутствия нескольких management адресов не обнаружено.
+
+В описании к демону lldpd написано, что для management address по умолчанию используется первый из обнаруженных ipv4 адресов.
+Специальных опций, изменяющих поведение lldpd от определённого по умолчанию, на серверах не обнаружено.
+Белогруд Сергей В
+09.12.2015 19:43    На серверы
+m1-sw03
+m1-mx01
+m1-mx02
+m1-sw01
+m1-sw02
+у меня доступ по ssh под использовавшимися учётными записями, отсутствует.
+Белогруд Сергей В
+09.12.2015 19:12    Вот это DS-QF01 наверное Ваш маршрутизатор?
+Если нет - нужен ip-адрес.
+
+[support@centos00 ~]$ host ds-qf01
+Host ds-qf01 not found: 2(SERVFAIL)
+[support@centos00 ~]$   Белогруд Сергей В
+09.12.2015 19:06    Как я понял из треш-вывода, нужно проверить "чтобы в lldp-tlv передавался только один management address." на следующих серверах и кое-где обозначенных интерфейсах:
+DC-C1
+DC-C2
+m1-db-dev eth4, eth6
+m1-db01-prod eth0, eth2
+m1-db06-prod eth4, eth5
+M1-SW03
+m1-db08-stb eth4, eth6
+m1-mx01
+m1-mx02
+m1-db02-prod eth4, eth6
+m1-asterisk01 eth0, eth1, eth6
+M1-SW01
+M1-SW02
+DS-QF01
+M1-ELB01
+
+Если что-то упустил из треш-вывода - прошу поправить.
+
+Вот у этого нужен ip-адрес или DNS имя:
+smdw eth5
+Белогруд Сергей В
+09.12.2015 18:42    [root@m1-db08-stb ~]# lldptool -t -i eth4 -V mngAddr
+[root@m1-db08-stb ~]# lldptool -t -i eth6 -V mngAddr
+[root@m1-db08-stb ~]#   Белогруд Сергей В
+09.12.2015 18:11    Пока не понял, что сделать, чтобы "проверить, чтобы в lldp-tlv передавался только один management address.".
+
+http://xgu.ru/wiki/LLDP
+http://linux.die.net/man/8/lldptool
+
+Есть идеи?  Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+#   This server has found.
+Rack-V322-4:xe-0/0/0.0 -               2c:27:d7:53:b1:e0   eth5         smdw
+Rack-V322-4:xe-0/0/0.0 -               2c:27:d7:53:b1:e4  2c:27:d7:53:b1:e4
+
+m1-gp-prd-smdw.tcsbank.ru
+
+[root@m1-gp-prd-smdw ~]# service lldpd status
+lldpd (pid  2599) is running...
+[root@m1-gp-prd-smdw ~]# service lldpd stop
+Stopping lldpd:                                            [  OK  ]
+[root@m1-gp-prd-smdw ~]# chkconfig --list lldpd
+lldpd           0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@m1-gp-prd-smdw ~]# chkconfig lldpd off
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# ls -Alh /sys/class/net/
+total 0
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 bond0 -> ../../devices/virtual/net/bond0
+lrwxrwxrwx 1 root root    0 Nov 27 18:53 bond0.1626 -> ../../devices/virtual/net/bond0.1626
+-rw-r--r-- 1 root root 4.0K Nov 27 18:20 bonding_masters
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth0 -> ../../devices/pci0000:00/0000:00:1c.0/0000:03:00.0/net/eth0
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth1 -> ../../devices/pci0000:00/0000:00:1c.0/0000:03:00.1/net/eth1
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth2 -> ../../devices/pci0000:00/0000:00:1c.2/0000:04:00.0/net/eth2
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth3 -> ../../devices/pci0000:00/0000:00:1c.2/0000:04:00.1/net/eth3
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth4 -> ../../devices/pci0000:00/0000:00:07.0/0000:0e:00.0/net/eth4
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth5 -> ../../devices/pci0000:00/0000:00:07.0/0000:0e:00.1/net/eth5
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth6 -> ../../devices/pci0000:00/0000:00:09.0/0000:08:00.0/net/eth6
+lrwxrwxrwx 1 root root    0 Nov 27 18:20 eth7 -> ../../devices/pci0000:00/0000:00:09.0/0000:08:00.1/net/eth7
+lrwxrwxrwx 1 root root    0 Nov 27 21:20 lo -> ../../devices/virtual/net/lo
+[root@m1-gp-prd-smdw ~]# cat /sys/class/net/bonding_masters
+bond0
+[root@m1-gp-prd-smdw ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth5
+DEVICE=eth5
+TYPE=Ethernet
+ONBOOT=yes
+NM_CONTROLLED=no
+BOOTPROTO=none
+MASTER="bond0"
+SLAVE="yes"
+[root@m1-gp-prd-smdw ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth4
+DEVICE=eth4
+TYPE=Ethernet
+ONBOOT=yes
+NM_CONTROLLED=no
+BOOTPROTO=none
+MASTER="bond0"
+SLAVE="yes"
+[root@m1-gp-prd-smdw ~]# ifconfig eth5
+eth5      Link encap:Ethernet  HWaddr 2C:27:D7:53:B1:E0
+          UP BROADCAST RUNNING SLAVE MULTICAST  MTU:1500  Metric:1
+          RX packets:3530822 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:36767 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:247326269 (235.8 MiB)  TX bytes:8859593 (8.4 MiB)
+          Interrupt:63
+
+[root@m1-gp-prd-smdw ~]# ifconfig eth4
+eth4      Link encap:Ethernet  HWaddr 2C:27:D7:53:B1:E0
+          UP BROADCAST RUNNING SLAVE MULTICAST  MTU:1500  Metric:1
+          RX packets:13061831 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:14889691 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:1213389933 (1.1 GiB)  TX bytes:2228434259 (2.0 GiB)
+          Interrupt:55
+
+[root@m1-gp-prd-smdw ~]#
+
+
+[root@m1-gp-prd-smdw ~]# grep '2c:27:d7:53:b1:e4' /etc/udev/rules.d/70-persistent-net.rules
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="2c:27:d7:53:b1:e4", ATTR{type}=="1", KERNEL=="eth*", NAME="eth5"
+[root@m1-gp-prd-smdw ~]# grep '2c:27:d7:53:b1:e0' /etc/udev/rules.d/70-persistent-net.rules
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="2c:27:d7:53:b1:e0", ATTR{type}=="1", KERNEL=="eth*", NAME="eth4"
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# cat /sys/class/net/eth4/address
+2c:27:d7:53:b1:e0
+[root@m1-gp-prd-smdw ~]# cat /sys/class/net/eth5/address
+2c:27:d7:53:b1:e0
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# lspci -tv -s 0000:0e:00
+-+-[0000:0e]-+-00.0  QLogic Corp. cLOM8214 1/10GbE Controller
+ |           \-00.1  QLogic Corp. cLOM8214 1/10GbE Controller
+ \-[0000:00]-
+[root@m1-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+
+
+[root@puppet 20151203-1533]# for var1 in {0..20} ; do puppet query nodes "(macaddress_eth${var1}=\"2C:27:D7:54:08:14\")" ; done
+...
+m1-gfs2-tst01.tcsbank.ru
+...
+[root@puppet 20151203-1533]#
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-gfs2-tst01
+Last login: Fri Oct  9 17:22:54 2015 from ds-sasetl01x-metro2.tcsbank.ru
+[bsv@m1-gfs2-tst01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-gfs2-tst01 ~]# grep -i -e "2c:27:d7:54:08:14" /etc/udev/rules.d/70-persistent-net.rules
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="2c:27:d7:54:08:14", ATTR{type}=="1", KERNEL=="eth*", NAME="eth7"
+[root@m1-gfs2-tst01 ~]#
+
+[root@m1-gfs2-tst01 ~]# service lldpd status
+lldpd: unrecognized service
+[root@m1-gfs2-tst01 ~]# rpm -qa | grep lldp
+[root@m1-gfs2-tst01 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.2 (Santiago)
+[root@m1-gfs2-tst01 ~]#
+
+[root@m1-gfs2-tst01 ~]# ip -f inet -o addr
+1: lo    inet 127.0.0.1/8 scope host lo
+10: bond0    inet 10.216.27.43/24 brd 10.216.27.255 scope global bond0
+13: bond1    inet 10.217.65.15/24 brd 10.217.65.255 scope global bond1
+16: bond2    inet 10.99.99.2/24 brd 10.99.99.255 scope global bond2
+[root@m1-gfs2-tst01 ~]# ifconfig eth7
+eth7      Link encap:Ethernet  HWaddr 2C:27:D7:54:08:14
+          inet6 addr: fe80::2e27:d7ff:fe54:814/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:9000  Metric:1
+          RX packets:306123241 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:109904438 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:27637436933 (25.7 GiB)  TX bytes:8902258948 (8.2 GiB)
+          Interrupt:103
+
+[root@m1-gfs2-tst01 ~]#
+
+[root@m1-gfs2-tst01 ~]# ls -Alh /sys/class/net/ | grep eth7
+lrwxrwxrwx 1 root root    0 Nov 10 12:39 eth7 -> ../../devices/pci0000:00/0000:00:0a.0/0000:05:00.1/net/eth7
+lrwxrwxrwx 1 root root    0 Nov 10 12:39 eth7.1627 -> ../../devices/virtual/net/eth7.1627
+lrwxrwxrwx 1 root root    0 Nov 10 12:39 eth7.1765 -> ../../devices/virtual/net/eth7.1765
+lrwxrwxrwx 1 root root    0 Nov 10 12:39 eth7.813 -> ../../devices/virtual/net/eth7.813
+[root@m1-gfs2-tst01 ~]# lspci -tv -s 0000:05:00.1
+-+-[0000:05]---00.1  QLogic Corp. cLOM8214 1/10GbE Controller
+ \-[0000:00]-
+[root@m1-gfs2-tst01 ~]#
+
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ host 10.216.26.12
+12.26.216.10.in-addr.arpa domain name pointer m1-gp-prd-ext-smdw.tcsbank.ru.
+[support@centos00 ~]$ host 10.216.4.112
+112.4.216.10.in-addr.arpa domain name pointer m1-gp-prd-smdw.tcsbank.ru.
+[support@centos00 ~]$ host 10.216.41.32
+32.41.216.10.in-addr.arpa domain name pointer m1-sinform01.tcsbank.ru.
+[support@centos00 ~]$ host 10.216.41.33
+33.41.216.10.in-addr.arpa domain name pointer m1-observeit.tcsbank.ru.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ var1=m1-sinform01 ; nc -w 2 ${var1} 22 <<< ' ' 1>/dev/null ; if [ $? -eq 0 ] ; then echo "${var1} tcp port 22 is open" ; else echo "${var1} tcp port 22 is closed"; fi
+m1-sinform01 tcp port 22 is closed
+[support@centos00 ~]$ var1=m1-observeit ; nc -w 2 ${var1} 22 <<< ' ' 1>/dev/null ; if [ $? -eq 0 ] ; then echo "${var1} tcp port 22 is open" ; else echo "${var1} tcp port 22 is closed"; fi
+m1-observeit tcp port 22 is closed
+[support@centos00 ~]$
+
+[support@centos00 ~]$ for var1 in $(cat) ; do SSHPASS="$(pass common/linux)" ; echo ; echo ${var1} ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname; service lldpd stop ; chkconfig lldpd off ; chkconfig --list lldpd ' )" ; done ; SSHPASS=''
+m1-db-dev
+m1-db01-prod
+m1-db06-prod
+m1-db08-stb
+m1-db02-prod
+m1-asterisk01
+m1-sinform01
+m1-observeit
+m1-gp-prd-ext-smdw
+
+m1-db-dev
+[sudo] password for bsv:
+m1-db-dev
+Stopping lldpd: [  OK  ]
+lldpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db-dev closed.
+
+m1-db01-prod
+[sudo] password for bsv:
+m1-db01-prod
+Stopping lldpd: [  OK  ]
+lldpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db01-prod closed.
+
+m1-db06-prod
+[sudo] password for bsv:
+m1-db06-prod
+Stopping lldpd: [  OK  ]
+lldpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db06-prod closed.
+
+m1-db08-stb
+[sudo] password for bsv:
+m1-db08-stb
+Stopping lldpd: [  OK  ]
+lldpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db08-stb closed.
+
+m1-db02-prod
+[sudo] password for bsv:
+m1-db02-prod
+Stopping lldpd: [  OK  ]
+lldpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-db02-prod closed.
+
+m1-asterisk01
+[sudo] password for bsv:
+m1-asterisk01.tcsbank.ru
+Stopping lldpd: [  OK  ]
+lldpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-asterisk01 closed.
+
+m1-sinform01
+ssh: connect to host m1-sinform01 port 22: Connection timed out
+
+m1-observeit
+ssh: connect to host m1-observeit port 22: Connection timed out
+
+m1-gp-prd-ext-smdw
+
+m1-gp-prd-smdw
+lldpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+Connection to m1-gp-prd-ext-smdw closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# pynag list host_name contacts contact_groups where host_name="m1-sinform01"
+host_name            contacts             contact_groups
+--------------------------------------------------------------------------------
+m1-sinform01         null                 windows-admins, servicedesk-duty-critical-group
+m1-sinform01         null                 null
+m1-sinform01         empty_contact        secure-admins
+m1-sinform01         empty_contact        secure-admins
+m1-sinform01         empty_contact        secure-admins
+m1-sinform01         null                 null
+m1-sinform01         null                 null
+m1-sinform01         null                 null
+m1-sinform01         empty_contact        secure-admins
+m1-sinform01         empty_contact        secure-admins
+m1-sinform01         empty_contact        secure-admins
+m1-sinform01         empty_contact        secure-admins
+m1-sinform01         null                 null
+m1-sinform01         null                 null
+----------14 objects matches search condition-----------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# pynag list host_name contacts contact_groups where address="10.216.41.33"
+host_name            contacts             contact_groups
+--------------------------------------------------------------------------------
+m1-observeit01       null                 +secure-admins
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# find . -name m1-observeit01.cfg
+./objects/servers/dc-m1/windows/security/m1-observeit01.cfg
+[root@vm-vol-nag01t nagios]# cat ./objects/servers/dc-m1/windows/security/m1-observeit01.cfg
+
+[root@vm-vol-nag01t nagios]# pynag list host_name address contacts contact_groups where host_name="m1-sinform01"
+host_name            address              contacts             contact_groups
+--------------------------------------------------------------------------------
+m1-sinform01         10.216.41.32         null                 windows-admins, servicedesk-duty-critical-group
+m1-sinform01         null                 null                 null
+m1-sinform01         null                 empty_contact        secure-admins
+m1-sinform01         null                 empty_contact        secure-admins
+m1-sinform01         null                 empty_contact        secure-admins
+m1-sinform01         null                 null                 null
+m1-sinform01         null                 null                 null
+m1-sinform01         null                 null                 null
+m1-sinform01         null                 empty_contact        secure-admins
+m1-sinform01         null                 empty_contact        secure-admins
+m1-sinform01         null                 empty_contact        secure-admins
+m1-sinform01         null                 empty_contact        secure-admins
+m1-sinform01         null                 null                 null
+m1-sinform01         null                 null                 null
+----------14 objects matches search condition-----------------------------------
+[root@vm-vol-nag01t nagios]# pynag list host_name address contacts contact_groups where host_name="m1-observeit01"
+host_name            address              contacts             contact_groups
+--------------------------------------------------------------------------------
+m1-observeit01       10.216.41.33         null                 +secure-admins
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+m1-observeit01       null                 null                 null
+----------13 objects matches search condition-----------------------------------
+[root@vm-vol-nag01t nagios]#
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+
+[support@centos00 en]$ sshpass -e scp /media/sf_share/hp/drivers/HP\ CN1000Q\ Dual\ Port\ Converged\ Network\ Adapter/QCC_CLI_Linux_1_0_03-01_x64/QConvergeConsoleCLI-1.0.03-01.x86_64.rpm bsv@m1-gp-tst-ext-smdw:/tmp           [support@centos00 en]$
+
+[root@m1-gp-tst-smdw ~]# mkdir -p ~/work/20151210-1802
+[root@m1-gp-tst-smdw ~]# cd !$
+cd ~/work/20151210-1802
+[root@m1-gp-tst-smdw 20151210-1802]# cp /tmp/QConvergeConsoleCLI-1.0.03-01.x86_64.rpm .
+[root@m1-gp-tst-smdw 20151210-1802]# yum localinstall QConvergeConsoleCLI-1.0.03-01.x86_64.rpm
+Loaded plugins: product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Setting up Local Package Process
+Examining QConvergeConsoleCLI-1.0.03-01.x86_64.rpm: QConvergeConsoleCLI-1.0.03-01.x86_64
+Marking QConvergeConsoleCLI-1.0.03-01.x86_64.rpm to be installed
+tcs-epel                                                                                                                                                                                                  | 3.0 kB     00:00
+tcs-epel/primary_db                                                                                                                                                                                       | 9.9 MB     00:00
+tcs-epel-6-x86_64                                                                                                                                                                                         | 3.0 kB     00:00
+tcs-epel-6-x86_64/primary_db                                                                                                                                                                              | 9.9 MB     00:00
+tcs-hp-hpsum                                                                                                                                                                                              | 2.9 kB     00:00
+tcs-hp-spp                                                                                                                                                                                                | 2.9 kB     00:00
+tcs-hp-spp/primary_db                                                                                                                                                                                     | 1.1 MB     00:00
+tcs-hp-stk                                                                                                                                                                                                | 2.9 kB     00:00
+tcs-ossec-2.7-x86_64                                                                                                                                                                                      | 2.9 kB     00:00
+tcs-puppetlabs-deps                                                                                                                                                                                       | 2.9 kB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64                                                                                                                                                                   | 2.9 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64                                                                                                                                                                       | 2.9 kB     00:00
+tcs-puppetlabs-products                                                                                                                                                                                   | 2.9 kB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                                                  | 3.4 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                                                       |  36 MB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                                                         | 3.0 kB     00:00
+tcs-zabbix-2.2-rhel-6-x86_64                                                                                                                                                                              | 2.9 kB     00:00
+tcs-zabbix-non-supported-rhel-6-x86_64                                                                                                                                                                    | 2.9 kB     00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package QConvergeConsoleCLI.x86_64 0:1.0.03-01 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=================================================================================================================================================================================================================================
+ Package                                                Arch                                      Version                                         Repository                                                                Size
+=================================================================================================================================================================================================================================
+Installing:
+ QConvergeConsoleCLI                                    x86_64                                    1.0.03-01                                       /QConvergeConsoleCLI-1.0.03-01.x86_64                                     11 M
+
+Transaction Summary
+=================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total size: 11 M
+Installed size: 11 M
+Is this ok [y/N]: y
+Downloading Packages:
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : QConvergeConsoleCLI-1.0.03-01.x86_64                                                                                                                                                                          1/1
+  Verifying  : QConvergeConsoleCLI-1.0.03-01.x86_64                                                                                                                                                                          1/1
+
+Installed:
+  QConvergeConsoleCLI.x86_64 0:1.0.03-01
+
+Complete!
+[root@m1-gp-tst-smdw 20151210-1802]#
+
+
+[root@m1-gp-tst-smdw 20151210-1802]# ls -Alh /opt/QLogic_Corporation/QConvergeConsoleCLI/
+total 5.1M
+-rwxr-xr-x   1 root root  23K Aug  9  2012 adapters.properties
+-rwxr-xr-x   1 root root  415 Aug  9  2012 agent.properties
+-rwxr-xr-x   1 root root 2.8K Aug  9  2012 allpr_contents.dat
+-rwxr-xr-x   1 root root  30K Aug  9  2012 fc_contents.dat
+-rwxr-xr-x   1 root root  25K Aug  9  2012 fcscli-exitcodes.txt
+-rwxr-xr-x   1 root root 1.5K Aug  9  2012 flashcfg.properties
+-rwxr-xr-x   1 root root   25 Aug  9  2012 iscli
+-rwxr-xr-x   1 root root 4.1K Aug  9  2012 iscli.cfg
+-rwxr-xr-x   1 root root  38K Aug  9  2012 iscsi_contents.dat
+-rw-r--r--   1 root root 4.2M Aug  9  2012 lib64.tgz
+-rwxr-xr-x   1 root root  404 Aug  9  2012 menu.properties
+-rwxr-xr-x   1 root root   24 Aug  9  2012 netscli
+-rwxr-xr-x   1 root root 8.9K Aug  9  2012 netscli.cfg
+-rwxr-xr-x   1 root root  13K Aug  9  2012 nic_contents.dat
+-rwxr-xr-x   1 root root  10K Aug  9  2012 npar_contents.dat
+drwxr-xr-x 184 root root 4.0K Dec 10 18:03 nvramdefs
+-rwxr-xr-x   1 root root 642K Aug  9  2012 qaucli
+-rwxr-xr-x   1 root root 3.7K Aug  9  2012 qaucli.cfg
+-rwxr-xr-x   1 root root 2.1K Aug  9  2012 qaucli_contents.dat
+-rwxr-xr-x   1 root root   23 Aug  9  2012 scli
+-rwxr-xr-x   1 root root 2.2K Dec 10 18:03 sfcli.properties
+-rw-r--r--   1 root root   11 Aug  9  2012 ucli.sig
+[root@m1-gp-tst-smdw 20151210-1802]#
+
+[support@centos00 en]$ sshpass -e scp /media/sf_share/hp/drivers/HP\ CN1000Q\ Dual\ Port\ Converged\ Network\ Adapter/QCC_CLI_Linux_1_0_03-01_x64/QConvergeConsoleCLI-1.0.03-01.x86_64.rpm bsv@m1-gp-prd-ext-smdw:/tmp
+[support@centos00 en]$
+
+[root@m1-gp-prd-smdw ~]# mkdir -p ~/work/20151210-1810
+[root@m1-gp-prd-smdw ~]# cd !$
+cd ~/work/20151210-1810
+[root@m1-gp-prd-smdw 20151210-1810]# cp /tmp/QConvergeConsoleCLI-1.0.03-01.x86_64.rpm .
+[root@m1-gp-prd-smdw 20151210-1810]# yum -y localinstall QConvergeConsoleCLI-1.0.03-01.x86_64.rpm
+Loaded plugins: product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Setting up Local Package Process
+Examining QConvergeConsoleCLI-1.0.03-01.x86_64.rpm: QConvergeConsoleCLI-1.0.03-01.x86_64
+Marking QConvergeConsoleCLI-1.0.03-01.x86_64.rpm to be installed
+tcs-epel                                                                                                                                                                                                  | 3.0 kB     00:00
+tcs-epel/primary_db                                                                                                                                                                                       | 9.9 MB     00:00
+tcs-epel-6-x86_64                                                                                                                                                                                         | 3.0 kB     00:00
+tcs-epel-6-x86_64/primary_db                                                                                                                                                                              | 9.9 MB     00:00
+tcs-hp-spp                                                                                                                                                                                                | 2.9 kB     00:00
+tcs-hp-spp/primary_db                                                                                                                                                                                     | 1.1 MB     00:00
+tcs-lldpad                                                                                                                                                                                                | 2.9 kB     00:00
+tcs-ossec-2.7-x86_64                                                                                                                                                                                      | 2.9 kB     00:00
+tcs-puppetlabs-deps                                                                                                                                                                                       | 2.9 kB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64                                                                                                                                                                   | 2.9 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64                                                                                                                                                                       | 2.9 kB     00:00
+tcs-puppetlabs-products                                                                                                                                                                                   | 2.9 kB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                                                  | 3.4 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                                                       |  36 MB     00:00
+tcs-rhel-x86_64-server-6-update                                                                                                                                                                           | 2.9 kB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                                                         | 3.0 kB     00:00
+tcs-zabbix-2.2-rhel-6-x86_64                                                                                                                                                                              | 2.9 kB     00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package QConvergeConsoleCLI.x86_64 0:1.0.03-01 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=================================================================================================================================================================================================================================
+ Package                                                Arch                                      Version                                         Repository                                                                Size
+=================================================================================================================================================================================================================================
+Installing:
+ QConvergeConsoleCLI                                    x86_64                                    1.0.03-01                                       /QConvergeConsoleCLI-1.0.03-01.x86_64                                     11 M
+
+Transaction Summary
+=================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total size: 11 M
+Installed size: 11 M
+Downloading Packages:
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : QConvergeConsoleCLI-1.0.03-01.x86_64                                                                                                                                                                          1/1
+  Verifying  : QConvergeConsoleCLI-1.0.03-01.x86_64                                                                                                                                                                          1/1
+
+Installed:
+  QConvergeConsoleCLI.x86_64 0:1.0.03-01
+
+Complete!
+[root@m1-gp-prd-smdw 20151210-1810]# /opt/QLogic_Corporation/QConvergeConsoleCLI/qaucli
+Using config file: /opt/QLogic_Corporation/QConvergeConsoleCLI/qaucli.cfg
+Installation directory: /opt/QLogic_Corporation/QConvergeConsoleCLI
+Working dir: /root/work/20151210-1810
+Using config file: /opt/QLogic_Corporation/QConvergeConsoleCLI/netscli.cfg
+Loading CNA Data ...
+Loading: 1. CNA ...
+Loading: 1. CNA Physical Port : 2 (Index : 1) ...
+Loading: 1. CNA Physical Port : 1 (Index : 2) ...
+Refreshing interfaces ... Please wait ...
+
+Using config file: /opt/QLogic_Corporation/QConvergeConsoleCLI/iscli.cfg
+Loading iSCSI Data ...
+
+
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Main Menu
+
+    1:  Adapter Information
+    2:  Adapter Configuration
+    3:  Adapter Updates
+    4:  Adapter Diagnostics
+    5:  Adapter Statistics
+    6:  Refresh
+    7:  Help
+    8:  Exit
+
+
+        Please Enter Selection: 1
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    1:  CNA Adapter Information
+    2:  CNA Port Information
+    3:  CNA VPD Information
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    CNA Adapter Information
+
+     1: CNA Model: CN1000Q  SN: 3U7229505R
+          Port   2 [Protocol(s): NIC]
+          Port   1 [Protocol(s): NIC]
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+--------------------------------------------------------------------------------
+Hostname                    : m1-gp-prd-smdw
+Adapter Model               : CN1000Q
+Chip Model                  : 8020
+Chip Version                : B0
+Adapter Alias               : None
+Serial Number               : 3U7229505R
+MAC Address Function 1      : 2c:27:d7:53:b1:e4
+MAC Address Function 0      : 2c:27:d7:53:b1:e0
+Driver Version              : 5.3.62
+Running Firmware Version    : 4.18.4
+Flash Package Version       : 2.70.35
+PXE Boot Version            : 2.0.3.39
+--------------------------------------------------------------------------------
+
+        Hit <Enter> to continue:
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    CNA Adapter Information
+
+     1: CNA Model: CN1000Q  SN: 3U7229505R
+          Port   2 [Protocol(s): NIC]
+          Port   1 [Protocol(s): NIC]
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 0
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    1:  CNA Adapter Information
+    2:  CNA Port Information
+    3:  CNA VPD Information
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 2
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    CNA Model CN1000Q  SN: 3U7229505R
+       1. Port   2 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E4 Link Up
+       2. Port   1 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E0 Link Up
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+--------------------------------------------------------------------------------
+
+Hostname                    : m1-gp-prd-smdw
+Adapter Model               : CN1000Q
+Port Alias                  : None
+Physical MAC Address        : 2c:27:d7:53:b1:e4
+Physical MAC Address Alias  : None
+Active/LAA MAC Address      : 2c:27:d7:53:b1:e0
+Active/LAA MAC Address Alias: None
+IPv4 Address                :
+IPv4 Subnet Mask            :
+IPv4 Default Gateway        :
+IPv4 DHCP Enabled           : No
+DHCP Servers                : Not Available
+DNS Servers                 : Not Available
+IPv6 Addresses              : Not Available
+IPv6 Default Router         : Not Available
+Link Status                 : Up
+MTU                         : 1500
+Interface Scope ID          :
+Interface Speed             : 10 Gbps
+Interface Description       : CN1000Q StorageWorks CN1000Q Dual Port Converged Network Adapter (NIC)
+
+--------------------------------------------------------------------------------
+
+        Hit <Enter> to continue: 2
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    CNA Model CN1000Q  SN: 3U7229505R
+       1. Port   2 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E4 Link Up
+       2. Port   1 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E0 Link Up
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 2
+--------------------------------------------------------------------------------
+
+Hostname                    : m1-gp-prd-smdw
+Adapter Model               : CN1000Q
+Port Alias                  : None
+Physical MAC Address        : 2c:27:d7:53:b1:e0
+Physical MAC Address Alias  : None
+Active/LAA MAC Address      : 2c:27:d7:53:b1:e0
+Active/LAA MAC Address Alias: None
+IPv4 Address                :
+IPv4 Subnet Mask            :
+IPv4 Default Gateway        :
+IPv4 DHCP Enabled           : No
+DHCP Servers                : Not Available
+DNS Servers                 : Not Available
+IPv6 Addresses              : Not Available
+IPv6 Default Router         : Not Available
+Link Status                 : Up
+MTU                         : 1500
+Interface Scope ID          :
+Interface Speed             : 10 Gbps
+Interface Description       : CN1000Q StorageWorks CN1000Q Dual Port Converged Network Adapter (NIC)
+
+--------------------------------------------------------------------------------
+
+        Hit <Enter> to continue:
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    CNA Model CN1000Q  SN: 3U7229505R
+       1. Port   2 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E4 Link Up
+       2. Port   1 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E0 Link Up
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 0
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    1:  CNA Adapter Information
+    2:  CNA Port Information
+    3:  CNA VPD Information
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 3
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    CNA Model CN1000Q  SN: 3U7229505R
+       1. Port   2 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E4 Link Up
+       2. Port   1 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E0 Link Up
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+--------------------------------------------------------------------------------
+VPD
+Description                    : HP StorageWorks CN1000Q Dual Port Converged Network Adapter
+Part Number                    : BS668-63003
+Engineering Date Code          : A-5148
+Serial Number                  : 3U7229505R
+Misc. Information              : PW=19W
+Manufacturing Date Code        : 5229
+Manufacturing Id               : NE3210404-28  A
+Flash Image Version            : 027035
+Asset Tag                      : NA
+--------------------------------------------------------------------------------
+
+        Hit <Enter> to continue:
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    CNA Model CN1000Q  SN: 3U7229505R
+       1. Port   2 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E4 Link Up
+       2. Port   1 [Protocol(s): NIC]
+          MAC Address: 2C:27:D7:53:B1:E0 Link Up
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 0
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    1:  CNA Adapter Information
+    2:  CNA Port Information
+    3:  CNA VPD Information
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    CNA Adapter Information
+
+     1: CNA Model: CN1000Q  SN: 3U7229505R
+          Port   2 [Protocol(s): NIC]
+          Port   1 [Protocol(s): NIC]
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 2
+Invalid selection!
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    CNA Adapter Information
+
+     1: CNA Model: CN1000Q  SN: 3U7229505R
+          Port   2 [Protocol(s): NIC]
+          Port   1 [Protocol(s): NIC]
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+--------------------------------------------------------------------------------
+Hostname                    : m1-gp-prd-smdw
+Adapter Model               : CN1000Q
+Chip Model                  : 8020
+Chip Version                : B0
+Adapter Alias               : None
+Serial Number               : 3U7229505R
+MAC Address Function 1      : 2c:27:d7:53:b1:e4
+MAC Address Function 0      : 2c:27:d7:53:b1:e0
+Driver Version              : 5.3.62
+Running Firmware Version    : 4.18.4
+Flash Package Version       : 2.70.35
+PXE Boot Version            : 2.0.3.39
+--------------------------------------------------------------------------------
+
+        Hit <Enter> to continue:
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    CNA Adapter Information
+
+     1: CNA Model: CN1000Q  SN: 3U7229505R
+          Port   2 [Protocol(s): NIC]
+          Port   1 [Protocol(s): NIC]
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 0
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Converged Network Adapter Information
+
+    1:  CNA Adapter Information
+    2:  CNA Port Information
+    3:  CNA VPD Information
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 0
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Main Menu
+
+    1:  Adapter Information
+    2:  Adapter Configuration
+    3:  Adapter Updates
+    4:  Adapter Diagnostics
+    5:  Adapter Statistics
+    6:  Refresh
+    7:  Help
+    8:  Exit
+
+
+        Please Enter Selection: 7
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Menu
+
+    1:  Contents
+    2:  Exit Codes
+    3:  About
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Contents Selection
+
+    1:  NIC
+    2:  FC/FCoE
+    3:  iSCSI
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+
+QConvergeConsole
+Version 1.0.3 (Build 1)
+Copyright (C) 2012 QLogic Corporation
+Build Type:  Release
+Build Date:  Aug  8 2012 15:03:37
+
+
+Usage: qaucli [options]
+
+
+The following is a simplified help.
+
+Interactive mode syntax:
+
+     -nic
+
+Non-interactive mode syntax:
+
+     qaucli -pr nic -switch  [options]
+       or
+     qaucli -nic -switch [options]
+       or
+     netscli -switch  [options]
+
+  where switch is one of the following command line switches:
+
+    -allowedvalues  [cna_port_inst] <config_name|config_alias> // Display allowed values for a Port Configuration parameter
+
+                                                 NOTE: Use -c to list the parameter supported for the selected port.
+
+     -beacon    [cna_port_inst] <on|off> // Enable/Disable Port Beacon
+
+        Hit <Enter> to continue:
+
+     -c         [cna_port_inst] // Display CNA Port Configuration
+
+     -cardreset [cna_port_inst] // Card Reset - Activate flash update change
+
+     -ch        [cna_port_inst] // Display CNA Configuration
+
+     -d         <flash_file> [xml_output_file]   // Generate XML discovery output
+                                                 // stdout as default if xml_output_file not specified
+
+     -ei                        // Get information about errors and exit codes for non-interactive mode.
+
+     -g         [cna_port_inst] // Display General System Information
+
+     -h                         // Help
+
+     -?                         // Help
+
+     ?                          // Help
+
+     -i         [cna_port_inst] // List All QLogic CNA Ports detected
+
+     -icna      [cna_port_inst] // CNA Information
+
+     -idcbx     [cna_port_inst] // Display Port DCBX Information
+
+        Hit <Enter> to continue:
+
+     -iset      [cna_port_inst] // Display Configured Port Settings
+
+     -link      [cna_port_inst] // Display Physical Link Status
+
+     -minidump  <cna_port_inst>  <minidump_file>  [force|noforce] // FW Mini Dump
+                                                                  // noforce (normal) as default
+                                                                  // force - may not be available in all releases
+
+     -n         [cna_port_inst] // Set CNA Port Configuration
+                         <config_name|config_alias> <value> [<config_name|config_alias> <value>]
+
+                        NOTE: Currently the following properties can be set:
+                               Port_Alias
+                               Port_Physical_MAC_Alias
+                               Port_LAA_MAC_Alias
+
+                        NOTE: The remaining variables that can be modified follow.
+                        NOTE: Some variables are not modifiable on certain OSs or configuration states.
+                        NOTE: To determine which ones can be changed, use -c option.
+
+                              Checksum_Offload_Enable           (on, off)
+                              IPv4_Checksum_Offload_Enable      (off, Rx, Tx, RxTx)
+                              IPv4_TCP_Checksum_Offload_Enable  (off, Rx, Tx, RxTx)
+                              IPv6_TCP_Checksum_Offload_Enable  (off, Rx, Tx, RxTx)
+
+        Hit <Enter> to continue:
+                              IPv4_UDP_Checksum_Offload_Enable  (off, Rx, Tx, RxTx)
+                              IPv6_UDP_Checksum_Offload_Enable  (off, Rx, Tx, RxTx)
+                              Large_Send_Offload_Enable         (on, off)
+                              IPv4_Large_Send_Offload_v1_Enable (on, off)
+                              IPv4_Large_Send_Offload_v2_Enable (on, off)
+                              IPv6_Large_Send_Offload_v2_Enable (on, off)
+                              Receive_Side_Scaling_Enable       (on, off)
+                              Header_Data_Split_Enable          (on, off)
+                                                          Jumbo_Frames_MTU_Value            (514 .. 9614)  // Values ranges may depend on the OS type. This version doesn't include dynamic range display.
+                                                  Jumbo_Frames_MTU_Enable           (on, off)
+                              Jumbo_Frames_MTU_Enable_Rx        (on, off)
+                              Jumbo_Frames_MTU_Enable_Tx        (on, off)
+                              LOCAL_Administered_Address_MAC    (xx:xx:xx:xx:xx:xx)
+                              Port_Wake_On_LAN_Option           (0 = Disabled, 1 = Wake on Magic Frame)
+                              VLAN_ID                           (1..4095)
+                              Chimney_Mode                      (CPU, Throughput)
+                              Large_Receive_Offload             (on, off)
+                              Priority_Tagging                  (off, Rx, Tx, RxTx)
+                              Vlan_Tagging                      (on, off)
+                              Receive_Side_Scaling_Ring         (1 .. 4)
+                              Health_Monitoring                 (on, off)
+                              Max_Jumbo_Buffers                 (1024, 2048, 4096, 8192
+                              Max_Offload_Connections           {0 .. 1024}
+                              Receive_Buffer_Size               Win: (1024, 2048, 4096, 8192, 16384, 32768) Linux:(1024, 2048, 4096, 8192)
+                              Transmit_Buffer_Size              Win: (1024, 2048) Linux: (256, 512, 1024, 2048)
+
+        Hit <Enter> to continue:
+                              Port_Optimize                     (1=Default, 2=IP Forward)
+                              TCP_Connection_Offload_IPv4       (on, off)
+                              Completion_Queue_Size             (1024, 2048, 4096, 8192, 16384, 32768)
+                              Interrupt_Moderation              ((on, off))
+                              Flow_Control                      (off, Rx, Tx, RxTx)
+                              Port_PXE_Enable                   (on, off)
+
+
+     -nh        [cna_port_inst] // Set CNA Configuration
+                         <config_name|config_alias> <value> [<config_name|config_alias> <value>]
+
+                        NOTE: Currently the following properties can be set:
+                               CNA_Alias
+
+     -pinfo     [cna_port_inst] // Port Information
+
+     -ping      <cna_port_inst>  <hostname_or_IPv4> [<count> <pocket_size> <timeout_ms> <TTL>]  // Ping (IPv4)
+
+                         NOTE: default values count=5; pocket_size=525; timeout_ms=1000; TTL=30
+
+     -rc                        // Display Exit Error Codes With Description
+
+     -rd        [cna_port_inst] // Restore Port Configuration Default Values
+
+     -sreset    [cna_port_inst] // Reset Ethernet Statistics Counters
+
+        Hit <Enter> to continue:
+
+     -statport  [cna_port_inst] // Display Ethernet Port Statistics
+
+     -sunreset  [cna_port_inst] // Undo Reset Ethernet Statistics Counters
+
+     -trans     [cna_port_inst] // Display Transceiver DMI Data
+
+     -updimages [cna_port_inst] [reset|noreset] image_file // Update Flash (Boot & Firmware images)
+                                                           // reset as default
+
+         -updimages_viewver image_file // View Version of Flash (Boot & Firmware images)
+
+     -v                         // Display Program Version Information
+
+     -ver                       // Display Program Version Information
+
+     -vpd       [cna_port_inst] // Display VPD Information
+
+     -z         [cna_port_inst] // Combined Display
+
+
+
+     VLANs and Teaming
+     =================
+
+
+        Hit <Enter> to continue:
+     -vlanlist                        // Display VLANs List
+
+     -vlaninfo [vlan_inst|ALL]        // Display VLAN Information
+
+     -vlanadd_preview                 // Preview Before Adding VLAN to Port or Team, indicates
+                                                 list indices to use in the -vlanadd command
+
+     -vlanadd   <list_insts>  <vlan_id> // Add VLAN to Port or Team
+                            NOTE: list_insts  ports indices comma separated, e.g.: 1,2
+                                  vlan_id : comma separated numeric value 1...4095, e.g: 100,555
+                            NOTE: Use -vlanadd_preview to preview list indices
+
+     -vlandel_preview                  // Preview Before Removing VLAN from Port or Team, indicates
+                                                  list indices to use in the -vlandel command
+
+     -vlandel   <list_insts|ALL>  <vlan_id|ALL>  // Remove VLAN from Port or Team
+                            NOTE: list_insts  ports indices comma separated, e.g.: 1,2
+                                  vlan_id : comma separated numeric value 1...4095, e.g.: 100,555
+                            NOTE: Use -vlandel_preview to preview list indices
+
+     -teamlist                        // Display Teams List
+
+     -teaminfo <team_inst|ALL>        // Display Team Information
+
+     -teamnew_portspreview            // Preview Available Ports Before Configuring New Team
+
+        Hit <Enter> to continue:
+
+     -teamnew   <team_type>  <port_insts|ALL> [user_assigned_name]  // Configure New Team
+                            NOTE: port_insts  ports indices comma separated, e.g.: 1,2
+                            NOTE: team_type : 1=Fail Over; 2=Load Balanced
+                                              3=802.3ad Static Team; 4=802.3ad Dynamic Team - Active  LACP
+                                              5=802.3ad Dynamic Team - Passive LACP
+                            NOTE: team types: 3,4 and 5 require non-CNA ports
+
+     -teamdel  <team_inst|ALL>        // Delete Team
+
+     -team_allowCNAsIn8023adTeam  <on|off>     //  Allow 802.3 Teams with CNAs
+
+     -vtcfgview [state_cfg_file]        // View Content of VLAN & Teaming State Configuration
+                     NOTE: if state_cfg_file not specified, the default file: "vtstate.cfg" in installation dir
+
+     -vtsave [state_cfg_file]            // Save VLAN & Teaming State Configuration
+                     NOTE: output defaults to file "vtstate.cfg" in installation dir
+
+     -vtrestore [state_cfg_file]         // Restore VLAN & Teaming State Configuration
+                     NOTE: output defaults to file "vtstate.cfg" in installation dir
+
+     -zvt                                // Combined Display Of VLANs & Teaming Information
+
+
+     Diagnosics
+
+        Hit <Enter> to continue:
+     ===========
+
+     -testflash        [cna_port_inst] // Perform Flash Test
+
+     -testhw           [cna_port_inst] // Perform Hardware Test
+
+     -testinterrupt    [cna_port_inst] // Perform Interrupt Test
+
+     -testled          [cna_port_inst] // Perform LED Test
+
+     -testlink         [cna_port_inst] // Perform Link Test
+
+     -testregister     [cna_port_inst] // Perform Register Test
+
+     -trans            [cna_port_inst] // Display Transceiver DMI Data
+
+     -intloopback <cna_port_inst> <tests_num> <on_error>// Internal Loopback Test
+
+                          NOTE: tests_num: number of tests (1-65535)
+                                 on_error: 0=Ignore; 1=Abort
+
+     -extloopback <cna_port_inst> <tests_num> <on_error>// External Loopback Test
+                                                                    NOTE: tests_num: number of tests (1-65535)
+                                                                                        on_error: 0=Ignore; 1=Abort
+            NOTE: To determine cna_port_inst run the following command: qaucli -nic -i
+
+        Hit <Enter> to continue:
+
+
+   Flash Support Tool
+   ==================
+
+     -flashsupport/qlflash options:
+
+     -flashsupport -d <flash_file>  [out_xml_file] [-p3]                    // Discovery with xml report
+     -flashsupport -u <flash_file>  <input_xml_file>  [out_xml_file] [-p3]  // Flash update and xml report
+     -flashsupport -asn --activate  <serial_number>                         // Activate adapter with serial number
+     -flashsupport -v --version                                             // display version
+     -flashsupport -h --help                                                // display help
+
+
+     -flashsupport -i --interface <interface_id>  // set interface prior to the following switches
+                                     // where interface_id is an 'Interface ID' value displayed by -vi switch
+     -flashsupport -a --all  [ql_romimage]    // Burn/update (all flash regions)
+                                    // if file is not specified, the default file with name: ql_romimage
+                                    // from working dir will be used
+     -flashsupport -info --information           // display info for specified interface
+                                    // (or all discovered adapters when interface not specified for -info)
+     -flashsupport -w0 --wol-off                 // set Wake on LAN off
+     -flashsupport -w1 --wol-on                  // set Wake on LAN on
+     -flashsupport -p0 --pxe-off                 // set PXE LAN off
+     -flashsupport -p1 --pxe-on                  // set PXE LAN on
+
+        Hit <Enter> to continue:
+
+     extras:
+     -flashsupport -vi --view-all-interfaces       // view all available interfaces
+     -flashsupport -s --supported <flash_file>     // display supported adapters
+
+     NOTE: -p3 is optional for xml compatibility for P3 cards
+            and must be last, following out_xml_file
+
+        Hit <Enter> to continue:
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Contents Selection
+
+    1:  NIC
+    2:  FC/FCoE
+    3:  iSCSI
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection:
+Invalid selection!
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Contents Selection
+
+    1:  NIC
+    2:  FC/FCoE
+    3:  iSCSI
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 2
+
+QConvergeConsole
+Version 1.0.3 (Build 1)
+Copyright (C) 2012 QLogic Corporation
+Build Type:  Release
+Build Date:  Aug  8 2012 15:03:37
+
+
+Usage: qaucli [options]
+
+
+Legends:
+
+   <hba instance>    - The HBA instance number of an HBA port.
+   <hba wwpn>        - The World Wide Port Name of an HBA port.
+                       (xx-xx-xx-xx-xx-xx-xx-xx or xxxxxxxxxxxxxx).
+   <all>             - All available adapters
+   <target wwnn>     - The World Wide Node Name of a target device.
+                       (xx-xx-xx-xx-xx-xx-xx-xx or xxxxxxxxxxxxxx).
+   <target wwpn>     - The World Wide Port Name of a target device.
+                       (xx-xx-xx-xx-xx-xx-xx-xx or xxxxxxxxxxxxxx).
+   <target portid>   - The Port ID of a target  device.
+                       (xx-xx-xx or xxxxxx).
+   <target id>       - The ID of a target device.
+   <lun id>          - The Logical Unit Number of a LUN.
+   <lunname>         - The udev persistent device name to be assigned to
+                       a designated LUN (Linux only).
+
+Options:
+
+   [int]             - Interactive mode (Menu driven).
+
+
+        Hit <Enter> to continue:
+   -i [<all>] [vpd]  - Views the general or vpd information of all HBAs.
+   -i <hba instance>|<hba wwpn> [vpd]
+                     - Displays general/VPD information of an HBA port.
+
+
+   -c  [<all>]       - Displays current HBA Parameter settings of all HBAs.
+   -c <hba instance>|<hba wwpn>
+                     - Displays current HBA Parameters settings of an HBA
+                       port.
+
+   -n <hba instance>|<hba wwpn> {<param name>|<param alias> <param value>}
+                     - Modifies current HBA parameter settings of an HBA
+                       port.
+   -n <hba instance>|<hba wwpn>|<all> default
+                     - Restores factory default HBA parameter settings of
+                       an HBA port
+                       Note: This option is not supported with 2Gb HBAs.
+   -n <hba instance>|<hba wwpn>|<all> <OEM name>
+                     - Updates current HBA parameter settings of an HBA port
+                       using a pre-defined OEM default templates.
+      Options:
+         <param name>     See supported parameter name (Table 1).
+         <param alias>    See supported parameter alias (Table 1).
+         <param value>    See supported parameter value (Table 1).
+
+
+        Hit <Enter> to continue:
+   -t [<all>]        - Displays information of devices (Disks or
+                                   or Tapes) attached to all HBAs.
+   -t <hba instance>|<hba wwpn>
+                     - Displays information of devices (Disks or Tapes)
+                       attached to an HBA port.
+   -t <hba instance>|<hba wwpn> <target wwpn>|<target portid>
+                     - Displays information of devices (Disks or Tapes)
+                       attached to an HBA port.
+
+   -l <hba instance>|<hba wwpn>
+                     - Displays LUNs information of devices attached to an
+                       HBA port.
+   -l <hba instance>|<hba wwpn> <target wwpn>|<target portid>
+                     - Displays LUNs information of devices attached
+                       to an HBA port.
+   -l <hba instance>|<hba wwpn> <target wwpn>|<target portid> <lun id>
+                     - Displays specific LUN information of a device
+                       attached to an HBA port.
+
+   -q <hba instance>|<hba wwpn>|<all> [-t|-targets]
+                     - Displays current iiDMA settings of all attached
+                       targets on an HBA port or all HBAs.
+   -q <hba instance>|<hba wwpn> <target wwpn>
+                     - Displays current iiDMA settings of the specified
+                       target on an HBA port.
+
+        Hit <Enter> to continue:
+   -q <hba instance>|<hba wwpn>|<all> ) -t|-targets <iidma speed>
+                     - Modifies iiDMA settings of all attached targets
+                       on an HBA port or all HBAs.
+   -q <hba instance>|<hba wwpn> {<target wwpn> <iidma speed>}
+                     - Modifies iiDMA settings of a specific targets
+                       attached on an HBA port.
+      Notes:
+         This feature is not supported with devices attached to a 2Gb HBA
+         or fibrelite HBA
+
+   -p <hba instance>|<hba wwpn>|<all> view|info
+                     - Displays current persistent binding configuration of
+                       all devices attached on an HBA port or all HBAs.
+
+   -p <hba instance>|<hba wwpn> {<target wwnn> <target wwpn> <target portid>
+      <target id> }
+                     - Binds the specified device(s) to an HBA port.
+
+   -p <hba instance>|<hba wwpn>|<all> bind all
+                     - Binds all attached device(s) to an HBA port or
+                       all HBAs.
+
+   -p <hba instance>|<hba wwpn>|<all> remove all|unbind all
+                     - Unbinds all attached device(s) to an HBA port or
+                       all HBAs.
+
+        Hit <Enter> to continue:
+
+   -p <hba instance>|<hba wwpn> remove|unbind <target wwnn>
+                     - Unbinds the specified device of an HBA port.
+
+   -m <hba instance>|<hba wwpn> view|info
+                     - Displays selective LUN information of all devices
+                       attached to an HBA port.
+
+   -m <hba instance>|<hba wwpn> <target wwnn> <target wwpn> <lun id>
+                     view|info
+                     - Displays selective LUN information of the specified
+                       device attached to an HBA port.
+
+   -m <hba instance>|<hba wwpn> {<target wwnn> <target wwpn> <lun id>
+      0|1|enable|disable|select|unselect}
+                     - Enables or disables selective LUN settings on the
+                       specified LUN id of specified devices attached to an
+                       HBA port.
+
+   -m <hba instance>|<hba wwpn> select|enable <target wwnn> <target wwpn>
+                     - Enables selective LUN settings of all available LUNs
+                       of the specified devices currently attached to an
+                       HBA port.
+
+   -m <hba instance>|<hba wwpn> unselect|disable <target wwnn> <target wwpn>
+
+        Hit <Enter> to continue:
+                     - Disables selective LUN settings of all available LUNs
+                       of the specified devices currently attached to an HBA
+                       port.
+
+   -m <hba instance>|<hba wwpn> select all
+                     - Enables selective LUN settings to all targets/LUNs
+                       attached to an HBA port.
+
+   -m <hba instance>|<hba wwpn> unselect all
+                     - Disables selective LUN settings to all targets/LUNs
+                       attached to an HBA port.
+
+        Notes:
+                To configure selective LUNs on a device, the device must be
+                persistently bound.
+
+   -e <hba instance>|<hba wwpn>|<all> view|info
+                     - Displays current settings of boot device(s) on an HBA
+                       port or all HBAs.
+
+   -e <hba instance>|<hba wwpn> <target wwnn> <target wwpn> <lun id>
+      [prim|alt1|alt2|alt3]
+                     - Configures the Operating System to boot from a device.
+                       * prim: Primary Boot Port Name
+                       * alt1: Alternate 1 Boot Port Name
+
+        Hit <Enter> to continue:
+                       * alt2: Alternate 2 Boot Port Name
+                       * alt3: Alternate 3 Boot Port Name
+
+   -e <hba instance>|<hba wwpn> enable|0 0 0
+                     - Selectable Boot: Configure the Operating System to
+                       boot from the first target the BIOS finds.
+
+   -e <hba instance>|<hba wwpn> disable [prim|alt1|alt2|alt3]
+                     - Clears the selected current boot device settings on
+                       an HBA Port (prim/alt1/alt2 or alt3 Boot Port Name)
+
+   -fg <hba instance>|<hba wwpn> view|info
+                     - Displays current driver settings.
+
+   -fs <hba instance>|<hba wwpn> {<param name>|<param alias> <param value>}
+                     - Modifies driver settings
+      Options:
+         <param name>    See column 1 - Table 3.
+         <param alias>   See column 2 - Table 3.
+         <param value>   See column 3 - Table 3.
+
+   -b <hba instance>|<hba wwpn>|<all>  [-rg <all>] <image file>
+                     - Updates boot code/firmware of an HBA or multiple
+                       HBAs with a flash image file.
+      -rg            - Specifies a boot region update type.
+
+        Hit <Enter> to continue:
+         <all>       - Update all regions (BIOS/EFI/FCode/Firmware).
+        <image file> - Boot code/multi-boot image file name.
+
+   -b <hba instance>|<hba wwpn>|<all> -op <update mode> [<-src> <template file>]
+                     - Updates boot code/firmware across multiple HBAs
+                       using a flash update configuration file.
+      -op            - Specifies flash update mode type when using
+                       template configuration file.
+      <updatemode>
+            0        - Force to update boot code/firmware across multiple
+                       HBAs (Override mode).
+            1        - Force to update boot code/firmware across multiple
+                       HBAs that are currently at or below a known revision.
+                       HBAs that are currently up revision will be ignored.
+            2          - Force to downgrade boot code/firmware across multiple
+                       HBAs that are currently up revision.
+                       Force to update boot code/firmware across multiple
+                       HBAs are currently down revision.
+                       HBAs that are currently at revision will be ignored.
+       -src          - Specifies a different template file than the default
+                          file.
+       <template file>
+                     - User-defined template file name.
+                     - See the sample template file included for a complete
+                       syntax/format of the file.
+
+        Hit <Enter> to continue:
+                       If the <-src> option is omitted, the application will
+                       try to use the default flash template file. User must
+                       modify/update the default flash template file for
+                       boot code/firmware version and image file path prior
+                       to use this for the first time.
+
+   -b <hba instance>|<hba wwpn> save <file name>
+                     - Saves current HBA boot code/firmware to a file.
+
+        Note:
+            Flash update is not supported with 2Gb SUN OEM HBAs.
+            If multiple HBAs are specified, only HBAs that are compatible with the
+            flash image will get updated. Other HBAs will be ignored by default.
+            The default flash template file name is 'flashcfg.properties' and it
+            can be found in the installation directory.
+
+   -r <hba instance>|<hba wwpn>|<all> <file name>
+                     - Updates HBA parameters of an HBA port or all HBAs
+                       from a file.
+   -r <hba instance>|<hba wwpn> save <file name>
+                     - Saves current HBA parameters of an HBA port to a file.
+
+   -a <hba instance>|<hba wwpn> view|info
+                     - Displays the current LED state on an HBA port.
+
+
+        Hit <Enter> to continue:
+   -a <hba instance>|<hba wwpn>
+                     - Flashes the HBA port LED to locate it in the host.
+        Note: This feature is not supported on QLA22xx series HBAs
+
+   -tb <hba instance>|<hba wwpn> {<target wwpn>} <beacon mode>
+                     - Locates a single device or multiple devices in a JBOD.
+        Note: This feature is only supported devices in a JBOD.
+
+   -kl <hba instance>|<hba wwpn> {[<param name>|<param alias> <param value>]}
+                     - Runs diagnostics loopback test on an HBA port.
+
+   -kr <hba instance>|<hba wwpn> {[-ex -exclude <target wwpn>]}
+       {[<param name>|<param alias> <param value>]}
+                     - Runs diagnostics read/write buffer test to all
+                          target device(s) attached to an HBA port.
+
+   -gs <hba instance>|<hba wwpn> {<param name>|<param alias> <param value>}
+                     - Displays adapter statistics of an HBA port.
+
+   -ls <hba instance>|<hba wwpn> {<param name>|<param alias> <param value>}
+                     - Displays adapter link status of an HBA port.
+
+   -vp <hba instance>|<hba wwpn> list all
+                     - Lists all virtual ports on a physical HBA port.
+
+
+        Hit <Enter> to continue:
+   -vp <hba instance>|<hba wwpn> list <vport wwpn>
+                     - Lists a specific virtual port on a physical HBA
+                       port.
+
+   -vp <hba instance>|<hba wwpn> create auto
+                     - Creates a virtual port with default wwpn (auto
+                       generated).
+
+   -vp <hba instance>|<hba wwpn> create <vport hex>.
+                     - Creates a virtual port using a predefined wwpn.
+
+   -vp <hba instance>|<hba wwpn> delete all
+                     - Deletes all virtual port(s) on a physical HBA port.
+
+   -vp <hba instance>|<hba wwpn> delete <vport wwpn>
+                     - Deletes a virtual port on a physical HBA port.
+
+   -qos <hba instance>|<hba wwpn> info --vp <all> [--per|--spd]
+                     - Displays current QoS settings of all virtual ports
+                       on a physical HBA port.
+
+   -qos <hba instance>|<hba wwpn> info --vp <vport wwpn> [--per|--spd]
+                     - Displays current QoS settings of a specific virtual
+                       port on a physical HBA port.
+
+
+        Hit <Enter> to continue:
+   -qos <hba instance>|<hba wwpn> {--vp <vport wwpn>
+         --pri <priority>|--bwspd <speed> [Gbps|Mbps]|--bwper <percent>|
+         --lock <lock op>|--enable <enable op>}
+                     - Changes QoS settings of a specified or specified
+                       virtual port(s).
+        Notes:
+           This feature is supported only with 8Gb/16Gb HBAs/CNAs and Windows
+           Server 2008/Windows Server 2008 R2/Windows Server 2012.
+
+   -ei               - Lists all application return codes.
+
+   -dm <hba instance>|<hba wwpn>|<all> general|gen|details|det
+                     - Runs transceiver (SFF/SFP) diagnostics on an HBA port
+                       in general or detail mode.
+        Notes:
+           This feature is not supported with 2Gb HBAs.
+           This feature is not available with inbox driver (SLES 10/11 or
+           RHEL 5.x
+
+   -tp | -topology
+                     -  Displays SAN topology of current host.
+
+   -ha <hba instance>|<hba wwpn> <alias>
+                     -  Adds an alias to an HBA.
+
+
+        Hit <Enter> to continue:
+   -ha <hba instance>|<hba wwpn> delete
+                     -  Deletes current alias of an HBA.
+
+   -ha <hba instance>|<hba wwpn> view|info
+                     -  Displays current alias of an HBA.
+
+   -pa <hba instance>|<hba wwpn> <alias>
+                     -  Adds an alias to an HBA port.
+
+   -pa <hba instance>|<hba wwpn> delete
+                     -  Deletes current alias of an HBA port.
+
+   -pa <hba instance>|<hba wwpn> view|info
+                     -  Displays current alias of an HBA port.
+
+   -sp <hba instance>|<hba wwpn> <firmware serdes table file>
+                     - Update adapter firmware serdes table from a file
+
+   -sp <hba instance>|<hba wwpn> save <firmware serdes table file>
+                     - Save current adapter firmware serdes table to a file.
+
+      Notes:
+         This feature is supported only with 8Gb/16Gb Mezzanine/Blades adapters.
+
+   -z <hba instance>|<hba wwpn>|<all>
+
+        Hit <Enter> to continue:
+                     - Provides a summary report of an HBA or all HBAs in
+                       the current host.
+
+   -q <hba instance>|<hba wwpn>|<all> [-t|-targets|]
+                     - Displays current iiDMA settings of devices attached on an
+                       HBA port or all HBAs.
+
+   -q <hba no>|<hba wwpn> <target wwpn>
+                     - Displays current iiDMA settings of a specific device attached
+                       on an HBA.
+
+
+   -q <hba instance>|<hba wwpn>|<all> -t|-targets <iidma speed>
+                     -  Modifies current iiDMA settings of all devices attached on
+                        an HBA port or all HBAs.
+
+
+   -q <hba instance>|<hba wwpn> {<target wwpn> <iidma speed>}
+                     - Modifies current iiDMA settings of the specified devices(s)
+                       attached on an HBA port.
+       Options:
+
+       -targets|-t   - Applies to all targets.
+       <iidma speed> - 1,2,4,8,10 or 16 (Gbps)
+
+
+        Hit <Enter> to continue:
+   -pc <hba instance>|<hba wwpn>|<all> --info
+                     - Display adapter personality type.
+
+   -pc <hba instance>|<hba wwpn>|<all> --type <mode>
+                     - Change the adapter current personality type.
+      Options:
+      <mode>           Personality type
+         fco | 0       Change the adapter personality to FC only.
+         cna | 1       Change the adapter personality to CNA.
+      Notes:
+         This feature is available only with HBA that is capable to support dual mode FC
+         or CNA (83xx series adapters).
+
+   -pl <hba instance>|<hba wwpn> --info [<targetid> <lunid>]
+                     -  Displays udev persistent device names of a specific LUN or
+                        all LUNs.
+
+   -pl <hba instance>|<hba wwpn> --del {<targetid> <lunid> <lunname>}
+                     - Removes current udev persistent device names of a specific
+                       LUN.
+
+   -pl <hba instance>|<hba wwpn> --set {<targetid> <lunid> <lunname>}
+                     - Adds new udev persistent device names to a specific LUN.
+
+      Notes:
+
+        Hit <Enter> to continue:
+         The LUN name must consist of the alphabetic characters a-z or
+         A-Z, the numeric character 0-9, the underbar '_' and the special
+         character '@', '#', '%', '/'. It must also contains non-empty
+         and no more than 80 characters long.
+
+   -u <hba instance>|<hba wwpn> <file name>
+                     - Update current adapter firmware preload table with a
+                       DAT file.
+
+   -u <hba instance>|<hba wwpn>|<all> save <file name>
+                     - Save current adapter firmware preload table to a DAT
+                       file.
+       Notes:
+         This feature is supported only with 8Gb/16Gb Mezzanine/Blades adapters.
+
+
+   -cna <hba instance>|<hba wwpn> --geninfo
+                      - Display FCoE general information of a CNA.
+
+
+   -cna <hba instance>|<hba wwpn> --dcb --info
+                      - Displays DCBX - Data Center Bridging settings
+
+   -cna <hba instance>|<hba wwpn> --updatecfg <mpi file>
+                      - Update current adapter MPI config table of with
+
+        Hit <Enter> to continue:
+                        a DAT file.
+
+   -cna <hba instance>|<hba wwpn> --savecfg <mpi file>
+                      - Save current adapter MPI config table to a file.
+
+   -cna <hba instance>|<hba wwpn> --tlv --detail | --raw
+                      - Display the DCBX parameters of data sent and
+                        received over the CNA port connection.
+                        The output displays the Type-Length-Value (TLV) of the
+                        LLDP frames meant for exchanging the parameters and
+                        their values  (Local/Remote/Current).
+      Options:
+         --detail       Display in details format.
+         --raw          Display in raw format.
+
+   -cna <hba instance>|<hba wwpn> --mon --dce [ { <param name> | <param alias>
+        <param value> } ]
+                      - Display the current information of network activity (DCE
+                         statistics) sent and received over a specific CNA port
+                         connection.
+
+   -v                 - Displays current app/lib version.
+
+   -h | -?            - Lists all the command options and syntax.
+
+
+        Hit <Enter> to continue:
+   -o <file name>     - Writes the output to a named file.
+
+   -f <file name>     - Executes from a command input file.
+
+   -x                 - Writes the output in XML format 1.
+
+   -x2                - Writes the output in XML format 2.
+
+   -s                 - Suppresses the output.
+
+        Notes:
+           1. Options -x,-x2,-s,-o can be combined with other options. However,
+              they must be at the beginning or at the end of the command line.
+           2. Option -f cannot be combined with any other options.
+              Only one command line option per input file is valid.
+           3. The '-' character can be replaced as '/' character.
+              i.e.  qaucli -g  and qaucli /g are both considered as valid commands.
+           4. Option -h can be combined with a command line option to display
+              the usage of that individual command.
+           5. Option -x can be used to generate an old-style format that is
+              compatible with previous releases (XML format 1).
+           6. Option -x2 can be used to generate a new-style format that is
+              matched with standard text output (XML format 2).
+
+
+
+        Hit <Enter> to continue:
+   Tables:
+
+
+   ========================================================================
+   Parameter Name                Alias   Value        Description
+   ========================================================================
+   ConnectionOption              CO      0-3          See note 1,9 below
+   DataRate                      DR      0-4          See note 2,9 below
+   FrameSize                     FR      512,1024
+                                         2048
+   HardLoopID                    HD      0-125
+   ResetDelay                    RD      0-255
+   EnableBIOS                    EB      0,1          See note 4,5 below
+   EnableHardLoopID              HL      0,1          See note 4 below
+   EnableFCTape                  EF      0,1          See note 4 below
+   OperationMode                 OM      0,5,6        See note 3 below
+   InterruptDelayTimer           ID      0-255
+   ExecutionThrottle             ET      1-65535
+   EnableExtendedLogging         EL      0,1          See note 4,5 below
+   LoginReTryCount               LR      0-255
+   EnableLipReset                LP      0,1          See note 4 below
+   PortDownRetryCount            PD      0-255
+   EnableLIPFullLogin            FL      0,1          See note 4 below
+   LinkDownTimeOut               LT      0-240
+   EnableTargetReset             TR      0,1          See note 4 below
+
+        Hit <Enter> to continue:
+   MaximumLUNsPerTarget          ML      0,8,16,32
+                                         64,128,256
+   EnableReceiveOutOfOrderFrame  EO      0,1          See note 4,8 below
+   =========================================================================
+   Notes:
+   1.  Connection Options:  0 - Loop Only.
+                            1 - Point-to-Point Only.
+                            2 - Loop preferred, otherwise Point-to-Point.
+                            3 - Point-to-Point, otherwise Loop (QLA22xx only).
+   2.  Data Rate:           0 - 1Gbs, 1 - 2Gbs, 2 - Auto, 3 - 4Gbs, 4 - 8Gbs.
+   3.  Operation Modes:     0 - Interrupt for every I/O completion.
+                            5 - Interrupt when Interrupt Delay Timer expires.
+                            6 - Interrupt when Interrupt Delay Timer expires
+                                or no active I/O.
+   4.  Others               0 - Disable, 1 - Enable.
+   5.  Option is not available on 4Gb or latest HBA.
+   6.  Option is not available on PPC64 or SPARC.
+   7.  Option is not available on Solaris.
+   8.  Option is available on 4Gb or latest HBAs.
+   9.  Option is read only on 10GbE CNA
+   10. OEM name             EMC  - EMC Specific Settings.
+                            HP   - HP Specific Settings.
+                            IBM  - IBM Specific Settings.
+                            QLGC - QLogic Specific Settings.
+                            SUN  - SUN Specific Settings.
+
+        Hit <Enter> to continue:
+                            HPQ  - HPQ Specific Settings.
+   ==========================================================================
+
+                     Table 1: HBA Parameters Settings (NVRAM)
+
+
+   Diagnostics Settings:
+
+   -exclude | -ex:   - Ignores this device in read/write buffer test.
+   <param name>      - See column 1 - Table 2.
+   <param alias>     - See column 2 - Table 2.
+   <param value>     - See column 3 - Table 2.
+
+
+    ========================================================================
+    Parameter Name    Alias   Value                   Description
+    ========================================================================
+    DataPattern       DP      00-FF                   See note 1 below
+                              CRPAT                   See note 1 below
+                              CSPAT                   See note 1 below
+                              CJTPAT                  See note 1 below
+    DataSize          DS      8,16,32,64,128,256
+                              512,1024,2048           See note 2 below
+    TestCount         TC      0-65535 (Loopback)      See note 3 below
+                              0-10000 (R/W Buffer)    See note 3 below
+
+        Hit <Enter> to continue:
+    TestIncrement     TI      1-65535 (Loopback)      See note 4 below
+                      TI      1-10000 (R/W Buffer)    See note 4 below
+    OnError           OE      0                       Ignore
+                              1                       Stop
+                              2                       Loop on error
+                                                      See note 5 below
+    LoopbackType      LT      0                       0 - 10 bit internal
+                                                          loopback
+                              1                       1 - 1 bit serial
+                                                          loopback
+                              2                       2 - External loopback
+                                                      See note 6 below
+    ======================================================
+
+                     Table 2: HBA Diagnostics Configuration Settings
+
+   Notes:
+
+   1. DataPattern:     Test pattern in hex format.
+                       Hex    Binary
+                       ---    --------
+                       00     00000000
+                       55     01010101
+                       5A     01011010
+                       A5     10100101
+
+        Hit <Enter> to continue:
+                       AA     10101010
+                       FF     11111111
+                       User Defined Pattern (Hex) .
+                       Random Pattern.
+                       CRPAT  - Loopback test only.
+                       CSPAT  - Loopback test only.
+                       CJTPAT - Loopback test only.
+   2. DataSize:        Specifies the data (frame payload) size in bytes. Actual
+                       data that is transferred during any given pass of the
+                       test.
+                       For R/W buffer test, the max data size is 128 bytes
+   3. TestCount:       0: Test Continuously
+                       1- Max : Total number of tests that will be executed.
+   4. TestIncrement:   Must be less than the number of test count specified.
+   5. OnError:         Specifies the action if an error occurs during any
+                       given pass.
+   6. LoopbackType:    Be sure to select the appropriate HBA connector for
+                       testing.  For internal loopback, a loopback connector
+                       must be plugged in the HBA connector.
+                       This option is applied only for loopback test.
+   Test Result:
+      A) Loopback test result:
+         Test Status, CRC Error, Disparity Error, Frame Length Error.
+      B) Read/Write buffer test result:
+         Loop ID/Status, Data Miscompare, Link Failure, Loss of Sync,
+
+        Hit <Enter> to continue:
+         Loss of Signal, Invalid CRC.
+
+
+   ========================================================================
+   Parameter Name     Alias  Value           Description
+   ========================================================================
+   PersistentOnly     PO     0,1             Present persistently bound
+                                             target(s) only
+   PersistentPlusNew  PN     0,1             Present persistently bound
+                                             target(s) plus any new
+                                             target(s) with driver default
+   BindWWPN           BW     0,1             Bind devices by WWPNs.
+   BindPortID         BP     0,1             Bind devices by Port IDs.
+   ========================================================================
+
+                     Table 3: Driver Settings
+
+
+   ========================================================================
+   Parameter Name     Alias  Value           Description
+   ========================================================================
+   AutoPoll           AP     0               Turn on automatically update the
+                                             HBA port statistics.
+                             1-256           Turn on automatically update the
+                                             HBA port statistics at a
+
+        Hit <Enter> to continue:
+                                             specified interval.
+   SetRate            SR     5-30            Set the polling interval during
+                                             automatically update (seconds).
+   LogToFile          LF     Log File Name   Export the statistics to a file
+                                             (CSV format).
+   ========================================================================
+                     Table 4: HBA Port Statistics Options
+
+   ========================================================================
+   Parameter Name     Alias  Value           Description
+   ========================================================================
+   AutoPoll           AP     0               Update the link statistics
+                                             automatically.
+                             1-256           Update the link statistics
+                                             up to a specified interval.
+   SetRate            SR     5-30            Set the Statistics Sampling
+                                             Rate (seconds).
+   LogToFile          LF     Log File Name   Export the link statistics to a
+                                             file (CSV format).
+   ========================================================================
+                     Table 5: Statistics/Link Status Options
+
+   =======================================================================
+   Parameter Name Alias Value   Description
+   =======================================================================
+
+        Hit <Enter> to continue:
+   AutoPoll       AP    0       Set to auto polling mode
+                        1-256   Set to manual polling mode (iteration)
+   SetRate        SR    5-30    Set the polling interval rate (seconds)
+   Details        DT    0-2     Set the details display mode
+                                0 - Absolute
+                                1 - Rate Per Second
+                                2 - Baseline
+   =======================================================================
+                     Table 6: DCE Statistics Options
+
+
+
+
+        Hit <Enter> to continue:
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Contents Selection
+
+    1:  NIC
+    2:  FC/FCoE
+    3:  iSCSI
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection:
+Invalid selection!
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Contents Selection
+
+    1:  NIC
+    2:  FC/FCoE
+    3:  iSCSI
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection:
+Invalid selection!
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Contents Selection
+
+    1:  NIC
+    2:  FC/FCoE
+    3:  iSCSI
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 0
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Help Menu
+
+    1:  Contents
+    2:  Exit Codes
+    3:  About
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 0
+
+        QConvergeConsole
+
+        CLI - Version 1.0.3 (Build 1)
+
+    Main Menu
+
+    1:  Adapter Information
+    2:  Adapter Configuration
+    3:  Adapter Updates
+    4:  Adapter Diagnostics
+    5:  Adapter Statistics
+    6:  Refresh
+    7:  Help
+    8:  Exit
+
+
+        Please Enter Selection: 8
+[root@m1-gp-prd-smdw 20151210-1810]#
+
+
+................................................................................
+................................................................................
+
+
+

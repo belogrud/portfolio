@@ -1,0 +1,152 @@
+
+
+................................................................................
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   835204
+Название    №835204
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  19.04.2016 16:24
+Дата регистрации    19.04.2016 16:24
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день!
+
+Сервер ds-asterisk05 прошу отключить запись сообщений аудита в dmesg.
+Отдать запрос unix-admins.
+
+[5379771.967098] type=1110 audit(1460635381.658:766684): pid=32287 uid=0 auid=0 ses=105974 msg='op=PAM:setcred grantors=pam_env,pam_unix acct="root"
+
+
+С уважением,
+
+Андрей Овчинников
+Руководитель группы разработки
+
+................................................................................
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Овчинников Андрей Ю
+Соглашение  - Каталог сервисов
+Сервис  99. Другое
+Контактное лицо Овчинников Андрей Ю
+Контактный e-mail   a.y.ovchinnikov@tinkoff.ru
+Контактные телефоны 79295797122, 2520
+
+................................................................................
+................................................................................
+
+[root@ds-asterisk05 ~]# ls -Alh /var/log/audit/
+total 26M
+-rw------- 1 root root 1.6M Mar 10 19:30 audit.log
+-r-------- 1 root root 6.1M Mar 10 08:29 audit.log.1
+-r-------- 1 root root 6.1M Mar  8 14:16 audit.log.2
+-r-------- 1 root root 6.1M Mar  6 19:50 audit.log.3
+-r-------- 1 root root 6.1M Mar  5 01:21 audit.log.4
+[root@ds-asterisk05 ~]#
+
+[root@ds-asterisk05 ~]# service auditd restart
+Stopping logging:                                          [  OK  ]
+Redirecting start to /bin/systemctl start auditd.service
+[root@ds-asterisk05 ~]#
+
+[root@ds-asterisk05 ~]# ls -Alh /var/log/audit/
+total 26M
+-rw------- 1 root root 1.6M Apr 19 18:21 audit.log
+-r-------- 1 root root 6.1M Mar 10 08:29 audit.log.1
+-r-------- 1 root root 6.1M Mar  8 14:16 audit.log.2
+-r-------- 1 root root 6.1M Mar  6 19:50 audit.log.3
+-r-------- 1 root root 6.1M Mar  5 01:21 audit.log.4
+[root@ds-asterisk05 ~]#
+
+[root@ds-asterisk05 ~]# dmesg | tail -n 3
+[5823295.111461] type=1131 audit(1461078547.721:803435): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=auditd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[5823296.050326] type=1305 audit(1461078548.659:803436): audit_enabled=1 old=1 auid=4294967295 ses=4294967295 res=1
+[5823296.050347] type=1305 audit(1461078548.659:803437): audit_pid=6698 old=0 auid=4294967295 ses=4294967295 res=1
+[root@ds-asterisk05 ~]#
+
+................................................................................
+................................................................................
+
+
+Дата
+Комментарий Автор
+19.04.2016 18:35    Похоже возникли какие-то трудности в работе демона auditd.
+Его рестарт как будто бы исправил ситуацию.
+Замечу, что на сервере ОС Centos 7.2 и в настройки и работе она несколько отличается от 6-й версии.
+
+До рестарта дата модификации файла audit.log - 10 марта - то есть давно.
+[root@ds-asterisk05 ~]# ls -Alh /var/log/audit/
+total 26M
+-rw------- 1 root root 1.6M Mar 10 19:30 audit.log
+-r-------- 1 root root 6.1M Mar 10 08:29 audit.log.1
+-r-------- 1 root root 6.1M Mar 8 14:16 audit.log.2
+-r-------- 1 root root 6.1M Mar 6 19:50 audit.log.3
+-r-------- 1 root root 6.1M Mar 5 01:21 audit.log.4
+[root@ds-asterisk05 ~]#
+
+Рестарт сервиса.
+[root@ds-asterisk05 ~]# service auditd restart
+Stopping logging: [ OK ]
+Redirecting start to /bin/systemctl start auditd.service
+[root@ds-asterisk05 ~]#
+
+Дата модификации сменилась на текущую - стали писаться логи.
+
+[root@ds-asterisk05 ~]# ls -Alh /var/log/audit/
+total 26M
+-rw------- 1 root root 1.6M Apr 19 18:21 audit.log
+-r-------- 1 root root 6.1M Mar 10 08:29 audit.log.1
+-r-------- 1 root root 6.1M Mar 8 14:16 audit.log.2
+-r-------- 1 root root 6.1M Mar 6 19:50 audit.log.3
+-r-------- 1 root root 6.1M Mar 5 01:21 audit.log.4
+[root@ds-asterisk05 ~]#
+
+Записи в dmesg перестали обновляться - новых нет.
+
+[root@ds-asterisk05 ~]# dmesg | tail -n 3
+[5823295.111461] type=1131 audit(1461078547.721:803435): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=auditd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[5823296.050326] type=1305 audit(1461078548.659:803436): audit_enabled=1 old=1 auid=4294967295 ses=4294967295 res=1
+[5823296.050347] type=1305 audit(1461078548.659:803437): audit_pid=6698 old=0 auid=4294967295 ses=4294967295 res=1
+[root@ds-asterisk05 ~]#
+
+[support@centos00 ~]$ date -d@1461078548.659
+Tue Apr 19 18:09:08 MSK 2016
+[support@centos00 ~]$
+
+Здесь описано нечто похожее на текущую задачу.
+https://www.centos.org/forums/viewto...
+
+Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+20.04.2016 12:46    Сегодняшняя проверка показывает, что паразитных новых сообщений не появилось.
+За сим констатирую некоторую стабильность результатов проведённых работ по заявке.
+Заявку закрываю.
+
+[root@ds-asterisk05 ~]# dmesg | tail -n 7
+[5823296.050326] type=1305 audit(1461078548.659:803436): audit_enabled=1 old=1 auid=4294967295 ses=4294967295 res=1
+[5823296.050347] type=1305 audit(1461078548.659:803437): audit_pid=6698 old=0 auid=4294967295 ses=4294967295 res=1
+[5884177.857506] TCP: request_sock_TCP: Possible SYN flooding on port 8089. Sending cookies. Check SNMP counters.
+[5884483.287584] TCP: request_sock_TCP: Possible SYN flooding on port 8089. Sending cookies. Check SNMP counters.
+[5885422.005704] Peer 10.216.42.35:50481/5038 unexpectedly shrunk window 139114019:139114161 (repaired)
+[5885933.452561] TCP: request_sock_TCP: Possible SYN flooding on port 8089. Sending cookies. Check SNMP counters.
+[5886133.697572] TCP: request_sock_TCP: Possible SYN flooding on port 8089. Sending cookies. Check SNMP counters.
+[root@ds-asterisk05 ~]# Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+

@@ -1,0 +1,215 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   981086
+Название    №981086
+Приоритет   Низкий
+Класс обслуживания  24x7
+Дата и время обращения  25.08.2016 03:42
+Дата регистрации    25.08.2016 03:42
+Тип запроса Nagios запрос
+Категория
+Критичность 2 - Средняя
+Срочность   Высокая
+Описание запроса
+** PROBLEM Service Alert: m1-gp-prd-sdw16/HP System Health Application is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: HP System Health Application
+Host: m1-gp-prd-sdw16
+Address: 10.216.4.16
+State: CRITICAL
+
+Date/Time: Thu Aug 25 03:42:24 MSK 2016
+
+Additional Info:
+
+CRITICAL - physical drive 0:1 is degraded, da controller 0 in slot 0 needs attention, System: proliant dl380p gen8, S/N: CZ23290BNN, ROM: P70 08/02/2014
+
+................................................................................
+
+[root@m1-gp-prd-sdw16 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.6 (Santiago)
+[root@m1-gp-prd-sdw16 ~]#
+
+
+[root@m1-gp-prd-sdw16 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BNN
+        UUID: 32333536-3030-5A43-3233-323930424E4E
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-prd-sdw16 ~]#
+
+
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller slot=0 show config
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 00143802641BB90)
+
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (2.2 TB, RAID 1+0, Interim Recovery Mode)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, Failed)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 500143802641BB9F)
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller slot=0 physicaldrive 1I:2:2 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:2:2
+         Port: 1I
+         Box: 2
+         Bay: 2
+         Status: Failed
+         Last Failure Reason: Mark bad failed
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD8
+         Serial Number: 6XR1R1Q80000B226B5AS
+         Model: HP      EG0600FBLSH
+         Maximum Temperature (C): 45
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Drive Authentication Status: Not Applicable
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-prd-sdw16 ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller slot=0 physicaldrive 1I:2:2 modify led=on duration=3600
+[root@m1-gp-prd-sdw16 ~]# hpuid -e
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller slot=0 physicaldrive 1I:2:2 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:2:2
+         Port: 1I
+         Box: 2
+         Bay: 2
+         Status: Rebuilding
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10500
+         Firmware Revision: HPD9
+         Serial Number: S0M6YVTV0000K628HARS
+         Model: HP      EG0600FCVBK
+         Current Temperature (C): 26
+         Maximum Temperature (C): 25
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Drive Authentication Status: OK
+         Carrier Application Version: 11
+         Carrier Bootloader Version: 6
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-prd-sdw16 ~]#
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller slot=0 show config
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 00143802641BB90)
+
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (2.2 TB, RAID 1+0, Recovering, 27% complete)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, Rebuilding)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 500143802641BB9F)
+
+[root@m1-gp-prd-sdw16 ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller slot=0 show config
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 00143802641BB90)
+
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (2.2 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 500143802641BB9F)
+
+You have new mail in /var/spool/mail/root
+[root@m1-gp-prd-sdw16 ~]#
+
+
+
+

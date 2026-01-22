@@ -1,0 +1,179 @@
+
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# cat groups/contact-group/network-admins-web-access.cfg
+define contactgroup{
+        contactgroup_name       network-admins-web-access
+        alias                   Network Administrators with full web access
+        members                 a.derzhaev,   \
+                                a.nikonenko,  \
+                                s.bukovnya,   \
+                                s.perepelkin, \
+                                v.sakalkin
+}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name where contact_groups__contains="network-admins-web-access" --quiet | head
+null
+dc-c1
+dc-c2
+dc-fw1
+null
+ds-con01
+ds-elb-vl505-self
+ds-fw01
+ds-gate-fa0-0
+ds-gp1
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name filename where contact_groups__contains="network-admins-web-access" --quiet | head
+null                 /usr/local/nagios/etc/objects/templates/hosts-templates.cfg
+dc-c1                /usr/local/nagios/etc/objects/switchs/cisco/dc-c1.cfg
+dc-c2                /usr/local/nagios/etc/objects/switchs/cisco/dc-c2.cfg
+dc-fw1               /usr/local/nagios/etc/objects/switchs/cisco/dc-fw1.cfg
+null                 /usr/local/nagios/etc/objects/templates/hosts-templates.cfg
+ds-con01             /usr/local/nagios/etc/objects/servers/dc-ds/networks/cisco/ds-con01.cfg
+ds-elb-vl505-self    /usr/local/nagios/etc/objects/servers/dc-ds/networks/juniper/balancer/ds-elb-vl505-self.cfg
+ds-fw01              /usr/local/nagios/etc/objects/servers/unknown_dc/ds-fw01.cfg
+ds-gate-fa0-0        /usr/local/nagios/etc/objects/servers/dc-ds/networks/cisco/ds-gate.cfg
+ds-gp1               /usr/local/nagios/etc/objects/switchs/dell/ds-gp1.cfg
+close failed in file object destructor:
+Error in sys.excepthook:
+
+Original exception was:
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# vim +view templates/hosts-templates.cfg
+...
+define host{
+    name                            cisco
+    use                             generic-host
+    notification_options            d,r
+    contact_groups                  network-admins, network-admins-web-access, servicedesk-duty-critical-group
+    hostgroups                      cisco
+    icon_image                      cisco.png
+    statusmap_image                 cisco.gd2
+    register                        0
+}
+...
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=kja-r1 --quiet                                                                                    /usr/local/nagios/etc/objects/switchs/cisco/kja-r1.cfg
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=nsk-r1 --quiet
+/usr/local/nagios/etc/objects/switchs/cisco/nsk-r1.cfg
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=ufa-r1 --quiet
+/usr/local/nagios/etc/objects/switchs/cisco/ufa-r1.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# head -n 5 /usr/local/nagios/etc/objects/switchs/cisco/kja-r1.cfg /usr/local/nagios/etc/objects/switchs/cisco/nsk-r1.cfg /usr/local/nagios/etc/objects/switchs/cisco/ufa-r1.cfg
+==> /usr/local/nagios/etc/objects/switchs/cisco/kja-r1.cfg <==
+define host{
+    use                         cisco
+    host_name                   kja-r1
+    address                     172.16.104.254
+    contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+
+==> /usr/local/nagios/etc/objects/switchs/cisco/nsk-r1.cfg <==
+define host{
+    use                         cisco
+    host_name                   nsk-r1
+    address                     172.16.102.254
+    contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+
+==> /usr/local/nagios/etc/objects/switchs/cisco/ufa-r1.cfg <==
+define host{
+    use                         cisco
+    host_name                   ufa-r1
+    address                     172.16.106.254
+    contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                  Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#211684. Granted access by net-admins to three hosts. Permission granted from template was overwritten in defenition at each of these hosts." switchs/cisco/kja-r1.cfg switchs/cisco/nsk-r1.cfg switchs/cisco/ufa-r1.cfg
+[master dc175aa] SD#211684. Granted access by net-admins to three hosts. Permission granted from template was overwritten in defenition at each of these hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 15, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 807 bytes, done.
+Total 8 (delta 7), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   d0669b0..dc175aa  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p
+commit dc175aa82a98df8b196880b25465ce1d98a22347
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Mon Feb 13 14:53:06 2017 +0300
+
+    SD#211684. Granted access by net-admins to three hosts. Permission granted from template was overwritten in defenition at each of these hosts.
+
+diff --git a/objects/switchs/cisco/kja-r1.cfg b/objects/switchs/cisco/kja-r1.cfg
+index 83d5173..79fdf80 100644
+--- a/objects/switchs/cisco/kja-r1.cfg
++++ b/objects/switchs/cisco/kja-r1.cfg
+@@ -3,7 +3,7 @@ define host{
+     host_name                   kja-r1
+     address                     172.16.104.254
+     contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+-    contact_groups              network-admins-email
++    contact_groups              network-admins-email, network-admins-web-access
+ }
+ define service{
+        use                           generic-service-ping
+diff --git a/objects/switchs/cisco/nsk-r1.cfg b/objects/switchs/cisco/nsk-r1.cfg
+index 7f73e05..44e39aa 100644
+--- a/objects/switchs/cisco/nsk-r1.cfg
++++ b/objects/switchs/cisco/nsk-r1.cfg
+@@ -3,7 +3,7 @@ define host{
+     host_name                   nsk-r1
+     address                     172.16.102.254
+     contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+-    contact_groups              network-admins-email
++    contact_groups              network-admins-email, network-admins-web-access
+ }
+ define service{
+        use                           generic-service-ping
+diff --git a/objects/switchs/cisco/ufa-r1.cfg b/objects/switchs/cisco/ufa-r1.cfg
+index 1594e53..8cdc366 100644
+--- a/objects/switchs/cisco/ufa-r1.cfg
++++ b/objects/switchs/cisco/ufa-r1.cfg
+@@ -3,7 +3,7 @@ define host{
+     host_name                   ufa-r1
+     address                     172.16.106.254
+     contacts                    m.kubrak_email, m.kubrak_sms, y.kapustin_email, y.kapustin_sms
+-    contact_groups              network-admins-email
++    contact_groups              network-admins-email, network-admins-web-access
+ }
+ define service{
+        use                         generic-service-ping
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+

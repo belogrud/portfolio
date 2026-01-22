@@ -1,0 +1,115 @@
+
+
+................................................................................
+
+[root@ds-gp-dev-smdw ~]# host m1-zabbix01p.tcsbank.ru
+m1-zabbix01p.tcsbank.ru has address 10.216.41.36
+[root@ds-gp-dev-smdw ~]# host monitoring1.tcsbank.ru
+monitoring1.tcsbank.ru has address 10.216.41.211
+[root@ds-gp-dev-smdw ~]# host monitoring2.tcsbank.ru
+monitoring2.tcsbank.ru has address 192.168.1.111
+[root@ds-gp-dev-smdw ~]# host monitoring3.tcsbank.ru
+monitoring3.tcsbank.ru has address 10.216.40.211
+[root@ds-gp-dev-smdw ~]# host monitoring4.tcsbank.ru
+monitoring4.tcsbank.ru has address 10.216.41.111
+[root@ds-gp-dev-smdw ~]# host monitoring5.tcsbank.ru
+monitoring5.tcsbank.ru has address 10.216.42.111
+[root@ds-gp-dev-smdw ~]# host monitoring6.tcsbank.ru
+monitoring6.tcsbank.ru is an alias for nagios3.tcsbank.ru.
+Host nagios3.tcsbank.ru not found: 3(NXDOMAIN)
+Host nagios3.tcsbank.ru not found: 3(NXDOMAIN)
+[root@ds-gp-dev-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-dev-smdw ~]# vim /etc/zabbix/zabbix_agentd.conf
+
+[root@ds-gp-dev-smdw ~]# grep -e "^Server" /etc/zabbix/zabbix_agentd.conf
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ServerActive=127.0.0.1
+[root@ds-gp-dev-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# service zabbix-agent restart
+Shutting down Zabbix agent:                                [  OK  ]
+Starting Zabbix agent:                                     [  OK  ]
+[root@ds-gp-dev-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-dev-smdw ~]# sed -e 's/\(^Server=.*$\)/\1,m1-zabbix01p.tcsbank.ru/' /etc/zabbix/zabbix_agentd.conf | grep -e "^Server="
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+[root@ds-gp-dev-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# for var1 in sdw{1..2} ; do ssh ${var1} "( hostname ; sed -e 's/\(^Server=.*$\)/\1,m1-zabbix01p.tcsbank.ru/' /etc/zabbix/zabbix_agentd.conf | grep -e '^Server='   )" ; done
+ds-gp-dev-sdw1
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ds-gp-dev-sdw2
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+[root@ds-gp-dev-smdw ~]#
+
+
+[root@ds-gp-dev-smdw ~]# for var1 in sdw{1..2} ; do ssh ${var1} "( hostname ; sed -i -e 's/\(^Server=.*$\)/\1,m1-zabbix01p.tcsbank.ru/' /etc/zabbix/zabbix_agentd.conf ; grep -e '^Server=' /etc/zabbix/zabbix_agentd.conf )" ; done
+ds-gp-dev-sdw1
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ds-gp-dev-sdw2
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+[root@ds-gp-dev-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# for var1 in sdw{1..2} ; do ssh ${var1} "( hostname ; service zabbix-agent restart )" ; done                                                        ds-gp-dev-sdw1
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+ds-gp-dev-sdw2
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+[root@ds-gp-dev-smdw ~]#
+
+
+[root@ds-gp-dev-smdw ~]# for var1 in sdw{3..8} ; do ssh ${var1} "( hostname ; sed -i -e 's/\(^Server=.*$\)/\1,m1-zabbix01p.tcsbank.ru/' /etc/zabbix/zabbix_agentd.conf ; grep -e '^Server=' /etc/zabbix/zabbix_agentd.conf )" ; done
+ds-gp-dev-sdw3
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ds-gp-dev-sdw4
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ds-gp-dev-sdw5
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ds-gp-dev-sdw6
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ds-gp-dev-sdw7
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+ds-gp-dev-sdw8
+Server=127.0.0.1,monitoring1.tcsbank.ru,monitoring2.tcsbank.ru,monitoring3.tcsbank.ru,monitoring4.tcsbank.ru,monitoring5.tcsbank.ru,monitoring6.tcsbank.ru,m1-zabbix01p.tcsbank.ru
+[root@ds-gp-dev-smdw ~]# for var1 in sdw{3..8} ; do ssh ${var1} "( hostname ; service zabbix-agent restart )" ; done                                                        ds-gp-dev-sdw3
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+ds-gp-dev-sdw4
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+ds-gp-dev-sdw5
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+ds-gp-dev-sdw6
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+ds-gp-dev-sdw7
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+ds-gp-dev-sdw8
+Shutting down Zabbix agent: [  OK  ]
+Starting Zabbix agent: [  OK  ]
+[root@ds-gp-dev-smdw ~]#
+
+................................................................................
+
+
+[root@m1-hadoop-cs01t ~]# for var1 in m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do ssh ${var1} "( hostname ; sed -i -e 's/\(^Server=.*$\)/\1,m1-zabbix01p.tcsbank.ru/' /etc/zabbix/zabbix_agentd.conf ; grep -e '^Server=' /etc/zabbix/zabbix_agentd.conf )" ; done
+
+[root@m1-hadoop-cs01t ~]# for var1 in m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do ssh ${var1} "( hostname ; service zabbix-agent restart )" ; done
+
+
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do ssh ${var1} "( hostname ; sed -i -e 's/\(^Server=.*$\)/\1,m1-zabbix01p.tcsbank.ru/' /etc/zabbix/zabbix_agentd.conf ; grep -e '^Server=' /etc/zabbix/zabbix_agentd.conf )" ; done
+
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do ssh ${var1} "( hostname ; service zabbix-agent restart )" ; done
+
+................................................................................
+
+#   Done!
+

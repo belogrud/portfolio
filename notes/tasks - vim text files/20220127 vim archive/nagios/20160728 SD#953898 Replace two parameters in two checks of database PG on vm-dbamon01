@@ -1,0 +1,242 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   953898
+Название    №953898
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  28.07.2016 13:04
+Дата регистрации    28.07.2016 13:04
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день!
+
+Коллеги, прошу переключить алерты nagios
+PG - Pay listener
+PG - Transfer listener
+На новые вьюхи в Prime:
+tctdbs.tcs_pg_mon_pay_plistener@prime
+tctdbs.tcs_pg_mon_transfer_plistener@prime
+соответственно.
+
+С уважением,
+Долженко Тимофей Юрьевич
+Заместитель руководителя отдела
+Отдел систем платежей
+Управление технологий платежных систем ДПСиОП
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Долженко Тимофей
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Долженко Тимофей
+Контактный e-mail   t.dolzhenko@tinkoff.ru
+Контактные телефоны 2499
+
+................................................................................
+
+
+vim /usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+    use                      generic-service
+    host_name                vm-dbamon01
+    service_description      PG - Pay listener
+    contacts                      processing_duty_sms, cards_24x7_email, s.belyakov_email, n.yatsishena_email, n.yatsishena_sms, v.bayshev_email, e.s.kuzmina_email, e.s.kuzmina_sms, k.vasilyev_email, a.b.popov_email, p.silaev_email, t.gaydukova_email,k.vasilyev_email,i.s.baranov_email,t.dolzhenko_email
+    contact_groups           pg-dev
+    check_interval                1
+    max_check_attempts       1
+    check_command            check_nrpe!check_tcs_mon_pg2_pay_plistener
+    notification_interval         5
+    flap_detection_enabled        0
+}
+
+
+[root@vm-dbamon01 plugins]# grep -ie "check_tcs_mon_pg2_pay_plistener" /etc/nrpe.d/*
+/etc/nrpe.d/check_db_pg2.cfg:command[check_tcs_mon_pg2_pay_plistener]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh
+[root@vm-dbamon01 plugins]#
+
+[root@vm-dbamon01 plugins]# ls -Alh /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener*
+-rwxr-xr-x 1 root root 710 Aug 11  2015 /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh
+-rw-r--r-- 1 root root 126 Aug 11  2015 /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sql
+[root@vm-dbamon01 plugins]#
+
+
+................................................................................
+
+define service{
+    use                      generic-service
+    host_name                vm-dbamon01
+    service_description      PG - Transfer listener
+    contacts                      processing_duty_sms, cards_24x7_email, s.belyakov_email, n.yatsishena_email, n.yatsishena_sms, e.s.kuzmina_email, e.s.kuzmina_sms, k.vasilyev_email, a.b.popov_email, p.silaev_email, t.gaydukova_email,k.vasilyev_email,i.s.baranov_email,t.dolzhenko_email
+    contact_groups           pg-dev
+    check_interval                1
+    max_check_attempts       1
+    check_command            check_nrpe!check_tcs_mon_pg2_transfer_plistener
+    notification_interval         5
+    flap_detection_enabled        0
+}
+
+[root@vm-dbamon01 plugins]# grep -ie "check_tcs_mon_pg2_transfer_plistener" /etc/nrpe.d/*
+/etc/nrpe.d/check_db_pg2.cfg:command[check_tcs_mon_pg2_transfer_plistener]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_mon_pg2_transfer_plistener.sh
+[root@vm-dbamon01 plugins]#
+
+[root@vm-dbamon01 plugins]# cat /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_mon_pg2_transfer_plistener.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select * from pg2.tcs_mon_pg2_transfer_plistener;
+[root@vm-dbamon01 plugins]#
+
+................................................................................
+
+[root@vm-dbamon01 plugins]# /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh
+Alert OK. Result=0
+[root@vm-dbamon01 plugins]#
+
+
+................................................................................
+
+[root@vm-dbamon01 plugins]# ls -A1 /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.*
+/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh
+/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh.backup
+/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sql
+/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sql.backup
+[root@vm-dbamon01 plugins]#
+
+................................................................................
+................................................................................
+
+#
+#   20160729
+#   Use this as a template for new check.
+[root@vm-dbamon01 plugins]# grep -irle "tcs_rate_orders_status_mon" /opt/TCS/scripts/nagios/plugins/
+/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_rate_orders_status_mon.sql
+/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_rate_orders_status_mon.sh
+[root@vm-dbamon01 plugins]#
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_orders_status_mon.sh prime4-check_tcs_pg_mon_pay_plistener.sh
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_orders_status_mon.sql prime4-check_tcs_pg_mon_pay_plistener.sql
+
+[root@vm-dbamon01 prime4]# vim -o prime4-check_tcs_pg_mon_pay_plistener.sh prime4-check_tcs_pg_mon_pay_plistener.sql
+
+[root@vm-dbamon01 prime4]# head prime4-check_tcs_pg_mon_pay_plistener.sh
+#!/bin/bash
+
+SQL_QUERY_HOST='db-prime4-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='PRIME4'
+SQL_QUERY_USER='tcs_monitor'
+SQL_QUERY_PASSWORD='tcs_monitor_1'
+
+SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime4-check_tcs_pg_mon_pay_plistener.sql
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# cat prime4-check_tcs_pg_mon_pay_plistener.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+SELECT * FROM tctdbs.tcs_pg_mon_pay_plistener;
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# ./prime4-check_tcs_pg_mon_pay_plistener.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 prime4]#
+
+................................................................................
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_pg_mon_pay_plistener.sh prime4-check_tcs_pg_mon_transfer_plistener.sh
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_pg_mon_pay_plistener.sql prime4-check_tcs_pg_mon_transfer_plistener.sql
+
+[root@vm-dbamon01 prime4]# vim -o prime4-check_tcs_pg_mon_transfer_plistener.sh prime4-check_tcs_pg_mon_transfer_plistener.sql
+
+[root@vm-dbamon01 prime4]# head  prime4-check_tcs_pg_mon_transfer_plistener.sh
+#!/bin/bash
+
+SQL_QUERY_HOST='db-prime4-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='PRIME4'
+SQL_QUERY_USER='tcs_monitor'
+SQL_QUERY_PASSWORD='tcs_monitor_1'
+
+SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime4-check_tcs_pg_mon_transfer_plistener.sql
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# cat  prime4-check_tcs_pg_mon_transfer_plistener.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+SELECT * FROM tctdbs.tcs_pg_mon_transfer_plistener;
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# ./prime4-check_tcs_pg_mon_transfer_plistener.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 prime4]#
+
+
+................................................................................
+
+[root@vm-dbamon01 prime4]# mkdir -p ~/work/20160729-1158
+[root@vm-dbamon01 prime4]# mv ../pg2/*.backup !$
+mv ../pg2/*.backup ~/work/20160729-1158
+[root@vm-dbamon01 prime4]# ls -Alh !$
+ls -Alh ~/work/20160729-1158
+total 8.0K
+-rwxr-xr-x 1 root root 723 Jul 29 11:11 pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh.backup
+-rw-r--r-- 1 root root 128 Jul 28 19:53 pg2-check_tcs_tcs_mon_pg2_pay_plistener.sql.backup
+[root@vm-dbamon01 prime4]#
+
+PG - Pay listener -> check_tcs_mon_pg2_pay_plistener
+PG - Transfer listener -> check_tcs_mon_pg2_transfer_plistener
+
+
+[root@vm-dbamon01 prime4]# vim /etc/nrpe.d/check_db_pg2.cfg -o /etc/nrpe.d/check_db_prime4.cfg
+
+/etc/nrpe.d/check_db_pg2.cfg
+...
+#command[check_tcs_mon_pg2_transfer_plistener]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_mon_pg2_transfer_plistener.sh
+#command[check_tcs_mon_pg2_pay_plistener]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh
+...
+
+/etc/nrpe.d/check_db_prime4.cfg
+...
+command[check_tcs_mon_pg2_transfer_plistener]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_pg_mon_transfer_plistener.sh
+command[check_tcs_mon_pg2_pay_plistener]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_pg_mon_pay_plistener.sh
+...
+
+
+[root@vm-dbamon01 prime4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# mv /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_tcs_mon_pg2_pay_plistener.{sh,sql} /opt/TCS/scripts/nagios/plugins/temp/
+[root@vm-dbamon01 prime4]# mv /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_mon_pg2_transfer_plistener.{sh,sql} /opt/TCS/scripts/nagios/plugins/temp/
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# ls -Alh /opt/TCS/scripts/nagios/plugins/temp/pg2*
+-rwxr-xr-x 1 root root 711 Aug 11  2015 /opt/TCS/scripts/nagios/plugins/temp/pg2-check_tcs_mon_pg2_transfer_plistener.sh
+-rw-r--r-- 1 root root 131 Aug 11  2015 /opt/TCS/scripts/nagios/plugins/temp/pg2-check_tcs_mon_pg2_transfer_plistener.sql
+-rwxr-xr-x 1 root root 710 Jul 28 19:48 /opt/TCS/scripts/nagios/plugins/temp/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sh
+-rw-r--r-- 1 root root 126 Jul 28 19:49 /opt/TCS/scripts/nagios/plugins/temp/pg2-check_tcs_tcs_mon_pg2_pay_plistener.sql
+[root@vm-dbamon01 prime4]#
+
+

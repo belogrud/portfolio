@@ -1,0 +1,326 @@
+
+
+#   In assume.
+#   I have killed all process, that use directory /mnt/backup_ds
+#   After several minutes nfs-resource was mounted automatically (I suppose from /etc/fstab where defined timeout=600 mount option).
+#
+
+
+
+................................................................................
+
+
+[12:02:49] tcsbank - Немчин Дмитрий: напиши как что выяснишь
+[12:02:50] tcsbank - Немчин Дмитрий: ок?
+[12:02:54] tcsbank - Немчин Дмитрий: еще раз привет
+[12:05:20] Sergey Belogrud: Хоршо.
+Сейчас буду общаться с СХД'шниками.
+[12:36:15] Sergey Belogrud: Ресурс смонтировался.
+[12:36:42] Sergey Belogrud: Женя Збираник смонтировал.
+Говорит ничего особого не делал.
+[12:37:15] Sergey Belogrud: Кстати это nfs-ресурс с выделенного сервера, а не с СХД, чего я сначала не понял.
+
+
+................................................................................
+
+
+[root@ds-gp-prd-smdw ~]# ssh mdw
+Last login: Tue Mar 15 15:12:24 2016 from smdw
+[root@ds-gp-prd-mdw ~]# df -h
+^C
+[root@ds-gp-prd-mdw ~]# mount -t nfs
+ds-gp-prd-nfs:/data on /mnt/backup_ds type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock,addr=10.216.2.40)
+v6250-ds:/vol/gp_metadb_ds on /mnt/backup_meta_ds type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+[root@ds-gp-prd-mdw ~]# ls /mnt/backup_ds
+^C^C^C^C^C^C
+
+
+^C^C^C^C^C^C^C^C^C^C^C^YKilled
+[root@ds-gp-prd-mdw ~]#
+[root@ds-gp-prd-mdw ~]#
+[root@ds-gp-prd-mdw ~]#
+[root@ds-gp-prd-mdw ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+6: eth6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.2.111/24 brd 10.216.2.255 scope global eth6
+7: eth7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.3.111/24 brd 10.216.3.255 scope global eth7
+11: bond0.1628@bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.28.8/24 brd 10.216.28.255 scope global bond0.1628
+    inet 10.216.28.10/24 brd 10.216.28.255 scope global secondary bond0.1628:0
+[root@ds-gp-prd-mdw ~]#
+
+
+
+[root@ds-gp-prd-mdw ~]# mount -v /mnt/backup_ds
+mount.nfs: trying text-based options 'bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock,addr=10.216.2.40'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.216.2.40 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.216.2.40 prog 100005 vers 3 prot TCP port 57426
+^C
+[root@ds-gp-prd-mdw ~]# host v6250-ds
+v6250-ds.tcsbank.ru has address 10.217.67.9
+[root@ds-gp-prd-mdw ~]# ping -c 3 10.217.67.9
+PING 10.217.67.9 (10.217.67.9) 56(84) bytes of data.
+64 bytes from 10.217.67.9: icmp_seq=1 ttl=254 time=0.138 ms
+64 bytes from 10.217.67.9: icmp_seq=2 ttl=254 time=0.119 ms
+64 bytes from 10.217.67.9: icmp_seq=3 ttl=254 time=0.164 ms
+
+--- 10.217.67.9 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.119/0.140/0.164/0.020 ms
+[root@ds-gp-prd-mdw ~]# showmount -e v6250-ds | grep /vol/gp_metadb_ds
+/vol/gp_metadb_ds                                               ds-gp-dev-ext-smdw,ds-gp-dev-ext-mdw,ds-gp-prd-ext-smdw,ds-gp-prd-ext-mdw
+[root@ds-gp-prd-mdw ~]# host ds-gp-prd-ext-mdw
+ds-gp-prd-ext-mdw.tcsbank.ru has address 10.216.28.8
+[root@ds-gp-prd-mdw ~]#
+
+
+................................................................................
+
+[root@ds-gp-prd-mdw ~]# ps axu | grep /mnt/backup_d[s] | awk '{ print $2 }'
+1594
+14340
+19667
+19964
+26617
+27497
+28215
+31826
+32592
+[root@ds-gp-prd-mdw ~]# for var1 in $(ps axu | grep /mnt/backup_d[s] | awk '{ print $2 }') ; do kill -9 ${var1} ; done
+-bash: kill: (2576) - No such process
+[root@ds-gp-prd-mdw ~]# p
+
+................................................................................
+
+Mar 21 11:25:27 ds-gp-prd-mdw snmpd[18258]: truncating integer value > 32 bits
+Mar 21 11:25:27 ds-gp-prd-mdw snmpd[18258]: truncating integer value > 32 bits
+Mar 21 11:27:07 ds-gp-prd-mdw auditd[20135]: Audit daemon rotating log files
+Mar 21 11:32:20 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:33:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:33:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:35:05 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:38:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:43:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:43:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:48:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:51:29 ds-gp-prd-mdw puppet-agent[21703]: Finished catalog run in 0.74 seconds
+Mar 21 11:53:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:53:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:56:39 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:56:51 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:57:43 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:58:01 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:58:14 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:58:25 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 11:58:38 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs not responding, still trying
+Mar 21 12:08:11 ds-gp-prd-mdw abrt[11338]: Not saving repeating crash in '/bin/bash'
+Mar 21 12:08:11 ds-gp-prd-mdw abrt[11338]: Saved core dump of pid 21237 to core.21237 at /home/gpadmin (413696 bytes)
+Mar 21 12:08:11 ds-gp-prd-mdw abrt[11335]: Saved core dump of pid 21250 (/bin/bash) to /var/spool/abrt/ccpp-2016-03-21-12:08:11-21250 (421888 bytes)
+Mar 21 12:08:11 ds-gp-prd-mdw abrtd: Directory 'ccpp-2016-03-21-12:08:11-21250' creation detected
+Mar 21 12:08:28 ds-gp-prd-mdw abrtd: New problem directory /var/spool/abrt/ccpp-2016-03-21-12:08:11-21250, processing
+Mar 21 12:08:28 ds-gp-prd-mdw abrtd: Sending an email...
+
+#   This time nfs-folder was successfully mounted by Zbiranik Eugene.
+
+Mar 21 12:08:28 ds-gp-prd-mdw abrtd: Email was sent to: root@localhost
+Mar 21 12:21:07 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:09 ds-gp-prd-mdw kernel: nfs: server ds-gp-prd-nfs OK
+Mar 21 12:21:28 ds-gp-prd-mdw puppet-agent[21781]: Finished catalog run in 0.74 seconds
+Mar 21 12:25:03 ds-gp-prd-mdw snmpd[18258]: truncating integer value > 32 bits
+Mar 21 12:25:03 ds-gp-prd-mdw snmpd[18258]: truncating integer value > 32 bits
+...
+
+
+
+................................................................................
+
+[root@ds-gp-prd-mdw ~]# ssh smdw
+Last login: Mon Mar 21 11:57:22 2016 from mdw
+[root@ds-gp-prd-smdw ~]# mount -t nfs | grep /mnt/backup_ds
+ds-gp-prd-nfs:/data on /mnt/backup_ds type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock,addr=10.216.2.40)
+[root@ds-gp-prd-smdw ~]# host ds-gp-prd-nfs
+ds-gp-prd-nfs.tcsbank.ru has address 10.216.2.40
+[root@ds-gp-prd-smdw ~]# ping -c 3 10.216.2.40
+PING 10.216.2.40 (10.216.2.40) 56(84) bytes of data.
+64 bytes from 10.216.2.40: icmp_seq=1 ttl=64 time=0.108 ms
+64 bytes from 10.216.2.40: icmp_seq=2 ttl=64 time=0.067 ms
+64 bytes from 10.216.2.40: icmp_seq=3 ttl=64 time=0.140 ms
+
+--- 10.216.2.40 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+rtt min/avg/max/mdev = 0.067/0.105/0.140/0.029 ms
+[root@ds-gp-prd-smdw ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+8: eth6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.2.112/24 brd 10.216.2.255 scope global eth6
+9: eth7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.3.112/24 brd 10.216.3.255 scope global eth7
+11: bond0.1628@bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.28.9/24 brd 10.216.28.255 scope global bond0.1628
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-prd-smdw ~]# showmount -e ds-gp-prd-nfs
+Export list for ds-gp-prd-nfs:
+/data 10.216.6.0/23,10.216.4.0/23,10.216.2.0/23,10.216.0.0/23
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-prd-mdw ~]# ping -c 3 10.216.2.40
+PING 10.216.2.40 (10.216.2.40) 56(84) bytes of data.
+64 bytes from 10.216.2.40: icmp_seq=1 ttl=64 time=0.054 ms
+64 bytes from 10.216.2.40: icmp_seq=2 ttl=64 time=0.086 ms
+64 bytes from 10.216.2.40: icmp_seq=3 ttl=64 time=0.294 ms
+
+--- 10.216.2.40 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.054/0.144/0.294/0.107 ms
+[root@ds-gp-prd-mdw ~]# showmount -e ds-gp-prd-nfs
+Export list for ds-gp-prd-nfs:
+/data 10.216.6.0/23,10.216.4.0/23,10.216.2.0/23,10.216.0.0/23
+[root@ds-gp-prd-mdw ~]#
+
+[root@ds-gp-prd-mdw ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+6: eth6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.2.111/24 brd 10.216.2.255 scope global eth6
+7: eth7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.3.111/24 brd 10.216.3.255 scope global eth7
+11: bond0.1628@bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.28.8/24 brd 10.216.28.255 scope global bond0.1628
+    inet 10.216.28.10/24 brd 10.216.28.255 scope global secondary bond0.1628:0
+[root@ds-gp-prd-mdw ~]#
+
+[root@ds-gp-prd-mdw ~]# ping -I 10.216.2.111 -c 3 10.216.2.40
+PING 10.216.2.40 (10.216.2.40) from 10.216.2.111 : 56(84) bytes of data.
+64 bytes from 10.216.2.40: icmp_seq=1 ttl=64 time=0.058 ms
+64 bytes from 10.216.2.40: icmp_seq=2 ttl=64 time=0.226 ms
+64 bytes from 10.216.2.40: icmp_seq=3 ttl=64 time=0.064 ms
+
+--- 10.216.2.40 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+rtt min/avg/max/mdev = 0.058/0.116/0.226/0.077 ms
+[root@ds-gp-prd-mdw ~]# ping -I 10.216.3.111 -c 3 10.216.2.40
+PING 10.216.2.40 (10.216.2.40) from 10.216.3.111 : 56(84) bytes of data.
+
+--- 10.216.2.40 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 11999ms
+
+[root@ds-gp-prd-mdw ~]#
+
+
+[root@ds-gp-prd-mdw ~]# ip route
+10.216.3.0/24 dev eth7  proto kernel  scope link  src 10.216.3.111
+10.216.2.0/24 dev eth6  proto kernel  scope link  src 10.216.2.111
+10.216.28.0/24 dev bond0.1628  proto kernel  scope link  src 10.216.28.8
+10.218.64.0/21 via 10.216.2.254 dev eth6
+10.218.64.0/21 via 10.216.3.254 dev eth7  metric 200
+10.216.0.0/21 via 10.216.2.254 dev eth6
+10.216.0.0/21 via 10.216.3.254 dev eth7  metric 200
+169.254.0.0/16 dev eth6  scope link  metric 1006
+169.254.0.0/16 dev eth7  scope link  metric 1007
+169.254.0.0/16 dev bond0  scope link  metric 1010
+169.254.0.0/16 dev bond0.1628  scope link  metric 1011
+default via 10.216.28.254 dev bond0.1628
+[root@ds-gp-prd-mdw ~]#
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-gp-prd-nfs
+Warning: Permanently added 'ds-gp-prd-nfs' (RSA) to the list of known hosts.
+Last login: Thu Feb 18 17:55:02 2016 from tcs4500.tcsbank.ru
+[bsv@ds-gp-prd-nfs ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-gp-prd-nfs ~]#
+
+
+Mar 21 11:42:28 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 11:45:48 ds-gp-prd-nfs puppet-agent[134594]: Finished catalog run in 2.26 seconds
+Mar 21 11:46:41 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 11:47:04 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 11:47:46 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 11:52:28 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 11:57:00 ds-gp-prd-nfs rpc.mountd[8983]: authenticated mount request from 10.216.2.111:878 for /data (/data)
+Mar 21 11:57:04 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 11:57:46 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 11:58:33 ds-gp-prd-nfs rpc.mountd[8983]: authenticated mount request from 10.216.2.111:924 for /data (/data)
+Mar 21 11:59:00 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:02:15 ds-gp-prd-nfs rpc.mountd[8983]: authenticated mount request from 10.216.2.111:776 for /data (/data)
+Mar 21 12:02:28 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:07:04 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:07:47 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:11:43 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:12:28 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:15:48 ds-gp-prd-nfs puppet-agent[135449]: Finished catalog run in 2.12 seconds
+Mar 21 12:17:04 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:17:46 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:22:28 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:24:08 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+Mar 21 12:24:52 ds-gp-prd-nfs rpc.mountd[8983]: authenticated mount request from 10.216.2.111:887 for /data (/data)
+Mar 21 12:27:05 ds-gp-prd-nfs snmpd[9284]: [smux_parse_var] Panic: type 48
+(END)
+
+................................................................................
+
+[root@ds-gp-prd-mdw ~]# ls /mnt/backup_ds
+1txt  backups  _bpmarchive_  lumira_views.sql  not_syncing_backups  o2g  profiles.backup.archive  pySync.log  sync_ood
+[root@ds-gp-prd-mdw ~]#
+
+[root@ds-gp-prd-mdw ~]# mount -t nfs
+v6250-ds:/vol/gp_metadb_ds on /mnt/backup_meta_ds type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+ds-gp-prd-nfs:/data on /mnt/backup_ds type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock,addr=10.216.2.40)
+[root@ds-gp-prd-mdw ~]#
+
+................................................................................
+
+Есть подозрения, что причиной проблем с nfs-ресурсом стали процессы, которые её использовали. А именно - заметное их количество.
+[root@ds-gp-prd-mdw ~]# ps axu | grep /mnt/backup_d[s] | awk '{ print $2 }'
+1594
+14340
+19667
+19964
+26617
+27497
+28215
+31826
+32592
+[root@ds-gp-prd-mdw ~]#
+
+Так же возможно, что некоторые из них конкретно давали высокую нагрузку (например не только чтение запись данных, а чтение метаданных в частности - листингфайлов, поиск файлов, их размеров, дат создания, прав и т.п.).
+
+Так как nfs-ресурс смонтирован с обычного сервера, а не с СХД, то это могло привести к существенному увеличению латентности между запросами информации по nfs-ресурсу и получением этой информации. Это выглядило как, например, зависание команды ls /mnt/backup_ds.
+[15:29:37] Sergey Belogrud: Резюмируя.
+Желательно пожалуй более мягко использовать выделенный nfs-ресурс по нагрузке.
+Повторюсь - это не СХД (которое конкретно заточено для переваривания подобных ситуаций).
+Это обычный сервер с запущенным обычным демоном, раздающим данные по nfs.
+[15:33:18] Sergey Belogrud: Как я понял по факту.
+Было сделано лишь следующее.
+Я принудительно завершил все процессы, которые использовали /mnt/backup_ds.
+Отмонтировал /mnt/backup_ds (возможно этого можно было бы и не делать - и файлы ресурса уже были доступны).
+После этого, в течении минут 10, nfs-ресурс был автоматически смонтирован, как это и указано в опциях монтирования в /etc/fstab: background,timeo=600.
+[15:34:33] tcsbank - Немчин Дмитрий: спасибо, будем разбираться с нагрузкой
+[15:34:39] Sergey Belogrud: Каких-либо ошибок где-либо на обоих серверах (ds-gp-prd-mdw, ds-gp-prd-nfs)  я не увидел.
+[15:34:53] tcsbank - Немчин Дмитрий: скорее всего скопилась большая очередь на сервисе, который это шару использует
+[15:35:19] Sergey Belogrud: Вероятно, вероятно.
+[15:35:23] tcsbank - Немчин Дмитрий: и нависло много процессов
+
+................................................................................
+................................................................................
+
+

@@ -1,0 +1,378 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   786573(главный)
+Название    №786573(главный)
+Приоритет   Низкий
+Класс обслуживания  9x5
+Дата и время обращения  17.03.2016 03:30
+Дата регистрации    17.03.2016 03:30
+Тип запроса Nagios запрос
+Категория
+Критичность 3 - Высокая
+Срочность   Высокая
+Описание запроса
+** PROBLEM Service Alert: vm-dbamon01-avaya/Check POM2 count is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: Check POM2 count
+Host: vm-dbamon01-avaya
+Address: 10.216.40.111
+State: CRITICAL
+
+Date/Time: Thu Mar 17 03:29:48 MSK 2016
+
+Additional Info:
+
+COUNT ERROR - Result=0
+Текущее состояние   Принят на обработку
+Автор   system
+Ответственный за запрос Чуриков Дмитрий / Отдел телекоммуникаций (группа)
+Кем решен
+Кем закрыт
+Массовая проблема   да
+Количество зависимых запросов   1
+Количество задач (активных/всего)   0 / 0
+Количество файлов   0
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Служебный Сотрудник
+Соглашение  Базовое соглашение
+Сервис  Другое
+Контактное лицо Служебный Сотрудник
+Контактный e-mail   -
+Контактные телефоны 123456
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag01t pynag]# vim +view /etc/nagios/objects/servers/vmware/vm-dbamon01-avaya.cfg
+...
+define service{
+        use                      generic-service
+        host_name                vm-dbamon01-avaya
+        service_description      Check POM2 count
+        check_interval           25
+        retry_interval           10
+        contacts                 d.churikov_email,d.churikov_sms,Naumen_nag_request_email, k.kovrigin_email, k.kovrigin_sms
+        contact_groups           servicedesk-duty-critical-group
+        check_command            check_nrpe!siebel-check-pom2_alive
+}
+...
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@10.216.40.111
+Last login: Thu Mar 17 14:48:24 2016 from tcs4500.tcsbank.ru
+[bsv@vm-dbamon01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-dbamon01 ~]# grep -ir -e "siebel-check-pom2_alive" /etc/nrpe.d/
+/etc/nrpe.d/check_db_siebel.cfg:command[siebel-check-pom2_alive]=/opt/TCS/scripts/nagios/plugins/siebel/bin/siebel-check-pom2_alive.sh
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/siebel/bin/siebel-check-pom2_alive.sh
+#!/bin/bash
+
+source /opt/TCS/scripts/nagios/plugins/siebel/bin/functions.sh
+
+SQL_QUERY_FILE=$SQL_QUERY_DIR/siebel/sql/siebel-check-pom2_alive.sql
+
+START=$(date +%s)
+RESULT=$(echo "exit" | sqlplus -s $SQL_QUERY_USER/$SQL_QUERY_PASSWORD@\"$SQL_QUERY_HOST:$SQL_QUERY_PORT/$SQL_QUERY_BASE\" @$SQL_QUERY_FILE)
+END=$(date +%s)
+DIFF=$(( $END - $START ))
+
+WRITE_LOG "$RESULT; $DIFF"
+
+if [ "$RESULT" -ge "1" ]; then
+  echo "COUNT OK - Result=$RESULT | Count=$RESULT"
+  exit $STATE_OK
+else
+  echo "COUNT ERROR - Result=$RESULT | Count=$RESULT"
+  exit $STATE_CRITICAL
+fi
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/siebel/bin/functions.sh
+#/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+ORACLE_HOME=/opt/oracle/products/11g/client
+NLS_LANG=RUSSIAN_CIS.CL8MSWIN1251
+#LC_ALL=ru_RU.cp1251
+PATH=$PATH:/$ORACLE_HOME/bin
+
+export ORACLE_HOME NLS_LANG LC_ALL PATH
+
+SQL_QUERY_HOST='db-siebel8-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='SIEBEL'
+SQL_QUERY_USER='pom'
+SQL_QUERY_PASSWORD='pomqwe_123'
+
+SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+
+function WRITE_LOG {
+
+  LOG_FILE="/opt/TCS/scripts/nagios/plugins/siebel/logs/$(basename $0 | awk -F. '{print $1}')-$(date +%Y-%m-%d).log"
+
+  echo -n "$(date +%b" "%d" "%H:%M): " >> $LOG_FILE
+  echo "$1" >> $LOG_FILE
+
+}
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/siebel/sql/siebel-check-pom2_alive.sql | iconv -f CP1251 -t UTF8
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select To_Char(Decode(Sign(Trunc(a.a/250)), 1, b.b, 0, 1))
+from
+  (select count(*) a
+    from siebel.cx_pom_call_req
+    where sysdate between earlist_start_dt and latest_start_dt
+    and status <> 'Завершено' and status <> 'Ошибка- нет номера' and status <> 'Проверка пройдена успешно'
+        and server_id='2'
+    ) a,
+  (select count(*) b
+    from siebel.cx_pom_call_req
+    where last_upd > sysdate - 1/24/5 and status <> 'В очереди'
+        and server_id='2'
+   ) b;
+
+exit
+
+[root@vm-dbamon01 ~]#
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+17.03.2016 15:13    В nagios параметры проверки выглядят так:
+
+[root@vm-vol-nag01t pynag]# vim +view /etc/nagios/objects/servers/vmware/vm-dbamon01-avaya.cfg
+...
+define service{
+use generic-service
+host_name vm-dbamon01-avaya
+service_description Check POM2 count
+check_interval 25
+retry_interval 10
+contacts d.churikov_email,d.churikov_sms,Naumen_nag_request_email, k.kovrigin_email, k.kovrigin_sms
+contact_groups servicedesk-duty-critical-group
+check_command check_nrpe!siebel-check-pom2_alive
+}
+...
+
+
+Непосредственно на сервере vm-dbamon01 это выглядит так (именно на этом сервере выполняются скрипты, которые опрашивают состояние БД):
+
+[root@vm-dbamon01 ~]# grep -ir -e "siebel-check-pom2_alive" /etc/nrpe.d/
+/etc/nrpe.d/check_db_siebel.cfg:command[siebel-check-pom2_alive]=/opt/TCS/scripts/nagios/ plugins/siebel/bin/siebel-check-pom2_alive.sh
+[root@vm-dbamon01 ~]#
+
+
+Скрипт, запускающийся с целью проверки состояния сервиса:
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/p lugins/siebel/bin/siebel-check-pom2_alive.sh
+#!/bin/bash
+
+source /opt/TCS/scripts/nagios/pl ugins/siebel/bin/functions.sh
+
+SQL_QUERY_FILE=$SQL_QUER Y_DIR/siebel/sql/siebel-check-pom2_alive.sql
+
+START=$(date +%s)
+RESULT=$(echo "exit" | sqlplus -s $SQL_QUERY_USER/$SQL_QUERY_PASSWORD@\"$SQL_QUERY_HOST:$SQL_QUERY_PORT/$SQL_QUERY_BASE\" @$SQL_QUERY_FILE)
+END=$(date +%s)
+DIFF=$(( $END - $START ))
+
+WRITE_LOG "$RESULT; $DIFF"
+
+if [ "$RESULT" -ge "1" ]; then
+echo "COUNT OK - Result=$RESULT | Count=$RESULT"
+exit $STATE_OK
+else
+echo "COUNT ERROR - Result=$RESULT | Count=$RESULT"
+exit $STATE_CRITICAL
+fi
+[root@vm-dbamon01 ~]#
+
+
+Содержимое вспомогательного файла с описанием переменных и путей:
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/pl ugins/siebel/bin/functions.sh
+#/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+ORACLE_HOME=/opt/oracl e/products/11g/client
+NLS_LANG=RUSSIAN_CIS.CL8MSWIN1251
+#LC_ALL=ru_RU.cp1251
+PATH=$PATH:/$ORACLE_HOME/bin
+
+export ORACLE_HOME NLS_LANG LC_ALL PATH
+
+SQL_QUERY_HOST='db-siebel8-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='SIEBEL'
+SQL_QUERY_USER='pom'
+SQL_QUERY_PASSWORD='********'
+
+SQL_QUERY_DIR=/opt/TCS/ scripts/nagios/plugins
+
+function WRITE_LOG {
+
+LOG_FILE="/opt/TCS/scripts/nagios /plugins/siebel/logs/$(basename $0 | awk -F. '{print $1}')-$(date +%Y-%m-%d).log"
+
+echo -n "$(date +%b" "%d" "%H:%M): " >> $LOG_FILE
+echo "$1" >> $LOG_FILE
+
+}
+[root@vm-dbamon01 ~]#
+
+
+Тело самого sql-запроса:
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/p lugins/siebel/sql/siebel-check-pom2_alive.sql | iconv -f CP1251 -t UTF8
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select To_Char(Decode(Sign(Trunc(a.a/250)), 1, b.b, 0, 1))
+from
+(select count(*) a
+from siebel.cx_pom_call_req
+where sysdate between earlist_start_dt and latest_start_dt
+and status <> 'Завершено' and status <> 'Ошибка- нет номера' and status <> 'Проверка пройдена успешно'
+and server_id='2'
+) a,
+(select count(*) b
+from siebel.cx_pom_call_req
+where last_upd > sysdate - 1/24/5 and status <> 'В очереди'
+and server_id='2'
+) b;
+
+exit
+
+[root@vm-dbamon01 ~]#   Белогруд Сергей В
+17.03.2016 10:16    просьба написать какой запрос и какие трэшхолды стоят на оповещениях /Check POM2 count и /Check POM1 count  Чуриков Дмитрий В
+17.03.2016 04:02    * RECOVERY Service Alert: vm-dbamon01-avaya/Check POM2 count is OK *    Максимова Марина
+17.03.2016 03:53    уже рекавери пришло, некритично.    Чуриков Дмитрий В
+17.03.2016 03:38    Чуриков Дмитрий оповещен    Максимова Марина
+
+................................................................................
+................................................................................
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/siebel/bin/siebel-check-pom2_alive.sh
+COUNT OK - Result=1 | Count=1
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# vim "+e ++enc=cp1251" /opt/TCS/scripts/nagios/plugins/siebel/sql/siebel-check-pom2_alive.sql
+
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select To_Char(Decode(Sign(Trunc(a.a/250)), 1, b.b, 0, 1))
+from
+  (select count(*) a
+    from siebel.cx_pom_call_req
+    where sysdate between earlist_start_dt and latest_start_dt
+    and status <> 'Завершено' and status <> 'Ошибка в message_id' and status <> 'Ошибка- нет номера' and status <> 'Проверка пройдена успешно'
+        and server_id='2'
+    ) a,
+  (select count(*) b
+    from siebel.cx_pom_call_req
+    where last_upd > sysdate - 1/24/5 and status <> 'В очереди'
+        and server_id='2'
+   ) b;
+
+exit
+
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/siebel/bin/siebel-check-pom2_alive.sh
+COUNT OK - Result=1 | Count=1
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/siebel/sql/siebel-check-pom2_alive.sql | iconv -f CP1251 -t UTF8
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select To_Char(Decode(Sign(Trunc(a.a/250)), 1, b.b, 0, 1))
+from
+  (select count(*) a
+    from siebel.cx_pom_call_req
+    where sysdate between earlist_start_dt and latest_start_dt
+    and status <> 'Завершено' and status <> 'Ошибка в message_id' and status <> 'Ошибка- нет номера' and status <> 'Проверка пройдена успешно'
+        and server_id='2'
+    ) a,
+  (select count(*) b
+    from siebel.cx_pom_call_req
+    where last_upd > sysdate - 1/24/5 and status <> 'В очереди'
+        and server_id='2'
+   ) b;
+
+exit
+
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/siebel/sql/siebel-check-pom1_alive.sql | iconv -f CP1251 -t UTF8                                                  set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select To_Char(Decode(Sign(Trunc(a.a/250)), 1, b.b, 0, 1))
+from
+  (select count(*) a
+    from siebel.cx_pom_call_req
+    where sysdate between earlist_start_dt and latest_start_dt
+    and status <> 'Завершено' and status <> 'Ошибка в message_id' and status <> 'Ошибка- нет номера' and status <> 'Проверка пройдена успешно'
+        and (server_id='1' or server_id='')
+    ) a,
+  (select count(*) b
+    from siebel.cx_pom_call_req
+    where last_upd > sysdate - 1/24/5 and status <> 'В очереди'
+        and (server_id='1' or server_id='')
+   ) b;
+
+exit
+
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/siebel/bin/siebel-check-pom1_alive.sh                                                                                 COUNT OK - Result=1 | Count=1
+[root@vm-dbamon01 ~]#
+
+

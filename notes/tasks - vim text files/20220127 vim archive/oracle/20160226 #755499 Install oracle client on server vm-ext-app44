@@ -1,0 +1,115 @@
+
+
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   755499
+Название    №755499
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  26.02.2016 10:46
+Дата регистрации    26.02.2016 10:46
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Просьба установить клиента Oracle на машине vm-ext-app44 (10.100.10.44).
+По аналогии с 10.100.10.9 (это linux-машины за vm-ext-router)
+Текущее состояние   Передан специалисту 1-й линии
+Автор   system
+Ответственный за запрос Первичная поддержка
+Кем решен
+Кем закрыт
+Массовая проблема   нет
+Количество задач (активных/всего)   0 / 0
+Количество файлов   1
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Карцев Константин
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Карцев Константин
+Контактный e-mail   k.kartsev@tinkoff.ru
+Контактные телефоны 8-926-656-72-42, 2101
+
+................................................................................
+
+[root@vm-ext-app44 ~]# dd if=/dev/zero of=/swapfile bs=1M count=2048
+2048+0 records in
+2048+0 records out
+2147483648 bytes (2.1 GB) copied, 4.36765 s, 492 MB/s
+[root@vm-ext-app44 ~]# mkswap /swapfile
+mkswap: /swapfile: warning: don't erase bootbits sectors
+        on whole disk. Use -f to force.
+Setting up swapspace version 1, size = 2097148 KiB
+no label, UUID=e4c7aa62-01f5-41dd-bdb6-3d640749eed1
+[root@vm-ext-app44 ~]# swapon /swapfile
+[root@vm-ext-app44 ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+/swapfile                               file            2097148 0       -1
+[root@vm-ext-app44 ~]#
+
+UUID=8ad23e46-52dc-4e04-8c74-897a6b78ee56 swap                    swap    defaults        0 0
+
+
+/swapfile       swap    swap    defaults        0 0
+
+[root@vm-ext-app44 ~]# swapoff -a
+[root@vm-ext-app44 ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+[root@vm-ext-app44 ~]# swapon -a
+[root@vm-ext-app44 ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+/swapfile                               file            2097148 0       -1
+[root@vm-ext-app44 ~]#
+
+#   remove from /etc/sudoers follow statment.
+
+#Defaults    requiretty
+
+#
+
+puppet agent -t
+...
+Notice: /Stage[main]/Oracle::Client/Exec[Installing Oracle Client]/returns: executed successfully
+Error: Could not find command '/opt/oracle/oraInventory/orainstRoot.sh'
+Error: /Stage[main]/Oracle::Client/Exec[Postinstall work]/returns: change from notrun to 0 failed: Could not find command '/opt/oracle/oraInventory/orainstRoot.sh'
+Notice: /Stage[main]/Oracle::Client/File[/opt/oracle/product/11g]: Dependency Exec[Postinstall work] has failures: true
+Warning: /Stage[main]/Oracle::Client/File[/opt/oracle/product/11g]: Skipping because of failed dependencies
+Notice: Finished catalog run in 24.42 seconds
+
+#   If we have errors messages like above we should rerun previous command "puppet agent -t".
+#   After second execution it should work with appropriate results.
+
+#   Just test what we have.
+#
+[root@vm-ext-app44 ~]# ls -alh /opt/oracle/product/
+total 12K
+drwxr-xr-x 3 oracle dba  4.0K Feb 26 17:29 .
+drwx------ 7 oracle dba  4.0K Feb 26 17:29 ..
+drwxr-xr-x 3 oracle dba  4.0K Feb 26 17:28 11.2.0.3
+lrwxrwxrwx 1 root   root   29 Feb 26 17:29 11g -> /opt/oracle/product/11.2.0.3/
+[root@vm-ext-app44 ~]#
+
+................................................................................
+
+Дата
+Комментарий Автор
+26.02.2016 17:35    Вернуть автору для проверки.    Белогруд Сергей В
+26.02.2016 17:34    Oracle client 11g установлен.
+Можно проверять.    Белогруд Сергей В
+26.02.2016 12:54    Какую версию клиента Oracle нужно установить.   Белогруд Сергей В
+26.02.2016 12:43    клиентов ставят unix-admins Новиков Матвей
+26.02.2016 12:39    На администраторов Oracle.
+
+Чтобы всё работало как надо - они по части Oracle первые люди в установке правильных дистрибутивов и их настройке.
+
+Что от unix-admins требуется - предоставим. Нужно чтобы конкретно написали, что нужно.  Белогруд Сергей В
+
+................................................................................
+

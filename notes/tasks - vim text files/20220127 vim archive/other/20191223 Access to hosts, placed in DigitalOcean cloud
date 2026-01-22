@@ -1,0 +1,520 @@
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# cat /tmp/20191226-1206.sh
+let count=1
+contacts_list="slack_integration-mon"
+while read var1_hostname
+    do
+        printf "\n\n${count}\n"
+        ((count++))
+        while read var2_service_description
+            do
+                var3_contacts="$(pynag list contacts where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" and contacts__exists=True --quiet)"
+                echo -e "#\n# host_name: ${var1_hostname}\n# service_description: ${var2_service_description}\n# contacts (before changes): ${var3_contacts}"
+
+                #   Some strings have spaces.
+                if [ -z "${var3_contacts}" ]
+                    then
+                        pynag update set contacts="${contacts_list}" where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" --force
+                        var4_contacts="$(pynag list contacts where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" and contacts__exists=True --quiet)"
+                        echo -e "# contacts (after changes): ${var4_contacts}"
+                    else
+                        if [[ "${var3_contacts}" == *"${contacts_list}"* ]]
+                            then
+                                echo -e "# contact already exits"
+                            else
+                                pynag update set contacts="${var3_contacts},${contacts_list}" where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" --force
+                        fi
+                fi
+
+            done < <(pynag list service_description where host_name="${var1_hostname}" and object_type=service --quiet)
+    done << 'EOF'
+vm-bpm-dev02
+EOF
+#vm-bpm-src01t
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# cat /tmp/20191226-1218.sh
+let count=1
+contact_groups_list="empty-group"
+while read var1_hostname
+    do
+        printf "\n\n${count}\n"
+        ((count++))
+        while read var2_service_description
+            do
+                var3_contact_groups="$(pynag list contact_groups where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" and contact_groups__exists=True --quiet)"
+                echo -e "#\n# host_name: ${var1_hostname}\n# service_description: ${var2_service_description}\n# contact_groups (before changes): ${var3_contact_groups}"
+
+
+                #   Some strings have spaces.
+                if [ -z "${var3_contact_groups}" ]
+                    then
+                        pynag update set contact_groups="${contact_groups_list}" where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" --force
+                        var4_contact_groups="$(pynag list contact_groups where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" and contact_groups__exists=True --quiet)"
+                        echo -e "# contact_groups (after changes): ${var4_contact_groups}"
+                    else
+                        if [[ "${var3_contact_groups}" == *"${contact_groups_list}"* ]]
+                            then
+                                echo -e "# contact already exits"
+                            else
+                                # pynag update set contact_groups="${var3_contact_groups},${contact_groups_list}" where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" --force
+                                # Here contact_groups full replaced to new.
+                                pynag update set contact_groups="${contact_groups_list}" where host_name="${var1_hostname}" and object_type=service and service_description="${var2_service_description}" --force
+                        fi
+                fi
+
+
+            done < <(pynag list service_description where host_name="${var1_hostname}" and object_type=service --quiet)
+    done << 'EOF'
+vm-bpm-dev02
+EOF
+#vm-bpm-src01t
+[root@vm-vol-nag4-tst objects]#
+
+
+
+[root@vm-vol-nag4-tst objects]# cat /tmp/20191226-1227.sh
+contact_groups_list="empty-group"
+while read var1_hostname
+    do
+       var3_contact_groups="$(pynag list contact_groups where host_name="${var1_hostname}" and object_type=host and contact_groups__exists=True --quiet)"
+       echo -e "#\n# host_name: ${var1_hostname}\n# contact_groups (before changes): ${var3_contact_groups}"
+       pynag update set contact_groups="${contact_groups_list}" where host_name="${var1_hostname}" and object_type=host --force
+       var4_contact_groups="$(pynag list contact_groups where host_name="${var1_hostname}" and object_type=host and contact_groups__exists=True --quiet)"
+       echo -e "# contact_groups (after changes): ${var4_contact_groups}"
+    done << 'EOF'
+vm-bpm-dev02
+EOF
+#vm-bpm-src01t
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name where address__contains="10.216.33." --quiet #pynag_address
+vm-bpm-dev02
+vm-bpm-src01t
+vm-bpm-tst03
+vm-bpm-tst04
+vm-cache-tst03
+vm-dadata-tst01
+vm-dadata-tst02
+vm-dadata-tst03
+vm-dadata-tst04
+vm-dadataweb-tst01
+vm-dadataweb-tst02
+vm-esb-tst04
+vm-evam01t
+vm-evam02t
+vm-evam03t
+vm-iib-tst01
+vm-iib-tst02
+vm-kafka-stp01t
+vm-kafka-stp02t
+vm-kafka-stp03t
+vm-odm-dev01
+vm-quik01t
+vm-rembo01t
+vm-smam01t
+vm-stp-quik01d
+vm-wfl-tst03
+vm-wfl-tst04
+vm-wfl-tst05
+vm-wfl-tst06
+vm-wflweb-tst01
+vm-wflweb-tst02
+vm-wmq-tst01
+vm-wmq-tst02
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name filename where address__contains="10.216.33." --quiet #pynag_address
+vm-bpm-dev02         /usr/local/nagios/etc/objects/servers/vmware/bpm/vm-bpm-dev02.cfg
+vm-bpm-src01t        /usr/local/nagios/etc/objects/servers/vmware/bpm/vm-bpm-src01t.cfg
+vm-bpm-tst03         /usr/local/nagios/etc/objects/servers/vmware/vm-bpm-tst03.cfg
+vm-bpm-tst04         /usr/local/nagios/etc/objects/servers/vmware/vm-bpm-tst04.cfg
+vm-cache-tst03       /usr/local/nagios/etc/objects/servers/vmware/vm-cache-tst03.cfg
+vm-dadata-tst01      /usr/local/nagios/etc/objects/servers/vmware/dadata/vm-dadata-tst01.cfg
+vm-dadata-tst02      /usr/local/nagios/etc/objects/servers/vmware/dadata/vm-dadata-tst02.cfg
+vm-dadata-tst03      /usr/local/nagios/etc/objects/servers/vmware/dadata/vm-dadata-tst03.cfg
+vm-dadata-tst04      /usr/local/nagios/etc/objects/servers/vmware/dadata/vm-dadata-tst04.cfg
+vm-dadataweb-tst01   /usr/local/nagios/etc/objects/servers/vmware/dadata/vm-dadataweb-tst01.cfg
+vm-dadataweb-tst02   /usr/local/nagios/etc/objects/servers/vmware/dadata/vm-dadataweb-tst02.cfg
+vm-esb-tst04         /usr/local/nagios/etc/objects/servers/vmware/esb/vm-esb-tst04.cfg
+vm-evam01t           /usr/local/nagios/etc/objects/servers/vmware/vm-evam01t.cfg
+vm-evam02t           /usr/local/nagios/etc/objects/servers/vmware/vm-evam02t.cfg
+vm-evam03t           /usr/local/nagios/etc/objects/servers/vmware/vm-evam03t.cfg
+vm-iib-tst01         /usr/local/nagios/etc/objects/servers/vmware/vm-iib-tst01.cfg
+vm-iib-tst02         /usr/local/nagios/etc/objects/servers/vmware/vm-iib-tst02.cfg
+vm-kafka-stp01t      /usr/local/nagios/etc/objects/servers/vmware/vm-kafka-stp01t.cfg
+vm-kafka-stp02t      /usr/local/nagios/etc/objects/servers/vmware/vm-kafka-stp02t.cfg
+vm-kafka-stp03t      /usr/local/nagios/etc/objects/servers/vmware/vm-kafka-stp03t.cfg
+vm-odm-dev01         /usr/local/nagios/etc/objects/servers/vmware/vm-odm-dev01.cfg
+vm-quik01t           /usr/local/nagios/etc/objects/servers/vmware/vm-quik01t.cfg
+vm-rembo01t          /usr/local/nagios/etc/objects/servers/vmware/vm-rembo01t.cfg
+vm-smam01t           /usr/local/nagios/etc/objects/servers/vmware/vm-smam01t.cfg
+vm-stp-quik01d       /usr/local/nagios/etc/objects/servers/vmware/vm-stp-quik01d.cfg
+vm-wfl-tst03         /usr/local/nagios/etc/objects/servers/vmware/wlp/vm-wfl-tst03.cfg
+vm-wfl-tst04         /usr/local/nagios/etc/objects/servers/vmware/wlp/vm-wfl-tst04.cfg
+vm-wfl-tst05         /usr/local/nagios/etc/objects/servers/vmware/wfl/vm-wfl-tst05.cfg
+vm-wfl-tst06         /usr/local/nagios/etc/objects/servers/vmware/wfl/vm-wfl-tst06.cfg
+vm-wflweb-tst01      /usr/local/nagios/etc/objects/servers/vmware/wlp/vm-wflweb-tst01.cfg
+vm-wflweb-tst02      /usr/local/nagios/etc/objects/servers/vmware/wfl/vm-wflweb-tst02.cfg
+vm-wmq-tst01         /usr/local/nagios/etc/objects/servers/vmware/vm-wmq-tst01.cfg
+vm-wmq-tst02         /usr/local/nagios/etc/objects/servers/vmware/vm-wmq-tst02.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+servers/vmware/bpm/vm-bpm-dev02.cfg servers/vmware/bpm/vm-bpm-src01t.cfg servers/vmware/vm-bpm-tst03.cfg servers/vmware/vm-bpm-tst04.cfg servers/vmware/vm-cache-tst03.cfg servers/vmware/dadata/vm-dadata-tst01.cfg servers/vmware/dadata/vm-dadata-tst02.cfg servers/vmware/dadata/vm-dadata-tst03.cfg servers/vmware/dadata/vm-dadata-tst04.cfg servers/vmware/dadata/vm-dadataweb-tst01.cfg servers/vmware/dadata/vm-dadataweb-tst02.cfg servers/vmware/esb/vm-esb-tst04.cfg servers/vmware/vm-evam01t.cfg servers/vmware/vm-evam02t.cfg servers/vmware/vm-evam03t.cfg servers/vmware/vm-iib-tst01.cfg servers/vmware/vm-iib-tst02.cfg servers/vmware/vm-kafka-stp01t.cfg servers/vmware/vm-kafka-stp02t.cfg servers/vmware/vm-kafka-stp03t.cfg servers/vmware/vm-odm-dev01.cfg servers/vmware/vm-quik01t.cfg servers/vmware/vm-rembo01t.cfg servers/vmware/vm-smam01t.cfg servers/vmware/vm-stp-quik01d.cfg servers/vmware/wlp/vm-wfl-tst03.cfg servers/vmware/wlp/vm-wfl-tst04.cfg servers/vmware/wfl/vm-wfl-tst05.cfg servers/vmware/wfl/vm-wfl-tst06.cfg servers/vmware/wlp/vm-wflweb-tst01.cfg servers/vmware/wfl/vm-wflweb-tst02.cfg servers/vmware/vm-wmq-tst01.cfg servers/vmware/vm-wmq-tst02.cfg
+
+
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@do-worker01p.sn-offline.com
+bsv@do-worker01p.sn-offline.com's password:
+Welcome to Ubuntu 14.04.6 LTS (GNU/Linux 3.13.0-32-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Dec 23 17:10:02 MSK 2019
+
+  System load:  0.0                Processes:           107
+  Usage of /:   49.4% of 29.40GB   Users logged in:     0
+  Memory usage: 25%                IP address for eth0: 128.199.45.19
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+New release '16.04.6 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+
+Your current Hardware Enablement Stack (HWE) is no longer supported
+since 2014-08-07.  Security updates for critical parts (kernel
+and graphics stack) of your system are no longer available.
+
+For more information, please see:
+http://wiki.ubuntu.com/1204_HWE_EOL
+
+To upgrade to a supported (or longer supported) configuration:
+
+* Upgrade from Ubuntu 12.04 LTS to Ubuntu 14.04 LTS by running:
+sudo do-release-upgrade
+
+OR
+
+* Install a newer HWE version by running:
+sudo apt-get install linux-generic-lts-trusty linux-image-generic-lts-trusty
+
+and reboot your system.
+
+*** System restart required ***
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+bsv@do-worker01p:~$ sudo -i
+[sudo] password for bsv:
+root@do-worker01p:~# ls -Alh /home/
+total 100K
+drwxr-x---  3 a.a.fedorov     a.a.fedorov     4.0K Jun  6  2017 a.a.fedorov
+drwxr-x---  3 a.leonov        a.leonov        4.0K Nov 11  2014 a.leonov
+drwxr-x---  3 ansible         ansible         4.0K Jun  7  2017 ansible
+drwxr-x---  3 ash             ash             4.0K Apr 28  2015 ash
+drwxr-x---  6            5023            5023 4.0K Aug 13  2015 atomin
+drwxr-x---  3 avk             avk             4.0K Nov 11  2014 avk
+drwxr-x---  3 backuppc        backuppc        4.0K Nov 11  2014 backuppc
+drwxr-x---  6 bigdata         bigdata         4.0K Apr 21  2016 bigdata
+drwxr-x---  5 bsv             bsv             4.0K Dec 23 17:11 bsv
+drwxr-x---  4 che             che             4.0K Sep 27  2016 che
+drwxr-x---  3 d.a.saraev      d.a.saraev      4.0K Jun 29  2016 d.a.saraev
+drwxr-x---  4 datagate        datagate        4.0K Dec 26  2017 datagate
+drwxr-x---  3 d.kryuchkov     d.kryuchkov     4.0K Apr 25  2016 d.kryuchkov
+drwxr-x---  3 d.maslovskaya   d.maslovskaya   4.0K Jan 16  2018 d.maslovskaya
+drwxr-x---  3 ext.dsavchuk    ext.dsavchuk    4.0K May 17  2018 ext.dsavchuk
+drwxr-x---  4 i.kochergin     i.kochergin     4.0K May 31  2017 i.kochergin
+drwxr-x---  6 isys.ayashnikov isys.ayashnikov 4.0K Apr  6  2018 isys.ayashnikov
+drwxr-xr-x  6 m.postovoy      m.postovoy      4.0K Aug  6 14:47 m.postovoy
+drwxr-x---  3            5011            5011 4.0K Nov 11  2014 pmezentsev
+drwxr-x---  4 qom             qom             4.0K Jul  3 14:53 qom
+drwxr-x--- 12 rundeck         rundeck         4.0K Jul 13 13:17 rundeck
+drwxr-x---  5 s.dubrovin      s.dubrovin      4.0K Dec 23 15:48 s.dubrovin
+drwxr-xr-x  3 spa             spa             4.0K May 14  2019 spa
+drwxr-x---  3 tan             tan             4.0K Nov 11  2014 tan
+drwxr-x---  5 zbir            zbir            4.0K Nov 13  2014 zbir
+root@do-worker01p:~#
+
+
+................................................................................
+
+#
+#	Here is sshd config, that had made, when this host was created.
+#
+root@do-worker01p:~# cat /etc/ssh/sshd_config
+# Package generated configuration file
+# See the sshd_config(5) manpage for details
+
+# What ports, IPs and protocols we listen for
+Port 22
+# Use these options to restrict which interfaces/protocols sshd will bind to
+#ListenAddress ::
+#ListenAddress 0.0.0.0
+Protocol 2
+# HostKeys for protocol version 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+#Privilege Separation is turned on for security
+UsePrivilegeSeparation yes
+
+# Lifetime and size of ephemeral version 1 server key
+KeyRegenerationInterval 3600
+ServerKeyBits 1024
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication:
+LoginGraceTime 120
+PermitRootLogin without-password
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+#AuthorizedKeysFile     %h/.ssh/authorized_keys
+
+# Don't read the user's ~/.rhosts and ~/.shosts files
+IgnoreRhosts yes
+# For this to work you will also need host keys in /etc/ssh_known_hosts
+RhostsRSAAuthentication no
+# similar for protocol version 2
+HostbasedAuthentication no
+# Uncomment if you don't trust ~/.ssh/known_hosts for RhostsRSAAuthentication
+#IgnoreUserKnownHosts yes
+
+# To enable empty passwords, change to yes (NOT RECOMMENDED)
+PermitEmptyPasswords no
+
+# Change to yes to enable challenge-response passwords (beware issues with
+# some PAM modules and threads)
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+#PasswordAuthentication yes
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosGetAFSToken no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+#UseLogin no
+
+#MaxStartups 10:30:60
+#Banner /etc/issue.net
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+root@do-worker01p:~#
+
+
+................................................................................
+
+#
+#	Here is backup default sshd config.
+#
+
+root@do-worker02p:~# cat work/20191224-1218/sshd_config
+#       $OpenBSD: sshd_config,v 1.101 2017/03/14 07:19:07 djm Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+#Port 22
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+#HostKey /etc/ssh/ssh_host_rsa_key
+#HostKey /etc/ssh/ssh_host_ecdsa_key
+#HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Ciphers and keying
+#RekeyLimit default none
+
+# Logging
+#SyslogFacility AUTH
+#LogLevel INFO
+
+# Authentication:
+
+#LoginGraceTime 2m
+PermitRootLogin yes
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
+
+#PubkeyAuthentication yes
+
+# Expect .ssh/authorized_keys2 to be disregarded by default in future.
+#AuthorizedKeysFile     .ssh/authorized_keys .ssh/authorized_keys2
+
+#AuthorizedPrincipalsFile none
+
+#AuthorizedKeysCommand none
+#AuthorizedKeysCommandUser nobody
+
+# For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+#HostbasedAuthentication no
+# Change to yes if you don't trust ~/.ssh/known_hosts for
+# HostbasedAuthentication
+#IgnoreUserKnownHosts no
+# Don't read the user's ~/.rhosts and ~/.shosts files
+#IgnoreRhosts yes
+
+# To disable tunneled clear text passwords, change to no here!
+#PasswordAuthentication no
+#PermitEmptyPasswords no
+
+# Change to yes to enable challenge-response passwords (beware issues with
+# some PAM modules and threads)
+ChallengeResponseAuthentication no
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+#KerberosGetAFSToken no
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+#GSSAPIStrictAcceptorCheck yes
+#GSSAPIKeyExchange no
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin yes
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+
+#AllowAgentForwarding yes
+#AllowTcpForwarding yes
+#GatewayPorts no
+X11Forwarding yes
+#X11DisplayOffset 10
+#X11UseLocalhost yes
+#PermitTTY yes
+PrintMotd no
+#PrintLastLog yes
+#TCPKeepAlive yes
+#UseLogin no
+#PermitUserEnvironment no
+#Compression delayed
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS no
+#PidFile /var/run/sshd.pid
+#MaxStartups 10:30:100
+#PermitTunnel no
+#ChrootDirectory none
+#VersionAddendum none
+
+# no default banner path
+#Banner none
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+# override default of no subsystems
+Subsystem       sftp    /usr/lib/openssh/sftp-server
+
+# Example of overriding settings on a per-user basis
+#Match User anoncvs
+#       X11Forwarding no
+#       AllowTcpForwarding no
+#       PermitTTY no
+#       ForceCommand cvs server
+root@do-worker02p:~#
+
+................................................................................
+
+#	Via ssh root access not permitted! Only with console.
+#
+#   root passwords
+#
+01
+>7P{ayc~-WqqLo#9
+
+02
+~r_;?u@FV4@7]4=X
+
+03
+9Nd=*"&f;/<oJdaC
+
+04
+.'?$@#-,#,#9tX?e
+
+05
+WE77WM#>aYg9`n<x
+
+06
+TbvPR~V$CEFXs3?L
+
+07
+&#@)k}&J%77+sT`?
+
+08
+|x[Jw+[$vAAW9}_,
+
+09
+NY-4iT(<Nz]x{K|}
+
+10
+u"s'RJH)$3f+.i>!
+
+................................................................................
+

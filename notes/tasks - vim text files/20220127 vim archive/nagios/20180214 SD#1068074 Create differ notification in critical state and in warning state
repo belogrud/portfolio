@@ -1,0 +1,316 @@
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# cat contacts/v.lugovskoy.cfg
+define contact{
+        contact_name                    v.lugovskoi_email
+        use                             generic-contact
+        alias                           Lugovskoi Viktor
+        email                           v.lugovskoi@tcsbank.ru
+}
+
+define contact{
+        contact_name                    v.lugovskoi_sms
+        use                             generic-contact-critical
+        alias                           Lugovskoi Viktor
+        email                           v.lugovskoi@tcsbank.ru
+        address1                        79057904988
+}[root@vm-vol-nag4-tst objects]# cat contacts/n.ekimov.cfg
+define contact{
+        contact_name                    n.ekimov_email
+        use                             generic-contact
+        alias                           Ekimov Nikita Andreevich
+        email                           n.ekimov@tcsbank.ru
+}
+
+define contact{
+        contact_name                    n.ekimov_sms
+        use                             generic-contact-critical
+        alias                           Ekimov Nikita Andreevich
+        email                           n.ekimov@tcsbank.ru
+        address1                        79999881679
+}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+define contact{
+        name                            generic-contact
+        service_notification_period     24x7
+        host_notification_period        24x7
+        service_notification_options    w,u,c,r,f
+        host_notification_options       d,u,r,f
+        service_notification_commands   notify-service-by-email
+        host_notification_commands      notify-host-by-email
+        register                        0
+}
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p 4a2a8bf63010fbc9755e4b444b509c8a5ea4327d
+commit 4a2a8bf63010fbc9755e4b444b509c8a5ea4327d
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Feb 14 15:03:03 2018 +0300
+
+    SD#1068074. Created contacts exactly to send notification only in critical or in warning state of services.
+
+diff --git a/objects/contacts/n.ekimov_critical.cfg b/objects/contacts/n.ekimov_critical.cfg
+new file mode 100644
+index 0000000..6b5d0af
+--- /dev/null
++++ b/objects/contacts/n.ekimov_critical.cfg
+@@ -0,0 +1,16 @@
++define contact{
++        contact_name                    n.ekimov_email_critical
++        use                             generic-contact
++        alias                           Ekimov Nikita Andreevich
++        email                           n.ekimov@tcsbank.ru
++        service_notification_options    c
++}
++
++define contact{
++        contact_name                    n.ekimov_sms_critical
++        use                             generic-contact-critical
++        alias                           Ekimov Nikita Andreevich
++        email                           n.ekimov@tcsbank.ru
++        address1                        79999881679
++        service_notification_options    c
++}
+diff --git a/objects/contacts/n.ekimov_warning.cfg b/objects/contacts/n.ekimov_warning.cfg
+new file mode 100644
+index 0000000..7f1adf4
+--- /dev/null
++++ b/objects/contacts/n.ekimov_warning.cfg
+@@ -0,0 +1,7 @@
++define contact{
++        contact_name                    n.ekimov_email_warning
++        use                             generic-contact
++        alias                           Ekimov Nikita Andreevich
++        email                           n.ekimov@tcsbank.ru
++        service_notification_options    w
++}
+diff --git a/objects/contacts/v.lugovskoy_critical.cfg b/objects/contacts/v.lugovskoy_critical.cfg
+new file mode 100644
+index 0000000..78389a5
+--- /dev/null
++++ b/objects/contacts/v.lugovskoy_critical.cfg
+@@ -0,0 +1,16 @@
++define contact{
++        contact_name                    v.lugovskoi_email_critical
++        use                             generic-contact
++        alias                           Lugovskoi Viktor
++        email                           v.lugovskoi@tcsbank.ru
++        service_notification_options    c
++}
++
++define contact{
++        contact_name                    v.lugovskoi_sms_critical
++        use                             generic-contact-critical
++        alias                           Lugovskoi Viktor
++        email                           v.lugovskoi@tcsbank.ru
++        address1                        79057904988
++        service_notification_options    c
++}
+diff --git a/objects/contacts/v.lugovskoy_warning.cfg b/objects/contacts/v.lugovskoy_warning.cfg
+new file mode 100644
+index 0000000..c636a67
+--- /dev/null
++++ b/objects/contacts/v.lugovskoy_warning.cfg
+@@ -0,0 +1,7 @@
++define contact{
++        contact_name                    v.lugovskoi_email_warning
++        use                             generic-contact
++        alias                           Lugovskoi Viktor
++        email                           v.lugovskoi@tcsbank.ru
++        service_notification_options    w
++}
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p servers/vmware/vm-insite-sql02p.cfg
+commit 518ec1caf4ab78af3c4ef9a505f5b9396402bdb2
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Feb 14 15:09:47 2018 +0300
+
+    SD#1068074. Was added one check and sprcial notifications in warning and in critical service state.
+
+diff --git a/objects/servers/vmware/vm-insite-sql02p.cfg b/objects/servers/vmware/vm-insite-sql02p.cfg
+index 6af6943..76f9bad 100644
+--- a/objects/servers/vmware/vm-insite-sql02p.cfg
++++ b/objects/servers/vmware/vm-insite-sql02p.cfg
+@@ -30,3 +30,11 @@ define service{
+     service_description      MySQL daemon
+     check_command            check_nrpe!check_mysql
+ }
++define service{
++    use                             generic-service-current-memory-load
++    host_name                       vm-insite-sql02p
++    service_description             Current Memory Load
++    check_command                   check_nrpe!check_memory_load_linux
++    contacts                        v.lugovskoi_email_warning,v.lugovskoi_email_critical,v.lugovskoi_sms_critical,n.ekimov_email_warning,n.ekimov_email_critical,n.ekimov_sms_critical
++    contact_groups                  empty-group
++}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 2 -p
+commit e64ab5c9bab51dd87df6b14cb247c7abe6bfc14d
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Feb 14 15:22:42 2018 +0300
+
+    SD#1068074. Some improvements were made.
+
+diff --git a/objects/contacts/v.lugovskoy.cfg b/objects/contacts/v.lugovskoy.cfg
+index 1ead0d5..d24cb94 100644
+--- a/objects/contacts/v.lugovskoy.cfg
++++ b/objects/contacts/v.lugovskoy.cfg
+@@ -11,4 +11,27 @@ define contact{
+         alias                           Lugovskoi Viktor
+         email                           v.lugovskoi@tcsbank.ru
+         address1                        79057904988
+-}
+\ No newline at end of file
++}
++define contact{
++        contact_name                    v.lugovskoi_email_warning
++        use                             generic-contact
++        alias                           Lugovskoi Viktor
++        email                           v.lugovskoi@tcsbank.ru
++        service_notification_options    w
++}
++define contact{
++        contact_name                    v.lugovskoi_email_critical
++        use                             generic-contact
++        alias                           Lugovskoi Viktor
++        email                           v.lugovskoi@tcsbank.ru
++        service_notification_options    c
++}
++
++define contact{
++        contact_name                    v.lugovskoi_sms_critical
++        use                             generic-contact-critical
++        alias                           Lugovskoi Viktor
++        email                           v.lugovskoi@tcsbank.ru
++        address1                        79057904988
++        service_notification_options    c
++}
+diff --git a/objects/contacts/v.lugovskoy_critical.cfg b/objects/contacts/v.lugovskoy_critical.cfg
+deleted file mode 100644
+index 78389a5..0000000
+--- a/objects/contacts/v.lugovskoy_critical.cfg
++++ /dev/null
+@@ -1,16 +0,0 @@
+-define contact{
+-        contact_name                    v.lugovskoi_email_critical
+-        use                             generic-contact
+-        alias                           Lugovskoi Viktor
+-        email                           v.lugovskoi@tcsbank.ru
+-        service_notification_options    c
+-}
+-
+-define contact{
+-        contact_name                    v.lugovskoi_sms_critical
+-        use                             generic-contact-critical
+-        alias                           Lugovskoi Viktor
+-        email                           v.lugovskoi@tcsbank.ru
+-        address1                        79057904988
+-        service_notification_options    c
+-}
+diff --git a/objects/contacts/v.lugovskoy_warning.cfg b/objects/contacts/v.lugovskoy_warning.cfg
+deleted file mode 100644
+index c636a67..0000000
+--- a/objects/contacts/v.lugovskoy_warning.cfg
++++ /dev/null
+@@ -1,7 +0,0 @@
+-define contact{
+-        contact_name                    v.lugovskoi_email_warning
+-        use                             generic-contact
+-        alias                           Lugovskoi Viktor
+-        email                           v.lugovskoi@tcsbank.ru
+-        service_notification_options    w
+-}
+
+commit ba14b3fdd3c53eff217bf9363d9daf2f8645102c
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Feb 14 15:20:39 2018 +0300
+
+    SD#1068074. Some improvements were made.
+
+diff --git a/objects/contacts/n.ekimov.cfg b/objects/contacts/n.ekimov.cfg
+index c9b7b80..ec1ec5b 100644
+--- a/objects/contacts/n.ekimov.cfg
++++ b/objects/contacts/n.ekimov.cfg
+@@ -12,3 +12,26 @@ define contact{
+         email                           n.ekimov@tcsbank.ru
+         address1                        79999881679
+ }
++define contact{
++        contact_name                    n.ekimov_email_warning
++        use                             generic-contact
++        alias                           Ekimov Nikita Andreevich
++        email                           n.ekimov@tcsbank.ru
++        service_notification_options    w
++}
++define contact{
++        contact_name                    n.ekimov_email_critical
++        use                             generic-contact
++        alias                           Ekimov Nikita Andreevich
++        email                           n.ekimov@tcsbank.ru
++        service_notification_options    c
++}
++
++define contact{
++        contact_name                    n.ekimov_sms_critical
++        use                             generic-contact-critical
++        alias                           Ekimov Nikita Andreevich
++        email                           n.ekimov@tcsbank.ru
++        address1                        79999881679
++        service_notification_options    c
++}
+diff --git a/objects/contacts/n.ekimov_critical.cfg b/objects/contacts/n.ekimov_critical.cfg
+deleted file mode 100644
+index 6b5d0af..0000000
+--- a/objects/contacts/n.ekimov_critical.cfg
++++ /dev/null
+@@ -1,16 +0,0 @@
+-define contact{
+-        contact_name                    n.ekimov_email_critical
+-        use                             generic-contact
+-        alias                           Ekimov Nikita Andreevich
+-        email                           n.ekimov@tcsbank.ru
+-        service_notification_options    c
+-}
+-
+-define contact{
+-        contact_name                    n.ekimov_sms_critical
+-        use                             generic-contact-critical
+-        alias                           Ekimov Nikita Andreevich
+-        email                           n.ekimov@tcsbank.ru
+-        address1                        79999881679
+-        service_notification_options    c
+-}
+diff --git a/objects/contacts/n.ekimov_warning.cfg b/objects/contacts/n.ekimov_warning.cfg
+deleted file mode 100644
+index 7f1adf4..0000000
+--- a/objects/contacts/n.ekimov_warning.cfg
++++ /dev/null
+@@ -1,7 +0,0 @@
+-define contact{
+-        contact_name                    n.ekimov_email_warning
+-        use                             generic-contact
+-        alias                           Ekimov Nikita Andreevich
+-        email                           n.ekimov@tcsbank.ru
+-        service_notification_options    w
+-}
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+

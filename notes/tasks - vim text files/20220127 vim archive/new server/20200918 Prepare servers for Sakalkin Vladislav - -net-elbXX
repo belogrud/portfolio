@@ -1,0 +1,387 @@
+
+
+................................................................................
+
+#
+#	Here is placed information about host, that was mentioned as an example (or template)
+#	to configure other hosts in this task similar.
+#
+
+[s.belogrud@TCS4357]# ssh bsv@ds-net-elb01
+Warning: Permanently added 'ds-net-elb01' (RSA) to the list of known hosts.
+Welcome to Ubuntu 18.04.4 LTS (GNU/Linux 4.15.0-101-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Fri Sep 18 11:27:30 MSK 2020
+
+  System load:  1.14               Users logged in:         0
+  Usage of /:   3.6% of 545.12GB   IP address for macvlan2: 10.218.91.1
+  Memory usage: 7%                 IP address for macvlan0: 10.218.81.1
+  Swap usage:   0%                 IP address for macvlan1: 10.218.83.1
+  Processes:    519
+
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+
+136 packages can be updated.
+86 updates are security updates.
+
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+bsv@ds-net-elb01:~$ sudo -i
+root@ds-net-elb01:~# dmidecode -t system
+# dmidecode 3.1
+Getting SMBIOS data from sysfs.
+SMBIOS 3.1 present.
+
+Handle 0x008D, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL360 Gen10
+        Version: Not Specified
+        Serial Number: CZJ80904QD
+        UUID: 39373638-3935-5A43-4A38-303930345144
+        Wake-up Type: Power Switch
+        SKU Number: 867959-B21
+        Family: ProLiant
+
+Handle 0x00AE, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+root@ds-net-elb01:~#
+
+
+	root@ds-net-elb01:~# cat > /etc/apt/sources.list.d/tcs-hp.list
+	# HPE Management Component Pack
+	# deb http://downloads.linux.hpe.com/SDR/repo/mcp dist/project_ver non-free
+	deb http://repo-linux.tcsbank.ru/repository/hp/SDR/repo/mcp bionic/current non-free
+	root@ds-net-elb01:~#
+	
+	root@ds-net-elb01:~# curl http://repo-linux.tcsbank.ru/repository/hp/hpPublicKey1024.pub | apt-key add -
+	  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                 Dload  Upload   Total   Spent    Left  Speed
+	100  1713  100  1713    0     0   4178      0 --:--:-- --:--:-- --:--:--  4178
+	OK
+	root@ds-net-elb01:~# curl http://repo-linux.tcsbank.ru/repository/hp/hpPublicKey2048.pub | apt-key add -
+	  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                 Dload  Upload   Total   Spent    Left  Speed
+	100   990  100   990    0     0   2426      0 --:--:-- --:--:-- --:--:--  2420
+	OK
+	root@ds-net-elb01:~# curl http://repo-linux.tcsbank.ru/repository/hp/hpePublicKey2048_key1.pub | apt-key add -
+	  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                 Dload  Upload   Total   Spent    Left  Speed
+	100  1004  100  1004    0     0   2329      0 --:--:-- --:--:-- --:--:--  2329
+	OK
+	root@ds-net-elb01:~#
+	
+	root@ds-net-elb01:~# apt-get update
+	Hit:1 http://repo-linux.tcsbank.ru/repository/ubuntu bionic InRelease
+	Hit:2 http://repo-linux.tcsbank.ru/repository/ubuntu bionic-updates InRelease
+	Hit:3 http://repo-linux.tcsbank.ru/repository/ubuntu bionic-backports InRelease
+	Hit:4 http://repo-linux.tcsbank.ru/repository/ubuntu bionic-security InRelease
+	Ign:5 http://repo-linux.tcsbank.ru/repository/hp/SDR/repo/mcp bionic/current InRelease
+	Get:6 http://repo-linux.tcsbank.ru/repository/hp/SDR/repo/mcp bionic/current Release [6,051 B]
+	Get:7 http://repo-linux.tcsbank.ru/repository/hp/SDR/repo/mcp bionic/current Release.gpg [490 B]
+	Hit:8 http://ppa.launchpad.net/vbernat/haproxy-1.8/ubuntu bionic InRelease
+	Hit:9 http://ppa.launchpad.net/vbernat/haproxy-1.9/ubuntu bionic InRelease
+	Hit:10 https://repos.influxdata.com/ubuntu bionic InRelease
+	Hit:11 http://repo.zabbix.com/zabbix/3.4/ubuntu bionic InRelease
+	Get:12 http://repo-linux.tcsbank.ru/repository/hp/SDR/repo/mcp bionic/current/non-free amd64 Packages [2,192 B]
+	Fetched 8,733 B in 1s (13.6 kB/s)
+	Reading package lists... Done
+	root@ds-net-elb01:~#
+	
+	root@ds-net-elb01:~# apt-get install ssa ssacli ssaducli
+
+
+root@ds-net-elb01:~# ssacli controller all show config
+
+HPE Smart Array P408i-a SR Gen10 in Slot 0 (Embedded)  (sn: PEYHC0CRHAG8W6)
+
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+
+
+   Internal Drive Cage at Port 2I, Box 0, OK
+
+
+   Port Name: 1I (Mixed)
+
+   Port Name: 2I (Mixed)
+
+   Array A (SAS, Unused Space: 0  MB)
+
+      logicaldrive 1 (558.88 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 600 GB, OK)
+
+   Unassigned
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS HDD, 600 GB, OK)
+
+   SEP (Vendor ID HPE, Model Smart Adapter) 379  (WWID: 51402EC0102299D0, Port: Unknown)
+
+root@ds-net-elb01:~#
+
+root@ds-net-elb01:~# df -hT
+Filesystem                        Type      Size  Used Avail Use% Mounted on
+udev                              devtmpfs   48G     0   48G   0% /dev
+tmpfs                             tmpfs     9.5G   11M  9.4G   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv ext4      546G   20G  504G   4% /
+tmpfs                             tmpfs      48G  4.0K   48G   1% /dev/shm
+tmpfs                             tmpfs     5.0M     0  5.0M   0% /run/lock
+tmpfs                             tmpfs      48G     0   48G   0% /sys/fs/cgroup
+/dev/loop0                        btrfs     256G  8.0G  247G   4% /var/lib/machines
+/dev/loop1                        squashfs   89M   89M     0 100% /snap/core/5897
+/dev/loop2                        squashfs   87M   87M     0 100% /snap/core/4917
+/dev/sdc2                         ext4      976M  146M  763M  17% /boot
+tmpfs                             tmpfs     9.5G     0  9.5G   0% /run/user/525
+root@ds-net-elb01:~#
+
+root@ds-net-elb01:~# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                      TYPE MOUNTPOINT        FSTYPE        SIZE
+loop0                     loop /var/lib/machines btrfs         256G
+loop1                     loop /snap/core/5897   squashfs     88.2M
+loop2                     loop /snap/core/4917   squashfs     86.9M
+sda                       disk                               558.9G
+sdb                       disk                               558.9G
+sdc                       disk                               558.9G
+├─sdc1                    part                                   1M
+├─sdc2                    part /boot             ext4            1G
+└─sdc3                    part                   LVM2_member 557.9G
+  └─ubuntu--vg-ubuntu--lv lvm  /                 ext4        553.9G
+root@ds-net-elb01:~#
+
+root@ds-net-elb01:~# findmnt
+TARGET                                SOURCE                            FSTYPE      OPTIONS
+/                                     /dev/mapper/ubuntu--vg-ubuntu--lv ext4        rw,relatime,stripe=64,data=ordered
+├─/sys                                sysfs                             sysfs       rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security              securityfs                        securityfs  rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                    tmpfs                             tmpfs       ro,nosuid,nodev,noexec,mode=755
+│ │ ├─/sys/fs/cgroup/unified          cgroup                            cgroup2     rw,nosuid,nodev,noexec,relatime
+│ │ ├─/sys/fs/cgroup/systemd          cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,xattr,name=systemd
+│ │ ├─/sys/fs/cgroup/blkio            cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,blkio
+│ │ ├─/sys/fs/cgroup/hugetlb          cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,hugetlb
+│ │ ├─/sys/fs/cgroup/cpuset           cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,cpuset
+│ │ ├─/sys/fs/cgroup/freezer          cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,freezer
+│ │ ├─/sys/fs/cgroup/pids             cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,pids
+│ │ ├─/sys/fs/cgroup/rdma             cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,rdma
+│ │ ├─/sys/fs/cgroup/memory           cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,memory
+│ │ ├─/sys/fs/cgroup/cpu,cpuacct      cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,cpu,cpuacct
+│ │ ├─/sys/fs/cgroup/devices          cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,devices
+│ │ ├─/sys/fs/cgroup/net_cls,net_prio cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,net_cls,net_prio
+│ │ └─/sys/fs/cgroup/perf_event       cgroup                            cgroup      rw,nosuid,nodev,noexec,relatime,perf_event
+│ ├─/sys/fs/pstore                    pstore                            pstore      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/debug                 debugfs                           debugfs     rw,relatime
+│ │ └─/sys/kernel/debug/tracing       tracefs                           tracefs     rw,relatime
+│ ├─/sys/kernel/config                configfs                          configfs    rw,relatime
+│ └─/sys/fs/fuse/connections          fusectl                           fusectl     rw,relatime
+├─/proc                               proc                              proc        rw,nosuid,nodev,noexec,relatime
+│ └─/proc/sys/fs/binfmt_misc          systemd-1                         autofs      rw,relatime,fd=37,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=33496
+│   └─/proc/sys/fs/binfmt_misc        binfmt_misc                       binfmt_misc rw,relatime
+├─/dev                                udev                              devtmpfs    rw,nosuid,relatime,size=49298932k,nr_inodes=12324733,mode=755
+│ ├─/dev/pts                          devpts                            devpts      rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/shm                          tmpfs                             tmpfs       rw,nosuid,nodev
+│ ├─/dev/hugepages                    hugetlbfs                         hugetlbfs   rw,relatime,pagesize=2M
+│ └─/dev/mqueue                       mqueue                            mqueue      rw,relatime
+├─/run                                tmpfs                             tmpfs       rw,nosuid,noexec,relatime,size=9866076k,mode=755
+│ ├─/run/lock                         tmpfs                             tmpfs       rw,nosuid,nodev,noexec,relatime,size=5120k
+│ └─/run/user/525                     tmpfs                             tmpfs       rw,nosuid,nodev,relatime,size=9866072k,mode=700,uid=525,gid=525
+├─/var/lib/machines                   /dev/loop0                        btrfs       rw,relatime,space_cache,subvolid=5,subvol=/
+├─/snap/core/5897                     /dev/loop1                        squashfs    ro,nodev,relatime
+├─/snap/core/4917                     /dev/loop2                        squashfs    ro,nodev,relatime
+├─/boot                               /dev/sdc2                         ext4        rw,relatime,stripe=64,data=ordered
+└─/var/lib/lxcfs                      lxcfs                             fuse.lxcfs  rw,nosuid,nodev,relatime,user_id=0,group_id=0,allow_other
+root@ds-net-elb01:~#
+
+root@ds-net-elb01:~# cat /etc/fstab
+UUID=a4a7a65d-f238-11e8-88e9-040973ca746d / ext4 defaults 0 0
+UUID=a4a7a65c-f238-11e8-88e9-040973ca746d /boot ext4 defaults 0 0
+/swap.img       none    swap    sw      0       0
+/var/lib/machines.raw /var/lib/machines btrfs defaults 0 0
+root@ds-net-elb01:~#
+
+root@ds-net-elb01:~# ip a | grep -w inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.218.91.1/24 brd 10.218.91.255 scope global macvlan2
+    inet 10.218.81.1/24 brd 10.218.81.255 scope global macvlan0
+    inet 10.218.83.1/24 brd 10.218.83.255 scope global macvlan1
+root@ds-net-elb01:~#
+root@ds-net-elb01:~# ip route
+default via 10.218.81.254 dev macvlan0 mtu 1500 rto_min lock 50ms
+10.218.81.0/24 dev macvlan0 proto kernel scope link src 10.218.81.1
+10.218.83.0/24 dev macvlan1 proto kernel scope link src 10.218.83.1
+10.218.91.0/24 dev macvlan2 proto kernel scope link src 10.218.91.1
+root@ds-net-elb01:~# cat /etc/hosts
+127.0.0.1       localhost.localdomain   localhost
+::1             localhost6.localdomain6 localhost6
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+root@ds-net-elb01:~#
+
+
+root@ds-net-elb01:~# grep -irle "10.218" /etc/
+/etc/systemd/network/30-macvlan0.network
+/etc/systemd/network/30-macvlan1.network
+/etc/systemd/network/30-macvlan2.network
+/etc/netdata/netdata.conf
+/etc/rc.local
+/etc/cloud/cloud.cfg.d/50-curtin-networking.cfg
+root@ds-net-elb01:~#
+
+root@ds-net-elb01:~# cat /etc/systemd/network/30-macvlan2.network
+[Match]
+Name=macvlan2
+
+[Link]
+MACAddress=02:00:0a:da:5b:01
+MTUBytes=1520
+
+[Network]
+LLDP=no
+EmitLLDP=no
+DHCP=no
+IPForward=yes
+Address=10.218.91.1/24
+root@ds-net-elb01:~# 
+
+root@ds-net-elb01:~# cat /etc/rc.local
+#!/bin/bash
+
+# Regenerate SSH keys if they do not exist
+SSHKEYGEN=/usr/bin/ssh-keygen
+
+if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+    $SSHKEYGEN -q -t rsa -f /etc/ssh/ssh_host_rsa_key -N "" -C "" < /dev/null > /dev/null 2> /dev/null
+    echo "Created /etc/ssh_host_rsa_key"
+fi
+
+if [ ! -f /etc/ssh/ssh_host_dsa_key ]; then
+    $SSHKEYGEN -q -t dsa -f /etc/ssh/ssh_host_dsa_key -N "" -C "" < /dev/null > /dev/null 2> /dev/null
+    echo "Created /etc/ssh_host_dsa_key"
+fi
+
+if [ ! -f /etc/ssh/ssh_host_ecdsa_key ]; then
+    $SSHKEYGEN -q -t ecdsa -f /etc/ssh/sssh_host_ecdsa_key -N "" -C "" < /dev/null > /dev/null 2> /dev/null
+    echo "Created /etc/ssh_host_ecdsa_key"
+fi
+
+if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
+    $SSHKEYGEN -q -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N "" -C "" < /dev/null > /dev/null 2> /dev/null
+    echo "Created /etc/ssh_host_ed25519_key"
+fi
+
+/sbin/ethtool -K eno5 gso off
+/sbin/ethtool -K eno5 tso off
+/sbin/ethtool -K eno5 lro off
+/sbin/ethtool -K eno5 gro off
+/sbin/ethtool -G eno5 rx 8192 tx 8192
+/sbin/ethtool -G eno5 rx 8192 tx 8192
+/sbin/ethtool -K eno5 rx off
+/sbin/ethtool -K eno5 tx off
+/sbin/ethtool -C eno5 rx-usecs 512
+/sbin/ethtool -K eno6 gso off
+/sbin/ethtool -K eno6 tso off
+/sbin/ethtool -K eno6 lro off
+/sbin/ethtool -K eno6 gro off
+/sbin/ethtool -G eno6 rx 8192 tx 8192
+/sbin/ethtool -G eno6 rx 8192 tx 8192
+/sbin/ethtool -K eno6 rx off
+/sbin/ethtool -K eno6 tx off
+/sbin/ethtool -C eno6 rx-usecs 512
+
+/sbin/ip route change default via 10.218.81.254 dev macvlan0 mtu 1500 rto_min 50
+
+exit 0
+root@ds-net-elb01:~#
+
+root@ds-net-elb01:~# cat /etc/cloud/cloud.cfg.d/50-curtin-networking.cfg
+network:
+  ethernets:
+    eno1:
+      addresses: []
+      dhcp4: true
+      optional: true
+    eno2:
+      addresses: []
+      dhcp4: true
+      optional: true
+    eno3:
+      addresses: []
+      dhcp4: true
+      optional: true
+    eno4:
+      addresses: []
+      dhcp4: true
+      optional: true
+    eno5:
+      addresses: []
+      dhcp4: true
+    eno6:
+      addresses:
+      - 10.218.81.1/24
+      dhcp4: false
+      gateway4: 10.218.81.254
+      nameservers:
+        addresses:
+        - 10.219.50.5
+        - 10.219.50.4
+        search:
+        - tcsbank.ru
+  version: 2
+root@ds-net-elb01:~#
+
+................................................................................
+
+[root@vd-nag4-tst-1 objects]# pynag list host_name filename where object_type=host and host_name__contains="ds-net-elb01" --quiet #pynag_host
+ds-net-elb01         /usr/local/nagios/etc/objects/servers/net-elb/ds-net-elb01.cfg
+[root@vd-nag4-tst-1 objects]# cat servers/net-elb/ds-net-elb01.cfg
+define host{
+    use                             noc-server
+    host_name                       ds-net-elb01
+    address                         10.218.81.1
+    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+}
+define service{
+    use                             generic-service-ping
+    host_name                       ds-net-elb01
+    service_description             PING
+    check_command                   check_ping!100.0,20%!500.0,60%
+}
+define service{
+        use                         hp-health-ilo5snmp
+        host_name                   ds-net-elb01
+        service_description         Server Health ilo5
+        check_command               check_hp_ilo5snmp!10.219.110.164
+}
+[root@vd-nag4-tst-1 objects]#
+
+................................................................................
+
+
+
+
+
+
+

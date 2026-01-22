@@ -1,0 +1,104 @@
+
+
+Nov 13 11:09:43 ds-db08-prod sshd[134003]: Accepted password for bsv from 172.16.28.74 port 49810 ssh2
+Nov 13 11:09:43 ds-db08-prod sshd[134003]: pam_unix(sshd:session): session opened for user bsv by (uid=0)
+Nov 13 11:09:47 ds-db08-prod sudo:      bsv : TTY=pts/1 ; PWD=/home/bsv ; USER=root ; COMMAND=/bin/bash
+Oct 30 15:38:30 ds-db08-prod sudo:    sebor : TTY=pts/1 ; PWD=/home/sebor ; USER=root ; COMMAND=/bin/sh -c echo BECOME-SUCCESS-lcsytbkxvshbsvduojqajhnoeaopgbxh; /usr/bin/python /home/sebor/.ansible/tmp/ansible-tmp-1509367109.15-72458549608085/setup.py; rm -rf "/home/sebor/.ansible/tmp/ansible-tmp-1509367109.15-72458549608085/" > /dev/null 2>&1
+(END)
+
+
+
+[root@ds-db07-prod ~]# less /var/log/secure-201711* | grep -e "gnitiev" | less
+...
+Nov  9 11:53:13 ds-db07-prod sshd[3111]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=172.16.28.65  user=gnitiev
+Nov  9 11:53:17 ds-db07-prod sshd[3111]: Failed password for gnitiev from 172.16.28.65 port 52589 ssh2
+Nov  9 11:53:25 ds-db07-prod sshd[3111]: Failed password for gnitiev from 172.16.28.65 port 52589 ssh2
+Nov  9 11:53:33 ds-db07-prod sshd[3111]: Failed password for gnitiev from 172.16.28.65 port 52589 ssh2
+Nov  9 11:53:37 ds-db07-prod sshd[3111]: PAM 2 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=172.16.28.65  user=gnitiev
+
+
+[root@ds-db08-prod ~]# less /var/log/secure* | grep -e "gnitiev" | less
+...
+Oct 16 15:33:04 ds-db08-prod sshd[136890]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=tcs790.tcsbank.ru  user=gnitiev
+Oct 16 15:33:09 ds-db08-prod sshd[136890]: Failed password for gnitiev from 172.16.28.65 port 60865 ssh2
+
+
+
+[root@m1-db08-prod ~]# less /var/log/secure* | grep -e "gnitiev" | less
+...
+Nov  9 11:52:31 m1-db08-prod sshd[144523]: Accepted password for gnitiev from 172.16.28.65 port 52565 ssh2
+Nov  9 11:52:31 m1-db08-prod sshd[144523]: pam_unix(sshd:session): session opened for user gnitiev by (uid=0)
+Nov  9 11:52:37 m1-db08-prod sudo:  gnitiev : TTY=pts/4 ; PWD=/home/gnitiev ; USER=root ; COMMAND=/bin/su -
+Nov  9 11:52:37 m1-db08-prod su: pam_unix(su-l:session): session opened for user root by gnitiev(uid=0)
+Nov  9 11:53:48 m1-db08-prod sshd[144523]: pam_unix(sshd:session): session closed for user gnitiev
+
+
+
+
+[root@m1-db08-prod ~]# awk '/gnitiev/{print}' /etc/{passwd,shadow}
+gnitiev:x:520:520::/home/gnitiev:/bin/bash
+gnitiev:$1$m5KEfs5X$vU7IjB2iuetcDNzcGpZXg0:17448:0:99999:7:::
+[root@m1-db08-prod ~]# chage -l gnitiev
+Last password change                                    : Oct 09, 2017
+Password expires                                        : never
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 99999
+Number of days of warning before password expires       : 7
+[root@m1-db08-prod ~]# sudo -l -U gnitiev
+Matching Defaults entries for gnitiev on this host:
+    !requiretty, !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR
+    LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE
+    LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User gnitiev may run the following commands on this host:
+    (ALL) ALL
+[root@m1-db08-prod ~]#
+
+................................................................................
+
+[root@ds-db07-prod ~]# usermod -p '$1$m5KEfs5X$vU7IjB2iuetcDNzcGpZXg0' gnitiev
+
+[root@ds-db07-prod ~]# awk '/gnitiev/{print}' /etc/{passwd,shadow}
+gnitiev:x:520:520::/home/gnitiev:/bin/bash
+gnitiev:$1$m5KEfs5X$vU7IjB2iuetcDNzcGpZXg0:17483:0:99999:7:::
+[root@ds-db07-prod ~]#
+
+
+................................................................................
+
+
+[root@ds-db08-prod ~]# awk '/gnitiev/{print}' /etc/{passwd,shadow}
+gnitiev:x:520:520::/home/gnitiev:/bin/bash
+gnitiev:!!$6$0t7uyW5k$46OgjhyJuSd3598gLW6sYxrcz3zlG66Un7UAD1B6cgF6u8fdTfd9zmo8elYwv5Dxag3ekbjlXwrLcEFnurhAG1:17227:0:99999:7:::
+[root@ds-db08-prod ~]# usermod -p '$1$m5KEfs5X$vU7IjB2iuetcDNzcGpZXg0' gnitiev
+[root@ds-db08-prod ~]# awk '/gnitiev/{print}' /etc/{passwd,shadow}
+gnitiev:x:520:520::/home/gnitiev:/bin/bash
+gnitiev:$1$m5KEfs5X$vU7IjB2iuetcDNzcGpZXg0:17483:0:99999:7:::
+[root@ds-db08-prod ~]# chage -l gnitiev
+Last password change                                    : Nov 13, 2017
+Password expires                                        : never
+Password inactive                                       : never
+Account expires                                         : never
+Minimum number of days between password change          : 0
+Maximum number of days between password change          : 99999
+Number of days of warning before password expires       : 7
+[root@ds-db08-prod ~]# sudo -l -U gnitiev
+Matching Defaults entries for gnitiev on this host:
+    !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS",
+    env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION
+    LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User gnitiev may run the following commands on this host:
+    (ALL) ALL
+[root@ds-db08-prod ~]#
+
+................................................................................
+
+
+
+
+

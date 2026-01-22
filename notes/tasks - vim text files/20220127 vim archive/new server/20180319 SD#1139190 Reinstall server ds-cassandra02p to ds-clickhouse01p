@@ -1,0 +1,859 @@
+
+................................................................................
+
+[root@ds-cassandra02p ~]# dmidecode -t system
+# dmidecode 2.12-dmifs
+# SMBIOS entry point at 0x7af0a000
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R730
+        Version: Not Specified
+        Serial Number: HG1P8D2
+        UUID: 4C4C4544-0047-3110-8050-C8C04F384432
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R730
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-cassandra02p ~]#
+
+
+[root@ds-cassandra02p ~]# df -hT
+Filesystem           Type      Size  Used Avail Use% Mounted on
+/dev/mapper/vg1-root xfs        20G  2.1G   18G  11% /
+devtmpfs             devtmpfs   63G     0   63G   0% /dev
+tmpfs                tmpfs      63G     0   63G   0% /dev/shm
+tmpfs                tmpfs      63G  130M   63G   1% /run
+tmpfs                tmpfs      63G     0   63G   0% /sys/fs/cgroup
+/dev/sdd1            ext4      734G   17G  680G   3% /data04
+/dev/sdc1            ext4      734G   18G  680G   3% /data03
+/dev/sdh1            ext4      734G   17G  680G   3% /data08
+/dev/sdb1            ext4      734G   17G  680G   3% /data02
+/dev/sdf1            ext4      734G   29G  669G   5% /data06
+/dev/sda1            ext4      734G  184G  513G  27% /data01
+/dev/sdi1            ext4      734G   17G  680G   3% /data09
+/dev/sdj1            ext4      734G   18G  679G   3% /data10
+/dev/sde1            ext4      734G   17G  680G   3% /data05
+/dev/sdg1            ext4      734G   17G  680G   3% /data07
+/dev/sdk2            xfs       497M  170M  328M  35% /boot
+/dev/sdk1            vfat      200M  9.5M  191M   5% /boot/efi
+/dev/mapper/vg1-var  xfs        31G  1.8G   29G   6% /var
+/dev/mapper/vg1-opt  xfs       225G  4.0G  221G   2% /opt
+tmpfs                tmpfs      13G     0   13G   0% /run/user/1001
+tmpfs                tmpfs      13G     0   13G   0% /run/user/525
+[root@ds-cassandra02p ~]# lsblk
+NAME         MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda            8:0    0 745.2G  0 disk
+└─sda1         8:1    0 745.2G  0 part /data01
+sdb            8:16   0 745.2G  0 disk
+└─sdb1         8:17   0 745.2G  0 part /data02
+sdc            8:32   0 745.2G  0 disk
+└─sdc1         8:33   0 745.2G  0 part /data03
+sdd            8:48   0 745.2G  0 disk
+└─sdd1         8:49   0 745.2G  0 part /data04
+sde            8:64   0 745.2G  0 disk
+└─sde1         8:65   0 745.2G  0 part /data05
+sdf            8:80   0 745.2G  0 disk
+└─sdf1         8:81   0 745.2G  0 part /data06
+sdg            8:96   0 745.2G  0 disk
+└─sdg1         8:97   0 745.2G  0 part /data07
+sdh            8:112  0 745.2G  0 disk
+└─sdh1         8:113  0 745.2G  0 part /data08
+sdi            8:128  0 745.2G  0 disk
+└─sdi1         8:129  0 745.2G  0 part /data09
+sdj            8:144  0 745.2G  0 disk
+└─sdj1         8:145  0 745.2G  0 part /data10
+sdk            8:160  0 278.9G  0 disk
+├─sdk1         8:161  0   200M  0 part /boot/efi
+├─sdk2         8:162  0   500M  0 part /boot
+└─sdk3         8:163  0 278.2G  0 part
+  ├─vg1-root 253:0    0    20G  0 lvm  /
+  ├─vg1-swap 253:1    0     4G  0 lvm
+  ├─vg1-opt  253:2    0 224.1G  0 lvm  /opt
+  └─vg1-var  253:3    0  30.1G  0 lvm  /var
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+7: vlan1865@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.218.65.3/24 brd 10.218.65.255 scope global vlan1865
+       valid_lft forever preferred_lft forever
+8: idrac: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 1000
+    inet 169.254.0.2/16 brd 169.254.255.255 scope global idrac
+       valid_lft forever preferred_lft forever
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# find /etc/sysconfig/network-scripts/ -iname ifcfg-\* -type f
+/etc/sysconfig/network-scripts/ifcfg-lo
+/etc/sysconfig/network-scripts/ifcfg-em1
+/etc/sysconfig/network-scripts/ifcfg-em2
+/etc/sysconfig/network-scripts/ifcfg-team0
+/etc/sysconfig/network-scripts/ifcfg-vlan1865
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# find /etc/sysconfig/network-scripts/ -iname ifcfg-\* -type f -exec echo "{}" \
+; -exec cat {} \; -exec echo \;
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+NAME=em1
+DEVICE=em1
+ONBOOT=yes
+BOOTPROTO=none
+USERCTL=no
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":100}'
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+BOOTPROTO=none
+USERCTL=no
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio":101}'
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+NAME=team0
+DEVICETYPE=Team
+BOOTPROTO=none
+USERCTL=no
+ONBOOT=yes
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1865
+VLAN=yes
+TYPE=Vlan
+DEVICE=vlan1865
+PHYSDEV=team0
+VLAN_ID=1865
+REORDER_HDR=0
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=yes
+IPV6INIT=no
+NAME=vlan1865
+ONBOOT=yes
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPADDR=10.218.65.3
+PREFIX=24
+GATEWAY=10.218.65.254
+
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+
+
+# No nameservers found; try putting DNS servers into your
+# ifcfg files in /etc/sysconfig/network-scripts like so:
+#
+# DNS1=xxx.xxx.xxx.xxx
+# DNS2=xxx.xxx.xxx.xxx
+# DOMAIN=lab.foo.com bar.foo.com
+nameserver 10.216.40.4
+nameserver 10.216.42.5
+search tcsbank.ru
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# awk '/sas-admin/{print}' /etc/{passwd,shadow}
+sas-admin:x:1001:511::/home/sas-admin:/bin/bash
+sas-admin:$6$vFb1STla$Vfhde1e4BY966W5m0XHMP5vfS3T./bvUKTc/YxpcKp6rSfXVI8JV9z0MKXVFC9UBdnyCkjGU6nJY23fSP0izv/:17543:0:99999:7:::
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# id sas-admin
+uid=1001(sas-admin) gid=511(admin) groups=511(admin),10(wheel)
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# awk '/a.dekanovich/{print}' /etc/{passwd,shadow}
+a.dekanovich:x:1105:1105:Dekanovich Andrey Konstantinovich:/home/a.dekanovich:/bin/bash
+a.dekanovich:$6$doFsS1S1$dzg0PaO.XSEv3tWjMfyDfmzLvLejNAVELP/DbQSYkezvYwMuQ6MD1BabdqPYIaw856In/XR8q.Fq5siavspe6.:17409:0:99999:7:::
+[root@ds-cassandra02p ~]#
+
+................................................................................
+
+#
+#	20180321
+#
+[root@ds-cassandra02p ~]# ls -Alh /etc/yum.repos.d/
+total 504K
+-rw-r--r--  1 root root  157 Jul  4  2016 datastax.repo
+drwxr-xr-x  3 root root   20 Nov 20 14:52 diamond
+-rw-r--r--  1 root root 1.4K Jun 24  2016 puppetlabs.repo
+-rw-r--r--  1 root root 391K Nov  5  2015 python-devel-2.7.5-34.el7.x86_64.rpm
+-rw-r--r--  1 root root  358 Jul 15  2016 redhat.repo
+-rw-r--r--. 1 root root  69K Jun 24  2016 redhat.repo_old
+-rw-r--r--  1 root root  104 Jan 12 15:01 tcs-dell-dsu.repo
+-rw-r--r--  1 root root  113 Jun 28  2016 tcs-dell.repo
+-rw-r--r--  1 root root  157 Jun 24  2016 tcs-epel-7-x86_64.repo
+-rw-r--r--  1 root root  161 May 26  2017 tcs-epel.repo
+-rw-r--r--  1 root root  204 Jan 12 14:58 tcs-rhel-base.repo
+-rw-r--r--  1 root root  204 Jan 12 14:58 tcs-rhel-extras.repo
+-rw-r--r--  1 root root  210 Jan 12 14:58 tcs-rhel-optional.repo
+[root@ds-cassandra02p ~]#
+
+
+[root@ds-cassandra02p ~]# cat /etc/yum.repos.d/puppetlabs.repo
+[puppetlabs-products]
+name=Puppet Labs Products El 7 - $basearch
+baseurl=http://repo-linux.tcsbank.ru/puppetlabs/el/7/products/$basearch
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=1
+gpgcheck=0
+
+[puppetlabs-deps]
+name=Puppet Labs Dependencies El 7 - $basearch
+baseurl=http://repo-linux.tcsbank.ru/puppetlabs/el/7/dependencies/$basearch
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=1
+gpgcheck=0
+
+[puppetlabs-devel]
+name=Puppet Labs Devel El 7 - $basearch
+baseurl=http://repo-linux.tcsbank.ru/puppetlabs/el/7/devel/$basearch
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=0
+gpgcheck=0
+
+[puppetlabs-products-source]
+name=Puppet Labs Products El 7 - $basearch - Source
+baseurl=http://repo-linux.tcsbank.ru/puppetlabs/el/7/products/SRPMS
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+failovermethod=priority
+enabled=0
+gpgcheck=0
+
+[puppetlabs-deps-source]
+name=Puppet Labs Source Dependencies El 7 - $basearch - Source
+baseurl=http://repo-linux.tcsbank.ru/puppetlabs/el/7/dependencies/SRPMS
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=0
+gpgcheck=0
+
+[puppetlabs-devel-source]
+name=Puppet Labs Devel El 7 - $basearch - Source
+baseurl=http://repo-linux.tcsbank.ru/puppetlabs/el/7/devel/SRPMS
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=0
+gpgcheck=0
+[root@ds-cassandra02p ~]#
+
+
+
+[root@ds-cassandra02p ~]# cat /etc/yum.repos.d/tcs-dell-dsu.repo
+[tcs-dell-dsu]
+name=DSU
+baseurl=http://repo-linux.tcsbank.ru/dell/dsu
+enabled=0
+gpgcheck=0
+proxy=_none_
+[root@ds-cassandra02p ~]#
+[root@ds-cassandra02p ~]# cat /etc/yum.repos.d/tcs-dell.repo
+[tcs-dell]
+name=DLR
+baseurl=http://repo-linux.tcsbank.ru/dell/rhel/6/$basearch
+enabled=1
+gpgcheck=0
+proxy=_none_
+[root@ds-cassandra02p ~]# cat /etc/yum.repos.d/tcs-epel-7-x86_64.repo
+[tcs-epel-7-x86_64]
+name=Extra Packages for Enterprise Linux 7 - x86_64
+baseurl=http://repo-linux.tcsbank.ru/epel/7/x86_64
+enabled=1
+gpgcheck=0
+proxy=_none_
+[root@ds-cassandra02p ~]# cat /etc/yum.repos.d/tcs-epel.repo
+[tcs-epel]
+name=Extra Packages for Enterprise Linux $releasever - $basearch
+baseurl=http://repo-linux.tcsbank.ru/epel/$releasever/$basearch
+enabled=1
+gpgcheck=0
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# cat /etc/snmp/snmpd.conf
+com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub 172.16.1.6
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+
+[root@ds-cassandra02p ~]#
+
+[root@ds-cassandra02p ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Wed Jun 22 14:46:42 2016
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/vg1-root    /                       xfs     defaults        0 0
+UUID=11a71a63-aae9-4078-b9d7-47c85bdbf1d6 /boot                   xfs     defaults        0 0
+UUID=A9EE-FEA9          /boot/efi               vfat    umask=0077,shortname=winnt 0 0
+/dev/mapper/vg1-opt     /opt                    xfs     defaults        0 0
+/dev/mapper/vg1-var     /var                    xfs     defaults        0 0
+/dev/mapper/vg1-swap    swap                    swap    defaults        0 0
+UUID=4eef5c13-0ff0-483e-a5e1-251b2cb05b62       /data01                 ext4    defaults        0 0
+UUID=b1b88ef9-9735-4970-be8a-e96515e32267       /data02                 ext4    defaults        0 0
+UUID=27649d24-6f8d-4d59-956a-cf0758fffc51       /data03                 ext4    defaults        0 0
+UUID=98a2040e-1889-4d52-834d-8d51f61648d1       /data04                 ext4    defaults        0 0
+UUID=91cc1edc-164b-4a32-9e90-dd64ab1eaf04       /data05                 ext4    defaults        0 0
+UUID=eb7b594f-f5a1-4ae4-bf91-f6e6f6c39abb       /data06                 ext4    defaults        0 0
+UUID=b39c697e-692e-497f-ae46-51a1a5165a75       /data07                 ext4    defaults        0 0
+UUID=4912d35c-bf91-45a7-8ad1-9ece9f3744aa       /data08                 ext4    defaults        0 0
+UUID=1e2dde3b-de97-447f-91f5-f14067ef535f       /data09                 ext4    defaults        0 0
+UUID=ee7b0642-14ff-46ab-b664-9cae69cabd36       /data10                 ext4    defaults        0 0
+[root@ds-cassandra02p ~]#
+
+................................................................................
+
+#	New OS was installed.
+
+................................................................................
+
+
+[root@ds-clickhouse01p ~]# systemctl stop firewalld
+[root@ds-clickhouse01p ~]# systemctl disable firewalld
+Removed symlink /etc/systemd/system/multi-user.target.wants/firewalld.service.
+Removed symlink /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service.
+[root@ds-clickhouse01p ~]#
+
+[root@ds-clickhouse01p ~]# systemctl stop NetworkManager
+[root@ds-clickhouse01p ~]# systemctl disable NetworkManager
+Removed symlink /etc/systemd/system/multi-user.target.wants/NetworkManager.service.
+Removed symlink /etc/systemd/system/dbus-org.freedesktop.nm-dispatcher.service.
+Removed symlink /etc/systemd/system/dbus-org.freedesktop.NetworkManager.service.
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+[root@ds-clickhouse01p ~]# find /etc/sysconfig/network-scripts/ -iname ifcfg-\* -type f -exec echo "{}"\; -exec cat {} \; -exec echo \;
+/etc/sysconfig/network-scripts/ifcfg-team0_slave_2
+HWADDR=18:66:DA:58:D7:54
+NAME="team0 slave 2"
+UUID=ff054a31-581c-461f-94bf-5d4f90b84f78
+DEVICE=em2
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=TeamPort
+TEAM_PORT_CONFIG='{"prio":200}'
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=f773e715-64ef-4945-b20a-b11e9942d956
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1865
+VLAN=yes
+TYPE=Vlan
+PHYSDEV=ef4097a9-cce6-4f8e-a57b-cdf82c6b2052
+VLAN_ID=1865
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPADDR=10.218.65.3
+PREFIX=24
+GATEWAY=10.218.65.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1865
+UUID=717f1e48-4b6b-4f34-bc5c-8cd8d308347b
+ONBOOT=yes
+
+/etc/sysconfig/network-scripts/ifcfg-team0_slave_1
+HWADDR=18:66:DA:58:D7:52
+NAME="team0 slave 1"
+UUID=61731a8f-6617-4484-b0e4-171880648c68
+DEVICE=em1
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=TeamPort
+TEAM_PORT_CONFIG='{"prio":100}'
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=92930e43-57cf-4cf1-a472-cbc122dc6af7
+DEVICE=em1
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+PROXY_METHOD=none
+BROWSER_ONLY=no
+IPV6INIT=no
+NAME=team0
+UUID=ef4097a9-cce6-4f8e-a57b-cdf82c6b2052
+ONBOOT=yes
+DEVICETYPE=Team
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+
+/etc/sysconfig/network-scripts/ifcfg-idrac
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=idrac
+UUID=ac53294b-ea08-47b2-99a2-301f7302718e
+DEVICE=idrac
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+UUID=3e2a5837-5f1c-4515-b472-68a28982aae7
+DEVICE=em2
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=d7525ec9-7fb2-4921-82ca-a4fb3f5a1806
+DEVICE=em4
+ONBOOT=no
+
+[root@ds-clickhouse01p ~]#
+
+[root@ds-clickhouse01p ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+search tcsbank.ru
+nameserver 10.216.40.4
+nameserver 10.216.42.5
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+
+[root@ds-clickhouse01p ~]# mkdir -p ~/work/20180322-1235
+[root@ds-clickhouse01p ~]# mv /etc/yum.repos.d/CentOS-* ~/work/20180322-1235/
+[root@ds-clickhouse01p ~]# cat > /etc/yum.repos.d/tcs-centos-base.repo
+[tcs-centos-base]
+name=CentOS-$releasever - Base
+baseurl=http://repo-linux.tcsbank.ru/centos/$releasever/os/$basearch/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+skip_if_unavailable=true
+[root@ds-clickhouse01p ~]# cat > /etc/yum.repos.d/tcs-centos-centosplus.repo
+[tcs-centos-centosplus]
+name=CentOS-$releasever - Plus
+baseurl=http://repo-linux.tcsbank.ru/centos/$releasever/centosplus/$basearch/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+skip_if_unavailable=true
+[root@ds-clickhouse01p ~]# cat > /etc/yum.repos.d/tcs-centos-extras.repo
+[tcs-centos-extras]
+name=CentOS-$releasever - Extras
+baseurl=http://repo-linux.tcsbank.ru/centos/$releasever/extras/$basearch/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+skip_if_unavailable=true
+[root@ds-clickhouse01p ~]# cat > /etc/yum.repos.d/tcs-centos-updates.repo
+[tcs-centos-updates]
+name=CentOS-$releasever - Updates
+baseurl=http://repo-linux.tcsbank.ru/centos/$releasever/updates/$basearch/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+skip_if_unavailable=true
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+
+[root@ds-clickhouse01p ~]# yum install puppet
+
+[root@ds-clickhouse01p ~]# puppet agent -t
+Info: Creating a new SSL key for ds-clickhouse01p.tcsbank.ru
+Info: Caching certificate for ca
+Info: csr_attributes file loading from /etc/puppet/csr_attributes.yaml
+Info: Creating a new SSL certificate request for ds-clickhouse01p.tcsbank.ru
+Info: Certificate Request fingerprint (SHA256): 0D:D7:60:02:B3:B2:D4:01:C9:3A:BB:D5:15:09:9A:90:07:7E:DC:66:40:D3:0D:4F:73:69:34:2B:45:97:0B:AA
+Info: Caching certificate for ca
+Exiting; no certificate found and waitforcert is disabled
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+
+[root@ds-clickhouse01p ~]# pvs
+  PV         VG     Fmt  Attr PSize   PFree
+  /dev/sda2  centos lvm2 a--  277.87g    0
+[root@ds-clickhouse01p ~]# vgs
+  VG     #PV #LV #SN Attr   VSize   VFree
+  centos   1   3   0 wz--n- 277.87g    0
+[root@ds-clickhouse01p ~]# lvs
+  LV   VG     Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  opt  centos -wi-ao---- 223.87g
+  root centos -wi-ao----  50.00g
+  swap centos -wi-ao----   4.00g
+[root@ds-clickhouse01p ~]#
+
+
+[root@ds-clickhouse01p ~]# lsblk
+NAME            MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda               8:0    0 278.9G  0 disk
+├─sda1            8:1    0     1G  0 part /boot
+└─sda2            8:2    0 277.9G  0 part
+  ├─centos-root 253:0    0    50G  0 lvm  /
+  ├─centos-swap 253:1    0     4G  0 lvm  [SWAP]
+  └─centos-opt  253:2    0 223.9G  0 lvm  /opt
+sdb               8:16   0   3.7T  0 disk
+sr0              11:0    1  1024M  0 rom
+[root@ds-clickhouse01p ~]#
+
+
+[root@ds-clickhouse01p ~]# pvcreate /dev/sdb
+  Physical volume "/dev/sdb" successfully created.
+[root@ds-clickhouse01p ~]# vgcreate data /dev/sdb
+  Volume group "data" successfully created
+[root@ds-clickhouse01p ~]# lvcreate -l 100%VG data -n lv_data
+  Logical volume "lv_data" created.
+[root@ds-clickhouse01p ~]#
+
+
+[root@ds-clickhouse01p ~]# pvs
+  PV         VG     Fmt  Attr PSize   PFree
+  /dev/sda2  centos lvm2 a--  277.87g    0
+  /dev/sdb   data   lvm2 a--   <3.64t    0
+[root@ds-clickhouse01p ~]# vgs
+  VG     #PV #LV #SN Attr   VSize   VFree
+  centos   1   3   0 wz--n- 277.87g    0
+  data     1   1   0 wz--n-  <3.64t    0
+[root@ds-clickhouse01p ~]# lvs
+  LV      VG     Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  opt     centos -wi-ao---- 223.87g
+  root    centos -wi-ao----  50.00g
+  swap    centos -wi-ao----   4.00g
+  lv_data data   -wi-a-----  <3.64t
+[root@ds-clickhouse01p ~]#
+
+[root@ds-clickhouse01p ~]# lsblk
+NAME            MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda               8:0    0 278.9G  0 disk
+├─sda1            8:1    0     1G  0 part /boot
+└─sda2            8:2    0 277.9G  0 part
+  ├─centos-root 253:0    0    50G  0 lvm  /
+  ├─centos-swap 253:1    0     4G  0 lvm  [SWAP]
+  └─centos-opt  253:2    0 223.9G  0 lvm  /opt
+sdb               8:16   0   3.7T  0 disk
+└─data-lv_data  253:3    0   3.7T  0 lvm
+sr0              11:0    1  1024M  0 rom
+[root@ds-clickhouse01p ~]#
+
+
+[root@ds-clickhouse01p ~]# mkfs.ext4 /dev/mapper/data-lv_data
+mke2fs 1.42.9 (28-Dec-2013)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=0 blocks, Stripe width=0 blocks
+243998720 inodes, 975993856 blocks
+48799692 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=3124756480
+29785 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848, 512000000, 550731776, 644972544
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@ds-clickhouse01p ~]#
+
+
+[root@ds-clickhouse01p ~]# mkdir /data
+[root@ds-clickhouse01p ~]# blkid
+/dev/mapper/centos-root: UUID="0bc4dd2b-d0b8-4b3a-8e49-a84ce1dba7e8" TYPE="ext4"
+/dev/sda2: UUID="7yYST2-zetA-2IYI-pLNG-Ju0p-kuR6-bMd21I" TYPE="LVM2_member"
+/dev/sda1: UUID="7aec091d-b839-4e5b-ac74-a71c25b7ca21" TYPE="ext4"
+/dev/mapper/centos-swap: UUID="e782b69f-58ba-4558-a7ed-208d80bbb784" TYPE="swap"
+/dev/sdb: UUID="Czi20j-Ywii-b8En-maxw-dHaw-0UDd-JGio8U" TYPE="LVM2_member"
+/dev/mapper/centos-opt: UUID="0edf5c22-8531-4aeb-b898-f2b71fb56363" TYPE="ext4"
+/dev/mapper/data-lv_data: UUID="b8d7cc92-de4d-46ba-8f6f-0773bc223471" TYPE="ext4"
+[root@ds-clickhouse01p ~]#
+
+[root@ds-clickhouse01p ~]# vim /etc/fstab
+[root@ds-clickhouse01p ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Wed Mar 21 18:10:23 2018
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/centos-root /                       ext4    defaults        1 1
+UUID=7aec091d-b839-4e5b-ac74-a71c25b7ca21 /boot                   ext4    defaults        1 2
+/dev/mapper/centos-opt  /opt                    ext4    defaults        1 2
+/dev/mapper/centos-swap swap                    swap    defaults        0 0
+/dev/mapper/data-lv_data        /data           ext4    defaults,noatime,discard        1 2
+[root@ds-clickhouse01p ~]#
+
+[root@ds-clickhouse01p ~]# mount /data
+[root@ds-clickhouse01p ~]# df -hT
+Filesystem               Type      Size  Used Avail Use% Mounted on
+/dev/mapper/centos-root  ext4       50G  2.0G   45G   5% /
+devtmpfs                 devtmpfs   63G     0   63G   0% /dev
+tmpfs                    tmpfs      63G     0   63G   0% /dev/shm
+tmpfs                    tmpfs      63G  9.2M   63G   1% /run
+tmpfs                    tmpfs      63G     0   63G   0% /sys/fs/cgroup
+/dev/sda1                ext4      976M  121M  789M  14% /boot
+/dev/mapper/centos-opt   ext4      221G  459M  209G   1% /opt
+tmpfs                    tmpfs      13G     0   13G   0% /run/user/0
+/dev/mapper/data-lv_data ext4      3.6T   89M  3.4T   1% /data
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+[root@ds-clickhouse01p ~]# cat /etc/redhat-release
+CentOS Linux release 7.4.1708 (Core)
+[root@ds-clickhouse01p ~]#
+
+[root@ds-clickhouse01p ~]# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R730
+        Version: Not Specified
+        Serial Number: HG1P8D2
+        UUID: 4C4C4544-0047-3110-8050-C8C04F384432
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R730
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+
+[root@ds-clickhouse01p ~]# yum install srvadmin-all
+
+[root@ds-clickhouse01p ~]# yum install net-snmp net-snmp-utils
+
+
+[root@ds-clickhouse01p ~]# systemctl enable snmpd
+Created symlink from /etc/systemd/system/multi-user.target.wants/snmpd.service to /usr/lib/systemd/system/snmpd.service.
+[root@ds-clickhouse01p ~]#
+
+[root@ds-clickhouse01p ~]# netstat -nlptu | grep snmp
+tcp        0      0 127.0.0.1:199           0.0.0.0:*               LISTEN      3955/snmpd
+udp        0      0 0.0.0.0:161             0.0.0.0:*                           3955/snmpd
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+
+[root@ds-clickhouse01p ~]# racadm getniccfg | head
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.3
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+[root@ds-clickhouse01p ~]#
+
+
+................................................................................
+
+[root@ds-clickhouse01p ~]# cat /etc/snmp/snmpd.conf
+# com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser default tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+# includeDir /etc/snmp/config.d
+[root@ds-clickhouse01p ~]#
+
+
+[root@ds-clickhouse01p ~]# snmpwalk -v 2c -c tcspub 10.218.65.3 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux ds-clickhouse01p.tcsbank.ru 3.10.0-693.el7.x86_64 #1 SMP Tue Aug22 21:09:27 UTC 2017 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (5621) 0:00:56.21
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: ds-clickhouse01p.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (2) 0:00:00.02
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+[root@ds-clickhouse01p ~]# /usr/lib64/nagios/plugins/check_openmanage -p
+OK - System: 'PowerEdge R730', SN: 'HG1P8D2', 128 GB ram (8 dimms), 2 logical drives, 12 physical drives|T0_System_Board_Inlet=22C;42;47 T1_System_Board_Exhaust=34C;70;75 T2_CPU1=44C;82;87 T3_CPU2=44C;82;87 W2_System_Board_Pwr_Consumption=154W;896;980 A0_PS1_Current_1=0.4A;0;0 A1_PS2_Current_2=0.4A;0;0 V26_PS1_Voltage_1=232V;0;0 V27_PS2_Voltage_2=226V;0;0 F0_System_Board_Fan1=3720rpm;0;0 F1_System_Board_Fan2=3720rpm;0;0 F2_System_Board_Fan3=3720rpm;0;0 F3_System_Board_Fan4=3480rpm;0;0 F4_System_Board_Fan5=3600rpm;0;0 F5_System_Board_Fan6=3720rpm;0;0
+[root@ds-clickhouse01p ~]#
+
+................................................................................
+
+
+
+
+
+
+
+
+
+
+

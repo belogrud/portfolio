@@ -1,0 +1,2254 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   556491
+Название    №556491
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  07.09.2015 18:18
+Дата регистрации    07.09.2015 18:18
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - 1-10 клиентов
+Срочность   Низкая
+Описание запроса
+Здравствуйте, коллеги!
+
+Нужно настроить мониторинг в нагиос числа процессов на серверах Hadoop продуктового и тестового кластеров.
+Перечень нод:
+ds-hadoop-cs0[1-2]p
+ds-hadoop-wk01p
+...
+ds-hadoop-wk20p
+m1-hadoop-cs01t
+m1-hadoop-wk01t
+...
+m1-hadoop-wk10t
+
+Пороги:
+1000 - Warning
+1500 - Critical
+
+Смс по ним не слать, но helpdesk и группу <dwh-adm> уведомлять нужно.
+
+С уважением,
+
+Георгий Безруких
+Системный администратор
+
+[cid:image001.png@01D0E999.4C60E130]
+
+Ленинградское шоссе, дом 39А, стр. 1
+Москва, 125212, Россия
+Тел.: +7 (495) 648 1000 (вн. 2659)
+Факс: +7 (495) 645 5909
+E-mail: g.bezrukikh@tinkoff.ru
+<mailto:g.bezrukikh@tinkoff.ru>www.tinkoff.ru<http://www.tinkoff.ru/>
+
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ grep -irl check_total_procs objects/
+objects/servers/vmware/m1/m1-pr-mpi01.cfg
+objects/servers/vmware/m1/m1-pr-mpi02.cfg
+objects/servers/vmware/vm-autotest01p.cfg
+objects/servers/vmware/vm-mason01p.cfg
+objects/servers/vmware/vcscps/cps02.cfg
+objects/servers/vmware/vcscps/cps03.cfg
+objects/servers/vmware/vcscps/cps01.cfg
+objects/servers/vmware/vm-wiki.cfg
+objects/servers/vmware/ds/ds-pr-mpi01.cfg
+objects/servers/vmware/puppet/puppetdb.cfg
+objects/servers/vmware/vm-autotest01t.cfg
+objects/servers/vmware/vm-prt-dev-ib01.cfg
+objects/servers/vmware/esb/vm-esb-app02.cfg
+objects/servers/vmware/esb/vm-esb-app03.cfg
+objects/servers/vmware/esb/vm-esb-app05.cfg
+objects/servers/vmware/esb/vm-esb-app06.cfg
+objects/servers/vmware/esb/vm-esb-app07.cfg
+objects/servers/vmware/esb/vm-esb-app04.cfg
+objects/servers/dc-var-linux/m1-pr-fg01.cfg
+objects/servers/dc-var-linux/vm-web-app01.cfg
+objects/servers/dc-var-linux/vm-var-app245.cfg.del
+objects/servers/dc-var-linux/vm-dmz-app246.cfg
+objects/servers/dc-var-linux/hq-msk-var-app37.cfg.del
+objects/servers/dc-var-linux/vm-var2-app28.cfg.del
+objects/servers/dc-var-linux/vm-web-app02.cfg
+objects/servers/dc-ds/linux/ds-sasetl01p.cfg
+objects/servers/dc-ds/linux/ds-sasetl01x.cfg
+objects/servers/dc-m1/linux/processing/online/m1-pr-onl01.cfg
+objects/servers/dc-m1/linux/processing/online/m1-pr-onl02.cfg
+objects/servers/dc-m1/linux/hadoop/m1-bigdata-repo01t.cfg
+objects/servers/dc-m1/linux/sas/m1-sasetl01t.cfg
+objects/servers/dc-m1/linux/sas/m1-sasetl01p.cfg
+objects/servers/dc-m1/linux/portal/m1-prt-dmz-appbln01.cfg
+objects/servers/of-vol-linux/hq-vol-proxy02.cfg
+objects/servers/of-vol-linux/hq-vol-proxy01.cfg
+objects/servers/of-vol-linux/hq-vol-proxy03.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ stat objects/servers/dc-m1/linux/hadoop/m1-bigdata-repo01t.cfg
+  File: `objects/servers/dc-m1/linux/hadoop/m1-bigdata-repo01t.cfg'
+  Size: 3896            Blocks: 8          IO Block: 4096   regular file
+Device: 801h/2049d      Inode: 1209300     Links: 1
+Access: (0664/-rw-rw-r--)  Uid: (  525/     bsv)   Gid: (  525/     bsv)
+Access: 2015-09-08 14:39:17.081997806 +0300
+Modify: 2015-09-08 14:39:17.006999697 +0300
+Change: 2015-09-08 14:39:17.006999697 +0300
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+
+................................................................................
+
+#   I will use this part of config as a template.
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ vim +view objects/servers/dc-m1/linux/hadoop/m1-bigdata-repo01t.cfg
+...
+define service{
+    use                     generic-service-8x5
+    host_name               m1-bigdata-repo01t
+    service_description     Check Total Procs
+    check_command           check_nrpe!check_total_procs
+    contacts                d.s.pavlov_email, d.s.pavlov_sms, d.ovchinnikov_email, d.ovchinnikov_sms, g.bezrukikh_email, g.bezrukikh_sms
+}
+
+define service{
+    use                     generic-service-8x5
+    host_name               m1-bigdata-repo01t
+    service_description     Check Zombie Procs
+    check_command           check_nrpe!check_zombie_procs
+    contacts                d.s.pavlov_email, d.s.pavlov_sms, d.ovchinnikov_email, d.ovchinnikov_sms, g.bezrukikh_email, g.bezrukikh_sms
+}
+
+
+
+[root@m1-bigdata-repo01t ~]# cat /etc/nrpe.d/check_procs.cfg
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+command[check_zombie_procs]=/usr/lib64/nagios/plugins/check_procs -w 5 -c 10 -s Z
+[root@m1-bigdata-repo01t ~]#
+
+
+................................................................................
+
+[root@m1-hadoop-cs01t ~]# ls -Alh /etc/nrpe.d/check_*
+-rw-r--r-- 1 root root 528 Jan  9  2014 /etc/nrpe.d/check_disks.cfg
+-rw-r--r-- 1 root root 192 Jul 10 13:29 /etc/nrpe.d/check_ntp.cfg
+[root@m1-hadoop-cs01t ~]# ls -Alh /usr/lib64/nagios/plugins/check_procs
+-rwxr-xr-x 1 root root 121K Oct 17  2013 /usr/lib64/nagios/plugins/check_procs
+[root@m1-hadoop-cs01t ~]#
+
+................................................................................
+
+
+ds-hadoop-cs01p
+ds-hadoop-cs02p
+ds-hadoop-wk01p
+...
+ds-hadoop-wk20p
+m1-hadoop-cs01t
+m1-hadoop-wk01t
+...
+m1-hadoop-wk10t
+
+
+................................................................................
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no ./check_procs.cfg bsv@${var1}:/tmp/ ; done
+Warning: Permanently added 'ds-hadoop-cs02p,10.218.64.38' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk05p,10.218.64.17' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk06p,10.218.64.18' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk07p,10.218.64.20' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk08p,10.218.64.21' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk09p,10.218.64.26' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk10p,10.218.64.27' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk11p,10.218.64.28' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk12p,10.218.64.29' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk13p,10.218.64.30' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk14p,10.218.64.31' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk15p,10.218.64.32' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk16p,10.218.64.33' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk17p,10.218.64.34' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk18p,10.218.64.35' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk19p,10.218.64.36' (RSA) to the list of known hosts.
+Warning: Permanently added 'ds-hadoop-wk20p,10.218.64.37' (RSA) to the list of known hosts.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that the RSA host key has just been changed.
+The fingerprint for the RSA key sent by the remote host is
+28:48:37:0b:90:cc:5a:b0:82:b6:aa:57:92:ea:fe:23.
+Please contact your system administrator.
+Add correct host key in /home/support/.ssh/known_hosts to get rid of this message.
+Offending key in /home/support/.ssh/known_hosts:112
+Password authentication is disabled to avoid man-in-the-middle attacks.
+Keyboard-interactive authentication is disabled to avoid man-in-the-middle attacks.
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
+lost connection
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that the RSA host key has just been changed.
+The fingerprint for the RSA key sent by the remote host is
+d2:c0:64:d7:b1:4f:26:9c:3c:9b:f4:a4:19:c5:df:a8.
+Please contact your system administrator.
+Add correct host key in /home/support/.ssh/known_hosts to get rid of this message.
+Offending key in /home/support/.ssh/known_hosts:113
+Password authentication is disabled to avoid man-in-the-middle attacks.
+Keyboard-interactive authentication is disabled to avoid man-in-the-middle attacks.
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
+lost connection
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that the RSA host key has just been changed.
+The fingerprint for the RSA key sent by the remote host is
+a6:79:54:5f:17:4d:7f:a7:c6:4e:4f:ec:1b:a0:37:cc.
+Please contact your system administrator.
+Add correct host key in /home/support/.ssh/known_hosts to get rid of this message.
+Offending key in /home/support/.ssh/known_hosts:114
+Password authentication is disabled to avoid man-in-the-middle attacks.
+Keyboard-interactive authentication is disabled to avoid man-in-the-middle attacks.
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
+lost connection
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that the RSA host key has just been changed.
+The fingerprint for the RSA key sent by the remote host is
+af:db:f7:46:6f:c5:5e:b6:9c:40:7e:f7:a1:a4:61:5e.
+Please contact your system administrator.
+Add correct host key in /home/support/.ssh/known_hosts to get rid of this message.
+Offending key in /home/support/.ssh/known_hosts:115
+Password authentication is disabled to avoid man-in-the-middle attacks.
+Keyboard-interactive authentication is disabled to avoid man-in-the-middle attacks.
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
+lost connection
+Warning: Permanently added 'm1-hadoop-wk06t,10.218.70.19' (RSA) to the list of known hosts.
+Warning: Permanently added 'm1-hadoop-wk07t,10.218.70.21' (RSA) to the list of known hosts.
+Warning: Permanently added 'm1-hadoop-wk08t,10.218.70.22' (RSA) to the list of known hosts.
+Warning: Permanently added 'm1-hadoop-wk09t,10.218.70.23' (RSA) to the list of known hosts.
+Warning: Permanently added 'm1-hadoop-wk10t,10.218.70.24' (RSA) to the list of known hosts.
+[support@centos00 20150908-1801]$
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; ls /tmp/check_procs.cfg )" ; done
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; ls /tmp/check_procs.cfg )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+/tmp/check_procs.cfg
+ds-hadoop-cs02p
+/tmp/check_procs.cfg
+ds-hadoop-wk01p.tcsbank.ru
+/tmp/check_procs.cfg
+ds-hadoop-wk02p.tcsbank.ru
+/tmp/check_procs.cfg
+ds-hadoop-wk03p.tcsbank.ru
+/tmp/check_procs.cfg
+ds-hadoop-wk04p.tcsbank.ru
+/tmp/check_procs.cfg
+ds-hadoop-wk05p
+/tmp/check_procs.cfg
+ds-hadoop-wk06p
+/tmp/check_procs.cfg
+ds-hadoop-wk07p
+/tmp/check_procs.cfg
+ds-hadoop-wk08p.tcsbank.ru
+/tmp/check_procs.cfg
+ds-hadoop-wk09p
+/tmp/check_procs.cfg
+ds-hadoop-wk10p
+/tmp/check_procs.cfg
+ds-hadoop-wk11p
+/tmp/check_procs.cfg
+ds-hadoop-wk12p
+/tmp/check_procs.cfg
+ds-hadoop-wk13p
+/tmp/check_procs.cfg
+ds-hadoop-wk14p
+/tmp/check_procs.cfg
+ds-hadoop-wk15p
+/tmp/check_procs.cfg
+ds-hadoop-wk16p
+/tmp/check_procs.cfg
+ds-hadoop-wk17p
+/tmp/check_procs.cfg
+ds-hadoop-wk18p
+/tmp/check_procs.cfg
+ds-hadoop-wk19p
+/tmp/check_procs.cfg
+ds-hadoop-wk20p
+/tmp/check_procs.cfg
+m1-hadoop-cs01t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk01t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk02t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk03t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk04t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk05t
+/tmp/check_procs.cfg
+m1-hadoop-wk06t
+/tmp/check_procs.cfg
+m1-hadoop-wk07t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk08t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk09t.tcsbank.ru
+/tmp/check_procs.cfg
+m1-hadoop-wk10t.tcsbank.ru
+/tmp/check_procs.cfg
+[support@centos00 20150908-1801]$
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; sudo -i sh -c '[ ! -e /etc/nrpe.d/check_procs.cfg ] && cp /tmp/check_procs.cfg /etc/nrpe.d/check_procs.cfg ' )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+ds-hadoop-cs02p
+ds-hadoop-wk01p.tcsbank.ru
+ds-hadoop-wk02p.tcsbank.ru
+ds-hadoop-wk03p.tcsbank.ru
+ds-hadoop-wk04p.tcsbank.ru
+ds-hadoop-wk05p
+ds-hadoop-wk06p
+ds-hadoop-wk07p
+ds-hadoop-wk08p.tcsbank.ru
+ds-hadoop-wk09p
+ds-hadoop-wk10p
+ds-hadoop-wk11p
+ds-hadoop-wk12p
+ds-hadoop-wk13p
+ds-hadoop-wk14p
+ds-hadoop-wk15p
+ds-hadoop-wk16p
+ds-hadoop-wk17p
+ds-hadoop-wk18p
+ds-hadoop-wk19p
+ds-hadoop-wk20p
+m1-hadoop-cs01t.tcsbank.ru
+m1-hadoop-wk01t.tcsbank.ru
+m1-hadoop-wk02t.tcsbank.ru
+m1-hadoop-wk03t.tcsbank.ru
+m1-hadoop-wk04t.tcsbank.ru
+m1-hadoop-wk05t
+m1-hadoop-wk06t
+m1-hadoop-wk07t.tcsbank.ru
+m1-hadoop-wk08t.tcsbank.ru
+m1-hadoop-wk09t.tcsbank.ru
+m1-hadoop-wk10t.tcsbank.ru
+
+#   Next command is better.
+#   This line doesn't work if file exists.
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; sudo -i sh -c '[ ! -e /etc/nrpe.d/check_procs.cfg ] && cp /tmp/check_procs.cfg /etc/nrpe.d/check_procs.cfg ' )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+Connection to ds-hadoop-cs01p closed.
+ds-hadoop-cs02p
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+Connection to ds-hadoop-wk20p closed.
+m1-hadoop-cs01t.tcsbank.ru
+Connection to m1-hadoop-cs01t closed.
+m1-hadoop-wk01t.tcsbank.ru
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+Connection to m1-hadoop-wk10t closed.
+[support@centos00 20150908-1801]$
+
+#   This command line is better then previous.
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; sudo -i sh -c ' cp -u /tmp/check_procs.cfg /etc/nrpe.d/check_procs.cfg ; grep -e check_total_procs /etc/nrpe.d/check_procs.cfg ' )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-cs01p closed.
+ds-hadoop-cs02p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to ds-hadoop-wk20p closed.
+m1-hadoop-cs01t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-cs01t closed.
+m1-hadoop-wk01t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 1000 -c 1500
+Connection to m1-hadoop-wk10t closed.
+[support@centos00 20150908-1801]$
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; ls /etc/nrpe.d/check_procs.cfg )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-cs02p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk01p.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk02p.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk03p.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk04p.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk05p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk06p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk07p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk08p.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk09p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk10p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk11p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk12p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk13p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk14p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk15p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk16p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk17p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk18p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk19p
+/etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk20p
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-cs01t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk01t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk02t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk03t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk04t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk05t
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk06t
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk07t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk08t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk09t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk10t.tcsbank.ru
+/etc/nrpe.d/check_procs.cfg
+[support@centos00 20150908-1801]$
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; ls -Alh /etc/nrpe.d/check_procs.cfg )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-cs02p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk01p.tcsbank.ru
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk02p.tcsbank.ru
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk03p.tcsbank.ru
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk04p.tcsbank.ru
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk05p
+-rw-r--r--. 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk06p
+-rw-r--r--. 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk07p
+-rw-r--r--. 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk08p.tcsbank.ru
+-rw-r--r--. 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk09p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk10p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk11p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk12p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk13p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk14p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk15p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk16p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk17p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk18p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk19p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+ds-hadoop-wk20p
+-rw-r--r-- 1 root root 161 Aug 13 12:57 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-cs01t.tcsbank.ru
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk01t.tcsbank.ru
+-rw-r--r-- 1 root root 161 Aug  4 16:41 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk02t.tcsbank.ru
+-rw-r--r-- 1 root root 161 Aug  5 15:30 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk03t.tcsbank.ru
+-rw-r--r--. 1 root root 161 Nov 10  2014 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk04t.tcsbank.ru
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk05t
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk06t
+-rw-r--r-- 1 root root 163 Sep  8 19:04 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk07t.tcsbank.ru
+-rw-r--r-- 1 root root 161 Aug  6 11:02 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk08t.tcsbank.ru
+-rw-r--r-- 1 root root 161 Aug  6 11:35 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk09t.tcsbank.ru
+-rw-r--r-- 1 root root 161 Aug  6 11:46 /etc/nrpe.d/check_procs.cfg
+m1-hadoop-wk10t.tcsbank.ru
+-rw-r--r-- 1 root root 161 Aug  6 11:53 /etc/nrpe.d/check_procs.cfg
+[support@centos00 20150908-1801]$
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; sudo -i sh -c ' service nrpe restart ' )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-cs01p closed.
+ds-hadoop-cs02p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk20p closed.
+m1-hadoop-cs01t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-cs01t closed.
+m1-hadoop-wk01t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk10t closed.
+[support@centos00 20150908-1801]$
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; ls /usr/lib64/nagios/plugins/check_procs )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-cs01p closed.
+ds-hadoop-cs02p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+/usr/lib64/nagios/plugins/check_procs
+Connection to ds-hadoop-wk20p closed.
+m1-hadoop-cs01t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-cs01t closed.
+m1-hadoop-wk01t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+/usr/lib64/nagios/plugins/check_procs
+Connection to m1-hadoop-wk10t closed.
+[support@centos00 20150908-1801]$
+
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ find . -name ds-hadoop-cs01p.cfg
+./objects/servers/dc-ds/linux/hadoop/ds-hadoop-cs01p.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ vim ./objects/servers/dc-ds/linux/hadoop/ds-hadoop-cs01p.cfg
+
+
+define service{
+    use                     generic-service
+    host_name               ds-hadoop-cs01p
+    service_description     Check Total Procs
+    check_command           check_nrpe!check_total_procs
+    contacts                empty_contact
+}
+
+
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git commit -m "SD#556491. Add check amount of process." objects/servers/dc-ds/linux/hadoop/ds-hadoop-cs01p.cfg
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; git status'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; git pull'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; service nagios reload'
+
+[root@vm-vol-nag01t ~]# check_nrpe3 -H ds-hadoop-cs01p -c check_total_procs
+PROCS CRITICAL: 1034 processes
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+
+#   Wed Sep  9 11:35:05 MSK 2015
+
+[root@vm-vol-nag01t ~]# for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do echo -e "\n${var1}" ; check_nrpe3 -H ${var1} -c check_total_procs ; done
+
+ds-hadoop-cs01p
+PROCS CRITICAL: 1443 processes
+
+ds-hadoop-cs02p
+PROCS CRITICAL: 741 processes
+
+ds-hadoop-wk01p
+PROCS CRITICAL: 710 processes
+
+ds-hadoop-wk02p
+PROCS CRITICAL: 681 processes
+
+ds-hadoop-wk03p
+PROCS CRITICAL: 681 processes
+
+ds-hadoop-wk04p
+PROCS CRITICAL: 674 processes
+
+ds-hadoop-wk05p
+PROCS CRITICAL: 691 processes
+
+ds-hadoop-wk06p
+PROCS CRITICAL: 688 processes
+
+ds-hadoop-wk07p
+PROCS CRITICAL: 687 processes
+
+ds-hadoop-wk08p
+PROCS CRITICAL: 639 processes
+
+ds-hadoop-wk09p
+PROCS CRITICAL: 656 processes
+
+ds-hadoop-wk10p
+PROCS CRITICAL: 604 processes
+
+ds-hadoop-wk11p
+PROCS CRITICAL: 621 processes
+
+ds-hadoop-wk12p
+PROCS CRITICAL: 572 processes
+
+ds-hadoop-wk13p
+PROCS CRITICAL: 640 processes
+
+ds-hadoop-wk14p
+PROCS CRITICAL: 613 processes
+
+ds-hadoop-wk15p
+PROCS CRITICAL: 590 processes
+
+ds-hadoop-wk16p
+PROCS CRITICAL: 641 processes
+
+ds-hadoop-wk17p
+PROCS CRITICAL: 590 processes
+
+ds-hadoop-wk18p
+PROCS CRITICAL: 574 processes
+
+ds-hadoop-wk19p
+PROCS CRITICAL: 598 processes
+
+ds-hadoop-wk20p
+PROCS CRITICAL: 628 processes
+
+m1-hadoop-cs01t
+PROCS CRITICAL: 698 processes
+
+m1-hadoop-wk01t
+PROCS CRITICAL: 554 processes
+
+m1-hadoop-wk02t
+PROCS CRITICAL: 554 processes
+
+m1-hadoop-wk03t
+PROCS CRITICAL: 528 processes
+
+m1-hadoop-wk04t
+PROCS CRITICAL: 532 processes
+
+m1-hadoop-wk05t
+PROCS CRITICAL: 529 processes
+
+m1-hadoop-wk06t
+PROCS CRITICAL: 527 processes
+
+m1-hadoop-wk07t
+PROCS CRITICAL: 553 processes
+
+m1-hadoop-wk08t
+PROCS CRITICAL: 553 processes
+
+m1-hadoop-wk09t
+PROCS CRITICAL: 553 processes
+
+m1-hadoop-wk10t
+PROCS CRITICAL: 553 processes
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do echo -e "\n${var1}" ; find $(pwd) -name ${var1}.cfg -exec grep -e contact {} \; ; done
+
+ds-hadoop-cs01p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+    contacts                 empty_contact
+    contact_groups           hetzner-admins
+    contacts                empty_contact
+#    contacts                 empty_contact
+#    contact_groups           hetzner-admins
+
+ds-hadoop-cs02p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk01p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk02p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk03p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk04p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk05p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk06p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk07p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk08p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email,d.s.pavlov_email,g.bezrukikh_email,Naumen_nag_request_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+ds-hadoop-wk09p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk10p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk11p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk12p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk13p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk14p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk15p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk16p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk17p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk18p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk19p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+ds-hadoop-wk20p
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 d.ovchinnikov_email, d.ovchinnikov_sms, d.s.pavlov_email, d.s.pavlov_sms, g.bezrukikh_email, g.bezrukikh_sms
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+m1-hadoop-cs01t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+m1-hadoop-wk01t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+m1-hadoop-wk02t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+m1-hadoop-wk03t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+m1-hadoop-wk04t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+m1-hadoop-wk05t
+    contacts                 g.bezrukikh_email
+    contact_groups           linux-admins
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+m1-hadoop-wk06t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+        contact_groups                linux-admins
+
+m1-hadoop-wk07t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+m1-hadoop-wk08t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+m1-hadoop-wk09t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+
+m1-hadoop-wk10t
+    contacts                 g.bezrukikh_email
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 g.bezrukikh_email
+    contact_groups           empty-group
+    contacts                 empty_contact
+    contact_groups           empty-group
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+................................................................................
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs01p ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; sudo -i sh -c ' sed -e \"s/command\[check_total_procs\]=\/usr\/lib64\/nagios\/plugins\/check_procs -w 150 -c 200/#command\[check_total_procs\]=\/usr\/lib64\/nagios\/plugins\/check_procs -w 150 -c 200/g\" /etc/nagios/nrpe.cfg | grep check_proc ' )" ; done
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs01p ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; sudo -i sh -c ' sed -i -e \"s/command\[check_total_procs\]=\/usr\/lib64\/nagios\/plugins\/check_procs -w 150 -c 200/#command\[check_total_procs\]=\/usr\/lib64\/nagios\/plugins\/check_procs -w 150 -c 200/g\" /etc/nagios/nrpe.cfg ; grep -e \"check_procs -w 150 -c 200\" /etc/nagios/nrpe.cfg ' )" ; done
+ds-hadoop-cs01p.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Connection to ds-hadoop-cs01p closed.
+[support@centos00 20150908-1801]$
+
+[root@vm-vol-nag01t ~]# check_nrpe3 -H ds-hadoop-cs01p -c check_total_procs
+PROCS OK: 713 processes
+[root@vm-vol-nag01t ~]#
+
+
+[support@centos00 20150908-1801]$ for var1 in ds-hadoop-cs02p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@${var1} "( hostname ; sudo -i sh -c ' sed -i -e \"s/command\[check_total_procs\]=\/usr\/lib64\/nagios\/plugins\/check_procs -w 150 -c 200/#command\[check_total_procs\]=\/usr\/lib64\/nagios\/plugins\/check_procs -w 150 -c 200/g\" /etc/nagios/nrpe.cfg ; grep -e \"check_procs -w 150 -c 200\" /etc/nagios/nrpe.cfg ; service nrpe restart ' )" ; done
+ds-hadoop-cs02p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to ds-hadoop-wk20p closed.
+m1-hadoop-cs01t.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-cs01t closed.
+m1-hadoop-wk01t.tcsbank.ru
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+# #command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+Connection to m1-hadoop-wk10t closed.
+[support@centos00 20150908-1801]$
+
+[root@vm-vol-nag01t ~]# for var1 in ds-hadoop-cs0{1..2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do echo -e "\n${var1}" ; check_nrpe3 -H      ${var1} -c check_total_procs ; done
+
+ds-hadoop-cs01p
+PROCS OK: 707 processes
+
+ds-hadoop-cs02p
+PROCS OK: 747 processes
+
+ds-hadoop-wk01p
+PROCS OK: 552 processes
+
+ds-hadoop-wk02p
+PROCS OK: 532 processes
+
+ds-hadoop-wk03p
+PROCS OK: 544 processes
+
+ds-hadoop-wk04p
+PROCS OK: 533 processes
+
+ds-hadoop-wk05p
+PROCS OK: 530 processes
+
+ds-hadoop-wk06p
+PROCS OK: 527 processes
+
+ds-hadoop-wk07p
+PROCS OK: 526 processes
+
+ds-hadoop-wk08p
+PROCS OK: 532 processes
+
+ds-hadoop-wk09p
+PROCS OK: 576 processes
+
+ds-hadoop-wk10p
+PROCS OK: 557 processes
+
+ds-hadoop-wk11p
+PROCS OK: 556 processes
+
+ds-hadoop-wk12p
+PROCS OK: 567 processes
+
+ds-hadoop-wk13p
+PROCS OK: 554 processes
+
+ds-hadoop-wk14p
+PROCS OK: 556 processes
+
+ds-hadoop-wk15p
+PROCS OK: 555 processes
+
+ds-hadoop-wk16p
+PROCS OK: 552 processes
+
+ds-hadoop-wk17p
+PROCS OK: 552 processes
+
+ds-hadoop-wk18p
+PROCS OK: 556 processes
+
+ds-hadoop-wk19p
+PROCS OK: 559 processes
+
+ds-hadoop-wk20p
+PROCS OK: 554 processes
+
+m1-hadoop-cs01t
+PROCS OK: 704 processes
+
+m1-hadoop-wk01t
+PROCS OK: 555 processes
+
+m1-hadoop-wk02t
+PROCS OK: 555 processes
+
+m1-hadoop-wk03t
+PROCS OK: 528 processes
+
+m1-hadoop-wk04t
+PROCS OK: 529 processes
+
+m1-hadoop-wk05t
+PROCS OK: 529 processes
+
+m1-hadoop-wk06t
+PROCS OK: 527 processes
+
+m1-hadoop-wk07t
+PROCS OK: 553 processes
+
+m1-hadoop-wk08t
+PROCS OK: 553 processes
+
+m1-hadoop-wk09t
+PROCS OK: 553 processes
+
+m1-hadoop-wk10t
+PROCS OK: 554 processes
+[root@vm-vol-nag01t ~]#
+
+
+................................................................................
+
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #git commit -a -m "SD#556491. Add check amount of process."
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #git push
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #sudo -u root -i sh -c 'cd /etc/nagios ; git status'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #sudo -u root -i sh -c 'cd /etc/nagios ; git pull'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; service nagios reload'
+
+................................................................................
+................................................................................
+
+
+
+
+

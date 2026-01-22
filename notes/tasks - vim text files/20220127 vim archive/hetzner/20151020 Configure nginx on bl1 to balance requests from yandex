@@ -1,0 +1,774 @@
+
+
+[17:36:44] tcsbank - Gurkin Roman: Сергей, можешь nginx настроить на bl1 ?
+[17:46:57] Sergey Belogrud: Настроить аналогично чему? Есть уже где-то настроенный нужным образом?
+[17:47:42] tcsbank - Gurkin Roman: не, там надо по другому настроить
+[17:48:28] tcsbank - Gurkin Roman: запросы которые идут от яндекса надо раскидывать на dsp2,dsp3, ... dsp6 но не более 900 запрос в сек на каждый
+[17:48:37] tcsbank - Gurkin Roman: все что лишнее надо отвечать 204
+[17:49:02] tcsbank - Gurkin Roman: и такая схема только для яндекса
+[17:50:10] Sergey Belogrud: А текущие nginx как настроены?
+[17:50:17] tcsbank - Gurkin Roman: яндекс шлет запросы на bl1.datamind.ru:9899/yandex
+[17:50:41 | Изменены 17:50:46] tcsbank - Gurkin Roman: сейчас на bl1 кажется нет nginx
+[17:50:50] tcsbank - Gurkin Roman: но я не уверен
+[17:51:09] tcsbank - Gurkin Roman: возможно есть, он должен балансить клики вроде
+[17:51:14] tcsbank - Gurkin Roman: на 80-м порту
+[17:51:29] tcsbank - Gurkin Roman: если так то это должно работать
+[17:53:08] Sergey Belogrud: Nginx есть.
+bsv@bl1:~$ service nginx status
+ * nginx is running
+[17:53:35] tcsbank - Gurkin Roman: значит он балансит клики на 80 порту - ломать нельзя )
+[17:53:51] tcsbank - Gurkin Roman: можно добавить туда обработку для яндекса как я описал выше?
+[17:54:54] Sergey Belogrud: Надеюсь, что можно.
+Я с nginx'ами не сталкивался раньше.
+[17:55:06] tcsbank - Gurkin Roman: эх )
+[17:56:08] saterenko: А разве не haproxy принимает запросы от яндекса и балансит их на dsp?
+[17:56:16] tcsbank - Gurkin Roman: haproxy
+[17:56:24] tcsbank - Gurkin Roman: хотим перекинуть на nginx
+[17:56:34] tcsbank - Gurkin Roman: мы же это обсудили с тобой
+[17:56:43] tcsbank - Gurkin Roman: но перекинуть только яндекс
+[17:57:16] saterenko: Ааа, я перепутал, думал, что ты написал, что nginx сейчас балансит...
+[17:57:31] tcsbank - Gurkin Roman: nginx сейчас балансит только клики
+[17:57:46 | Изменены 17:57:49] saterenko: Ok
+
+................................................................................
+
+upport@centos00 ~]$ ssh-add ~/.ssh/id_dsa
+Enter passphrase for /home/support/.ssh/id_dsa:
+Identity added: /home/support/.ssh/id_dsa (/home/support/.ssh/id_dsa)
+[support@centos00 ~]$
+
+[support@centos00 ~]$ ssh bsv@bk1.datamind.ru
+The authenticity of host 'bk1.datamind.ru (88.198.167.20)' can't be established.
+RSA key fingerprint is 38:46:93:81:1d:af:7e:81:a9:1f:bb:69:61:84:f6:83.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'bk1.datamind.ru,88.198.167.20' (RSA) to the list of known hosts.
+Welcome to Ubuntu 12.04.3 LTS (GNU/Linux 3.8.0-33-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+New release '14.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Tue Oct 20 17:47:26 2015 from 91.194.227.252
+bsv@bk1:~$
+
+bsv@bk1:~$ read -s SSHPASS ; export SSHPASS
+bsv@bk1:~$ sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@bl1
+Welcome to Ubuntu 12.04.3 LTS (GNU/Linux 3.8.0-33-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+New release '14.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Tue Oct 20 17:48:35 2015 from puppet
+bsv@bl1:~$
+
+................................................................................
+
+root@bl1 ~/work/20151020-1822 # netstat -nlptu | grep 9899
+tcp        0      0 0.0.0.0:9899            0.0.0.0:*               LISTEN      6583/haproxy
+root@bl1 ~/work/20151020-1822 # ps auxc | grep haproxy
+haproxy   6583  4.9  0.0  43032 19796 ?        Ss   14:17  12:36 haproxy
+haproxy   6584  4.9  0.0  55280 31916 ?        Ss   14:17  12:29 haproxy
+haproxy   6585  7.5  0.1  77648 54312 ?        Rs   14:17  19:15 haproxy
+haproxy   6586 10.5  0.2 114120 90688 ?        Rs   14:17  26:38 haproxy
+haproxy   6587 15.3  0.4 182208 158696 ?       Ss   14:17  38:50 haproxy
+haproxy   6588 25.6  0.7 278356 254904 ?       Rs   14:17  65:00 haproxy
+haproxy   6589 37.9  0.8 301100 277356 ?       Ss   14:17  96:08 haproxy
+haproxy   6590 36.1  0.8 301128 277360 ?       Ss   14:17  91:34 haproxy
+root@bl1 ~/work/20151020-1822 # whereis haproxy
+haproxy: /usr/sbin/haproxy /etc/haproxy /usr/share/man/man1/haproxy.1.gz
+root@bl1 ~/work/20151020-1822 # rpm -qf /usr/sbin/haproxy
+The program 'rpm' is currently not installed.  You can install it by typing:
+apt-get install rpm
+root@bl1 ~/work/20151020-1822 #
+
+................................................................................
+
+#   Check that config of haproxy and nginx are not obtaining from puppet.
+bsv@bk1:~$ find /etc/puppet/ -name *haproxy*
+bsv@bk1:~$ find /etc/puppet/ -name *nginx*
+/etc/puppet/manifests/classes/nginx.pp
+/etc/puppet/backup/manifests/classes/nginx.pp
+/etc/puppet/dist/apps/nginx
+/etc/puppet/dist/apps/nginx/nginx-stats.sh
+/etc/puppet/dist/apps/zabbix/zabbix_agentd.conf.d/nginx.conf
+/etc/puppet/dist/apps/zabbix/scripts/nginx_stats.sh
+bsv@bk1:~$
+
+................................................................................
+
+#   Following section should be commented out if I up nginx load balancer on port 9899.
+root@bl1 ~/work/20151020-1822 # vim +view /etc/haproxy/haproxy.cfg
+...
+listen  yandex-9899 0.0.0.0:9899
+        #cookie SERVERID rewrite
+        mode tcp
+
+
+        timeout http-keep-alive 2s
+        option http-server-close
+        option http-pretend-keepalive
+        #balance        roundrobin
+        balance leastconn
+
+#       server  dsp1 148.251.1.143:9875 weight 10 check inter 5001 rise 2 fall 5
+        server  dsp2 148.251.1.142:9875 weight 10 check inter 5001 rise 2 fall 5 maxconn 2000
+        server  dsp3 148.251.1.141:9875 weight 10 check inter 5001 rise 2 fall 5 maxconn 2000
+        server  dsp4 148.251.1.140:9875 weight 10 check inter 5001 rise 2 fall 5 maxconn 2000
+        server  dsp5 148.251.1.134:9875 weight 10 check inter 5001 rise 2 fall 5 maxconn 2000
+###     server  dsp6 148.251.1.133:9875 maxconn 3 weight 10 check inter 5001 rise 2 fall 5
+        server  dsp6 148.251.1.133:9875 weight 10 check inter 5001 rise 2 fall 5 maxconn 2000
+
+###     server  dsp-test 144.76.224.22:9875 weight 10 check inter 5001 rise 2 fall 5
+        #server  dsp-test 144.76.224.22:9875 maxconn 1 weight 1 check inter 5001 rise 2 fall 5
+...
+
+................................................................................
+
+#   Here I have found new not used yet port. That I try in new section in nginx.conf file, before I apply required port.
+#   I will check how my config in nginx work before.
+root@bl1 ~/work/20151020-1822 # netstat -nlptu | grep 9999
+
+root@bl1 ~/work/20151020-1822 # nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@bl1 ~/work/20151020-1822 #
+
+        server {
+                listen 9999;
+                server_name bl1.datamind.ru;
+                access_log /var/log/nginx/access_http_9899.log;
+                error_log /var/log/nginx/error_http_9899.log;
+
+                location /image {
+                        if ($request_uri = /image?source=external&pixel_id=3&dmp_id= ) {
+                                return 200;
+                        }
+                        return 200;
+                }
+
+                location /yandex {
+                          proxy_set_header Host $host;
+                          proxy_set_header X-Real-IP  $remote_addr;
+                          proxy_set_header X-Forwarded-Host $host;
+                          proxy_set_header X-Forwarded-Server $host;
+                          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                          proxy_pass http://backend;
+                          proxy_redirect off;
+                         }
+                }
+
+root@bl1 ~/work/20151020-1822 # nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@bl1 ~/work/20151020-1822 #
+
+
+root@bl1 ~/work/20151020-1822 # service nginx reload
+Reloading nginx configuration: nginx.
+root@bl1 ~/work/20151020-1822 # netstat -nlptu | grep 9999
+root@bl1 ~/work/20151020-1822 # service nginx restart
+Restarting nginx: nginx: [emerg] bind() to 0.0.0.0:9999 failed (98: Address already in use)
+nginx: [emerg] bind() to 0.0.0.0:9999 failed (98: Address already in use)
+nginx: [emerg] bind() to 0.0.0.0:9999 failed (98: Address already in use)
+nginx: [emerg] bind() to 0.0.0.0:9999 failed (98: Address already in use)
+nginx: [emerg] bind() to 0.0.0.0:9999 failed (98: Address already in use)
+nginx: [emerg] still could not bind()
+nginx.
+root@bl1 ~/work/20151020-1822 # netstat -nlptu | grep 9999
+root@bl1 ~/work/20151020-1822 #
+
+#   This method restarting of nginx is woriking.
+#
+root@bl1 ~/work/20151020-1822 # /etc/init.d/nginx status
+ * nginx is not running
+root@bl1 ~/work/20151020-1822 # /etc/init.d/nginx configtest
+Testing nginx configuration: nginx.
+root@bl1 ~/work/20151020-1822 # /etc/init.d/nginx stop
+Stopping nginx: nginx.
+root@bl1 ~/work/20151020-1822 # /etc/init.d/nginx start
+Starting nginx: nginx.
+root@bl1 ~/work/20151020-1822 #
+
+root@bl1 ~/work/20151020-1822 # netstat -nlptu | grep 8888
+tcp        0      0 0.0.0.0:8888            0.0.0.0:*               LISTEN      16488/nginx
+root@bl1 ~/work/20151020-1822 #
+
+................................................................................
+
+root@bl1 ~/work/20151020-1822 # curl http://148.251.1.142:80/yandex
+{"error":"unknown resource: '/yandex'"}root@bl1 ~/work/20151020-1822 #
+root@bl1 ~/work/20151020-1822 #
+
+................................................................................
+
+#   Fri Oct 23 18:25:52 MSK 2015
+
+root@bl1 ~ # nginx -t
+nginx: [emerg] invalid parameter "max_conns=9000" in /etc/nginx/nginx.conf:98
+nginx: configuration file /etc/nginx/nginx.conf test failed
+root@bl1 ~ #
+
+root@bl1 ~ # tail -n 2 /var/log/nginx/error.log
+2015/10/23 16:40:41 [error] 19157#0: *405421 connect() failed (111: Connection refused) while connecting to upstream, client: 46.47.194.28, server: pool.datamind.ru, request: "HEAD / HTTP/1.1", upstream: "http://148.251.1.134:80/", host: "pool.datamind.ru"
+2015/10/23 18:44:09 [emerg] 32260#0: invalid parameter "max_conns=9000" in /etc/nginx/nginx.conf:98
+root@bl1 ~ #
+
+................................................................................
+................................................................................
+
+
+#   Mon Oct 26 17:12:27 MSK 2015
+
+        upstream backend-ssp {
+        #dsp1
+                #server 148.251.1.143:9875;
+        #dsp2
+                server 148.251.1.142:9875;
+        #dsp3
+                server 148.251.1.141:9875;
+        #dsp4
+                server 148.251.1.140:9875;
+        #dsp5
+                server 148.251.1.134:9875;
+        #dsp6
+                server 148.251.1.133:9875;
+        #dsp-test
+                #server 144.76.224.22:9875;
+        }
+
+        server {
+                listen 81;
+                server_name bl1.datamind.ru;
+                access_log /var/log/nginx/access_http_9899.log;
+                error_log /var/log/nginx/error_http_9899.log;
+
+                location /yandex {
+                          proxy_set_header Host $host;
+                          proxy_set_header X-Real-IP  $remote_addr;
+                          proxy_set_header X-Forwarded-Host $host;
+                          proxy_set_header X-Forwarded-Server $host;
+                          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                          proxy_pass http://backend-ssp;
+                          proxy_redirect off;
+                         }
+                }
+
+#   This section was taken from /etc/haproxy/haproxy.cfg
+# ALL
+listen  all-9875 0.0.0.0:9875
+        #cookie SERVERID rewrite
+#       timeout http-keep-alive 15s
+#        option http-server-close
+#        option http-pretend-keepalive
+        mode tcp
+        #balance source
+        option tcplog
+        balance roundrobin
+        #balance        roundrobin
+        #server dsp1 148.251.1.143:9875 weight 10 check inter 5001 rise 2 fall 5
+        server  dsp2 148.251.1.142:9875 weight 10 check inter 5001 rise 2 fall 5
+        server  dsp3 148.251.1.141:9875 weight 10 check inter 5001 rise 2 fall 5
+        server  dsp4 148.251.1.140:9875 weight 10 check inter 5001 rise 2 fall 5
+        server  dsp5 148.251.1.134:9875 weight 10 check inter 5001 rise 2 fall 5
+        server  dsp6 148.251.1.133:9875 weight 10 check inter 5001 rise 2 fall 5
+        #server  dsp-test 144.76.224.22:9875 maxconn 10 weight 1 check inter 5001 rise 2 fall 5
+
+................................................................................
+
+
+
+root@bl1 ~ # nginx -t
+nginx: [emerg] unknown directive "least_conn" in /etc/nginx/nginx.conf:93
+nginx: configuration file /etc/nginx/nginx.conf test failed
+root@bl1 ~ #
+
+................................................................................
+
+root@bl1 ~ # ls -Alh /opt
+total 4.0K
+-rw-r--r-- 1 root root 4 Apr 15  2014 test
+root@bl1 ~ # cd /opt
+root@bl1 /opt # apt-get build-dep nginx
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+E: Unable to find a source package for nginx
+root@bl1 /opt # ll
+total 12
+drwxr-xr-x  2 root root 4096 Apr 11  2014 ./
+drwxr-xr-x 23 root root 4096 Dec  9  2013 ../
+-rw-r--r--  1 root root    4 Apr 15  2014 test
+root@bl1 /opt # apt-get source nginx
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+E: Unable to find a source package for nginx
+root@bl1 /opt #
+
+................................................................................
+................................................................................
+
+
+#   Tue Oct 27 11:50:14 MSK 2015
+root@bl1 ~ # apt-cache search nginx
+collectd-core - statistics collection and monitoring daemon (core system)
+fcgiwrap - simple server to run CGI applications over FastCGI
+gitweb - fast, scalable, distributed revision control system (web interface)
+gunicorn - Event-based HTTP/WSGI server
+libplack-middleware-file-sass-perl - Sass and SCSS support for all Plack-based PSGI frameworks
+nginx - small, but very powerful and efficient web server and mail proxy
+nginx-common - small, but very powerful and efficient web server (common files)
+nginx-doc - small, but very powerful and efficient web server (documentation)
+nginx-extras - nginx web server with full set of core modules and extras
+nginx-extras-dbg - Debugging symbols for nginx (extras)
+nginx-full - nginx web server with full set of core modules
+nginx-full-dbg - Debugging symbols for nginx (full)
+nginx-light - nginx web server with minimal set of core modules
+nginx-light-dbg - Debugging symbols for nginx (light)
+nginx-naxsi - nginx web server with naxsi 0.44 included
+nginx-naxsi-dbg - Debugging symbols for nginx (naxsi)
+stud - scalable TLS unwrapping daemon
+uwsgi-extra - fast, self-healing application container server (extra files)
+root@bl1 ~ # apt-file search /etc/nginx/nginx.conf
+The program 'apt-file' is currently not installed.  You can install it by typing:
+apt-get install apt-file
+root@bl1 ~ # apt-get install apt-file
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+  binutils build-essential cpp cpp-4.6 dpkg-dev fakeroot g++ g++-4.6 gcc gcc-4.6 libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl libapt-pkg-perl libc-bin libc-dev-bin libc6 libc6-dev libconfig-file-perl
+  libdpkg-perl libgmp10 libgomp1 liblist-moreutils-perl libmpc2 libmpfr4 libquadmath0 libregexp-assemble-perl libstdc++6-4.6-dev linux-libc-dev make manpages-dev
+Suggested packages:
+  binutils-doc cpp-doc gcc-4.6-locales debian-keyring g++-multilib g++-4.6-multilib gcc-4.6-doc libstdc++6-4.6-dbg gcc-multilib autoconf automake1.9 libtool flex bison gdb gcc-doc gcc-4.6-multilib libmudflap0-4.6-dev libgcc1-dbg
+  libgomp1-dbg libquadmath0-dbg libmudflap0-dbg binutils-gold glibc-doc libstdc++6-4.6-doc make-doc
+The following NEW packages will be installed:
+  apt-file binutils build-essential cpp cpp-4.6 dpkg-dev fakeroot g++ g++-4.6 gcc gcc-4.6 libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl libapt-pkg-perl libc-dev-bin libc6-dev libconfig-file-perl
+  libdpkg-perl libgmp10 libgomp1 liblist-moreutils-perl libmpc2 libmpfr4 libquadmath0 libregexp-assemble-perl libstdc++6-4.6-dev linux-libc-dev make manpages-dev
+The following packages will be upgraded:
+  libc-bin libc6
+2 upgraded, 30 newly installed, 0 to remove and 135 not upgraded.
+Need to get 36.9 MB of archives.
+After this operation, 85.4 MB of additional disk space will be used.
+Do you want to continue [Y/n]? y
+Get:1 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main libc-bin amd64 2.15-0ubuntu10.12 [1,179 kB]
+Get:2 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main libc6 amd64 2.15-0ubuntu10.12 [4,652 kB]
+Get:3 http://mirror.hetzner.de/ubuntu/packages/ precise/main libgmp10 amd64 2:5.0.2+dfsg-2ubuntu1 [238 kB]
+Get:4 http://mirror.hetzner.de/ubuntu/packages/ precise/main libgomp1 amd64 4.6.3-1ubuntu5 [25.5 kB]
+Get:5 http://mirror.hetzner.de/ubuntu/packages/ precise/main libmpfr4 amd64 3.1.0-3ubuntu2 [201 kB]
+Get:6 http://mirror.hetzner.de/ubuntu/packages/ precise/main libquadmath0 amd64 4.6.3-1ubuntu5 [126 kB]
+Get:7 http://mirror.hetzner.de/ubuntu/packages/ precise/main libmpc2 amd64 0.9-4 [39.5 kB]
+Get:8 http://mirror.hetzner.de/ubuntu/packages/ precise/universe libconfig-file-perl all 1.50-2 [10.1 kB]
+Get:9 http://mirror.hetzner.de/ubuntu/packages/ precise/main libapt-pkg-perl amd64 0.1.25build2 [82.9 kB]
+Get:10 http://mirror.hetzner.de/ubuntu/packages/ precise/main liblist-moreutils-perl amd64 0.33-1build1 [49.1 kB]
+Get:11 http://mirror.hetzner.de/ubuntu/packages/ precise/universe libregexp-assemble-perl all 0.35-2 [87.5 kB]
+Get:12 http://mirror.hetzner.de/ubuntu/packages/ precise/universe apt-file all 2.5.0ubuntu1 [25.6 kB]
+Get:13 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main binutils amd64 2.22-6ubuntu1.3 [2,657 kB]
+Get:14 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main libc-dev-bin amd64 2.15-0ubuntu10.12 [83.1 kB]
+Get:15 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main libc6-dev amd64 2.15-0ubuntu10.12 [2,942 kB]
+Get:16 http://mirror.hetzner.de/ubuntu/packages/ precise/main cpp-4.6 amd64 4.6.3-1ubuntu5 [4,836 kB]
+Get:17 http://mirror.hetzner.de/ubuntu/packages/ precise/main cpp amd64 4:4.6.3-1ubuntu5 [27.6 kB]
+Get:18 http://mirror.hetzner.de/ubuntu/packages/ precise/main gcc-4.6 amd64 4.6.3-1ubuntu5 [7,572 kB]
+Get:19 http://mirror.hetzner.de/ubuntu/packages/ precise/main gcc amd64 4:4.6.3-1ubuntu5 [5,114 B]
+Get:20 http://mirror.hetzner.de/ubuntu/packages/ precise/main libstdc++6-4.6-dev amd64 4.6.3-1ubuntu5 [1,660 kB]
+Get:21 http://mirror.hetzner.de/ubuntu/packages/ precise/main g++-4.6 amd64 4.6.3-1ubuntu5 [6,954 kB]
+Get:22 http://mirror.hetzner.de/ubuntu/packages/ precise/main g++ amd64 4:4.6.3-1ubuntu5 [1,442 B]
+Get:23 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main make amd64 3.81-8.1ubuntu1.1 [119 kB]
+Get:24 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main libdpkg-perl all 1.16.1.2ubuntu7.6 [181 kB]
+Get:25 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main dpkg-dev all 1.16.1.2ubuntu7.6 [468 kB]
+Get:26 http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main build-essential amd64 11.5ubuntu2.1 [5,816 B]
+Get:27 http://mirror.hetzner.de/ubuntu/packages/ precise/main fakeroot amd64 1.18.2-1 [87.2 kB]
+Get:28 http://mirror.hetzner.de/ubuntu/packages/ precise/main libalgorithm-diff-perl all 1.19.02-2 [50.7 kB]
+Get:29 http://mirror.hetzner.de/ubuntu/packages/ precise/main libalgorithm-diff-xs-perl amd64 0.04-2build2 [12.4 kB]
+Get:30 http://mirror.hetzner.de/ubuntu/packages/ precise/main libalgorithm-merge-perl all 0.08-2 [12.7 kB]
+Get:31 http://mirror.hetzner.de/ubuntu/packages/ precise/main manpages-dev all 3.35-0.1ubuntu1 [1,671 kB]
+Err http://mirror.hetzner.de/ubuntu/security/ precise-security/main linux-libc-dev amd64 3.2.0-86.124
+  404  Not Found
+Fetched 36.1 MB in 17s (2,004 kB/s)
+Failed to fetch http://mirror.hetzner.de/ubuntu/security/pool/main/l/linux/linux-libc-dev_3.2.0-86.124_amd64.deb  404  Not Found
+E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?
+root@bl1 ~ # apt-get install apt-file
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+  binutils build-essential cpp cpp-4.6 dpkg-dev fakeroot g++ g++-4.6 gcc gcc-4.6 libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl libapt-pkg-perl libc-bin libc-dev-bin libc6 libc6-dev libconfig-file-perl
+  libdpkg-perl libgmp10 libgomp1 liblist-moreutils-perl libmpc2 libmpfr4 libquadmath0 libregexp-assemble-perl libstdc++6-4.6-dev linux-libc-dev make manpages-dev
+Suggested packages:
+  binutils-doc cpp-doc gcc-4.6-locales debian-keyring g++-multilib g++-4.6-multilib gcc-4.6-doc libstdc++6-4.6-dbg gcc-multilib autoconf automake1.9 libtool flex bison gdb gcc-doc gcc-4.6-multilib libmudflap0-4.6-dev libgcc1-dbg
+  libgomp1-dbg libquadmath0-dbg libmudflap0-dbg binutils-gold glibc-doc libstdc++6-4.6-doc make-doc
+The following NEW packages will be installed:
+  apt-file binutils build-essential cpp cpp-4.6 dpkg-dev fakeroot g++ g++-4.6 gcc gcc-4.6 libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl libapt-pkg-perl libc-dev-bin libc6-dev libconfig-file-perl
+  libdpkg-perl libgmp10 libgomp1 liblist-moreutils-perl libmpc2 libmpfr4 libquadmath0 libregexp-assemble-perl libstdc++6-4.6-dev linux-libc-dev make manpages-dev
+The following packages will be upgraded:
+  libc-bin libc6
+2 upgraded, 30 newly installed, 0 to remove and 135 not upgraded.
+Need to get 856 kB/36.9 MB of archives.
+After this operation, 85.4 MB of additional disk space will be used.
+Do you want to continue [Y/n]? y
+Err http://mirror.hetzner.de/ubuntu/packages/ precise-updates/main linux-libc-dev amd64 3.2.0-86.124
+  404  Not Found
+Err http://mirror.hetzner.de/ubuntu/security/ precise-security/main linux-libc-dev amd64 3.2.0-86.124
+  404  Not Found
+Failed to fetch http://mirror.hetzner.de/ubuntu/security/pool/main/l/linux/linux-libc-dev_3.2.0-86.124_amd64.deb  404  Not Found
+E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?
+root@bl1 ~ #
+
+
+root@bl1 ~ # dpkg --get-selections | grep -i nginx
+nginx                                           install
+nginx-common                                    install
+nginx-full                                      install
+root@bl1 ~ #
+
+................................................................................
+
+root@bl1 ~ # apt-cache show nginx-extras
+Package: nginx-extras
+Priority: optional
+Section: universe/httpd
+Installed-Size: 1268
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+Architecture: amd64
+Source: nginx
+Version: 1.1.19-1ubuntu0.7
+Provides: httpd, nginx
+Depends: nginx-common (= 1.1.19-1ubuntu0.7), perl (>= 5.14.2-6ubuntu2.4), perlapi-5.14.2, libc6 (>= 2.14), libexpat1 (>= 1.95.8), libgd2-noxpm (>= 2.0.36~rc1~dfsg) | libgd2-xpm (>= 2.0.36~rc1~dfsg), libgeoip1 (>= 1.4.8+dfsg), liblua5.1-0, libpam0g (>= 0.99.7.1), libpcre3 (>= 8.10), libperl5.14 (>= 5.14.2), libssl1.0.0 (>= 1.0.0), libxml2 (>= 2.7.4), libxslt1.1 (>= 1.1.25), zlib1g (>= 1:1.1.4)
+Conflicts: nginx-full, nginx-light, nginx-naxsi
+Filename: pool/universe/n/nginx/nginx-extras_1.1.19-1ubuntu0.7_amd64.deb
+Size: 524626
+MD5sum: 5e43495e0c929f815468812e6497565f
+SHA1: 8a70c920b52c437b7e7de5bae08737ed76e59120
+SHA256: 2bdf4b624c32c9abc2ebb3cd8ee07524b09a1ae10de06d8b58ddd7213d30d210
+Description-en: nginx web server with full set of core modules and extras
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ This package provides the standard version of Nginx. It also includes extra
+ features and modules such as the perl module which allows the addition of
+ perl in configuration files.
+ .
+ MODULES INCLUDED:
+ Standard HTTP Modules:
+   Core, Access, Auth Basic, Auto Index, Browser, Charset, Empty GIF, FastCGI,
+   Geo, Gzip, Headers, Index, Limit Requests, Limit Zone, Log, Map, Memcached,
+   Proxy, Referer, Rewrite, SCGI, Split Clients, SSI, Upstream, User ID, UWSGI
+ Optional HTTP Modules:
+   Addition, Debug, WebDAV, Flash Streaming Video, GeoIP, Gzip Precompression,
+   HTTP Sub, Image Filter, MP4, RealIP, Stub Status, SSL, XSLT, IPv6, Embedded
+   Perl, Secure Link, Random Index
+ Mail Modules:
+   Mail Core, POP3, IMAP, SMTP, SSL
+ Third Party Modules:
+   Echo, Embedded Lua, http push, Nginx Development Kit, Upload module,
+   Upload Progress, HttpHeadersMore, Upstream Fair Queue, Chunkin, Auth PAM,
+   DAV Ext
+Homepage: http://nginx.net
+Description-md5: 62625a0880a12b7730bf18aa24f0ddfe
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Origin: Ubuntu
+
+Package: nginx-extras
+Priority: optional
+Section: universe/httpd
+Installed-Size: 1268
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+Architecture: amd64
+Source: nginx
+Version: 1.1.19-1
+Provides: httpd, nginx
+Depends: nginx-common (= 1.1.19-1), perl (>= 5.14.2-6ubuntu2), perlapi-5.14.2, libc6 (>= 2.14), libexpat1 (>= 1.95.8), libgd2-noxpm (>= 2.0.36~rc1~dfsg) | libgd2-xpm (>= 2.0.36~rc1~dfsg), libgeoip1 (>= 1.4.8+dfsg), liblua5.1-0, libpam0g (>= 0.99.7.1), libpcre3 (>= 8.10), libperl5.14 (>= 5.14.2), libssl1.0.0 (>= 1.0.0), libxml2 (>= 2.7.4), libxslt1.1 (>= 1.1.25), zlib1g (>= 1:1.1.4)
+Conflicts: nginx-full, nginx-light, nginx-naxsi
+Filename: pool/universe/n/nginx/nginx-extras_1.1.19-1_amd64.deb
+Size: 524848
+MD5sum: a9dd4d6301b5f871994a9b881d8b9e3c
+SHA1: 4b26e8f8dfe908aa945175fb9c3e5d704d97b4b6
+SHA256: 400b7146175cddd86bd40ace497662c696e1c529d0846ea7cbe145917edc9338
+Description-en: nginx web server with full set of core modules and extras
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ This package provides the standard version of Nginx. It also includes extra
+ features and modules such as the perl module which allows the addition of
+ perl in configuration files.
+ .
+ MODULES INCLUDED:
+ Standard HTTP Modules:
+   Core, Access, Auth Basic, Auto Index, Browser, Charset, Empty GIF, FastCGI,
+   Geo, Gzip, Headers, Index, Limit Requests, Limit Zone, Log, Map, Memcached,
+   Proxy, Referer, Rewrite, SCGI, Split Clients, SSI, Upstream, User ID, UWSGI
+ Optional HTTP Modules:
+   Addition, Debug, WebDAV, Flash Streaming Video, GeoIP, Gzip Precompression,
+   HTTP Sub, Image Filter, MP4, RealIP, Stub Status, SSL, XSLT, IPv6, Embedded
+   Perl, Secure Link, Random Index
+ Mail Modules:
+   Mail Core, POP3, IMAP, SMTP, SSL
+ Third Party Modules:
+   Echo, Embedded Lua, http push, Nginx Development Kit, Upload module,
+   Upload Progress, HttpHeadersMore, Upstream Fair Queue, Chunkin, Auth PAM,
+   DAV Ext
+Homepage: http://nginx.net
+Description-md5: 62625a0880a12b7730bf18aa24f0ddfe
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Origin: Ubuntu
+
+root@bl1 ~ #
+
+
+................................................................................
+
+root@bl1 ~ # apt-cache show nginx
+Package: nginx
+Priority: optional
+Section: universe/web
+Installed-Size: 85
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+Architecture: all
+Version: 1.1.19-1ubuntu0.7
+Depends: nginx-full | nginx-light
+Filename: pool/universe/n/nginx/nginx_1.1.19-1ubuntu0.7_all.deb
+Size: 5808
+MD5sum: 6240ae511c9751f31ff527d381cd204c
+SHA1: eda634e6bdd3a2f89b64a8b20127af8f1c92372b
+SHA256: 6ea649d2357febace021acc766409533027ab912ddecec8d23ed02bbdb08945f
+Description-en: small, but very powerful and efficient web server and mail proxy
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ This is a dummy package that selects nginx-full by default, but also can be
+ installed with nginx-light for upgrading to nginx-light directly.
+Homepage: http://nginx.net
+Description-md5: c71c42a7e7b75f4b7b417a4547f32b56
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Origin: Ubuntu
+
+Package: nginx
+Status: install ok installed
+Priority: optional
+Section: httpd
+Installed-Size: 84
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Architecture: all
+Version: 1.1.19-1ubuntu0.5
+Depends: nginx-full | nginx-light
+Description-en: small, but very powerful and efficient web server and mail proxy
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ This is a dummy package that selects nginx-full by default, but also can be
+ installed with nginx-light for upgrading to nginx-light directly.
+Homepage: http://nginx.net
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+
+Package: nginx
+Priority: optional
+Section: universe/web
+Installed-Size: 84
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+Architecture: all
+Version: 1.1.19-1
+Depends: nginx-full | nginx-light
+Filename: pool/universe/n/nginx/nginx_1.1.19-1_all.deb
+Size: 6612
+MD5sum: 8a0257fc187d9ed7cfa4be2019aafd81
+SHA1: a9a3784457c8abf7c3f047cfdcebafa7fde34e23
+SHA256: c66e2fa07f97e0138815045b4821de0381a6eed76f111bfd8ce8120f26228449
+Description-en: small, but very powerful and efficient web server and mail proxy
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ This is a dummy package that selects nginx-full by default, but also can be
+ installed with nginx-light for upgrading to nginx-light directly.
+Homepage: http://nginx.net
+Description-md5: c71c42a7e7b75f4b7b417a4547f32b56
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Origin: Ubuntu
+
+root@bl1 ~ #
+root@bl1 ~ # apt-cache show nginx-full
+Package: nginx-full
+Priority: optional
+Section: universe/httpd
+Installed-Size: 913
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+Architecture: amd64
+Source: nginx
+Version: 1.1.19-1ubuntu0.7
+Provides: httpd, nginx
+Depends: nginx-common (= 1.1.19-1ubuntu0.7), libc6 (>= 2.14), libexpat1 (>= 1.95.8), libgd2-noxpm (>= 2.0.36~rc1~dfsg) | libgd2-xpm (>= 2.0.36~rc1~dfsg), libgeoip1 (>= 1.4.8+dfsg), libpam0g (>= 0.99.7.1), libpcre3 (>= 8.10), libssl1.0.0 (>= 1.0.0), libxml2 (>= 2.7.4), libxslt1.1 (>= 1.1.25), zlib1g (>= 1:1.1.4)
+Conflicts: nginx-extras, nginx-light, nginx-naxsi
+Filename: pool/universe/n/nginx/nginx-full_1.1.19-1ubuntu0.7_amd64.deb
+Size: 378022
+MD5sum: 95b6d8ea8d5c878df60008e562e51de6
+SHA1: 0c84ce1646737dcbda680b12d670b065262829ad
+SHA256: 2d9a11fcf1672b22026ce6366699edb21108e117321d3c3e38d59a907084532f
+Description-en: nginx web server with full set of core modules
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ It can also act as a POP3/IMAP mail proxy with SSL and TLS SNI support. This
+ package has the standard set of modules enabled.
+ .
+ MODULES INCLUDED:
+ Standard HTTP Modules:
+   Core, Access, Auth Basic, Auto Index, Browser, Charset, Empty GIF, FastCGI,
+   Geo, Gzip, Headers, Index, Limit Requests, Limit Zone, Log, Map, Memcached,
+   Proxy, Referer, Rewrite, SCGI, Split Clients, SSI, Upstream, User ID, UWSGI
+ Optional HTTP Modules:
+   Addition, Debug, GeoIP, Gzip Precompression, HTTP Sub, Image Filter, IPv6,
+   RealIP, Stub Status, WebDAV, XSLT
+ Mail Modules:
+   Mail Core, IMAP, POP3, SMTP, SSL
+ Third Party Modules:
+   Echo, Upstream Fair Queue, DAV Ext
+Homepage: http://nginx.net
+Description-md5: fe2320ac927be4eda66558015a53db7e
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Origin: Ubuntu
+
+Package: nginx-full
+Status: install ok installed
+Priority: optional
+Section: httpd
+Installed-Size: 913
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Architecture: amd64
+Source: nginx
+Version: 1.1.19-1ubuntu0.5
+Provides: httpd, nginx
+Depends: nginx-common (= 1.1.19-1ubuntu0.5), libc6 (>= 2.14), libexpat1 (>= 1.95.8), libgd2-noxpm (>= 2.0.36~rc1~dfsg) | libgd2-xpm (>= 2.0.36~rc1~dfsg), libgeoip1 (>= 1.4.8+dfsg), libpam0g (>= 0.99.7.1), libpcre3 (>= 8.10), libssl1.0.0 (>= 1.0.0), libxml2 (>= 2.7.4), libxslt1.1 (>= 1.1.25), zlib1g (>= 1:1.1.4)
+Conflicts: nginx-extras, nginx-light, nginx-naxsi
+Description-en: nginx web server with full set of core modules
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ It can also act as a POP3/IMAP mail proxy with SSL and TLS SNI support. This
+ package has the standard set of modules enabled.
+ .
+ MODULES INCLUDED:
+ Standard HTTP Modules:
+   Core, Access, Auth Basic, Auto Index, Browser, Charset, Empty GIF, FastCGI,
+   Geo, Gzip, Headers, Index, Limit Requests, Limit Zone, Log, Map, Memcached,
+   Proxy, Referer, Rewrite, SCGI, Split Clients, SSI, Upstream, User ID, UWSGI
+ Optional HTTP Modules:
+   Addition, Debug, GeoIP, Gzip Precompression, HTTP Sub, Image Filter, IPv6,
+   RealIP, Stub Status, WebDAV, XSLT
+ Mail Modules:
+   Mail Core, IMAP, POP3, SMTP, SSL
+ Third Party Modules:
+   Echo, Upstream Fair Queue, DAV Ext
+Homepage: http://nginx.net
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+
+Package: nginx-full
+Priority: optional
+Section: universe/httpd
+Installed-Size: 913
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Kartik Mistry <kartik@debian.org>
+Architecture: amd64
+Source: nginx
+Version: 1.1.19-1
+Provides: httpd, nginx
+Depends: nginx-common (= 1.1.19-1), libc6 (>= 2.14), libexpat1 (>= 1.95.8), libgd2-noxpm (>= 2.0.36~rc1~dfsg) | libgd2-xpm (>= 2.0.36~rc1~dfsg), libgeoip1 (>= 1.4.8+dfsg), libpam0g (>= 0.99.7.1), libpcre3 (>= 8.10), libssl1.0.0 (>= 1.0.0), libxml2 (>= 2.7.4), libxslt1.1 (>= 1.1.25), zlib1g (>= 1:1.1.4)
+Conflicts: nginx-extras, nginx-light, nginx-naxsi
+Filename: pool/universe/n/nginx/nginx-full_1.1.19-1_amd64.deb
+Size: 379454
+MD5sum: 446b9aba39a37af83f0d0f9e5e86b123
+SHA1: 03a99b5b59fb2a51c671674813d34446dd7d9fd8
+SHA256: 2c4cea78fc2997dcd5d90d365c30d010cdc757ba8cfae0049517c1f6a360ba88
+Description-en: nginx web server with full set of core modules
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to
+ the open-source community. This server can be used as standalone HTTP server
+ and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+ .
+ It can also act as a POP3/IMAP mail proxy with SSL and TLS SNI support. This
+ package has the standard set of modules enabled.
+ .
+ MODULES INCLUDED:
+ Standard HTTP Modules:
+   Core, Access, Auth Basic, Auto Index, Browser, Charset, Empty GIF, FastCGI,
+   Geo, Gzip, Headers, Index, Limit Requests, Limit Zone, Log, Map, Memcached,
+   Proxy, Referer, Rewrite, SCGI, Split Clients, SSI, Upstream, User ID, UWSGI
+ Optional HTTP Modules:
+   Addition, Debug, GeoIP, Gzip Precompression, HTTP Sub, Image Filter, IPv6,
+   RealIP, Stub Status, WebDAV, XSLT
+ Mail Modules:
+   Mail Core, IMAP, POP3, SMTP, SSL
+ Third Party Modules:
+   Echo, Upstream Fair Queue, DAV Ext
+Homepage: http://nginx.net
+Description-md5: fe2320ac927be4eda66558015a53db7e
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Origin: Ubuntu
+
+root@bl1 ~ #
+
+................................................................................
+#   This module found in nginx-extra version.
+Upstream Fair Queue
+
+................................................................................
+
+root@bl1 ~ # aptitude show nginx-full
+Package: nginx-full
+State: installed
+Automatically installed: yes
+Version: 1.1.19-1ubuntu0.5
+Priority: optional
+Section: httpd
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Architecture: amd64
+Uncompressed Size: 935 k
+Depends: nginx-common (= 1.1.19-1ubuntu0.5), libc6 (>= 2.14), libexpat1 (>= 1.95.8), libgd2-noxpm (>= 2.0.36~rc1~dfsg) | libgd2-xpm (>= 2.0.36~rc1~dfsg), libgeoip1 (>= 1.4.8+dfsg), libpam0g (>= 0.99.7.1), libpcre3 (>= 8.10),
+         libssl1.0.0 (>= 1.0.0), libxml2 (>= 2.7.4), libxslt1.1 (>= 1.1.25), zlib1g (>= 1:1.1.4)
+Conflicts: nginx-extras, nginx-extras, nginx-light, nginx-light, nginx-naxsi, nginx-naxsi, nginx-full
+Provides: httpd, nginx
+Description: nginx web server with full set of core modules
+ Nginx (engine x) is a web server created by Igor Sysoev and kindly provided to the open-source community. This server can be used as standalone HTTP server and as a reverse proxy server before some Apache or another big server to
+ reduce load to backend servers by many concurrent HTTP-sessions.
+
+ It can also act as a POP3/IMAP mail proxy with SSL and TLS SNI support. This package has the standard set of modules enabled.
+
+ MODULES INCLUDED: Standard HTTP Modules:
+  Core, Access, Auth Basic, Auto Index, Browser, Charset, Empty GIF, FastCGI,
+  Geo, Gzip, Headers, Index, Limit Requests, Limit Zone, Log, Map, Memcached,
+  Proxy, Referer, Rewrite, SCGI, Split Clients, SSI, Upstream, User ID, UWSGI
+ Optional HTTP Modules:
+  Addition, Debug, GeoIP, Gzip Precompression, HTTP Sub, Image Filter, IPv6,
+  RealIP, Stub Status, WebDAV, XSLT
+ Mail Modules:
+  Mail Core, IMAP, POP3, SMTP, SSL
+ Third Party Modules:
+  Echo, Upstream Fair Queue, DAV Ext
+Homepage: http://nginx.net
+
+root@bl1 ~ #
+
+................................................................................
+
+
+
+
+

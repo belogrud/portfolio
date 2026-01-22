@@ -1,0 +1,127 @@
+
+................................................................................
+
+[s.belogrud@TCS4357]# scp /drives/e/data/distributives/nexus/nexus-3.21.2-03-unix.tar.gz bsv@m1-nexus01p:/tmp/
+nexus-3.21.2-03-unix.tar.gz                                                                                                                                       100%  134MB  20.8MB/s   00:06
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[root@m1-nexus01p ~]# mkdir -p ~/work/20200327-1603
+[root@m1-nexus01p ~]# cp /tmp/nexus-3.21.2-03-unix.tar.gz ~/work/20200327-1603/
+[root@m1-nexus01p ~]# cd ~/work/20200327-1603/
+
+[root@m1-nexus01p 20200327-1603]# tar -xvzf ~/work/20200327-1603/nexus-3.21.2-03-unix.tar.gz -C /opt/nexus/
+
+[root@m1-nexus01p 20200327-1603]# ls -Alh /opt/nexus/
+total 0
+drwxr-xr-x.  9 nexus nexus 163 Jan 31 18:10 nexus-3.20.1-01
+drwxr-xr-x   9 root  root  163 Mar 27 16:06 nexus-3.21.2-03
+drwxrwxr-x. 15 nexus nexus 248 Feb  4 19:38 nexus-data
+drwxr-xr-x.  3 nexus nexus  20 Jan 31 18:10 sonatype-work
+[root@m1-nexus01p 20200327-1603]#
+
+................................................................................
+
+[root@m1-nexus01p 20200327-1603]# diff -Nuar /opt/nexus/nexus-3.20.1-01/bin/nexus.vmoptions /opt/nexus/nexus-3.21.2-03/bin/nexus.vmoptions
+--- /opt/nexus/nexus-3.20.1-01/bin/nexus.vmoptions      2020-01-31 18:41:33.507155077 +0300
++++ /opt/nexus/nexus-3.21.2-03/bin/nexus.vmoptions      2020-03-19 00:48:27.000000000 +0300
+@@ -11,7 +11,7 @@
+ -Dkaraf.base=.
+ -Dkaraf.etc=etc/karaf
+ -Djava.util.logging.config.file=etc/karaf/java.util.logging.properties
+--Dkaraf.data=/opt/nexus/nexus-data
++-Dkaraf.data=../sonatype-work/nexus3
+ -Dkaraf.log=../sonatype-work/nexus3/log
+ -Djava.io.tmpdir=../sonatype-work/nexus3/tmp
+ -Dkaraf.startLocalConsole=false
+[root@m1-nexus01p 20200327-1603]#
+
+[root@m1-nexus01p 20200327-1603]# vim /opt/nexus/nexus-3.21.2-03/bin/nexus.vmoptions -c ":/-Dkaraf.data="
+[root@m1-nexus01p 20200327-1603]# grep -e ":/-Dkaraf.data=" /opt/nexus/nexus-3.21.2-03/bin/nexus.vmoptions
+[root@m1-nexus01p 20200327-1603]# grep -e "-Dkaraf.data=" /opt/nexus/nexus-3.21.2-03/bin/nexus.vmoptions
+-Dkaraf.data=/opt/nexus/nexus-data
+[root@m1-nexus01p 20200327-1603]#
+
+[root@m1-nexus01p 20200327-1603]# cat /etc/systemd/system/nexus.service
+[Unit]
+Description=nexus service
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=65536
+ExecStart=/opt/nexus/nexus-3.20.1-01/bin/nexus start
+ExecStop=/opt/nexus/nexus-3.20.1-01/bin/nexus stop
+User=nexus
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+[root@m1-nexus01p 20200327-1603]#
+
+[root@m1-nexus01p 20200327-1603]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: active (running) since Tue 2020-02-04 19:38:37 MSK; 1 months 21 days ago
+ Main PID: 6100 (java)
+   CGroup: /system.slice/nexus.service
+           └─6100 /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre/bin/java -server -Dinstall4j.jvmDir=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre -Dexe4j.m...
+
+Warning: Journal has been rotated since unit was started. Log output is incomplete or unavailable.
+[root@m1-nexus01p 20200327-1603]#
+
+[root@m1-nexus01p 20200327-1603]# systemctl stop nexus
+[root@m1-nexus01p 20200327-1603]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: inactive (dead) since Fri 2020-03-27 16:19:07 MSK; 32s ago
+  Process: 30925 ExecStop=/opt/nexus/nexus-3.20.1-01/bin/nexus stop (code=exited, status=0/SUCCESS)
+ Main PID: 6100 (code=exited, status=0/SUCCESS)
+
+Mar 27 16:19:03 m1-nexus01p.tcsbank.ru systemd[1]: Stopping nexus service...
+Mar 27 16:19:03 m1-nexus01p.tcsbank.ru nexus[30925]: Shutting down nexus
+Mar 27 16:19:07 m1-nexus01p.tcsbank.ru nexus[30925]: Stopped.
+Mar 27 16:19:07 m1-nexus01p.tcsbank.ru systemd[1]: Stopped nexus service.
+Warning: Journal has been rotated since unit was started. Log output is incomplete or unavailable.
+[root@m1-nexus01p 20200327-1603]# vim /etc/systemd/system/nexus.service
+[root@m1-nexus01p 20200327-1603]# cat /etc/systemd/system/nexus.service
+[Unit]
+Description=nexus service
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=65536
+ExecStart=/opt/nexus/nexus-3.21.2-03/bin/nexus start
+ExecStop=/opt/nexus/nexus-3.21.2-03/bin/nexus stop
+User=nexus
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+[root@m1-nexus01p 20200327-1603]# systemctl daemon-reload
+[root@m1-nexus01p 20200327-1603]# systemctl start nexus
+[root@m1-nexus01p 20200327-1603]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: active (running) since Fri 2020-03-27 16:20:58 MSK; 11s ago
+  Process: 31245 ExecStart=/opt/nexus/nexus-3.21.2-03/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 31419 (java)
+   CGroup: /system.slice/nexus.service
+           └─31419 /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre/bin/java -server -Dinstall4j.jvmDir=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre -Dexe4j....
+
+Mar 27 16:20:57 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Mar 27 16:20:58 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+[root@m1-nexus01p 20200327-1603]#
+
+................................................................................
+
+
+
+
+
+
+
+
+

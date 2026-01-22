@@ -1,0 +1,185 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   791773
+Название    №791773
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  21.03.2016 15:34
+Дата регистрации    21.03.2016 15:34
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Барановский Вадим
+Соглашение  - Каталог сервисов
+Сервис  99. Другое
+Контактное лицо Барановский Вадим
+Контактный e-mail   v.baranovskiy@tinkoff.ru
+Контактные телефоны 2724
+
+................................................................................
+
+Дата
+Комментарий Автор
+24.03.2016 11:48    ВМ создал:
+vm-1c-app01t / 10.216.43.191
+vm-1c-db01t / 10.216.43.192
+
+@unix-admins
+- добавить в Nagios
+
+Потом перевести задачу на Семена    Бегизардов Павел
+24.03.2016 11:16    + бэкапы и мониторинг   Барков Семен В
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# cp ~bsv/work/vm-vol-nag01t_nagios_conf_templates/vm-win-template.cfg objects/servers/vmware/vm-1c-app01t.cfg
+[root@vm-vol-nag01t nagios]# cp ~bsv/work/vm-vol-nag01t_nagios_conf_templates/vm-win-template.cfg objects/servers/vmware/vm-1c-db01t.cfg
+
+................................................................................
+
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description contact_groups contacts where host_name=vm-1c-server ; pynag list display_name address filename where object_type=host and host_name=vm-1c-server
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+vm-1c-server         null                 windows-admins, servicedesk-duty-critical-group null
+vm-1c-server         1C Agent             null                 null
+vm-1c-server         C:\ Drive Space      null                 null
+vm-1c-server         CPU Load             null                 null
+vm-1c-server         D:\ Drive Space      null                 null
+vm-1c-server         Memory Usage         null                 null
+vm-1c-server         NSClient++ Version   null                 null
+vm-1c-server         Uptime               null                 null
+vm-1c-server         Windows Time         null                 null
+----------9 objects matches search condition------------------------------------
+display_name         address              filename
+--------------------------------------------------------------------------------
+null                 10.216.40.55         /etc/nagios/objects/servers/vmware/vm-1c-server.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+[root@vm-vol-nag01t nagios]# server_name="vm-1c-app01t" ; pynag list host_name service_description contact_groups contacts where host_name="${server_name}" ; pynag list display_name address filename where object_type=host and host_name="${server_name}"
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+vm-1c-app01t         null                 windows-admins, servicedesk-duty-critical-group null
+vm-1c-app01t         CPU Load             null                 null
+vm-1c-app01t         Drive C:\ Space      null                 null
+vm-1c-app01t         Memory Pool Nonpaged Bytes null                 null
+vm-1c-app01t         Memory Usage         null                 null
+vm-1c-app01t         PING                 null                 null
+vm-1c-app01t         Uptime               null                 null
+vm-1c-app01t         Windows Time         null                 null
+----------8 objects matches search condition------------------------------------
+display_name         address              filename
+--------------------------------------------------------------------------------
+null                 10.216.43.191        /etc/nagios/objects/servers/vmware/vm-1c-app01t.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]# server_name="vm-1c-db01t" ; pynag list host_name service_description contact_groups contacts where host_name="${server_name}" ; pynag list display_name address filename where object_type=host and host_name="${server_name}"
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+vm-1c-db01t          null                 windows-admins, servicedesk-duty-critical-group null
+vm-1c-db01t          CPU Load             null                 null
+vm-1c-db01t          Drive C:\ Space      null                 null
+vm-1c-db01t          Memory Pool Nonpaged Bytes null                 null
+vm-1c-db01t          Memory Usage         null                 null
+vm-1c-db01t          PING                 null                 null
+vm-1c-db01t          Uptime               null                 null
+vm-1c-db01t          Windows Time         null                 null
+----------8 objects matches search condition------------------------------------
+display_name         address              filename
+--------------------------------------------------------------------------------
+null                 10.216.43.192        /etc/nagios/objects/servers/vmware/vm-1c-db01t.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]# /usr/sbin/nagios -v /etc/nagios/nagios.cfg | tail
+Checking for circular paths between hosts...
+Checking for circular host and service dependencies...
+Checking global event handlers...
+Checking obsessive compulsive processor commands...
+Checking misc settings...
+
+Total Warnings: 180
+Total Errors:   0
+
+Things look okay - No serious problems were detected during the pre-flight check
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git add objects/servers/vmware/vm-1c-app01t.cfg objects/servers/vmware/vm-1c-db01t.cfg
+[root@vm-vol-nag01t nagios]# git commit --author=author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#791773. Add under monitoring two new servers: vm-1c-app01t, vm-1c-db01t" objects/servers/vmware/vm-1c-app01t.cfg objects/servers/vmware/vm-1c-db01t.cfg
+[master 6d6d018] SD#791773. Add under monitoring two new servers: vm-1c-app01t, vm-1c-db01t
+ Author: author=Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 100 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/vmware/vm-1c-app01t.cfg
+ create mode 100644 objects/servers/vmware/vm-1c-db01t.cfg
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+
+Дата
+Комментарий Автор
+24.03.2016 19:01    Оба сервера в мониторинг nagios добавлены.
+Завтра после 16:00 изменения применятся на production nagios.
+
+Настройки оповещения установлены по умолчанию (иных указаний я не обнаружил).
+Ниже подробности.
+
+[root@vm-vol-nag01t nagios]# server_name="vm-1c-app01t" ; pynag list host_name service_description contact_groups contacts where host_name="${server_name}" ; pynag list display_name address filename where object_type=host and host_name="${server_name}"
+host_name service_description contact_groups contacts
+--------------------------------------------------------------------------------
+vm-1c-app01t null windows-admins, servicedesk-duty-critical-group null
+vm-1c-app01t CPU Load null null
+vm-1c-app01t Drive C:\ Space null null
+vm-1c-app01t Memory Pool Nonpaged Bytes null null
+vm-1c-app01t Memory Usage null null
+vm-1c-app01t PING null null
+vm-1c-app01t Uptime null null
+vm-1c-app01t Windows Time null null
+----------8 objects matches search condition------------------------------------
+display_name address filename
+--------------------------------------------------------------------------------
+null 10.216.43.191 /etc/nagios/objects/servers/vmware/vm-1c-app01t.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# server_name="vm-1c-db01t" ; pynag list host_name service_description contact_groups contacts where host_name="${server_name}" ; pynag list display_name address filename where object_type=host and host_name="${server_name}"
+host_name service_description contact_groups contacts
+--------------------------------------------------------------------------------
+vm-1c-db01t null windows-admins, servicedesk-duty-critical-group null
+vm-1c-db01t CPU Load null null
+vm-1c-db01t Drive C:\ Space null null
+vm-1c-db01t Memory Pool Nonpaged Bytes null null
+vm-1c-db01t Memory Usage null null
+vm-1c-db01t PING null null
+vm-1c-db01t Uptime null null
+vm-1c-db01t Windows Time null null
+----------8 objects matches search condition------------------------------------
+display_name address filename
+--------------------------------------------------------------------------------
+null 10.216.43.192 /etc/nagios/objects/servers/vmware/vm-1c-db01t.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+

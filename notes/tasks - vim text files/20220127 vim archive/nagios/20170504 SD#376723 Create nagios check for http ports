@@ -1,0 +1,532 @@
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# check_http --help
+check_http v1.4.16 (nagios-plugins 1.4.16)
+Copyright (c) 1999 Ethan Galstad <nagios@nagios.org>
+Copyright (c) 1999-2011 Nagios Plugin Development Team
+        <nagiosplug-devel@lists.sourceforge.net>
+
+This plugin tests the HTTP service on the specified host. It can test
+normal (http) and secure (https) servers, follow redirects, search for
+strings and regular expressions, check connection times, and report on
+certificate expiration times.
+
+
+Usage:
+ check_http -H <vhost> | -I <IP-address> [-u <uri>] [-p <port>]
+       [-w <warn time>] [-c <critical time>] [-t <timeout>] [-L] [-a auth]
+       [-b proxy_auth] [-f <ok|warning|critcal|follow|sticky|stickyport>]
+       [-e <expect>] [-s string] [-l] [-r <regex> | -R <case-insensitive regex>]
+       [-P string] [-m <min_pg_size>:<max_pg_size>] [-4|-6] [-N] [-M <age>]
+       [-A string] [-k string] [-S <version>] [--sni] [-C <warn_age>[,<crit_age>]]
+       [-T <content-type>] [-j method]
+NOTE: One or both of -H and -I must be specified
+
+Options:
+ -h, --help
+    Print detailed help screen
+ -V, --version
+    Print version information
+ --extra-opts=[section][@file]
+    Read options from an ini file. See http://nagiosplugins.org/extra-opts
+    for usage and examples.
+ -H, --hostname=ADDRESS
+    Host name argument for servers using host headers (virtual host)
+    Append a port to include it in the header (eg: example.com:5000)
+ -I, --IP-address=ADDRESS
+    IP address or name (use numeric address if possible to bypass DNS lookup).
+ -p, --port=INTEGER
+    Port number (default: 80)
+ -4, --use-ipv4
+    Use IPv4 connection
+ -6, --use-ipv6
+    Use IPv6 connection
+ -S, --ssl=VERSION
+    Connect via SSL. Port defaults to 443. VERSION is optional, and prevents
+    auto-negotiation (1 = TLSv1, 2 = SSLv2, 3 = SSLv3).
+ --sni
+    Enable SSL/TLS hostname extension support (SNI)
+ -C, --certificate=INTEGER
+    Minimum number of days a certificate has to be valid. Port defaults to 443
+    (when this option is used the URL is not checked.)
+
+ -e, --expect=STRING
+    Comma-delimited list of strings, at least one of them is expected in
+    the first (status) line of the server response (default: HTTP/1.)
+    If specified skips all other status line logic (ex: 3xx, 4xx, 5xx processing)
+ -s, --string=STRING
+    String to expect in the content
+ -u, --url=PATH
+    URL to GET or POST (default: /)
+ -P, --post=STRING
+    URL encoded http POST data
+ -j, --method=STRING  (for example: HEAD, OPTIONS, TRACE, PUT, DELETE)
+    Set HTTP method.
+ -N, --no-body
+    Don't wait for document body: stop reading after headers.
+    (Note that this still does an HTTP GET or POST, not a HEAD.)
+ -M, --max-age=SECONDS
+    Warn if document is more than SECONDS old. the number can also be of
+    the form "10m" for minutes, "10h" for hours, or "10d" for days.
+ -T, --content-type=STRING
+    specify Content-Type header media type when POSTing
+
+ -l, --linespan
+    Allow regex to span newlines (must precede -r or -R)
+ -r, --regex, --ereg=STRING
+    Search page for regex STRING
+ -R, --eregi=STRING
+    Search page for case-insensitive regex STRING
+ --invert-regex
+    Return CRITICAL if found, OK if not
+
+ -a, --authorization=AUTH_PAIR
+    Username:password on sites with basic authentication
+ -b, --proxy-authorization=AUTH_PAIR
+    Username:password on proxy-servers with basic authentication
+ -A, --useragent=STRING
+    String to be sent in http header as "User Agent"
+ -k, --header=STRING
+    Any other tags to be sent in http header. Use multiple times for additional headers
+ -L, --link
+    Wrap output in HTML link (obsoleted by urlize)
+ -f, --onredirect=<ok|warning|critical|follow|sticky|stickyport>
+    How to handle redirected pages. sticky is like follow but stick to the
+    specified IP address. stickyport also ensures port stays the same.
+ -m, --pagesize=INTEGER<:INTEGER>
+    Minimum page size required (bytes) : Maximum page size required (bytes)
+ -w, --warning=DOUBLE
+    Response time to result in warning status (seconds)
+ -c, --critical=DOUBLE
+    Response time to result in critical status (seconds)
+ -t, --timeout=INTEGER
+    Seconds before connection times out (default: 10)
+ -v, --verbose
+    Show details for command-line debugging (Nagios may truncate output)
+
+Notes:
+ This plugin will attempt to open an HTTP connection with the host.
+ Successful connects return STATE_OK, refusals and timeouts return STATE_CRITICAL
+ other errors return STATE_UNKNOWN.  Successful connects, but incorrect reponse
+ messages from the host result in STATE_WARNING return values.  If you are
+ checking a virtual server that uses 'host headers' you must supply the FQDN
+ (fully qualified domain name) as the [host_name] argument.
+
+ This plugin can also check whether an SSL enabled web server is able to
+ serve content (optionally within a specified time) or whether the X509
+ certificate is still valid for the specified number of days.
+
+ Please note that this plugin does not check if the presented server
+ certificate matches the hostname of the server, or if the certificate
+ has a valid chain of trust to one of the locally installed CAs.
+
+Examples:
+ CHECK CONTENT: check_http -w 5 -c 10 --ssl -H www.verisign.com
+
+ When the 'www.verisign.com' server returns its content within 5 seconds,
+ a STATE_OK will be returned. When the server returns its content but exceeds
+ the 5-second threshold, a STATE_WARNING will be returned. When an error occurs,
+ a STATE_CRITICAL will be returned.
+
+ CHECK CERTIFICATE: check_http -H www.verisign.com -C 14
+
+ When the certificate of 'www.verisign.com' is valid for more than 14 days,
+ a STATE_OK is returned. When the certificate is still valid, but for less than
+ 14 days, a STATE_WARNING is returned. A STATE_CRITICAL will be returned when
+ the certificate is expired.
+ CHECK CERTIFICATE: check_http -H www.verisign.com -C 30,14
+
+ When the certificate of 'www.verisign.com' is valid for more than 30 days,
+ a STATE_OK is returned. When the certificate is still valid, but for less than
+ 30 days, but more than 14 days, a STATE_WARNING is returned.
+ A STATE_CRITICAL will be returned when certificate expires in less than 14 days
+
+Send email to nagios-users@lists.sourceforge.net if you have questions
+regarding use of this software. To submit patches or suggest improvements,
+send email to nagiosplug-devel@lists.sourceforge.net
+
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.218.2.72 -p 8080 -e "200 OK" -u "http://m1-tcb-prod-app01:8080/api/v1/version"
+HTTP CRITICAL - Invalid HTTP response received from host on port 8080: HTTP/1.1 400 Bad Request
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# curl http://m1-tcb-prod-app01:8080/api/v1/version
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}[root@vm-vol-nag4-tst objects]#
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.218.2.72 -p 8080 -e "400 Bad Request" -u "http://m1-tcb-prod-app01:8080/api/v1/version"
+HTTP OK: Status line output matched "400 Bad Request" - 185 bytes in 0.004 second response time |time=0.004177s;;;0.000000 size=185B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+
+ot@vm-vol-nag4-tst objects]# check_http -H m1-tcb-prod-app01 -p 8080 -v -u "/api/v1/version"
+GET /api/v1/version HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: m1-tcb-prod-app01:8080
+
+
+http://m1-tcb-prod-app01:8080/api/v1/version is 334 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Server: spray-can/1.3.4
+Date: Thu, 04 May 2017 12:54:57 GMT
+Access-Control-Allow-Origin: *
+Content-Type: application/json; charset=UTF-8
+Connection: close
+Content-Length: 134
+**** CONTENT ****
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}
+HTTP OK: HTTP/1.1 200 OK - 334 bytes in 0.022 second response time |time=0.022202s;;;0.000000 size=334B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.218.2.72 -p 8080 -e "200 OK" -u "http://ds-tcb-prod-app01:8080/api/v1/version"
+HTTP CRITICAL - Invalid HTTP response received from host on port 8080: HTTP/1.1 400 Bad Request
+[root@vm-vol-nag4-tst objects]# curl http://ds-tcb-prod-app01:8080/api/v1/version
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# curl -v http://ds-tcb-prod-app01:8080/api/v1/version
+* About to connect() to ds-tcb-prod-app01 port 8080 (#0)
+*   Trying 10.218.7.72... connected
+* Connected to ds-tcb-prod-app01 (10.218.7.72) port 8080 (#0)
+> GET /api/v1/version HTTP/1.1
+> User-Agent: curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.19.1 Basic ECC zlib/1.2.3 libidn/1.18 libssh2/1.4.2
+> Host: ds-tcb-prod-app01:8080
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Server: spray-can/1.3.4
+< Date: Thu, 04 May 2017 12:41:57 GMT
+< Access-Control-Allow-Origin: *
+< Content-Type: application/json; charset=UTF-8
+< Content-Length: 134
+<
+* Connection #0 to host ds-tcb-prod-app01 left intact
+* Closing connection #0
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}[root@vm-vol-nag4-tst objects]#
+
+
+
+[root@vm-vol-nag4-tst objects]# check_http -H ds-tcb-prod-app01 -p 8080 -v -u "/api/v1/version"
+GET /api/v1/version HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: ds-tcb-prod-app01:8080
+
+
+http://ds-tcb-prod-app01:8080/api/v1/version is 334 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Server: spray-can/1.3.4
+Date: Thu, 04 May 2017 12:52:08 GMT
+Access-Control-Allow-Origin: *
+Content-Type: application/json; charset=UTF-8
+Connection: close
+Content-Length: 134
+**** CONTENT ****
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}
+HTTP OK: HTTP/1.1 200 OK - 334 bytes in 0.011 second response time |time=0.011500s;;;0.000000 size=334B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# check_http -H 192.168.5.150 -ssl -e "200 OK" -u "https://tinkoff.loans/api/v1/version"
+HTTP CRITICAL - Invalid HTTP response received from host: HTTP/1.0 302 Found
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# curl -k https://tinkoff.loans/api/v1/version
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# curl -v -k https://tinkoff.loans/api/v1/version
+* About to connect() to tinkoff.loans port 443 (#0)
+*   Trying 192.168.5.150... connected
+* Connected to tinkoff.loans (192.168.5.150) port 443 (#0)
+* Initializing NSS with certpath: sql:/etc/pki/nssdb
+* warning: ignoring value of ssl.verifyhost
+* skipping SSL peer certificate verification
+* SSL connection using TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+* Server certificate:
+*       subject: CN=tinkoff.loans
+*       start date: Jun 21 00:00:00 2016 GMT
+*       expire date: Jun 21 23:59:59 2018 GMT
+*       common name: tinkoff.loans
+*       issuer: CN=thawte DV SSL CA - G2,OU=Domain Validated SSL,O="thawte, Inc.",C=US
+> GET /api/v1/version HTTP/1.1
+> User-Agent: curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.19.1 Basic ECC zlib/1.2.3 libidn/1.18 libssh2/1.4.2
+> Host: tinkoff.loans
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Server: spray-can/1.3.4
+< Date: Thu, 04 May 2017 12:39:11 GMT
+< Access-Control-Allow-Origin: *
+< Content-Type: application/json; charset=UTF-8
+< Content-Length: 134
+< X-UA-Compatible: IE=Edge
+<
+* Connection #0 to host tinkoff.loans left intact
+* Closing connection #0
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# check_http -H tinkoff.loans --ssl -v -u "/api/v1/version"
+GET /api/v1/version HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: tinkoff.loans
+
+
+https://tinkoff.loans:443/api/v1/version is 360 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Server: spray-can/1.3.4
+Date: Thu, 04 May 2017 12:57:00 GMT
+Access-Control-Allow-Origin: *
+Content-Type: application/json; charset=UTF-8
+Connection: close
+Content-Length: 134
+X-UA-Compatible: IE=Edge
+**** CONTENT ****
+{"commitId":"3cba3849ef3566cd6e0c9798473119b5b43e3f3d","abbrev":"3cba384","date":"2017-05-03 19:08:52 +0300","branch":"release/v1.11"}
+HTTP OK: HTTP/1.1 200 OK - 360 bytes in 0.019 second response time |time=0.018843s;;;0.000000 size=360B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# check_http -H ds-tcb-prod-app01 -p 8080 -e "200 OK" -u "/api/v1/version"
+HTTP OK: Status line output matched "200 OK" - 334 bytes in 0.007 second response time |time=0.006643s;;;0.000000 size=334B;;;0
+[root@vm-vol-nag4-tst objects]# check_http -H m1-tcb-prod-app01 -p 8080 -e "200 OK" -u "/api/v1/version"
+HTTP OK: Status line output matched "200 OK" - 334 bytes in 0.007 second response time |time=0.007134s;;;0.000000 size=334B;;;0
+[root@vm-vol-nag4-tst objects]# check_http -H tinkoff.loans --ssl -e "200 OK" -u "/api/v1/version"
+HTTP OK: Status line output matched "200 OK" - 360 bytes in 0.017 second response time |time=0.017043s;;;0.000000 size=360B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+#
+#   With regex.
+#
+[root@vm-vol-nag4-tst objects]# check_http -H ds-tcb-prod-app01 -p 8080 -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+HTTP OK: Status line output matched "200 OK" - 334 bytes in 0.007 second response time |time=0.007136s;;;0.000000 size=334B;;;0
+[root@vm-vol-nag4-tst objects]# check_http -H m1-tcb-prod-app01 -p 8080 -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+HTTP OK: Status line output matched "200 OK" - 334 bytes in 0.008 second response time |time=0.007554s;;;0.000000 size=334B;;;0
+[root@vm-vol-nag4-tst objects]# check_http -H tinkoff.loans --ssl -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+HTTP OK: Status line output matched "200 OK" - 360 bytes in 0.019 second response time |time=0.019412s;;;0.000000 size=360B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="byakov"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+l.byakov_email       l.byakov@tcsbank.ru  /usr/local/nagios/etc/objects/contacts/l.byakov.cfg
+l.byakov_sms         l.byakov@tcsbank.ru  /usr/local/nagios/etc/objects/contacts/l.byakov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="sveshnikov"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="golovko"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+Sveshnikov Sergey Aleksandrovich
+s.sveshnikov
+79035678089
+
+Golovko Aleksey Nikolaevich
+a.golovko1
+79687380937
+
+[root@vm-vol-nag4-tst objects]# addcontact s.sveshnikov
+Adding new contact to Nagios
+Full name: Sveshnikov Sergey Aleksandrovich
+Email: s.sveshnikov@tinkoff.ru
+Mobile (10 numbers): 9035678089
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="sveshnikov"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+s.sveshnikov_email   s.sveshnikov@tinkoff.ru /usr/local/nagios/etc/objects/contacts/s.sveshnikov.cfg
+s.sveshnikov_sms     s.sveshnikov@tinkoff.ru /usr/local/nagios/etc/objects/contacts/s.sveshnikov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# cat /usr/local/nagios/etc/objects/contacts/s.sveshnikov.cfg
+define contact{
+        contact_name            s.sveshnikov_email
+        use                     generic-contact
+        alias                   Sveshnikov Sergey Aleksandrovich
+        email                   s.sveshnikov@tinkoff.ru
+}
+
+define contact{
+        contact_name            s.sveshnikov_sms
+        use                     generic-contact-critical
+        alias                   Sveshnikov Sergey Aleksandrovich
+        email                   s.sveshnikov@tinkoff.ru
+        address1                79035678089
+}
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# addcontact a.golovko1
+Adding new contact to Nagios
+Full name: Golovko Aleksey Nikolaevich
+Email: a.golovko1@tinkoff.ru
+Mobile (10 numbers): 9687380937
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="golovko"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+a.golovko1_email     a.golovko1@tinkoff.ru /usr/local/nagios/etc/objects/contacts/a.golovko1.cfg
+a.golovko1_sms       a.golovko1@tinkoff.ru /usr/local/nagios/etc/objects/contacts/a.golovko1.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# cat /usr/local/nagios/etc/objects/contacts/a.golovko1.cfg
+define contact{
+        contact_name            a.golovko1_email
+        use                     generic-contact
+        alias                   Golovko Aleksey Nikolaevich
+        email                   a.golovko1@tinkoff.ru
+}
+
+define contact{
+        contact_name            a.golovko1_sms
+        use                     generic-contact-critical
+        alias                   Golovko Aleksey Nikolaevich
+        email                   a.golovko1@tinkoff.ru
+        address1                79687380937
+}
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git add contacts/a.golovko1.cfg contacts/s.sveshnikov.cfg
+
+................................................................................
+
+m1-tcb-prod-app01
+ds-tcb-prod-app01
+
+m1-tcb-prod-mdb01
+ds-tcb-prod-mdb01
+
+m1-tcb-prod-rds01
+ds-tcb-prod-rds01
+
+[root@vm-vol-nag4-tst objects]# host m1-tcb-prod-app01
+m1-tcb-prod-app01.tcsbank.ru has address 10.218.2.72
+[root@vm-vol-nag4-tst objects]# host ds-tcb-prod-app01
+ds-tcb-prod-app01.tcsbank.ru has address 10.218.7.72
+[root@vm-vol-nag4-tst objects]# host m1-tcb-prod-mdb01
+m1-tcb-prod-mdb01.tcsbank.ru has address 10.218.2.74
+[root@vm-vol-nag4-tst objects]# host ds-tcb-prod-mdb01
+ds-tcb-prod-mdb01.tcsbank.ru has address 10.218.7.74
+[root@vm-vol-nag4-tst objects]# host m1-tcb-prod-rds01
+m1-tcb-prod-rds01.tcsbank.ru has address 10.218.2.73
+[root@vm-vol-nag4-tst objects]# host ds-tcb-prod-rds01
+ds-tcb-prod-rds01.tcsbank.ru has address 10.218.7.73
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst pynag]# host tinkoff.loans
+tinkoff.loans has address 192.168.5.150
+[root@vm-vol-nag4-tst pynag]#
+
+[root@vm-vol-nag4-tst objects]# cp /home/sebor/templates/vm-lin-template.cfg !$/m1-tcb-prod-app01.cfg
+cp /home/sebor/templates/vm-lin-template.cfg ~/work/20170504-1706/m1-tcb-prod-app01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# cd ~/work/20170504-1706
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# cp ~/work/20170504-1706/m1-tcb-prod-app01.cfg servers/vmware/
+
+
+#       new file:   contacts/a.golovko1.cfg
+#       new file:   contacts/s.sveshnikov.cfg
+#
+
+[root@vm-vol-nag4-tst objects]# git add servers/vmware/m1-tcb-prod-app01.cfg
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#376723. Create check http ports for hosts." contacts/a.golovko1.cfg contacts/s.sveshnikov.cfg servers/vmware/m1-tcb-prod-app01.cfg
+[master 9224e6d] SD#376723. Create check http ports for hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 84 insertions(+), 0 deletions(-)
+ create mode 100644 objects/contacts/a.golovko1.cfg
+ create mode 100644 objects/contacts/s.sveshnikov.cfg
+ create mode 100644 objects/servers/vmware/m1-tcb-prod-app01.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 14, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (9/9), done.
+Writing objects: 100% (9/9), 1.41 KiB, done.
+Total 9 (delta 6), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   0c0e02d..9224e6d  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#376723. Create check http ports for hosts." servers/vmware/m1-tcb-prod-app01.cfg servers/vmware/ds-tcb-prod-app01.cfg servers/vmware/tinkoff.loans.cfg
+[master 519bee3] SD#376723. Create check http ports for hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 118 insertions(+), 2 deletions(-)
+ create mode 100644 objects/servers/vmware/ds-tcb-prod-app01.cfg
+ create mode 100644 objects/servers/vmware/tinkoff.loans.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 12, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 1.29 KiB, done.
+Total 8 (delta 6), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   06a9883..519bee3  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git add servers/vmware/ds-tcb-prod-mdb01.cfg servers/vmware/ds-tcb-prod-rds01.cfg servers/vmware/m1-tcb-prod-mdb01.cfg servers/vmware/m1-tcb-prod-rds01.cfg
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#376723. Create ping monitoring for several hosts." servers/vmware/ds-tcb-prod-mdb01.cfg servers/vmware/ds-tcb-prod-rds01.cfg servers/vmware/m1-tcb-prod-mdb01.cfg servers/vmware/m1-tcb-prod-rds01.cfg
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[master 0f6db15] SD#376723. Create ping monitoring for several hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 4 files changed, 202 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/vmware/ds-tcb-prod-mdb01.cfg
+ create mode 100644 objects/servers/vmware/ds-tcb-prod-rds01.cfg
+ create mode 100644 objects/servers/vmware/m1-tcb-prod-mdb01.cfg
+ create mode 100644 objects/servers/vmware/m1-tcb-prod-rds01.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 13, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (9/9), done.
+Writing objects: 100% (9/9), 1.23 KiB, done.
+Total 9 (delta 7), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   e5d5fd3..0f6db15  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+

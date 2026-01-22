@@ -1,0 +1,604 @@
+
+................................................................................
+
+Иванаев Артем  4:40 PM
+Привет. Можешь помочь? )
+https://netbox.tcsbank.ru/dcim/devices/1716/ заменили диск, диск статс Ок , а все равно ошибку алертит
+4:40
+Logical Drive 06
+Status Failed
+
+Белогруд Сергей:house_with_garden:  5:30 PM
+Привет.
+Позже гляну. Пока в очередь поставил.
+
+Иванаев Артем  5:31 PM
+ок. спасибо
+
+Белогруд Сергей:house_with_garden:  5:34 PM
+По памяти для Хадупов диски с данными по отдельности каждый. И после замены нужно с ними манипуляции в производить чтобы они стали доступными для ОС.
+Untitled 
+[root@m1-hadoop-wk03t ~]# hpssacli controller slot=2  physicaldrive 2I:1:7 show detail
+Smart Array P420 in Slot 2
+   array F
+Click to expand inline (33 lines)
+
+
+
+
+Иванаев Артем  5:36 PM
+дашь инструкции на будущее? )
+
+Белогруд Сергей:house_with_garden:  5:37 PM
+Сначала нужно точно определиться с тем чего оно так. А то может и другая причина.
+5:39
+Ну да - диск вроде в порядке, а вот raid 0 для него сделанный (чтобы он отдельным диском в ОС отдавался) - вот с ним что-то не "алё".
+image.png 
+image.png
+
+
+
+Иванаев Артем  5:41 PM
+может нужно файловую систему ему сделать?
+
+Белогруд Сергей:house_with_garden:  6:23 PM
+А перезагрузить сервер можем (я перезагружу)?
+
+Белогруд Сергей:house_with_garden:  6:40 PM
+Я примерно вспомнил, кажется как это делалось для Dell серверов.  Для Dell серверов это можно сделать без перезагрузки. У них можно поуправлять raid-контроллером из iDRAC.
+Для HP Gen8 - в iLO нет опций управления raid-контроллером. И мне пока известен только метод упрвления raid-контроллером, когда вход осуществляется в утилиту конфигурирования при начальной загрузке сервера.
+
+Иванаев Артем  7:24 PM
+Видимо ты уже договрился.
+7:25
+Да, не удобно это сделано. У DELL это преимущество
+
+Белогруд Сергей:house_with_garden:  7:25 PM
+Да. С Кругляченко. В 20:05 перезагружу.
+
+
+
+
+
+7:26
+Может быть это можно сделать как-то и хитрыми командами, подключившись по ssh к iLO. Но я не уверен. И как бы чего лишнего не поломать....
+
+Иванаев Артем  7:27 PM
+это точно.
+
+................................................................................
+
+Белогруд Сергей:house_with_garden:  6:48 PM
+Дима, привет.
+Подскажи пожалуйста - кто у вас hadoop'ами заруливает?
+Мне бы перезагрузить m1-hadoop-wk03t - на нём диск поменяли, но без влезания в конфигуратор raid-контроллера, ОС его не увидит.
+
+Немчин Дмитрий:house_with_garden:  6:49 PM
+там же нет никаких рейдов
+6:49
+и после влезания в конфиг . - нужен ребут?
+
+Белогруд Сергей:house_with_garden:  6:50 PM
+Ну как бы нет. Потому, что чтобы raid-контроллер дал просто диск ОС этот диск нужно поместить в raid0 (каждый такой диск).
+6:50
+Чтобы залезть в конфигуратор raid контроллера нужен reboot. Это как в BIOS попадать. Только нужно F8 нажимать.
+6:52
+Для Dell серверов можно подшаманивать диски без перезагрузки - прямо из iDRAC.
+Но это сервер HP - и Gen8 - и там из iLO нет доступа к конфигурированию raid контроллера.
+6:55
+Вот так это выглядит. На самом деле. Куча raid0 из одного диска. Иначе фигу вам отдельных дисков в ОС.
+Это HP.
+image.png 
+image.png
+
+
+Немчин Дмитрий:house_with_garden:  6:56 PM
+воу
+6:57
+напиши Антону Кругляченко - он сегодня дежурный
+6:57
+и по Хадупу тоже
+
+Белогруд Сергей:house_with_garden:  6:57 PM
+Ок.
+Спасибо.
+
+................................................................................
+
+[root@m1-hadoop-wk03t ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380e Gen8
+        Version: Not Specified
+        Serial Number: CZJ42800XZ
+        UUID: 32393636-3735-5A43-4A34-32383030585A
+        Wake-up Type: Power Switch
+        SKU Number: 669257-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: Firmware-detected hardware failure
+
+[root@m1-hadoop-wk03t ~]#
+
+................................................................................
+ 
+[root@m1-hadoop-wk03t ~]# less /var/log/messages
+...
+Apr 13 15:59:12 m1-hadoop-wk03t kernel: EXT4-fs error (device sdg1): __ext4_get_inode_loc: unable to read inode block - inode=82706433, block=330825760
+Apr 13 15:59:12 m1-hadoop-wk03t kernel: EXT4-fs error (device sdg1): __ext4_get_inode_loc: unable to read inode block - inode=82706433, block=330825760
+Apr 13 15:59:12 m1-hadoop-wk03t kernel: EXT4-fs error (device sdg1): __ext4_get_inode_loc: unable to read inode block - inode=82706433, block=330825760
+Apr 13 15:59:12 m1-hadoop-wk03t kernel: EXT4-fs error (device sdg1): __ext4_get_inode_loc: unable to read inode block - inode=82706433, block=330825760
+Apr 13 15:59:12 m1-hadoop-wk03t kernel: EXT4-fs error (device sdg1): __ext4_get_inode_loc: unable to read inode block - inode=82706433, block=330825760
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: EXT4-fs (sdg1): previous I/O error to superblock detected
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: __ratelimit: 81 callbacks suppressed
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Sense Key : Hardware Error [current]
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Add. Sense: Logical unit failure
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg] CDB: Write(10): 2a 00 00 00 10 00 00 00 08 00
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: __ratelimit: 81 callbacks suppressed
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: end_request: critical target error, dev sdg, sector 4096
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: Buffer I/O error on device sdg1, logical block 0
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: lost page write due to I/O error on sdg1
+Apr 13 15:59:19 m1-hadoop-wk03t kernel: EXT4-fs error (device sdg1): ext4_put_super: Couldn't clean up the journal
+Apr 13 16:08:07 m1-hadoop-wk03t cmaeventd[3478]: Hot-plug drive removed: Port 2I Box 1 Bay 7 of Array Controller in slot 2.
+Apr 13 16:09:07 m1-hadoop-wk03t cmaeventd[3478]: Hot-plug drive inserted: Port 2I Box 1 Bay 7 of Array Controller in slot 2.
+Apr 13 16:09:08 m1-hadoop-wk03t cmaidad[3543]: Physical Drive Status Change: Slot 2 Port 2I Box 1 Bay 7.Status is now OK.
+Apr 13 16:09:12 m1-hadoop-wk03t cmaeventd[3478]: Logical drive 6 of Array Controller in slot 2, is in a FAILED state but has one or more drive replacements and is ready to go to OK.  However, this
+ will not happen until an Accept Media Exchange command is issued to the logic drive.
+Apr 13 16:11:16 m1-hadoop-wk03t hp-ams[3201]: NOTICE: IML Cleared (iLO 4 user:Administrator)
+Apr 13 16:20:09 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+Apr 13 16:20:09 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Sense Key : Hardware Error [current]
+Apr 13 16:20:09 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Add. Sense: Logical unit failure
+Apr 13 16:20:09 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg] CDB: Read(10): 28 00 00 00 10 00 00 00 08 00
+Apr 13 16:20:09 m1-hadoop-wk03t kernel: end_request: critical target error, dev sdg, sector 4096
+Apr 13 16:20:12 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+Apr 13 16:20:12 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Sense Key : Hardware Error [current]
+Apr 13 16:20:12 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Add. Sense: Logical unit failure
+Apr 13 16:20:12 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg] CDB: Read(10): 28 00 00 00 10 00 00 00 08 00
+Apr 13 16:20:12 m1-hadoop-wk03t kernel: end_request: critical target error, dev sdg, sector 4096
+Apr 13 16:20:12 m1-hadoop-wk03t kernel: Buffer I/O error on device sdg1, logical block 0
+Apr 13 16:20:12 m1-hadoop-wk03t kernel: sd 0:0:0:5: [sdg]  Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+...
+
+................................................................................
+
+
+[root@m1-hadoop-wk03t ~]# hpssacli controller slot=2 show config
+
+Smart Array P420 in Slot 2                (sn: PDSXK0BRH6R02A)
+
+
+   Gen8 ServBP 12+2 at Port 2I, Box 1, OK
+   array A (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:1 (port 2I:box 1:bay 1, SATA, 4000.7 GB, OK)
+
+   array B (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 2 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:3 (port 2I:box 1:bay 3, SATA, 4000.7 GB, OK)
+
+   array C (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 3 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:4 (port 2I:box 1:bay 4, SATA, 4000.7 GB, OK)
+
+   array D (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 4 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SATA, 4000.7 GB, OK)
+
+   array E (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 5 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SATA, 4000.7 GB, OK)
+
+   array F (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 6 (3.6 TB, RAID 0, Failed)
+
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SATA, 4000.7 GB, OK)
+
+   array G (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 7 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SATA, 4000.7 GB, OK)
+
+   array H (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 8 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:9 (port 2I:box 1:bay 9, SATA, 4000.7 GB, OK)
+
+   array I (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 9 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:10 (port 2I:box 1:bay 10, SATA, 4000.7 GB, OK)
+
+   array J (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 10 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:11 (port 2I:box 1:bay 11, SATA, 4000.7 GB, OK)
+
+   array K (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 11 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:12 (port 2I:box 1:bay 12, SATA, 4000.7 GB, OK)
+
+   array L (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 12 (465.7 GB, RAID 1, OK)
+
+      physicaldrive 2I:1:13 (port 2I:box 1:bay 13, SATA, 500 GB, OK)
+      physicaldrive 2I:1:14 (port 2I:box 1:bay 14, SATA, 500 GB, OK)
+
+   array M (SATA, Unused Space: 0  MB)
+
+
+      logicaldrive 13 (3.6 TB, RAID 0, OK)
+
+      physicaldrive 2I:1:2 (port 2I:box 1:bay 2, SATA, 4000.7 GB, OK)
+
+   Enclosure SEP (Vendor ID HP, Model Gen8 ServBP 12+2) 378  (WWID: 5001438030529479, Port: 2I, Box: 1)
+
+   Expander 380  (WWID: 5001438030529460, Port: 2I, Box: 1)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 379  (WWID: 5001438030E24FDF)
+
+[root@m1-hadoop-wk03t ~]#
+
+
+
+[root@m1-hadoop-wk03t ~]# hpssacli controller slot=2 physicaldrive 2I:1:7 show detail
+
+Smart Array P420 in Slot 2
+
+   array F
+
+      physicaldrive 2I:1:7
+         Port: 2I
+         Box: 1
+         Bay: 7
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SATA
+         Size: 4000.7 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 7200
+         Firmware Revision: HPG1
+         Serial Number: 10ADK2YRFQNE
+         Model: ATA     MB004000GWFWB
+         SATA NCQ Capable: True
+         SATA NCQ Enabled: True
+         Current Temperature (C): 26
+         Maximum Temperature (C): 39
+         PHY Count: 1
+         PHY Transfer Rate: 6.0Gbps
+         Drive Authentication Status: OK
+         Carrier Application Version: 11
+         Carrier Bootloader Version: 6
+         Sanitize Erase Supported: False
+
+
+[root@m1-hadoop-wk03t ~]#
+
+
+................................................................................
+
+[root@m1-hadoop-wk03t ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME   TYPE MOUNTPOINT FSTYPE   SIZE
+sdb    disk                     3.7T
+└─sdb1 part /disk11    ext4     3.7T
+sdf    disk                     3.7T
+└─sdf1 part /disk4     ext4     3.7T
+sdc    disk                     3.7T
+└─sdc1 part /disk1     ext4     3.7T
+sde    disk                     3.7T
+└─sde1 part /disk3     ext4     3.7T
+sdh    disk                     3.7T
+└─sdh1 part /disk6     ext4     3.7T
+sdg    disk                     3.7T
+└─sdg1 part                     3.7T
+sdi    disk                     3.7T
+└─sdi1 part /disk7     ext4     3.7T
+sdm    disk                     3.7T
+└─sdm1 part /disk12    ext4     3.7T
+sdj    disk                     3.7T
+└─sdj1 part /disk8     ext4     3.7T
+sda    disk                   465.7G
+├─sda1 part /opt       ext4   146.5G
+├─sda2 part /var       ext4   146.5G
+├─sda3 part /          ext4    78.1G
+├─sda4 part                       1K
+└─sda5 part [SWAP]     swap    94.7G
+sdl    disk                     3.7T
+└─sdl1 part /disk10    ext4     3.7T
+sdk    disk                     3.7T
+└─sdk1 part /disk9     ext4     3.7T
+sdd    disk                     3.7T
+└─sdd1 part /disk2     ext4     3.7T
+[root@m1-hadoop-wk03t ~]# parted -a optimal /dev/sdg1 mklabel GPT print mkpart primary ext4 0% 100% print
+Error: Input/output error during read on /dev/sdg1
+parted: invalid token: print
+Retry/Ignore/Cancel?
+Retry/Ignore/Cancel? C
+Error: Input/output error during read on /dev/sdg1
+Retry/Ignore/Cancel? C
+Error: Input/output error during write on /dev/sdg1
+Retry/Ignore/Cancel? Cancel
+[root@m1-hadoop-wk03t ~]#
+
+
+................................................................................
+
+#
+#	Before reboot, needs to comment string with failed drive.
+#	Instead we will get timeout during boot process. I' not sure, but as I remember - it could be true.
+#
+
+[root@m1-hadoop-wk03t ~]# cat /etc/fstab
+...
+/dev/sdf1 /disk4        ext4    defaults,noatime,nodiratime     0 0
+#/dev/sdg1 /disk5       ext4    defaults,noatime,nodiratime     0 0
+/dev/sdh1 /disk6        ext4    defaults,noatime,nodiratime     0 0
+...
+
+[root@m1-hadoop-wk03t ~]#
+
+
+................................................................................
+
+#
+#	After reboot.
+#	And accept to data loss on failed drive and continue to use that logical drive with new disk.
+#
+
+#
+#	Here is drive /dev/sdg
+#
+[s.belogrud@TCS4357]# ssh bsv@m1-hadoop-wk03t
+Last login: Mon Apr 13 17:31:29 2020 from tcs4357.tcsbank.ru
+[bsv@m1-hadoop-wk03t ~]$ sudo -i
+[root@m1-hadoop-wk03t ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME   TYPE MOUNTPOINT FSTYPE   SIZE
+sda    disk                   465.7G
+├─sda1 part /opt       ext4   146.5G
+├─sda2 part /var       ext4   146.5G
+├─sda3 part /          ext4    78.1G
+├─sda4 part                       1K
+└─sda5 part [SWAP]     swap    94.7G
+sdb    disk                     3.7T
+└─sdb1 part /disk11    ext4     3.7T
+sdc    disk                     3.7T
+└─sdc1 part /disk1     ext4     3.7T
+sdd    disk                     3.7T
+└─sdd1 part /disk2     ext4     3.7T
+sdh    disk                     3.7T
+└─sdh1 part /disk6     ext4     3.7T
+sdf    disk                     3.7T
+└─sdf1 part /disk4     ext4     3.7T
+sdg    disk                     3.7T
+sdi    disk                     3.7T
+└─sdi1 part /disk7     ext4     3.7T
+sdm    disk                     3.7T
+└─sdm1 part /disk12    ext4     3.7T
+sdk    disk                     3.7T
+└─sdk1 part /disk9     ext4     3.7T
+sdl    disk                     3.7T
+└─sdl1 part /disk10    ext4     3.7T
+sdj    disk                     3.7T
+└─sdj1 part /disk8     ext4     3.7T
+sde    disk                     3.7T
+└─sde1 part /disk3     ext4     3.7T
+[root@m1-hadoop-wk03t ~]#
+
+[root@m1-hadoop-wk03t ~]# parted -a optimal /dev/sdg mklabel GPT print mkpart primary ext4 0% 100% print
+Model: HP LOGICAL VOLUME (scsi)
+Disk /dev/sdg: 4001GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: HP LOGICAL VOLUME (scsi)
+Disk /dev/sdg: 4001GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  4001GB  4001GB               primary
+
+Information: You may need to update /etc/fstab.
+
+[root@m1-hadoop-wk03t ~]#
+
+[root@m1-hadoop-wk03t ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME   TYPE MOUNTPOINT FSTYPE   SIZE
+sda    disk                   465.7G
+├─sda1 part /opt       ext4   146.5G
+├─sda2 part /var       ext4   146.5G
+├─sda3 part /          ext4    78.1G
+├─sda4 part                       1K
+└─sda5 part [SWAP]     swap    94.7G
+sdb    disk                     3.7T
+└─sdb1 part /disk11    ext4     3.7T
+sdc    disk                     3.7T
+└─sdc1 part /disk1     ext4     3.7T
+sdd    disk                     3.7T
+└─sdd1 part /disk2     ext4     3.7T
+sdh    disk                     3.7T
+└─sdh1 part /disk6     ext4     3.7T
+sdf    disk                     3.7T
+└─sdf1 part /disk4     ext4     3.7T
+sdg    disk                     3.7T
+└─sdg1 part                     3.7T
+sdi    disk                     3.7T
+└─sdi1 part /disk7     ext4     3.7T
+sdm    disk                     3.7T
+└─sdm1 part /disk12    ext4     3.7T
+sdk    disk                     3.7T
+└─sdk1 part /disk9     ext4     3.7T
+sdl    disk                     3.7T
+└─sdl1 part /disk10    ext4     3.7T
+sdj    disk                     3.7T
+└─sdj1 part /disk8     ext4     3.7T
+sde    disk                     3.7T
+└─sde1 part /disk3     ext4     3.7T
+[root@m1-hadoop-wk03t ~]#
+
+[root@m1-hadoop-wk03t ~]# mkfs.ext4 /dev/sdg1
+mke2fs 1.41.12 (17-May-2010)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=64 blocks, Stripe width=64 blocks
+244187136 inodes, 976745984 blocks
+48837299 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=4294967296
+29808 block groups
+32768 blocks per group, 32768 fragments per group
+8192 inodes per group
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848, 512000000, 550731776, 644972544
+
+Writing inode tables: done
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+This filesystem will be automatically checked every 24 mounts or
+180 days, whichever comes first.  Use tune2fs -c or -i to override.
+[root@m1-hadoop-wk03t ~]#
+
+[root@m1-hadoop-wk03t ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME   TYPE MOUNTPOINT FSTYPE   SIZE
+sda    disk                   465.7G
+├─sda1 part /opt       ext4   146.5G
+├─sda2 part /var       ext4   146.5G
+├─sda3 part /          ext4    78.1G
+├─sda4 part                       1K
+└─sda5 part [SWAP]     swap    94.7G
+sdb    disk                     3.7T
+└─sdb1 part /disk11    ext4     3.7T
+sdc    disk                     3.7T
+└─sdc1 part /disk1     ext4     3.7T
+sdd    disk                     3.7T
+└─sdd1 part /disk2     ext4     3.7T
+sdh    disk                     3.7T
+└─sdh1 part /disk6     ext4     3.7T
+sdf    disk                     3.7T
+└─sdf1 part /disk4     ext4     3.7T
+sdg    disk                     3.7T
+└─sdg1 part            ext4     3.7T
+sdi    disk                     3.7T
+└─sdi1 part /disk7     ext4     3.7T
+sdm    disk                     3.7T
+└─sdm1 part /disk12    ext4     3.7T
+sdk    disk                     3.7T
+└─sdk1 part /disk9     ext4     3.7T
+sdl    disk                     3.7T
+└─sdl1 part /disk10    ext4     3.7T
+sdj    disk                     3.7T
+└─sdj1 part /disk8     ext4     3.7T
+sde    disk                     3.7T
+└─sde1 part /disk3     ext4     3.7T
+[root@m1-hadoop-wk03t ~]#
+
+#
+#	Let's uncomment previously commented line, where this drive was mounted.
+#
+[root@m1-hadoop-wk03t ~]# vim /etc/fstab
+[root@m1-hadoop-wk03t ~]# mount /disk5
+[root@m1-hadoop-wk03t ~]#
+
+[root@m1-hadoop-wk03t ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME   TYPE MOUNTPOINT FSTYPE   SIZE
+sda    disk                   465.7G
+├─sda1 part /opt       ext4   146.5G
+├─sda2 part /var       ext4   146.5G
+├─sda3 part /          ext4    78.1G
+├─sda4 part                       1K
+└─sda5 part [SWAP]     swap    94.7G
+sdb    disk                     3.7T
+└─sdb1 part /disk11    ext4     3.7T
+sdc    disk                     3.7T
+└─sdc1 part /disk1     ext4     3.7T
+sdd    disk                     3.7T
+└─sdd1 part /disk2     ext4     3.7T
+sdh    disk                     3.7T
+└─sdh1 part /disk6     ext4     3.7T
+sdf    disk                     3.7T
+└─sdf1 part /disk4     ext4     3.7T
+sdg    disk                     3.7T
+└─sdg1 part /disk5     ext4     3.7T
+sdi    disk                     3.7T
+└─sdi1 part /disk7     ext4     3.7T
+sdm    disk                     3.7T
+└─sdm1 part /disk12    ext4     3.7T
+sdk    disk                     3.7T
+└─sdk1 part /disk9     ext4     3.7T
+sdl    disk                     3.7T
+└─sdl1 part /disk10    ext4     3.7T
+sdj    disk                     3.7T
+└─sdj1 part /disk8     ext4     3.7T
+sde    disk                     3.7T
+└─sde1 part /disk3     ext4     3.7T
+[root@m1-hadoop-wk03t ~]#
+
+[root@m1-hadoop-wk03t ~]# df -hT
+Filesystem     Type   Size  Used Avail Use% Mounted on
+/dev/sda3      ext4    77G   43G   31G  59% /
+tmpfs          tmpfs   95G     0   95G   0% /dev/shm
+/dev/sda1      ext4   145G   38G   99G  28% /opt
+/dev/sda2      ext4   145G  2.8G  134G   3% /var
+/dev/sdc1      ext4   3.6T  2.6T  858G  76% /disk1
+/dev/sdd1      ext4   3.6T  2.6T  848G  76% /disk2
+/dev/sde1      ext4   3.6T  2.6T  831G  77% /disk3
+/dev/sdf1      ext4   3.6T  2.6T  864G  76% /disk4
+/dev/sdh1      ext4   3.6T  2.6T  840G  76% /disk6
+/dev/sdi1      ext4   3.6T  2.6T  829G  77% /disk7
+/dev/sdj1      ext4   3.6T  2.6T  824G  77% /disk8
+/dev/sdk1      ext4   3.6T  2.6T  851G  76% /disk9
+/dev/sdl1      ext4   3.6T  2.7T  817G  77% /disk10
+/dev/sdb1      ext4   3.6T  2.6T  833G  77% /disk11
+/dev/sdm1      ext4   3.6T  2.6T  857G  76% /disk12
+cm_processes   tmpfs   95G     0   95G   0% /var/run/cloudera-scm-agent/process
+/dev/sdg1      ext4   3.6T   68M  3.4T   1% /disk5
+[root@m1-hadoop-wk03t ~]#
+
+
+
+
+

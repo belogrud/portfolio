@@ -1,0 +1,978 @@
+
+
+................................................................................
+
+Тема
+
+возможность установки локалдьных дисков в сервера БД
+Номер
+
+45353
+Описание
+Прошу исследовать возможность установки локальных дисков(количество) на сервера :
+ds-db02-stb
+ds-db07-stb
+m1-db08-stb
+m1-db-dev
+ds-db-dev
+m1-db-tst
+ds-db-tst
+
+для размещения на них временного табличного про-ва TEMP
+
+С уважением,
+
+Матвей Новиков
+Администратор баз данных
+
+
+Дата регистрации
+
+10.10.2016
+
+15:57
+Инициатор
+Новиков Матвей Сергеевич
+Тип запроса
+
+Запрос на обслуживание
+Подразделение
+Отдел администрирования баз данных
+Критичность
+
+Низкая
+E-mail
+
+m.novikov@tinkoff.ru
+Состояние
+
+В работе
+Внутр. телефон
+
+2150
+Группа
+unix-admins
+Соглашение
+Каталог сервисов
+Ответственный
+Белогруд Сергей Владимирович
+Сервис
+00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Ответственный от 1-й линии
+
+Не заполнено
+Решение
+
+Не заполнено
+Внешние комментарииСвязиКлассификация и решениеФайлыЖурнал изменений
+
+
+Новиков Матвей Сергеевич
+минимальные размеры разделов по серверам:
+ds-db02-stb 500Gb
+ds-db07-stb 500Gb
+m1-db08-stb 500Gb
+m1-db-dev 500Gb
+ds-db-dev 1500Gb
+m1-db-tst 1000Gb
+ds-db-tst 2000Gb
+Сегодня в 16:52
+Терентьев Алексей Николаевич
+нужно определить, сколько дисков можно поставить, не модернизируя сервера. если что-то непонятно - СПРАШИВАЙТЕ оперативно, и не через сервисдеск.
+Сегодня в 16:37
+Терентьев Алексей Николаевич
+направить на unix-admins, Белогруд С. Надо оценить по всем указанным серверам - возможность добивки 2-ух дисков . Сразу записать pn и наименования нужных дисков для каждого сервера, на примере 600ГБ дисков.  Информация потребуется для закупки.
+Сегодня в 16:19
+................................................................................
+................................................................................
+
+
+[root@ds-db02-stb ~]# dmidecode -t system | egrep -e "Product Name|Serial Number"
+        Product Name: ProLiant DL580 G7
+        Serial Number: CZ3236VSLP
+[root@ds-db02-stb ~]#
+
+[root@ds-db02-stb ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438021564B80)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (279.4 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438021564B8F)
+
+[root@ds-db02-stb ~]#
+
+[root@ds-db02-stb ~]# hpssacli controller slot=0 enclosure all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 1I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 2I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      None attached
+
+
+[root@ds-db02-stb ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDA
+         Serial Number:         PMWBZRWB
+         Model: HP      EG0300FBDBR
+         Current Temperature (C): 31
+         Maximum Temperature (C): 41
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDA
+         Serial Number:         PMWBU2SB
+         Model: HP      EG0300FBDBR
+         Current Temperature (C): 31
+         Maximum Temperature (C): 43
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@ds-db02-stb ~]#
+
+................................................................................
+
+[root@ds-db07-stb ~]# dmidecode -t system | egrep -e "Product Name|Serial Number"
+        Product Name: ProLiant DL980 G7
+        Serial Number: CZ3333LLYD
+[root@ds-db07-stb ~]#
+
+[root@ds-db07-stb ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438025F80BE0)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (279.4 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438025F80BEF)
+
+[root@ds-db07-stb ~]#
+
+[root@ds-db07-stb ~]# hpssacli controller slot=0 enclosure all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 1I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 2I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      None attached
+
+
+[root@ds-db07-stb ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number:         KLHH1L5F
+         Model: HP      EG0300FBVFL
+         Current Temperature (C): 32
+         Maximum Temperature (C): 45
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number:         KLHH99EF
+         Model: HP      EG0300FBVFL
+         Current Temperature (C): 33
+         Maximum Temperature (C): 49
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@ds-db07-stb ~]#
+
+................................................................................
+
+[root@ds-db-dev ~]# dmidecode -t system | egrep -e "Product Name|Serial Number"
+        Product Name: ProLiant DL580 G7
+        Serial Number: CZ3138V26V
+[root@ds-db-dev ~]#
+
+[root@ds-db-dev ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 50014380170B8070)
+
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (558.9 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250 (WWID: 50014380170B807F)
+
+[root@ds-db-dev ~]#
+
+
+[root@ds-db-dev ~]# hpssacli controller slot=0 enclosure all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 1I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 2I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      None attached
+
+
+[root@ds-db-dev ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Rotational Speed: 10000
+         Firmware Revision: HPDA
+         Serial Number:         PPHZKG5B
+         Model: HP      EG0600FBDBU
+         Current Temperature (C): 32
+         Maximum Temperature (C): 44
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Rotational Speed: 10000
+         Firmware Revision: HPDA
+         Serial Number:         PPHWY9PB
+         Model: HP      EG0600FBDBU
+         Current Temperature (C): 34
+         Maximum Temperature (C): 45
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@ds-db-dev ~]#
+
+................................................................................
+
+
+[root@ds-db-tst ~]# dmidecode -t system | egrep -e "Product Name|Serial Number"
+        Product Name: ProLiant DL580 G7
+        Serial Number: CZJ2491RVT
+[root@ds-db-tst ~]#
+
+[root@ds-db-tst ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 50014380238B91B0)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (558.9 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 50014380238B91BF)
+
+[root@ds-db-tst ~]#
+
+
+[root@ds-db-tst ~]# hpssacli controller slot=0 enclosure all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Drive Bays: 4
+      Port: 1I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Drive Bays: 4
+      Port: 2I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      None attached
+
+
+[root@ds-db-tst ~]#
+
+[root@ds-db-tst ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD6
+         Serial Number: EA01PD11SR801305
+         Model: HP      EG0600FBDSR
+         Current Temperature (C): 35
+         Maximum Temperature (C): 42
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD6
+         Serial Number: EA01PD11SR3S1305
+         Model: HP      EG0600FBDSR
+         Current Temperature (C): 38
+         Maximum Temperature (C): 45
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@ds-db-tst ~]#
+
+
+................................................................................
+
+
+[root@m1-db08-stb ~]# dmidecode -t system | egrep -e "Product Name|Serial Number"
+        Product Name: ProLiant DL980 G7
+        Serial Number: CZ3333LM1Y
+[root@m1-db08-stb ~]#
+
+[root@m1-db08-stb ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438025F80CA0)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (279.4 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438025F80CAF)
+
+[root@m1-db08-stb ~]#
+
+[root@m1-db08-stb ~]# hpssacli controller slot=0 enclosure all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 1I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 2I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      None attached
+
+
+[root@m1-db08-stb ~]#
+
+[root@m1-db08-stb ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number:         KLHGZW6F
+         Model: HP      EG0300FBVFL
+         Current Temperature (C): 33
+         Maximum Temperature (C): 42
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number:         KLHGPPVF
+         Model: HP      EG0300FBVFL
+         Current Temperature (C): 33
+         Maximum Temperature (C): 43
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@m1-db08-stb ~]#
+
+................................................................................
+
+[root@m1-db-dev ~]# dmidecode -t system | egrep -e "Product Name|Serial Number"
+        Product Name: ProLiant DL580 G7
+        Serial Number: CZ3138V286
+[root@m1-db-dev ~]#
+
+[root@m1-db-dev ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438014E1F2C0)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (558.9 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438014E1F2CF)
+
+[root@m1-db-dev ~]#
+
+[root@m1-db-dev ~]# hpssacli controller slot=0 enclosure all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 1I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+      Power Supply Status: Not Redundant
+      Serial Number:
+      Drive Bays: 4
+      Port: 2I
+      Box: 1
+      Location: Internal
+
+   Physical Drives
+      None attached
+
+
+[root@m1-db-dev ~]#
+
+
+[root@m1-db-dev ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD6 (FW update is recommended to minimum version: HPD7)
+         Serial Number: EA01PD11SG2L1304
+         Model: HP      EG0600FBDSR
+         Current Temperature (C): 34
+         Maximum Temperature (C): 43
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD6 (FW update is recommended to minimum version: HPD7)
+         Serial Number:         PPJ5R52B
+         Model: HP      EG0600FBDBU
+         Current Temperature (C): 32
+         Maximum Temperature (C): 43
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@m1-db-dev ~]#
+
+................................................................................
+
+
+[root@m1-db-tst ~]# dmidecode -t system | egrep -e "Product Name|Serial Number"
+        Product Name: ProLiant DL580 G7
+        Serial Number: GB8108ERE5
+[root@m1-db-tst ~]#
+
+[root@m1-db-tst ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 50014380131CBE10)
+
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (279.4 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+   unassigned
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 300 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 300 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250 (WWID: 50014380131CBE1F)
+
+[root@m1-db-tst ~]#
+
+
+[root@m1-db-tst ~]# hpssacli controller slot=0 physicaldrive all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 1I:1:1
+         Port: 1I
+         Box: 1
+         Bay: 1
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDG
+         Serial Number:         PFVTM6EE
+         Model: HP      DG0300FARVV
+         Current Temperature (C): 31
+         Maximum Temperature (C): 46
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+      physicaldrive 1I:1:2
+         Port: 1I
+         Box: 1
+         Bay: 2
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDG
+         Serial Number:         PFVVVRKE
+         Model: HP      DG0300FARVV
+         Current Temperature (C): 32
+         Maximum Temperature (C): 48
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+   unassigned
+
+      physicaldrive 1I:1:3
+         Port: 1I
+         Box: 1
+         Bay: 3
+         Status: OK
+         Drive Type: Unassigned Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDG
+         Serial Number:         PFVTMAUE
+         Model: HP      DG0300FARVV
+         Current Temperature (C): 30
+         Maximum Temperature (C): 48
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+      physicaldrive 1I:1:4
+         Port: 1I
+         Box: 1
+         Bay: 4
+         Status: OK
+         Drive Type: Unassigned Drive
+         Interface Type: SAS
+         Size: 300 GB
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDG
+         Serial Number:         PFVVSB1E
+         Model: HP      DG0300FARVV
+         Current Temperature (C): 31
+         Maximum Temperature (C): 50
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@m1-db-tst ~]#
+
+
+        [root@m1-db-tst ~]# hpssacli controller slot=0 physicaldrive 1I:1:3 show detail
+
+        Smart Array P410i in Slot 0 (Embedded)
+
+           unassigned
+
+              physicaldrive 1I:1:3
+                 Port: 1I
+                 Box: 1
+                 Bay: 3
+                 Status: OK
+                 Drive Type: Unassigned Drive
+                 Interface Type: SAS
+                 Size: 300 GB
+                 Native Block Size: 512
+                 Rotational Speed: 10000
+                 Firmware Revision: HPDG
+                 Serial Number:         PFVTMAUE
+                 Model: HP      DG0300FARVV
+                 Current Temperature (C): 29
+                 Maximum Temperature (C): 48
+                 PHY Count: 2
+                 PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+        [root@m1-db-tst ~]# hpssacli controller slot=0 physicaldrive 1I:1:4 show detail
+
+        Smart Array P410i in Slot 0 (Embedded)
+
+           unassigned
+
+              physicaldrive 1I:1:4
+                 Port: 1I
+                 Box: 1
+                 Bay: 4
+                 Status: OK
+                 Drive Type: Unassigned Drive
+                 Interface Type: SAS
+                 Size: 300 GB
+                 Native Block Size: 512
+                 Rotational Speed: 10000
+                 Firmware Revision: HPDG
+                 Serial Number:         PFVVSB1E
+                 Model: HP      DG0300FARVV
+                 Current Temperature (C): 31
+                 Maximum Temperature (C): 50
+                 PHY Count: 2
+                 PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+        [root@m1-db-tst ~]#
+
+
+        [root@m1-db-tst ~]# hpssacli controller slot=0 enclosure all show detail
+
+        Smart Array P410i in Slot 0 (Embedded)
+
+           Internal Drive Cage at Port 1I, Box 1, OK
+              Power Supply Status: Not Redundant
+              Serial Number:
+              Drive Bays: 4
+              Port: 1I
+              Box: 1
+              Location: Internal
+
+           Physical Drives
+              physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+              physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+              physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 300 GB, OK)
+              physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 300 GB, OK)
+
+
+           Internal Drive Cage at Port 2I, Box 1, OK
+              Power Supply Status: Not Redundant
+              Serial Number:
+              Drive Bays: 4
+              Port: 2I
+              Box: 1
+              Location: Internal
+
+           Physical Drives
+              None attached
+
+
+        [root@m1-db-tst ~]#
+
+
+        [root@m1-db-tst ~]# hpssacli controller slot=0 show
+
+        Smart Array P410i in Slot 0 (Embedded)
+           Bus Interface: PCI
+           Slot: 0
+           Serial Number: 50014380131CBE10
+           Cache Serial Number: PBCDF0CRHZQ87U
+           RAID 6 (ADG) Status: Disabled
+           Controller Status: OK
+           Hardware Revision: C
+           Firmware Version: 6.40
+           Rebuild Priority: Medium
+           Expand Priority: Medium
+           Surface Scan Delay: 15 secs
+           Surface Scan Mode: Idle
+           Queue Depth: Automatic
+           Monitor and Performance Delay: 60  min
+           Elevator Sort: Enabled
+           Degraded Performance Optimization: Disabled
+           Inconsistency Repair Policy: Disabled
+           Wait for Cache Room: Disabled
+           Surface Analysis Inconsistency Notification: Disabled
+           Post Prompt Timeout: 0 secs
+           Cache Board Present: True
+           Cache Status: OK
+           Cache Ratio: 25% Read / 75% Write
+           Drive Write Cache: Disabled
+           Total Cache Size: 1024 MB
+           Total Cache Memory Available: 912 MB
+           No-Battery Write Cache: Disabled
+           Cache Backup Power Source: Capacitors
+           Battery/Capacitor Count: 1
+           Battery/Capacitor Status: OK
+           SATA NCQ Supported: True
+           Number of Ports: 2 Internal only
+           Driver Name: hpsa
+           Driver Version: 3.4.4
+           Driver Supports HP SSD Smart Path: True
+
+        [root@m1-db-tst ~]#
+
+        [root@m1-db-tst ~]# hpssacli controller slot=0 physicaldrive allunassigned show
+
+        Smart Array P410i in Slot 0 (Embedded)
+
+           unassigned
+
+              physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 300 GB, OK)
+              physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 300 GB, OK)
+
+        [root@m1-db-tst ~]# hpssacli controller slot=0 physicaldrive all show
+
+        Smart Array P410i in Slot 0 (Embedded)
+
+           array A
+
+              physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+              physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+
+           unassigned
+
+              physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 300 GB, OK)
+              physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 300 GB, OK)
+
+        [root@m1-db-tst ~]#
+
+................................................................................
+................................................................................
+
+
+
+
+
+
+

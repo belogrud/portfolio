@@ -1,0 +1,128 @@
+
+
+
+
+................................................................................
+
+Тема
+
+нотификация
+Номер
+
+18432
+Описание
+Просьба добавить смс-нотификацию сотруднику Данилову Сергею по аналогии с Афанасьевым Иваном
+Nagios
+Splunk
+Oracle Enterprise Manager
+
+С уважением, Виктория Волкова
+
+................................................................................
+
+Волкова Виктория Александровна
+нужно заменить телефон 79167851020 на 79199923541
+
+................................................................................
+
+
+Afanasyev Ivan Andreevich <i.afanasyev@tinkoff.ru>
+Danilov Sergey Andreevich <s.a.danilov@tinkoff.ru>
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name service_description filename contacts where contacts__contains="afanasyev"
+host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+m1-sblapp03p         Drive D: Space       /usr/local/nagios/etc/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg i.afanasyev_email,i.afanasyev_sms,a.tarasov_email
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list host_name service_description filename contacts where contacts__contains="danilov"
+host_name            service_description  filename             contacts
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# grep -ire "i.afanasyev_email" groups/contact-group/*
+groups/contact-group/sibel-admins.cfg:        members                 v.meagcov_email,m.kovalev_email,v.dyupina_email,v.dyupina_sms,i.afanasyev_email,i.afanasyev_sms,a.tarasov_email,a.tarasov_sms,s.a.danilov_email,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email address1 filename where address1__contains="79167851020"
+contact_name         email                address1             filename
+--------------------------------------------------------------------------------
+a.tarasov_sms        a.tarasov@tinkoff.ru 79167851020          /usr/local/nagios/etc/objects/contacts/a.tarasov.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="danilov"
+contact_name         filename
+--------------------------------------------------------------------------------
+s.a.danilov_email    /usr/local/nagios/etc/objects/contacts/s.a.danilov.cfg
+s.a.danilov_sms      /usr/local/nagios/etc/objects/contacts/s.a.danilov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDNew#18432. Added to notification contact s.a.danilov. Changed one phone number belonged to Tarasov." servers/dc-m1/windows/sbl/m1-sblapp03p.cfg contacts/a.tarasov.cfg
+[master ef4c455] SDNew#18432. Added to notification contact s.a.danilov. Changed one phone number belonged to Tarasov.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                  Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 19, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (10/10), done.
+Writing objects: 100% (10/10), 877 bytes, done.
+Total 10 (delta 9), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   d90d184..ef4c455  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager show -p ef4c455
+commit ef4c4554f60df5efa67168ae6746526bfdf8f4f7
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Tue Sep 13 14:47:38 2016 +0300
+
+    SDNew#18432. Added to notification contact s.a.danilov. Changed one phone number belonged to Tarasov.
+
+diff --git a/objects/contacts/a.tarasov.cfg b/objects/contacts/a.tarasov.cfg
+index e44cd71..ceb0d0d 100644
+--- a/objects/contacts/a.tarasov.cfg
++++ b/objects/contacts/a.tarasov.cfg
+@@ -10,5 +10,6 @@ define contact{
+         use                     generic-contact-critical
+         alias                   Tarasov Artur
+         email                   a.tarasov@tinkoff.ru
+-        address1                79167851020
++        #address1                79167851020
++        address1                79199923541
+ }
+diff --git a/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg b/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
+index 399c7ea..c9ad6a6 100644
+--- a/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
++++ b/objects/servers/dc-m1/windows/sbl/m1-sblapp03p.cfg
+@@ -45,7 +45,7 @@ define service{
+    service_description           Drive D: Space
+     check_command           check_nt!USEDDISKSPACE!-l d -w 90 -c 95
+     contact_groups          sibel-admins, windows-admins-critical
+-    contacts      i.afanasyev_email,i.afanasyev_sms,a.tarasov_email
++    contacts      i.afanasyev_email,i.afanasyev_sms,a.tarasov_email,s.a.danilov_email,s.a.danilov_sms
+     notifications_enabled   1
+    flap_detection_enabled        0
+ }
+[root@vm-vol-nag4-tst objects]#
+
+
+
+

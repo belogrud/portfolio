@@ -1,0 +1,140 @@
+
+................................................................................
+
+[root@ru-tf0004 nrpe.d]# check_http -v -H api.tinkoffinsurance.ru --ssl -e "200 OK" -u "/api/vehicle_search?origin=web&vehicleType=2&top=5"
+GET /api/vehicle_search?origin=web&vehicleType=2&top=5 HTTP/1.1
+User-Agent: check_http/v1.4.15 (nagios-plugins 1.4.15)
+Connection: close
+Host: api.tinkoffinsurance.ru
+
+
+https://api.tinkoffinsurance.ru:443/api/vehicle_search?origin=web&vehicleType=2&top=5 is 617 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Cache-Control: no-cache
+Pragma: no-cache
+Content-Type: application/json; charset=utf-8
+Expires: -1
+Server: Microsoft-IIS/8.5
+X-AspNet-Version: 4.0.30319
+X-Powered-By: ASP.NET
+Date: Thu, 26 Apr 2018 11:58:25 GMT
+Connection: close
+Content-Length: 339
+**** CONTENT ****
+{"Payload":[{"ModelId":450,"MakerId":46,"Maker":"Ford","Model":"Focus"},{"ModelId":1006,"MakerId":48,"Maker":"Hyundai","Model":"Solaris"},{"ModelId":486,"MakerId":50,"Maker":"Kia","Model":"Rio"},{"ModelId":562,"MakerId":56,"Maker":"Opel","Model":"Astra"},{"ModelId":618,"MakerId":63,"Maker":"Volkswagen","Model":"Polo"}],"ResultCode":"Ok"}
+Status line output matched "200 OK" -
+HTTP OK: Status line output matched "200 OK" - 617 bytes in 0.115 second response time |time=0.115021s;;;0.000000 size=617B;;;0
+[root@ru-tf0004 nrpe.d]#
+
+................................................................................
+
+[root@ru-tf0004 nrpe.d]# check_http -v -H www.tinkoffinsurance.ru --ssl -e "200 OK" -u "/api/vendors?companyType=glassstation"
+GET /api/vendors?companyType=glassstation HTTP/1.1
+User-Agent: check_http/v1.4.15 (nagios-plugins 1.4.15)
+Connection: close
+Host: www.tinkoffinsurance.ru
+
+
+https://www.tinkoffinsurance.ru:443/api/vendors?companyType=glassstation is 871 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Cache-Control: no-cache
+Pragma: no-cache
+Content-Type: application/json; charset=utf-8
+Expires: -1
+Server: Microsoft-IIS/8.5
+Set-Cookie: ASP.NET_SessionId=3r03mpmvyt15x2uhp5ip0xup; path=/; HttpOnly
+Set-Cookie: SessionId=3r03mpmvyt15x2uhp5ip0xup; path=/
+Set-Cookie: querystring=companyType=glassstation; path=/
+X-AspNet-Version: 4.0.30319
+X-Powered-By: MSX Basic Web Clustered Engine (WCE pi)
+X-Frame-Options: SAMEORIGIN
+Date: Thu, 26 Apr 2018 12:06:02 GMT
+Connection: close
+Content-Length: 274
+Set-Cookie: BIGipServerTI-prt-app_tcp80=691329546.20480.0000; path=/
+**** CONTENT ****
+[{"id":8,"label":"Каргласс"},{"id":6452,"label":"РАВТ"},{"id":6487,"label":"МВО Автостекло"},{"id":6497,"label":"БС Сервис"},{"id":6605,"label":"Эй Джи Экспертс Рус"},{"id":6614,"label":"Империя Автостекла"}]
+Status line output matched "200 OK" -
+HTTP OK: Status line output matched "200 OK" - 871 bytes in 0.809 second response time |time=0.809130s;;;0.000000 size=871B;;;0
+[root@ru-tf0004 nrpe.d]#
+
+................................................................................
+
+[root@ru-tf0004 nrpe.d]# vim /etc/nagios/nrpe.cfg
+[root@ru-tf0004 nrpe.d]# tail -n 4 /etc/nagios/nrpe.cfg
+# SD#1254152
+command[check_https_api_tinkoffinsurance_ru]=/usr/lib64/nagios/plugins/check_http -H api.tinkoffinsurance.ru --ssl -e "200 OK" -u "/api/vehicle_search?origin=web&vehicleType=2&top=5"
+command[check_https_www_tinkoffinsurance_ru]=/usr/lib64/nagios/plugins/check_http -H www.tinkoffinsurance.ru --ssl -e "200 OK" -u "/api/vendors?companyType=glassstation"
+
+[root@ru-tf0004 nrpe.d]#
+
+
+[root@ru-tf0004 nrpe.d]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@ru-tf0004 nrpe.d]#
+
+................................................................................
+
+Isakov Timur Irkinovich		t.isakov@tinkoffinsurance.ru
+Kazakov Aleksandr Sergeevich	a.s.kazakov
+Goranskiy Vadim Vladimirovich	v.goranskiy
+Kolotov Tikhon Sergeevich	t.kolotov
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="t.isakov" --quiet #pynag_email
+t.isakov_email       t.isakov@tinkoffinsurance.ru /usr/local/nagios/etc/objects/contacts/t.isakov.cfg
+t.isakov_sms         t.isakov@tinkoffinsurance.ru /usr/local/nagios/etc/objects/contacts/t.isakov.cfg
+[root@vm-vol-nag4-tst objects]# 
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="a.s.kazakov" --quiet #pynag_email
+a.s.kazakov_email    a.s.kazakov@tinkoffinsurance.ru /usr/local/nagios/etc/objects/contacts/a.s.kazakov.cfg
+a.s.kazakov_sms      a.s.kazakov@tinkoffinsurance.ru /usr/local/nagios/etc/objects/contacts/a.s.kazakov.cfg
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="v.goranskiy" --quiet #pynag_email
+v.goranskiy_email    v.goranskiy@tinkoffinsurance.ru /usr/local/nagios/etc/objects/contacts/v.goranskiy.cfg
+v.goranskiy_sms      v.goranskiy@tinkoffinsurance.ru /usr/local/nagios/etc/objects/contacts/v.goranskiy.cfg
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="t.kolotov" --quiet #pynag_email
+t.kolotov_email      t.kolotov@tinkoffinsurance.ru /usr/local/nagios/etc/objects/contacts/t.kolotov.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p external/ru-tf0004.activeby.net.cfg
+commit a739f01347cd2fab294775a695aca8fd23046fe9
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Thu Apr 26 15:32:52 2018 +0300
+
+    SD#1254152. Were added two tests.
+
+diff --git a/objects/external/ru-tf0004.activeby.net.cfg b/objects/external/ru-tf0004.activeby.net.cfg
+index 3b5927e..086367d 100644
+--- a/objects/external/ru-tf0004.activeby.net.cfg
++++ b/objects/external/ru-tf0004.activeby.net.cfg
+@@ -401,3 +401,23 @@ define service{
+ #        max_check_attempts          3
+ #        contact_groups              windows-admins
+ #}
++
++# SD#1254152
++define service{
++        use                         generic-service
++        host_name                   ru-tf0004.activeby.net
++        service_description         External api.tinkoffinsurance.ru:443 check
++        check_command               check_nrpe!check_https_api_tinkoffinsurance_ru
++        check_interval              1
++        contacts                    t.isakov_email,a.s.kazakov_email,v.goranskiy_email,t.kolotov_email
++}
++# SD#1254152
++define service{
++        use                         generic-service
++        host_name                   ru-tf0004.activeby.net
++        service_description         External www.tinkoffinsurance.ru:443 check
++        check_command               check_nrpe!check_https_www_tinkoffinsurance_ru
++        check_interval              1
++        contacts                    t.isakov_email,a.s.kazakov_email,v.goranskiy_email,t.kolotov_email
++}
++
+[root@vm-vol-nag4-tst objects]#
+
+

@@ -1,0 +1,288 @@
+
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="vm-dbamon" --quiet
+/usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01-avaya.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           PRIME ISS - Incoming Queue
+    check_command                 check_nrpe!prime4-check_iss_incoming_queue
+    check_interval                5
+    max_check_attempts            1
+    notification_interval         5
+    contacts                      s.morozkin_email, s.morozkin_sms, d.a.makeev_sms, processing_duty_sms, cards_24x7_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+ }
+................................................................................
+[root@vm-dbamon01 ~]# awk '/prime4-check_iss_incoming_queue/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_prime4.cfg          command[prime4-check_iss_incoming_queue]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_iss_incoming_queue.sh
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cd /opt/TCS/scripts/nagios/plugins/prime4/
+
+[root@vm-dbamon01 prime4]# cp prime4-check_iss_incoming_queue.sh prime4-check_iis_bsckoffice.sh
+[root@vm-dbamon01 prime4]# cp prime4-check_iss_incoming_queue.sql prime4-check_iis_bsckoffice.sql
+
+[root@vm-dbamon01 prime4]# vim -o prime4-check_iis_bsckoffice.sh prime4-check_iis_bsckoffice.sql
+
+#
+#   Testing. Not working properly, yet.
+#
+[root@vm-dbamon01 prime4]# ./prime4-check_iis_bsckoffice.sh
+ERROR. Result=   0
+[root@vm-dbamon01 prime4]#
+#   Follow is for example, how it should be.
+[root@vm-dbamon01 prime4]# ./prime4-check_iss_incoming_queue.sh
+OK. Result=0
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# vim /etc/nrpe.d/check_db_prime4.cfg
+...
+command[prime4-check_iis_bsckoffice]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_iis_bsckoffice.sh
+"/etc/nrpe.d/check_db_prime4.cfg" 40L, 4739C written
+[root@vm-dbamon01 prime4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 prime4]#
+
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           PRIME ISS - BackOffice
+    check_command                 check_nrpe!prime4-check_iis_bsckoffice
+    check_interval                5
+    max_check_attempts            1
+    notification_interval         5
+    contacts                      s.morozkin_email,s.morozkin_sms,a.gladyshev_email,a.gladyshev_sms,d.a.makeev_sms, processing_duty_sms, cards_24x7_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+}
+...
+
+................................................................................
+................................................................................
+
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             ONLINE ISS - Outgoing Queue
+        check_command                   check_nrpe!check_tcs_monitor_outgoing_iss
+        check_interval                  5
+        first_notification_delay        0
+        contact_groups                  empty-group
+    contacts                      m.b.kuzmin_email,m.b.kuzmin_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           5
+}
+
+[root@vm-dbamon01 prime4]# awk '/check_tcs_monitor_outgoing_iss/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_online4.cfg         command[check_tcs_monitor_outgoing_iss]=/opt/TCS/scripts/nagios/plugins/online4/online4_check_outgoing_iss.sh
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# cd /opt/TCS/scripts/nagios/plugins/online4/
+
+[root@vm-dbamon01 online4]# cp online4_check_outgoing_iss.sh online4_check_neartime.sh
+[root@vm-dbamon01 online4]# cp online4_check_outgoing_iss.sql online4_check_neartime.sql
+
+[root@vm-dbamon01 online4]# vim -o online4_check_neartime.sh online4_check_neartime.sql
+
+#
+#   Is not good.
+#
+[root@vm-dbamon01 online4]# ./online4_check_neartime.sh
+ERROR. Result=   0
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# vim /etc/nrpe.d/check_db_online4.cfg
+...
+command[check_tcs_monitor_neartime_exception]=/opt/TCS/scripts/nagios/plugins/online4/online4_check_neartime.sh
+
+[root@vm-dbamon01 online4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 online4]#
+
+
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             ONLINE ISS - Neartime
+        check_command                   check_nrpe!check_tcs_monitor_neartime_exception
+        check_interval                  5
+        first_notification_delay        0
+        contact_groups                  empty-group
+        contacts                        s.morozkin_email,s.morozkin_sms,a.gladyshev_email,a.gladyshev_sms,m.b.kuzmin_email,m.b.kuzmin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           5
+}
+...
+
+................................................................................
+................................................................................
+
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           PRIME ISS - Incoming Queue
+    check_command                 check_nrpe!prime4-check_iss_incoming_queue
+    check_interval                5
+    max_check_attempts            1
+    notification_interval         5
+    contacts                      s.morozkin_email, s.morozkin_sms, d.a.makeev_sms, processing_duty_sms, cards_24x7_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+ }
+
+[root@vm-dbamon01 online4]# awk '/prime4-check_iss_incoming_queue/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_prime4.cfg          command[prime4-check_iss_incoming_queue]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_iss_incoming_queue.sh
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# cd /opt/TCS/scripts/nagios/plugins/prime4/
+
+[root@vm-dbamon01 prime4]# cp prime4-check_iss_incoming_queue.sh prime4-check_prime2online.sh
+[root@vm-dbamon01 prime4]# cp prime4-check_iss_incoming_queue.sql prime4-check_prime2online.sql
+
+[root@vm-dbamon01 prime4]# vim -o prime4-check_prime2online.sh prime4-check_prime2online.sql
+
+#
+#   Good result.
+#
+[root@vm-dbamon01 prime4]# ./prime4-check_prime2online.sh
+OK. Result=0
+[root@vm-dbamon01 prime4]#
+
+[root@vm-dbamon01 prime4]# vim /etc/nrpe.d/check_db_prime4.cfg
+...
+command[prime4-check_prime2online]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_prime2online.sh
+
+[root@vm-dbamon01 prime4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 prime4]#
+
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+    use                           generic-service
+    host_name                     vm-dbamon01
+    service_description           PRIME ISS - Prime2Online
+    check_command                 check_nrpe!prime4-check_prime2online
+    check_interval                5
+    max_check_attempts            1
+    notification_interval         5
+    contacts                      s.morozkin_email,s.morozkin_sms,a.gladyshev_email,a.gladyshev_sms,d.a.makeev_sms, processing_duty_sms, cards_24x7_email
+    contact_groups                servicedesk-duty-critical-group
+    flap_detection_enabled        0
+ }
+...
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p servers/vmware/vm-dbamon01.cfg
+commit bb39acbdd044c9e06d5f9f49a1eb0cc39605fca5
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Tue Mar 28 11:34:17 2017 +0300
+
+    SD#280835. Created monitoring for several check. Only one at this time works properly. Other two is in waiting state - sections were commented.
+
+diff --git a/objects/servers/vmware/vm-dbamon01.cfg b/objects/servers/vmware/vm-dbamon01.cfg
+index c328091..124bf7f 100644
+--- a/objects/servers/vmware/vm-dbamon01.cfg
++++ b/objects/servers/vmware/vm-dbamon01.cfg
+@@ -200,6 +200,20 @@ define service{
+         max_check_attempts              1
+         notification_interval           5
+ }
++#define service{
++#        use                             generic-service
++#        host_name                       vm-dbamon01
++#        service_description             ONLINE ISS - Neartime
++#        check_command                   check_nrpe!check_tcs_monitor_neartime_exception
++#        check_interval                  5
++#        first_notification_delay        0
++#        contact_groups                  empty-group
++#      contacts                        s.morozkin_email,s.morozkin_sms,a.gladyshev_email,a.gladyshev_sms,m.b.kuzmin_email,m.b.kuzmin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
++#        notification_options            w,u,c,r
++#        flap_detection_enabled          0
++#        max_check_attempts              1
++#        notification_interval           5
++#}
+ define service{
+         use                             generic-service
+         host_name                       vm-dbamon01
+@@ -2581,6 +2595,30 @@ define service{
+     contact_groups                servicedesk-duty-critical-group
+     flap_detection_enabled        0
+  }
++#define service{
++#    use                           generic-service
++#    host_name                     vm-dbamon01
++#    service_description           PRIME ISS - BackOffice
++#    check_command                 check_nrpe!prime4-check_iis_bsckoffice
++#    check_interval                5
++#    max_check_attempts            1
++#    notification_interval         5
++#    contacts                      s.morozkin_email,s.morozkin_sms,a.gladyshev_email,a.gladyshev_sms,d.a.makeev_sms, processing_duty_sms, cards_24x7_email
++#    contact_groups                servicedesk-duty-critical-group
++#    flap_detection_enabled        0
++# }
++define service{
++    use                           generic-service
++    host_name                     vm-dbamon01
++    service_description           PRIME ISS - Prime2Online
++    check_command                 check_nrpe!prime4-check_prime2online
++    check_interval                5
++    max_check_attempts            1
++    notification_interval         5
++    contacts                      s.morozkin_email,s.morozkin_sms,a.gladyshev_email,a.gladyshev_sms,d.a.makeev_sms, processing_duty_sms, cards_24x7_email
++    contact_groups                servicedesk-duty-critical-group
++    flap_detection_enabled        0
++ }
+ define service{
+     use                           generic-service
+     host_name                     vm-dbamon01
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#280835. Created monitoring for several check. Only one at this time works properly. Other two is in waiting state - sections were commented." servers/vmware/vm-dbamon01.cfg
+[master bb39acb] SD#280835. Created monitoring for several check. Only one at this time works properly. Other two is in waiting state - sections were commented.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 38 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 915 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   95cd839..bb39acb  master -> master
+[root@vm-vol-nag4-tst objects]#
+................................................................................
+
+#
+#   20170403
+#
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@vm-dbamon01
+Last login: Mon Mar 27 18:31:23 2017 from tcs4500.tcsbank.ru
+[bsv@vm-dbamon01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/online4/online4_check_neartime.sh
+Connection OK. Result=0
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/prime4/prime4-check_iis_bsckoffice.sh
+OK. Result=0
+[root@vm-dbamon01 ~]#
+
+

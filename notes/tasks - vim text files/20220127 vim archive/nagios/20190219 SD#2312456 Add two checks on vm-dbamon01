@@ -1,0 +1,60 @@
+
+...........................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@vm-dbamon01
+Last login: Thu Feb  7 16:08:13 2019 from tcs4357.tcsbank.ru
+[bsv@vm-dbamon01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-dbamon01 ~]# awk '/check_tcs_sme_check_pmt_for_support/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_pg2.cfg     command[check_tcs_sme_check_pmt_for_support]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_pmt_for_support.sh
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_pmt_for_support.sh /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_prm_payments.sh
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_pmt_for_support.sql /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_prm_payments.sql
+[root@vm-dbamon01 ~]# vim -o /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_prm_payments.sh /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_prm_payments.sql
+2 files to edit
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_prm_payments.sh
+Connection OK. Result=0
+[root@vm-dbamon01 ~]# vim -c "/check_tcs_sme_check_pmt_for_support" /etc/nrpe.d/check_db_pg2.cfg
+[root@vm-dbamon01 ~]# service nrped reload
+nrped: unrecognized service
+[root@vm-dbamon01 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-vol-nag4-tst objects]# vim servers/vmware/vm-dbamon01.cfg
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+...........................................................................
+
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_pmt_for_support.sh /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_fail_inside_le.sh
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_pmt_for_support.sql /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_fail_inside_le.sql
+[root@vm-dbamon01 ~]# vim -o /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_fail_inside_le.sh /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_fail_inside_le.sql
+2 files to edit
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/pg2/pg2_tcs_sme_check_fail_inside_le.sh
+ERROR. Result=select * from pg2.tcs_sme_check_fail_inside_le
+                  *
+ERROR at line 1:
+ORA-01031: insufficient privileges
+[root@vm-dbamon01 ~]# vim -c "/check_tcs_sme_check_pmt_for_support" /etc/nrpe.d/check_db_pg2.cfg
+[root@vm-dbamon01 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-vol-nag4-tst objects]# vim servers/vmware/vm-dbamon01.cfg
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+...........................................................................
+

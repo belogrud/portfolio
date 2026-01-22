@@ -1,0 +1,219 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   791409
+Название    №791409
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  21.03.2016 12:16
+Дата регистрации    21.03.2016 12:16
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, просьба создать ftp шару для хранения протоколов встреч от региональных менеджеров SME. По расчету хватит 5гб на полгода.
+Текущее состояние   Принят на обработку
+Автор   system
+Ответственный за запрос Белогруд Сергей / unix-admins
+Кем решен
+Кем закрыт
+Массовая проблема   нет
+Количество задач (активных/всего)   0 / 0
+Количество файлов   1
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Акользин Александр
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Использование хранилищ данных
+Контактное лицо Акользин Александр
+Контактный e-mail   a.akolzin@tinkoff.ru
+Контактные телефоны 79629939122, 2074
+
+................................................................................
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@vm-dmz-app112
+Last login: Mon Nov 23 17:28:27 2015 from tcs4500.tcsbank.ru
+[bsv@vm-dmz-app112 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-dmz-app112 ~]# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg-root   197G  156G   32G  84% /
+tmpfs                 940M     0  940M   0% /dev/shm
+/dev/sda1             194M   33M  152M  18% /boot
+/dev/mapper/sftp_vg-lvol0
+                       50G  270M   47G   1% /home/sftp
+v6250-ds-nfs.tcsbank.ru:/vol/volinfobez
+                      3.0T  337G  2.7T  11% /mnt/volinfobez
+[root@vm-dmz-app112 ~]#
+
+
+[root@vm-dmz-app112 ~]# grep sftp /etc/passwd
+dchl_service:x:1000:496::/home/sftp/dchl_service:/sbin/nologin
+svyaznoy:x:1001:496::/home/sftp/svyaznoy:/sbin/nologin
+nalog2015:x:4042:496::/home/sftp/nalog2015:/sbin/nologin
+beeline:x:1002:496::/home/sftp/beeline:/sbin/nologin
+a.ayana:x:1003:496::/home/sftp/a.ayana:/sbin/nologin
+k.chuprakov:x:1004:496:Chuprakov Konstantin Grigoryevich:/home/sftp/k.chuprakov:/sbin/nologin
+i.mihailets:x:1005:496:Mihailets Irina:/home/sftp/i.mihailets:/sbin/nologin
+a.shilov:x:1006:496:Shilov Aleksandr Danilovich:/home/sftp/a.shilov:/sbin/nologin
+v.a.shishakin:x:1007:496:Shishakin Vladislav Andreevich:/home/sftp/v.a.shishakin:/sbin/nologin
+n.zavorina:x:1008:496:Zavorina Nadezhda Sergeevna:/home/sftp/n.zavorina:/sbin/nologin
+n.zhigunov:x:1009:496:Zhigunov Nikolay:/home/sftp/n.zhigunov:/sbin/nologin
+[root@vm-dmz-app112 ~]#
+
+Keish5ah
+
+[root@vm-dmz-app112 ~]# grub-crypt
+Password:
+Retype password:
+$6$FJwGt3Gz2hbhe6YB$O9KFpqqfMc8dx85HxhiY3O7kI9m82tWbF0WPaER4o8ZdQ1WItI.chpJherRN9O//zwv0ujIPszM22dZ0./yn.1
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# useradd -g sftpusers -u 1010 -d /home/sftp/sme_service -s /sbin/nologin -p '$6$FJwGt3Gz2hbhe6YB$O9KFpqqfMc8dx85HxhiY3O7kI9m82tWbF0WPaER4o8ZdQ1WItI.chpJherRN9O//zwv0ujIPszM22dZ0./yn.1' sme_service
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# ls -Alh ~sme_service/
+total 16K
+-rw-r--r--. 1 sme_service sftpusers  18 Oct 16  2014 .bash_logout
+-rw-r--r--. 1 sme_service sftpusers 176 Oct 16  2014 .bash_profile
+-rw-r--r--. 1 sme_service sftpusers 124 Oct 16  2014 .bashrc
+-rw-r--r--. 1 sme_service sftpusers 658 Jun 23  2012 .zshrc
+[root@vm-dmz-app112 ~]# yes | rm ~sme_service/{.bash_logout,.bash_profile,.bashrc,.zshrc}
+rm: remove regular file `/home/sftp/sme_service/.bash_logout'? rm: remove regular file `/home/sftp/sme_service/.bash_profile'? rm: remove regular file `/home/sftp/sme_service/.bashrc'? rm: remove regular file `/home/sftp/sme_service/.zshrc'? [root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# mkdir -p ~sme_service/upload
+[root@vm-dmz-app112 ~]# mkdir -p ~sme_service/download
+
+[root@vm-dmz-app112 ~]# chown sme_service:sftpusers ~sme_service/upload
+[root@vm-dmz-app112 ~]# chown sme_service:sftpusers ~sme_service/download
+
+[root@vm-dmz-app112 ~]# chown root:root /home/sftp/sme_service
+[root@vm-dmz-app112 ~]# chmod 0755 /home/sftp/sme_service
+
+[root@vm-dmz-app112 ~]# service sshd restart
+Stopping sshd:                                             [  OK  ]
+Starting sshd:                                             [  OK  ]
+[root@vm-dmz-app112 ~]#
+
+................................................................................
+
+[support@centos00 20160315-1129]$ sftp sme_service@ftp03.tcsbank.ru
+Connecting to ftp03.tcsbank.ru...
+sme_service@ftp03.tcsbank.ru's password:
+sftp> ls -l
+drwxr-xr-x    2 1010     496          4096 Mar 21 13:56 download
+drwxr-xr-x    2 1010     496          4096 Mar 21 13:56 upload
+sftp> cd upload
+sftp> ls -l
+sftp> !ls
+ds-gp-prd-ext-mdw.limits.conf  ds-gp-prd-ext-smdw.limits.conf  ds-gp-prd-sdw1.limits.conf  m1-gp-prd-ext-smdw.limits.conf  m1-gp-tst-ext-smdw.limits.conf
+sftp> put m1-gp-tst-ext-smdw.limits.conf
+Uploading m1-gp-tst-ext-smdw.limits.conf to /upload/m1-gp-tst-ext-smdw.limits.conf
+m1-gp-tst-ext-smdw.limits.conf                                                                                                                                 100% 1916     1.9KB/s   00:00
+sftp> ls -l
+-rw-r--r--    1 1010     496          1916 Mar 21 14:01 m1-gp-tst-ext-smdw.limits.conf
+sftp> rename m1-gp-tst-ext-smdw.limits.conf test1.tmp
+sftp> ls -l
+-rw-r--r--    1 1010     496          1916 Mar 21 14:01 test1.tmp
+sftp> get test1.tmp
+Fetching /upload/test1.tmp to test1.tmp
+/upload/test1.tmp                                                                                                                                              100% 1916     1.9KB/s   00:00
+sftp> !ls -l test1.tmp
+-rw-r--r-- 1 support support 1916 Mar 21 17:02 test1.tmp
+sftp> rm test1.tmp
+Removing /upload/test1.tmp
+sftp> ls -l
+sftp> !ls -l m1-gp-tst-ext-smdw.limits.conf
+-rw-r--r-- 1 support support 1916 Mar 15 11:32 m1-gp-tst-ext-smdw.limits.conf
+sftp> quit
+[support@centos00 20160315-1129]$
+
+................................................................................
+
+#
+#   Just to know. The scp service doesn't work for this case!
+#   Only sftp is working.
+#
+[support@centos00 20160315-1129]$ scp test1.tmp sme_service@ftp03.tcsbank.ru:upload/
+sme_service@ftp03.tcsbank.ru's password:
+^CKilled by signal 2.
+[support@centos00 20160315-1129]$ scp -v test1.tmp sme_service@ftp03.tcsbank.ru:upload/
+Executing: program /usr/bin/ssh host ftp03.tcsbank.ru, user sme_service, command scp -v -t upload/
+OpenSSH_5.3p1, OpenSSL 1.0.0-fips 29 Mar 2010
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: Applying options for *
+debug1: Connecting to ftp03.tcsbank.ru [192.168.5.112] port 22.
+debug1: Connection established.
+debug1: identity file /home/support/.ssh/identity type -1
+debug1: identity file /home/support/.ssh/id_rsa type 1
+debug1: identity file /home/support/.ssh/id_dsa type 2
+debug1: Remote protocol version 2.0, remote software version OpenSSH_5.3
+debug1: match: OpenSSH_5.3 pat OpenSSH*
+debug1: Enabling compatibility mode for protocol 2.0
+debug1: Local version string SSH-2.0-OpenSSH_5.3
+debug1: SSH2_MSG_KEXINIT sent
+debug1: SSH2_MSG_KEXINIT received
+debug1: kex: server->client aes128-ctr hmac-md5 none
+debug1: kex: client->server aes128-ctr hmac-md5 none
+debug1: SSH2_MSG_KEX_DH_GEX_REQUEST(1024<1024<8192) sent
+debug1: expecting SSH2_MSG_KEX_DH_GEX_GROUP
+debug1: SSH2_MSG_KEX_DH_GEX_INIT sent
+debug1: expecting SSH2_MSG_KEX_DH_GEX_REPLY
+debug1: Host 'ftp03.tcsbank.ru' is known and matches the RSA host key.
+debug1: Found key in /home/support/.ssh/known_hosts:507
+debug1: ssh_rsa_verify: signature correct
+debug1: SSH2_MSG_NEWKEYS sent
+debug1: expecting SSH2_MSG_NEWKEYS
+debug1: SSH2_MSG_NEWKEYS received
+debug1: SSH2_MSG_SERVICE_REQUEST sent
+debug1: SSH2_MSG_SERVICE_ACCEPT received
+debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+debug1: Next authentication method: gssapi-keyex
+debug1: No valid Key exchange context
+debug1: Next authentication method: gssapi-with-mic
+debug1: Unspecified GSS failure.  Minor code may provide more information
+Credentials cache file '/tmp/krb5cc_500' not found
+
+debug1: Unspecified GSS failure.  Minor code may provide more information
+Credentials cache file '/tmp/krb5cc_500' not found
+
+debug1: Unspecified GSS failure.  Minor code may provide more information
+
+
+debug1: Unspecified GSS failure.  Minor code may provide more information
+Credentials cache file '/tmp/krb5cc_500' not found
+
+debug1: Next authentication method: publickey
+debug1: Offering public key: /home/support/.ssh/id_dsa
+debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+debug1: Trying private key: /home/support/.ssh/identity
+debug1: Offering public key: /home/support/.ssh/id_rsa
+debug1: Authentications that can continue: publickey,gssapi-keyex,gssapi-with-mic,password
+debug1: Next authentication method: password
+sme_service@ftp03.tcsbank.ru's password:
+debug1: Authentication succeeded (password).
+debug1: channel 0: new [client-session]
+debug1: Requesting no-more-sessions@openssh.com
+debug1: Entering interactive session.
+debug1: Sending environment.
+debug1: Sending env LANG = en_US.UTF-8
+debug1: Sending env LANGUAGE =
+debug1: Sending command: scp -v -t upload/
+^Cdebug1: channel 0: free: client-session, nchannels 1
+debug1: fd 0 clearing O_NONBLOCK
+debug1: fd 1 clearing O_NONBLOCK
+Killed by signal 2.
+[support@centos00 20160315-1129]$
+
+................................................................................
+................................................................................
+
+
+

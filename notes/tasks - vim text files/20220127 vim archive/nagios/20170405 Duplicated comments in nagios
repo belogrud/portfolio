@@ -1,0 +1,134 @@
+
+[root@vm-vol-nag4-prod ~]# grep -e "ds-dc01" /var/tmp/nagios_not_persistant_comments.backup | wc -l
+15185
+[root@vm-vol-nag4-prod ~]#
+
+[root@vm-vol-nag4-prod ~]# mkdir -p ~/work/20170405-1302
+[root@vm-vol-nag4-prod ~]# cp /var/tmp/nagios_not_persistant_comments.backup !$/
+cp /var/tmp/nagios_not_persistant_comments.backup ~/work/20170405-1302/
+[root@vm-vol-nag4-prod ~]#
+
+
+[root@vm-vol-nag4-prod ~]# cat /var/tmp/nagios_not_persistant_comments.backup | sort | uniq
+ds-dc01;Memory Usage;support;SD 281624;1490175642
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+[root@vm-vol-nag4-prod ~]#
+
+[root@vm-vol-nag4-prod ~]# cat ~/work/20170405-1302/nagios_not_persistant_comments.backup | sort | uniq > /var/tmp/nagios_not_persistant_comments.backup
+[root@vm-vol-nag4-prod ~]#
+
+[root@vm-vol-nag4-prod ~]# cat !$
+cat /var/tmp/nagios_not_persistant_comments.backup
+ds-dc01;Memory Usage;support;SD 281624;1490175642
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+[root@vm-vol-nag4-prod ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-prod ~]# if [ -e "/var/tmp/nagios_not_persistant_comments.draft" ] ; then sort /var/tmp/nagios_not_persistant_comments.draft | uniq ; fi
+ds-dc01;Memory Usage;support;SD 281624;1490175642
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+[root@vm-vol-nag4-prod ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-prod ~]# ls -Alh /var/tmp/nagios_not_persistant_comments.backup
+-rw-r--r-- 1 root root 2.9M Apr  5 12:56 /var/tmp/nagios_not_persistant_comments.backup
+[root@vm-vol-nag4-prod ~]# head !$
+head /var/tmp/nagios_not_persistant_comments.backup
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+ds-dc01;Memory Usage;support;SD 281624;1490175642
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+ds-dc01;Memory Usage;support;SD 281624;1490175642
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+[root@vm-vol-nag4-prod ~]#
+
+[root@vm-vol-nag4-prod ~]# grep -e "ds-dc01" /var/tmp/nagios_not_persistant_comments.backup | wc -l
+15185
+[root@vm-vol-nag4-prod ~]#
+
+................................................................................
+
+
+[root@vm-vol-nag4-prod nagios]# git --no-pager log -n 1 -p
+commit 045eb57654acd8d765ce0ea9446ebd1e8d60bccc
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Apr 5 14:01:23 2017 +0300
+
+    Was made check, that will prevent duplication of comments lot of time
+
+diff --git a/nagios_save_not_persistant_comments.sh b/nagios_save_not_persistant_comments.sh
+index 0dcd2ce..bdbfc79 100755
+--- a/nagios_save_not_persistant_comments.sh
++++ b/nagios_save_not_persistant_comments.sh
+@@ -73,15 +73,18 @@ done < <( echo -e "GET comments\nFilter: persistent = 0\nFilter: type = 2\nFilte
+ #echo '${array_second_argument[@]}' = "${array_second_argument[@]}"
+ #echo '${array_third_argument[@]}' = "${array_third_argument[@]}"
+
++if [ -e /var/tmp/nagios_not_persistant_comments.draft ] ; then rm -f /var/tmp/nagios_not_persistant_comments.draft ; fi
+ if [ -e /var/tmp/nagios_not_persistant_comments.backup ] ; then rm -f /var/tmp/nagios_not_persistant_comments.backup ; fi
+
+ if [ ${index} -gt 0 ]
+  then
+     for (( count=0  ; count < ${index} ; count++ ))
+      do
+-        echo "${array_first_argument[${count}]};${array_second_argument[${count}]};${array_third_argument[${count}]};${array_fourth_argument[${count}]};${array_fifth_argument[${count}]}" >> /var/tmp/nagios_not_persistant_comments.backup
++        echo "${array_first_argument[${count}]};${array_second_argument[${count}]};${array_third_argument[${count}]};${array_fourth_argument[${count}]};${array_fifth_argument[${count}]}" >> /var/tmp/nagios_not_persistant_comments.draft
+      done
+  fi
+
++if [ -e "/var/tmp/nagios_not_persistant_comments.draft" ] ; then sort /var/tmp/nagios_not_persistant_comments.draft | uniq > /var/tmp/nagios_not_persistant_comments.backup ; fi
++
+ if [ -e ${LOCKFILE} ] ; then rm -f ${LOCKFILE} ; fi
+
+[root@vm-vol-nag4-prod nagios]#
+
+................................................................................
+
+[root@vm-vol-nag4-prod nagios]# head /var/tmp/nagios_not_persistant_comments.draft
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+ds-dc01;Memory Usage;support;SD 281624;1490175642
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+ds-dc01;Memory Usage;support;SD 281624;1490175642
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+[root@vm-vol-nag4-prod nagios]#
+
+[root@vm-vol-nag4-prod nagios]# grep -e "ds-dc01" /var/tmp/nagios_not_persistant_comments.draft | wc -l
+15185
+[root@vm-vol-nag4-prod nagios]#
+
+................................................................................
+
+#
+#   20170412
+#
+[root@vm-vol-nag4-prod ~]# grep -e "ds-dc01" /var/tmp/nagios_not_persistant_comments.draft | wc -l
+8
+[root@vm-vol-nag4-prod ~]# cat /var/tmp/nagios_not_persistant_comments.backup
+ds-dc01;Memory Usage;bsv;SD 281624;1491391677
+m1-dc01;Memory Usage;support;SD 281625;1490175586
+vd-sw25-1;Gig10/39 AP25-01-19-16;support;sd 325527;1491981933
+vm-asterisk02t;Calls transferring;support;SD 279751;1490175484
+vm-autotest05ta;Drive C: Space;support;SD 322054;1491894493
+vm-dbamon01;IG - Notifications;support;SD 281628;1490175247
+[root@vm-vol-nag4-prod ~]#
+
+
+
+

@@ -1,0 +1,1563 @@
+
+................................................................................
+
+https://jira.tcsbank.ru/browse/IN-396
+
+................................................................................
+
+[root@vd-nag4-tst-1 objects]# pynag list host_name filename where object_type=host and host_name__contains="ds-splunk-nidx01" --quiet #pynag_host
+ds-splunk-nidx01     /usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-splunk-nidx01.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-ds/linux/ds-splunk-nidx01.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-ds/linux/ds-splunk-nidx02.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-ds/linux/ds-splunk-nidx03.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-ds/linux/ds-splunk-nidx04.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-ds/linux/ds-splunk-nidx05.cfg
+[root@vd-nag4-tst-1 objects]# pynag list host_name filename where object_type=host and host_name__contains="m1-splunk-nidx01" --quiet #pynag_host
+m1-splunk-nidx01     /usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-splunk-nidx01.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-m1/linux/m1-splunk-nidx01.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-m1/linux/m1-splunk-nidx02.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-m1/linux/m1-splunk-nidx03.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-m1/linux/m1-splunk-nidx04.cfg
+[root@vd-nag4-tst-1 objects]# vim servers/dc-m1/linux/m1-splunk-nidx05.cfg
+
+
+[root@vd-nag4-tst-1 objects]# service nagios checkconfig && service nagios reload
+Running configuration check... OK.
+Running configuration check... Reloading nagios configuration... done
+[root@vd-nag4-tst-1 objects]# git commit --author='Belogrud <s.belogrud@tinkoff.ru>' -m "JIRA#IN-396. Install new OS on servers. All previous checks were commented." serv
+ers/dc-ds/linux/ds-splunk-nidx0{1..5}.cfg servers/dc-m1/linux/m1-splunk-nidx0{1..5}.cfg
+[master af9d721] JIRA#IN-396. Install new OS on servers. All previous checks were commented.
+ Author: Belogrud <s.belogrud@tinkoff.ru>
+ 10 files changed, 531 insertions(+), 501 deletions(-)
+ rewrite objects/servers/dc-ds/linux/ds-splunk-nidx01.cfg (99%)
+ rewrite objects/servers/dc-ds/linux/ds-splunk-nidx02.cfg (99%)
+ rewrite objects/servers/dc-ds/linux/ds-splunk-nidx03.cfg (99%)
+ rewrite objects/servers/dc-ds/linux/ds-splunk-nidx04.cfg (99%)
+ rewrite objects/servers/dc-ds/linux/ds-splunk-nidx05.cfg (99%)
+ rewrite objects/servers/dc-m1/linux/m1-splunk-nidx01.cfg (99%)
+ rewrite objects/servers/dc-m1/linux/m1-splunk-nidx02.cfg (99%)
+ rewrite objects/servers/dc-m1/linux/m1-splunk-nidx03.cfg (99%)
+ rewrite objects/servers/dc-m1/linux/m1-splunk-nidx04.cfg (99%)
+ rewrite objects/servers/dc-m1/linux/m1-splunk-nidx05.cfg (99%)
+[root@vd-nag4-tst-1 objects]#
+
+................................................................................
+
+
+root@ds-splunk-nidx01:~# debconf-show libssl1.1
+  libssl1.1/restart-failed:
+  libraries/restart-without-asking: false
+  libssl1.1/restart-services:
+root@ds-splunk-nidx01:~# echo 'libssl1.1 libraries/restart-without-asking boolean true' | debconf-set-selections
+debconf: DbDriver "config": /var/cache/debconf/config.dat is locked by another process: Resource temporarily unavailable
+root@ds-splunk-nidx01:~# echo 'libssl1.1 libraries/restart-without-asking boolean true' | debconf-set-selections
+debconf: DbDriver "config": /var/cache/debconf/config.dat is locked by another process: Resource temporarily unavailable
+root@ds-splunk-nidx01:~# export DEBIAN_FRONTEND=noninteractive ; apt-get -y install python
+E: Could not get lock /var/lib/dpkg/lock - open (11: Resource temporarily unavailable)
+E: Unable to lock the administration directory (/var/lib/dpkg/), is another process using it?
+root@ds-splunk-nidx01:~#
+root@ds-splunk-nidx01:~# ps aux | grep -e "apt"
+root      5617  0.0  0.0 141228 91964 ?        S    09:32   0:00 apt-get -y install python
+root      5796  0.0  0.0  13136  1100 pts/0    S+   09:48   0:00 grep --color=auto -e apt
+root@ds-splunk-nidx01:~# pidof "apt-get -y install python"
+root@ds-splunk-nidx01:~# pidof apt-get"
+>
+root@ds-splunk-nidx01:~# pidof apt-get
+5617
+root@ds-splunk-nidx01:~# kill -9 `pidof apt-get`
+root@ds-splunk-nidx01:~#
+root@ds-splunk-nidx01:~# export DEBIAN_FRONTEND=noninteractive ; apt-get -y install python
+E: dpkg was interrupted, you must manually run 'sudo dpkg --configure -a' to correct the problem.
+root@ds-splunk-nidx01:~# dpkg --configure -a
+Processing triggers for libc-bin (2.27-3ubuntu1) ...
+Setting up libssl1.1:amd64 (1.1.1-1ubuntu2.1~18.04.6) ...
+Checking for services that may need to be restarted...done.
+Checking for services that may need to be restarted...done.
+Checking init scripts...
+
+Restarting services possibly affected by the upgrade:
+
+Services restarted successfully.
+
+Processing triggers for man-db (2.8.3-2) ...
+Setting up libpython2.7-stdlib:amd64 (2.7.17-1~18.04ubuntu1.1) ...
+Setting up python2.7 (2.7.17-1~18.04ubuntu1.1) ...
+Setting up libpython-stdlib:amd64 (2.7.15~rc1-1) ...
+Setting up python (2.7.15~rc1-1) ...
+Processing triggers for libc-bin (2.27-3ubuntu1) ...
+root@ds-splunk-nidx01:~#
+
+
+t@ds-splunk-nidx01:~# export DEBIAN_FRONTEND=noninteractive ; apt-get -y install python
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+python is already the newest version (2.7.15~rc1-1).
+0 upgraded, 0 newly installed, 0 to remove and 265 not upgraded.
+root@ds-splunk-nidx01:~#
+
+................................................................................
+#
+#	20200903
+#
+
+root@ds-splunk-nidx05:~# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eno3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 24:6e:96:5d:84:7c brd ff:ff:ff:ff:ff:ff
+3: eno4: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 24:6e:96:5d:84:7d brd ff:ff:ff:ff:ff:ff
+    inet 10.216.42.161/24 brd 10.216.42.255 scope global eno4
+       valid_lft forever preferred_lft forever
+    inet6 fe80::266e:96ff:fe5d:847d/64 scope link
+       valid_lft forever preferred_lft forever
+4: eno1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 24:6e:96:5d:84:78 brd ff:ff:ff:ff:ff:ff
+5: eno2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 24:6e:96:5d:84:7a brd ff:ff:ff:ff:ff:ff
+root@ds-splunk-nidx05:~# ip link set dev eno3 up
+root@ds-splunk-nidx05:~# ethtool eno3
+Settings for eno3:
+        Supported ports: [ TP ]
+        Supported link modes:   10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: Twisted Pair
+        PHYAD: 1
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: off (auto)
+        Supports Wake-on: pumbg
+        Wake-on: d
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: no
+root@ds-splunk-nidx05:~# ip link set dev eno1 up
+root@ds-splunk-nidx05:~# ethtool eno1
+Settings for eno1:
+        Supported ports: [ TP ]
+        Supported link modes:   100baseT/Full
+                                1000baseT/Full
+                                10000baseT/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  100baseT/Full
+                                1000baseT/Full
+                                10000baseT/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: Twisted Pair
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: Unknown
+        Supports Wake-on: umbg
+        Wake-on: g
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: no
+root@ds-splunk-nidx05:~# ip link set dev eno2 up
+root@ds-splunk-nidx05:~# ethtool eno2
+Settings for eno2:
+        Supported ports: [ TP ]
+        Supported link modes:   100baseT/Full
+                                1000baseT/Full
+                                10000baseT/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  100baseT/Full
+                                1000baseT/Full
+                                10000baseT/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: Twisted Pair
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: Unknown
+        Supports Wake-on: umbg
+        Wake-on: g
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: no
+root@ds-splunk-nidx05:~#
+
+
+................................................................................
+
+root@m1-splunk-nidx05:~# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eno3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 24:6e:96:5d:7b:cc brd ff:ff:ff:ff:ff:ff
+3: eno4: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 24:6e:96:5d:7b:cd brd ff:ff:ff:ff:ff:ff
+4: eno1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 24:6e:96:5d:7b:c8 brd ff:ff:ff:ff:ff:ff
+    inet 10.216.41.161/24 brd 10.216.41.255 scope global eno1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::266e:96ff:fe5d:7bc8/64 scope link
+       valid_lft forever preferred_lft forever
+5: eno2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 24:6e:96:5d:7b:ca brd ff:ff:ff:ff:ff:ff
+root@m1-splunk-nidx05:~# ip link set dev eno2 up
+root@m1-splunk-nidx05:~# ethtool eno2
+Settings for eno2:
+        Supported ports: [ TP ]
+        Supported link modes:   100baseT/Full
+                                1000baseT/Full
+                                10000baseT/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  100baseT/Full
+                                1000baseT/Full
+                                10000baseT/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: Twisted Pair
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: Unknown
+        Supports Wake-on: umbg
+        Wake-on: g
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: no
+root@m1-splunk-nidx05:~# ip link set dev eno3 up
+root@m1-splunk-nidx05:~# ethtool eno3
+Settings for eno3:
+        Supported ports: [ TP ]
+        Supported link modes:   10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: Twisted Pair
+        PHYAD: 1
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: off (auto)
+        Supports Wake-on: pumbg
+        Wake-on: d
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: no
+root@m1-splunk-nidx05:~# ip link set dev eno4 up
+root@m1-splunk-nidx05:~# ethtool eno4
+Settings for eno4:
+        Supported ports: [ TP ]
+        Supported link modes:   10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: Not reported
+        Advertised link modes:  10baseT/Half 10baseT/Full
+                                100baseT/Half 100baseT/Full
+                                1000baseT/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: Not reported
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: Twisted Pair
+        PHYAD: 1
+        Transceiver: internal
+        Auto-negotiation: on
+        MDI-X: off (auto)
+        Supports Wake-on: pumbg
+        Wake-on: d
+        Current message level: 0x00000007 (7)
+                               drv probe link
+        Link detected: no
+root@m1-splunk-nidx05:~#
+
+................................................................................
+#
+#	20200907
+#
+root@ds-splunk-nidx01:~# echo 'deb http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic main' | tee -a /etc/apt/sources.list.d/linux.dell.com.sources.list
+deb http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic main
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Get:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease [88.7 kB]
+Get:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease [74.6 kB]
+Get:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease [88.7 kB]
+Get:5 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic InRelease [2,513 B]
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease [100 kB]
+Err:5 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic InRelease
+  The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 1285491434D8786F
+Reading package lists... Done
+W: GPG error: http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 1285491434D8786F
+E: The repository 'http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic InRelease' is not signed.
+N: Updating from such a repository can't be done securely, and is therefore disabled by default.
+N: See apt-secure(8) manpage for repository creation and user configuration details.
+root@ds-splunk-nidx01:~#
+
+
+root@ds-splunk-nidx01:~# apt-key adv --keyserver-options http-proxy="http://proxy.tcsbank.ru:8080" --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 1285491434D8786F
+Executing: /tmp/apt-key-gpghome.x65POghx5e/gpg.1.sh --keyserver-options http-proxy=http://proxy.tcsbank.ru:8080 --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 1285491434D8786F
+gpg: keyserver receive failed: No data
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# apt-key adv --keyserver-options http-proxy="http://repo-linux.tcsbank.ru:80/repository/sks-keyservers" --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 1
+285491434D8786F
+Executing: /tmp/apt-key-gpghome.GiQEcfZlRJ/gpg.1.sh --keyserver-options http-proxy=http://repo-linux.tcsbank.ru:80/repository/sks-keyservers --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 1285491434D8786F
+gpg: keyserver receive failed: No data
+root@ds-splunk-nidx01:~#
+
+
+root@TCS4357:~# apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 1285491434D8786F
+Executing: /tmp/tmp.ponDN06Rub/gpg.1.sh --keyserver
+hkp://keyserver.ubuntu.com:80
+--recv-keys
+1285491434D8786F
+gpg: requesting key 34D8786F from hkp server keyserver.ubuntu.com
+gpg: key 34D8786F: public key "Dell Inc., PGRE 2012 (PG Release Engineering Build Group 2012) <PG_Release_Engineering@Dell.com>" imported
+gpg: Total number processed: 1
+gpg:               imported: 1  (RSA: 1)
+root@TCS4357:~#
+
+root@TCS4357:~# apt-key export 1285491434D8786F > /mnt/c/share/apt.key.dell.key
+root@TCS4357:~#
+
+[s.belogrud@TCS4357]# scp /mnt/c/share/apt.key.dell.key bsv@ds-splunk-nidx01:/tmp/
+apt.key.dell.key                                                                                                                                     100% 4652   569.1KB/s   00:00
+[s.belogrud@TCS4357]#
+
+root@ds-splunk-nidx01:~# apt-key add /tmp/apt.key.dell.key
+OK
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Get:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease [88.7 kB]
+Get:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease [74.6 kB]
+Get:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease [88.7 kB]
+Get:5 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic InRelease [2,513 B]
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease [100 kB]
+Get:7 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic/main i386 Packages [642 B]
+Get:8 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic/main amd64 Packages [8,356 B]
+Fetched 361 kB in 2s (210 kB/s)
+Reading package lists... Done
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+
+
+root@ds-splunk-nidx01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu bionic InRelease
+Get:2 http://repo-linux.tcsbank.ru/ubuntu bionic-updates InRelease [88.7 kB]
+Get:3 http://repo-linux.tcsbank.ru/ubuntu bionic-backports InRelease [74.6 kB]
+Get:4 http://repo-linux.tcsbank.ru/ubuntu bionic-security InRelease [88.7 kB]
+Get:5 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic InRelease [2,513 B]
+Get:6 http://repo-linux.tcsbank.ru/puppetlabs/apt bionic InRelease [100 kB]
+Get:7 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic/main i386 Packages [642 B]
+Get:8 http://repo-linux.tcsbank.ru/repository/dell/community/openmanage/930/bionic bionic/main amd64 Packages [8,356 B]
+Fetched 361 kB in 2s (210 kB/s)
+Reading package lists... Done
+root@ds-splunk-nidx01:~# apt-get install srvadmin-all snmp snmpd snmp-mibs-downloader libsnmp-base ipmitool -y --force-yes
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  facter fonts-lato hiera javascript-common libboost-filesystem1.65.1 libboost-locale1.65.1 libboost-log1.65.1 libboost-program-options1.65.1 libboost-regex1.65.1
+  libboost-system1.65.1 libboost-thread1.65.1 libcpp-hocon0.1.6 libfacter3.10.0 libjs-jquery libleatherman-data libleatherman1.4.0 libopts25 libruby2.5 libyaml-cpp0.5v5
+  python-argcomplete python-ipaddr rake ruby ruby-augeas ruby-deep-merge ruby-did-you-mean ruby-json ruby-minitest ruby-net-telnet ruby-power-assert ruby-selinux ruby-shadow
+  ruby-test-unit ruby2.5 rubygems-integration sntp
+Use 'apt autoremove' to remove them.
+The following additional packages will be installed:
+  cim-schema freeipmi-common libargtable2-0 libcimcclient0 libcmpicppimpl0 libfreeipmi16 libopenipmi0 libsfcutil0 libsnmp30 libsysfs2 libwsman-client4
+  libwsman-curl-client-transport1 libwsman-server1 libwsman1 openipmi openwsman sfcb smistrip srvadmin-base srvadmin-deng srvadmin-deng-snmp srvadmin-hapi srvadmin-idrac-vmcli
+  srvadmin-idracadm7 srvadmin-idracadm8 srvadmin-isvc srvadmin-isvc-snmp srvadmin-itunnelprovider srvadmin-jre srvadmin-marvell srvadmin-nvme srvadmin-omacore srvadmin-omacs
+  srvadmin-omaksmig srvadmin-omcommon srvadmin-omilcore srvadmin-ominst srvadmin-oslog srvadmin-realssd srvadmin-server-cli srvadmin-server-snmp srvadmin-smcommon srvadmin-smweb
+  srvadmin-standardagent srvadmin-storage srvadmin-storage-cli srvadmin-storage-snmp srvadmin-storageservices srvadmin-storageservices-cli srvadmin-storageservices-snmp
+  srvadmin-storelib srvadmin-storelib-sysfs srvadmin-tomcat srvadmin-webserver srvadmin-xmlsup
+Suggested packages:
+  freeipmi-tools sblim-cmpi-base snmptrapd
+The following NEW packages will be installed:
+  cim-schema freeipmi-common ipmitool libargtable2-0 libcimcclient0 libcmpicppimpl0 libfreeipmi16 libopenipmi0 libsfcutil0 libsysfs2 libwsman-client4 libwsman-curl-client-transport1
+  libwsman-server1 libwsman1 openipmi openwsman sfcb smistrip snmp-mibs-downloader snmpd srvadmin-all srvadmin-base srvadmin-deng srvadmin-deng-snmp srvadmin-hapi
+  srvadmin-idrac-vmcli srvadmin-idracadm7 srvadmin-idracadm8 srvadmin-isvc srvadmin-isvc-snmp srvadmin-itunnelprovider srvadmin-jre srvadmin-marvell srvadmin-nvme srvadmin-omacore
+  srvadmin-omacs srvadmin-omaksmig srvadmin-omcommon srvadmin-omilcore srvadmin-ominst srvadmin-oslog srvadmin-realssd srvadmin-server-cli srvadmin-server-snmp srvadmin-smcommon
+  srvadmin-smweb srvadmin-standardagent srvadmin-storage srvadmin-storage-cli srvadmin-storage-snmp srvadmin-storageservices srvadmin-storageservices-cli
+  srvadmin-storageservices-snmp srvadmin-storelib srvadmin-storelib-sysfs srvadmin-tomcat srvadmin-webserver srvadmin-xmlsup
+The following packages will be upgraded:
+  libsnmp-base libsnmp30 snmp
+3 upgraded, 58 newly installed, 0 to remove and 243 not upgraded.
+Need to get 71.8 MB of archives.
+After this operation, 308 MB of additional disk space will be used.
+...
+Setting up srvadmin-omilcore (9.3.0) ...
+     **********************************************************
+     After the install process completes, you may need
+     to log out and then log in again to reset the PATH
+     variable to access the Dell EMC OpenManage CLI utilities
+     **********************************************************
+Setting up srvadmin-omcommon (9.3.0) ...
+...
+Setting up srvadmin-deng-snmp (9.3.0) ...
+Setting up libsnmp-base (5.7.3+dfsg-1.8ubuntu3.6) ...
+Setting up srvadmin-idracadm8 (9.3.0) ...
+Setting up srvadmin-base (9.3.0) ...
+Setting up libsnmp30:amd64 (5.7.3+dfsg-1.8ubuntu3.6) ...
+Setting up openipmi (2.0.22-1.1ubuntu2.1) ...
+Setting up srvadmin-server-snmp (9.3.0) ...
+Setting up ipmitool (1.8.18-5ubuntu0.1) ...
+Setting up srvadmin-webserver (9.3.0) ...
+Setting up snmpd (5.7.3+dfsg-1.8ubuntu3.6) ...
+adduser: Warning: The home directory `/var/lib/snmp' does not belong to the user you are currently creating.
+Created symlink /etc/systemd/system/multi-user.target.wants/snmpd.service → /lib/systemd/system/snmpd.service.
+Setting up sfcb (1.4.9-0ubuntu5) ...
+Sf format being used.
+update-rc.d: warning: start and stop actions are no longer supported; falling back to defaults
+Setting up srvadmin-nvme (9.3.0) ...
+Setting up snmp (5.7.3+dfsg-1.8ubuntu3.6) ...
+Setting up libwsman-client4:amd64 (2.6.5-0ubuntu3) ...
+Setting up libwsman1:amd64 (2.6.5-0ubuntu3) ...
+Setting up srvadmin-storage (9.3.0) ...
+Setting up libwsman-server1:amd64 (2.6.5-0ubuntu3) ...
+Setting up srvadmin-server-cli (9.3.0) ...
+Setting up srvadmin-storage-snmp (9.3.0) ...
+Setting up srvadmin-storage-cli (9.3.0) ...
+Setting up srvadmin-storageservices-cli (9.3.0) ...
+Setting up openwsman (2.6.5-0ubuntu3) ...
+Setting up srvadmin-storageservices-snmp (9.3.0) ...
+Setting up srvadmin-storageservices (9.3.0) ...
+Setting up srvadmin-itunnelprovider (9.3.0) ...
+Setting up srvadmin-standardagent (9.3.0) ...
+Setting up srvadmin-all (9.3.0) ...
+Processing triggers for libc-bin (2.27-3ubuntu1) ...
+Processing triggers for ureadahead (0.100.0-20) ...
+Processing triggers for systemd (237-3ubuntu10.3) ...
+W: --force-yes is deprecated, use one of the options starting with --allow instead.
+root@ds-splunk-nidx01:~#
+
+
+................................................................................
+
+
+root@ds-splunk-nidx01:~# logout
+bsv@ds-splunk-nidx01:~$ logout
+Connection to ds-splunk-nidx01 closed.
+[s.belogrud@TCS4357]# ssh bsv@ds-splunk-nidx01
+
+root@ds-splunk-nidx01:~# omreport system summary | head
+Error! No Hardware or Feature detected. Make sure Server Administrator services are running.
+
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# omconfig about
+
+Product name : Dell EMC OpenManage Server Administrator
+Version      : 9.3.0
+Copyright    : Copyright (C) Dell Inc. 1995-2020 All rights reserved.
+Company      : Dell Inc.
+
+iDRAC Service Module (iSM) is a lightweight software service that better integrates operating system (OS) related features with iDRAC and can be installed on Dell EMC 12th or later generations of PowerEdge servers. iSM has very little impact on the host processor and smaller memory footprint than "in-band" agents such as Dell EMC OpenManage Server Administrator (OMSA), thus expanding iDRAC management into supported host operating systems. Refer here for more details: https://www.dell.com/support/ism
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# netstat -nlpu | grep snmp
+udp        0      0 0.0.0.0:40227           0.0.0.0:*                           12194/snmpd
+udp        0      0 127.0.0.1:161           0.0.0.0:*                           12194/snmpd
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# egrep -v -e "^#| *#|^$"  /etc/snmp/snmpd.conf
+agentAddress  udp:127.0.0.1:161
+view   systemonly  included   .1.3.6.1.2.1.1
+view   systemonly  included   .1.3.6.1.2.1.25.1
+ rocommunity public  default    -V systemonly
+ rocommunity6 public  default   -V systemonly
+ rouser   authOnlyUser
+sysLocation    Sitting on the Dock of the Bay
+sysContact     Me <me@example.org>
+sysServices    72
+proc  mountd
+proc  ntalkd    4
+proc  sendmail 10 1
+disk       /     10000
+disk       /var  5%
+includeAllDisks  10%
+load   12 10 5
+ trapsink     localhost public
+iquerySecName   internalUser
+rouser          internalUser
+defaultMonitors          yes
+linkUpDownNotifications  yes
+ extend    test1   /bin/echo  Hello, world!
+ extend-sh test2   echo Hello, world! ; echo Hi there ; exit 35
+ master          agentx
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# egrep -v -e "^#| *#|^$"  /etc/default/snmpd
+export MIBS=
+SNMPDRUN=yes
+SNMPDOPTS='-Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux,mteTrigger,mteTriggerConf -p /run/snmpd.pid'
+root@ds-splunk-nidx01:~#
+
+
+root@ds-splunk-nidx01:~# mkdir -p ~/work/20200907-1923
+root@ds-splunk-nidx01:~# cp /etc/snmp/snmpd.conf ~/work/20200907-1923/
+root@ds-splunk-nidx01:~# cp /etc/default/snmpd ~/work/20200907-1923/
+root@ds-splunk-nidx01:~#
+................................................................................
+
+root@ds-splunk-nidx01:~# systemctl status snmpd
+● snmpd.service - Simple Network Management Protocol (SNMP) Daemon.
+   Loaded: loaded (/lib/systemd/system/snmpd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Mon 2020-09-07 19:09:09 MSK; 15min ago
+ Main PID: 12194 (snmpd)
+    Tasks: 1 (limit: 6143)
+   CGroup: /system.slice/snmpd.service
+           └─12194 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux mteTrigger mteTriggerConf -f
+
+Sep 07 19:09:09 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Simple Network Management Protocol (SNMP) Daemon....
+Sep 07 19:09:09 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Simple Network Management Protocol (SNMP) Daemon..
+Sep 07 19:09:09 ds-splunk-nidx01.tcsbank.ru snmpd[12194]: /etc/snmp/snmpd.conf: line 145: Warning: Unknown token: defaultMonitors.
+Sep 07 19:09:09 ds-splunk-nidx01.tcsbank.ru snmpd[12194]: /etc/snmp/snmpd.conf: line 147: Warning: Unknown token: linkUpDownNotifications.
+Sep 07 19:09:09 ds-splunk-nidx01.tcsbank.ru snmpd[12194]: Turning on AgentX master support.
+Sep 07 19:09:09 ds-splunk-nidx01.tcsbank.ru snmpd[12194]: Created directory: /var/agentx
+Sep 07 19:09:09 ds-splunk-nidx01.tcsbank.ru snmpd[12194]: NET-SNMP version 5.7.3
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# systemctl stop snmpd
+root@ds-splunk-nidx01:~# cat > /etc/snmp/snmpd.conf
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser  default       tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# systemctl start snmpd
+root@ds-splunk-nidx01:~# systemctl status snmpd
+● snmpd.service - Simple Network Management Protocol (SNMP) Daemon.
+   Loaded: loaded (/lib/systemd/system/snmpd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Mon 2020-09-07 19:27:39 MSK; 9s ago
+  Process: 13992 ExecStartPre=/bin/mkdir -p /var/run/agentx (code=exited, status=0/SUCCESS)
+ Main PID: 13997 (snmpd)
+    Tasks: 1 (limit: 6143)
+   CGroup: /system.slice/snmpd.service
+           └─13997 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux mteTrigger mteTriggerConf -f
+
+Sep 07 19:27:39 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Simple Network Management Protocol (SNMP) Daemon....
+Sep 07 19:27:39 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Simple Network Management Protocol (SNMP) Daemon..
+Sep 07 19:27:39 ds-splunk-nidx01.tcsbank.ru snmpd[13997]: /etc/snmp/snmpd.conf: line 11: Error: cannot resolve source hostname
+Sep 07 19:27:39 ds-splunk-nidx01.tcsbank.ru snmpd[13997]: /etc/snmp/snmpd.conf: line 22: Warning: Unknown token: smuxpeer.
+Sep 07 19:27:39 ds-splunk-nidx01.tcsbank.ru snmpd[13997]: /etc/snmp/snmpd.conf: line 26: Error: Can't open include dir '/etc/snmp/config.d'.
+Sep 07 19:27:39 ds-splunk-nidx01.tcsbank.ru snmpd[13997]: net-snmp: 2 error(s) in config file(s)
+Sep 07 19:27:39 ds-splunk-nidx01.tcsbank.ru snmpd[13997]: NET-SNMP version 5.7.3
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux ds-splunk-nidx01.tcsbank.ru 4.15.0-29-generic #31-Ubuntu SMP Tue Jul 17 15:39:52 UTC 2018 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (5837) 0:00:58.37
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "ds-splunk-nidx01.tcsbank.ru"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (1) 0:00:00.01
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@ds-splunk-nidx01:~#
+
+
+
+................................................................................
+
+root@ds-splunk-nidx01:~# systemctl stop snmpd
+root@ds-splunk-nidx01:~# vim /etc/default/snmpd
+root@ds-splunk-nidx01:~# systemctl start snmpd
+root@ds-splunk-nidx01:~# egrep -v -e "^#| *#|^$"  /etc/default/snmpd
+export MIBS=
+SNMPDRUN=yes
+SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid'
+root@ds-splunk-nidx01:~#
+
+[root@vd-nag4-tst-1 objects]# host ds-splunk-nidx01
+ds-splunk-nidx01.tcsbank.ru has address 10.216.42.73
+[root@vd-nag4-tst-1 objects]#
+
+[root@vd-nag4-tst-1 objects]# /usr/lib64/nagios/plugins/check_openmanage -H 10.216.42.73 -C tcspub -P 2c -p
+ERROR: (SNMP) OpenManage is not installed or is not working correctly
+[root@vd-nag4-tst-1 objects]#
+
+[root@vd-nag4-tst-1 objects]# snmpwalk -v 2c -c tcspub 10.216.42.73 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux ds-splunk-nidx01.tcsbank.ru 4.15.0-29-generic #31-Ubuntu SMP Tue Jul 17 15:39:52 UTC 2018 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (20503) 0:03:25.03
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: ds-splunk-nidx01.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (1) 0:00:00.01
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@vd-nag4-tst-1 objects]#
+
+
+................................................................................
+
+root@ds-splunk-nidx01:~# systemctl list-units --type service | tee -a /tmp/20200907-1937.systemd.list.units.services.txt
+UNIT                                                  LOAD   ACTIVE SUB     DESCRIPTION
+accounts-daemon.service                               loaded active running Accounts Service
+apparmor.service                                      loaded active exited  AppArmor initialization
+apport.service                                        loaded active exited  LSB: automatic crash report generation
+atd.service                                           loaded active running Deferred execution scheduler
+atop.service                                          loaded active running Atop advanced performance monitor
+atopacct.service                                      loaded active running Atop process accounting daemon
+beat_exporter.service                                 loaded active running Collects Redis Sentinel metrics to be exported by Prometheus
+blk-availability.service                              loaded active exited  Availability of block devices
+certmonger.service                                    loaded active running Certificate monitoring and PKI enrollment
+chrony.service                                        loaded active running chrony, an NTP client/server
+commvault.service                                     loaded active exited  CommVault Service
+console-setup.service                                 loaded active exited  Set console font and keymap
+cron.service                                          loaded active running Regular background program processing daemon
+dbus.service                                          loaded active running D-Bus System Message Bus
+ebtables.service                                      loaded active exited  ebtables ruleset management
+elasticsearch.service                                 loaded active running Elasticsearch
+elasticsearch_exporter.service                        loaded active running Collects elasticsearch metrics to be exported by prometheus
+filebeat.service                                      loaded active running Filebeat sends log files to Logstash or directly to Elasticsearch.
+getty@tty1.service                                    loaded active running Getty on tty1
+grub-common.service                                   loaded active exited  LSB: Record successful boot for GRUB
+instsvcdrv.service                                    loaded active exited  Systems Management Device Drivers
+ipmievd.service                                       loaded active running IPMI event daemon
+irqbalance.service                                    loaded active running irqbalance daemon
+iscsid.service                                        loaded active running iSCSI initiator daemon (iscsid)
+keyboard-setup.service                                loaded active exited  Set the console keyboard layout
+kmod-static-nodes.service                             loaded active exited  Create list of required static device nodes for the current kernel
+lldpad.service                                        loaded active running Link Layer Discovery Protocol Agent Daemon.
+lvm2-lvmetad.service                                  loaded active running LVM2 metadata daemon
+lvm2-monitor.service                                  loaded active exited  Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling
+lvm2-pvscan@8:2.service                               loaded active exited  LVM2 PV scan on device 8:2
+lxcfs.service                                         loaded active running FUSE filesystem for LXC
+lxd-containers.service                                loaded active exited  LXD - container startup/shutdown
+mcollective.service                                   loaded active running The Marionette Collective
+nagios-nrpe-server.service                            loaded active running Nagios Remote Plugin Executor
+netscript.service                                     loaded active exited  Netscript network interfaces and iptables
+netscript@bond0.service                               loaded active exited  Netscript ifup for bond0
+netscript@eno1.service                                loaded active exited  Netscript ifup for eno1
+netscript@eno2.service                                loaded active exited  Netscript ifup for eno2
+netscript@eno3.service                                loaded active exited  Netscript ifup for eno3
+netscript@eno4.service                                loaded active exited  Netscript ifup for eno4
+netscript@idrac.service                               loaded active exited  Netscript ifup for idrac
+networkd-dispatcher.service                           loaded active running Dispatcher daemon for systemd-networkd
+node_exporter.service                                 loaded active running Collects node metrics to be exported by prometheus
+oddjobd.service                                       loaded active running privileged operations for unprivileged applications
+polkit.service                                        loaded active running Authorization Manager
+puppet.service                                        loaded active running Puppet agent
+rpc-gssd.service                                      loaded active running RPC security service for NFS client and server
+rpcbind.service                                       loaded active running RPC bind portmap service
+rsyslog.service                                       loaded active running System Logging Service
+setvtrgb.service                                      loaded active exited  Set console scheme
+sfcb.service                                          loaded active exited  LSB: Start sfcb
+snapd.seeded.service                                  loaded active exited  Wait until snapd is fully seeded
+snapd.service                                         loaded active running Snappy daemon
+snmpd.service                                         loaded active running Simple Network Management Protocol (SNMP) Daemon.
+ssh.service                                           loaded active running OpenBSD Secure Shell server
+sssd.service                                          loaded active running System Security Services Daemon
+sysstat.service                                       loaded active exited  Resets System Activity Data Collector
+systemd-fsck@dev-disk-by\x2duuid-1204\x2dFB0E.service loaded active exited  File System Check on /dev/disk/by-uuid/1204-FB0E
+systemd-journal-flush.service                         loaded active exited  Flush Journal to Persistent Storage
+systemd-journald.service                              loaded active running Journal Service
+systemd-logind.service                                loaded active running Login Service
+systemd-modules-load.service                          loaded active exited  Load Kernel Modules
+systemd-networkd-wait-online.service                  loaded active exited  Wait for Network to be Configured
+systemd-networkd.service                              loaded active running Network Service
+systemd-random-seed.service                           loaded active exited  Load/Save Random Seed
+systemd-remount-fs.service                            loaded active exited  Remount Root and Kernel File Systems
+systemd-sysctl.service                                loaded active exited  Apply Kernel Variables
+systemd-tmpfiles-setup-dev.service                    loaded active exited  Create Static Device Nodes in /dev
+systemd-tmpfiles-setup.service                        loaded active exited  Create Volatile Files and Directories
+systemd-udev-trigger.service                          loaded active exited  udev Coldplug all Devices
+systemd-udevd.service                                 loaded active running udev Kernel Device Manager
+systemd-update-utmp.service                           loaded active exited  Update UTMP about System Boot/Shutdown
+systemd-user-sessions.service                         loaded active exited  Permit User Sessions
+ufw.service                                           loaded active exited  Uncomplicated firewall
+unattended-upgrades.service                           loaded active running Unattended Upgrades Shutdown
+user@525.service                                      loaded active running User Manager for UID 525
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+76 loaded units listed. Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+root@ds-splunk-nidx01:~#
+
+................................................................................
+................................................................................
+
+#
+#	20200909
+#
+root@ds-splunk-nidx01:~# omreport system summary | head
+System Summary
+
+------------------
+Software Profile
+------------------
+Systems Management
+Name                       : Dell EMC OpenManage Server Administrator
+Version                    : 9.3.0
+Description                : Systems Management Software
+Contains                   : Apache Tomcat Webserver 9.0.8
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# vim /etc/snmp/snmpd.conf
+
+root@ds-splunk-nidx01:~# cat /etc/snmp/snmpd.conf
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+# rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+# smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser  default       tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+# includeDir /etc/snmp/config.d
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# systemctl stop snmpd
+
+root@ds-splunk-nidx01:~# systemctl start snmpd
+root@ds-splunk-nidx01:~# systemctl status snmpd
+● snmpd.service - Simple Network Management Protocol (SNMP) Daemon.
+   Loaded: loaded (/lib/systemd/system/snmpd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Wed 2020-09-09 11:37:27 MSK; 3s ago
+  Process: 30027 ExecStartPre=/bin/mkdir -p /var/run/agentx (code=exited, status=0/SUCCESS)
+ Main PID: 30033 (snmpd)
+    Tasks: 1 (limit: 6143)
+   CGroup: /system.slice/snmpd.service
+           └─30033 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux mteTrigger mteTriggerConf -f
+
+Sep 09 11:37:27 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Simple Network Management Protocol (SNMP) Daemon....
+Sep 09 11:37:27 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Simple Network Management Protocol (SNMP) Daemon..
+Sep 09 11:37:27 ds-splunk-nidx01.tcsbank.ru snmpd[30033]: NET-SNMP version 5.7.3
+root@ds-splunk-nidx01:~# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux ds-splunk-nidx01.tcsbank.ru 4.15.0-29-generic #31-Ubuntu SMP Tue Jul 17 15:39:52 UTC 2018 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (1322) 0:00:13.22
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "ds-splunk-nidx01.tcsbank.ru"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (1) 0:00:00.01
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# apt-cache search srvadmin-idrac
+srvadmin-idrac-vmcli - This package contains CLI utils that provide virtual media features from the management station to the iDRAC in the remote system.
+srvadmin-idracadm7 - The command line user interface to the Remote Access Controller (RAC).
+srvadmin-idracadm8 - The command line user interface to the Remote Access Controller (RAC).
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# apt-get install srvadmin-idracadm7
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+srvadmin-idracadm7 is already the newest version (9.3.0).
+srvadmin-idracadm7 set to manually installed.
+The following packages were automatically installed and are no longer required:
+  facter fonts-lato hiera javascript-common libboost-filesystem1.65.1 libboost-locale1.65.1 libboost-log1.65.1 libboost-program-options1.65.1 libboost-regex1.65.1
+  libboost-system1.65.1 libboost-thread1.65.1 libcpp-hocon0.1.6 libfacter3.10.0 libjs-jquery libleatherman-data libleatherman1.4.0 libopts25 libruby2.5 libyaml-cpp0.5v5
+  python-argcomplete python-ipaddr rake ruby ruby-augeas ruby-deep-merge ruby-did-you-mean ruby-json ruby-minitest ruby-net-telnet ruby-power-assert ruby-selinux ruby-shadow
+  ruby-test-unit ruby2.5 rubygems-integration sntp
+Use 'apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 243 not upgraded.
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# apt-get install srvadmin-deng
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+srvadmin-deng is already the newest version (9.3.0).
+srvadmin-deng set to manually installed.
+The following packages were automatically installed and are no longer required:
+  facter fonts-lato hiera javascript-common libboost-filesystem1.65.1 libboost-locale1.65.1 libboost-log1.65.1 libboost-program-options1.65.1 libboost-regex1.65.1
+  libboost-system1.65.1 libboost-thread1.65.1 libcpp-hocon0.1.6 libfacter3.10.0 libjs-jquery libleatherman-data libleatherman1.4.0 libopts25 libruby2.5 libyaml-cpp0.5v5
+  python-argcomplete python-ipaddr rake ruby ruby-augeas ruby-deep-merge ruby-did-you-mean ruby-json ruby-minitest ruby-net-telnet ruby-power-assert ruby-selinux ruby-shadow
+  ruby-test-unit ruby2.5 rubygems-integration sntp
+Use 'apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 243 not upgraded.
+root@ds-splunk-nidx01:~# apt autoremove
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages will be REMOVED:
+  facter fonts-lato hiera javascript-common libboost-filesystem1.65.1 libboost-locale1.65.1 libboost-log1.65.1 libboost-program-options1.65.1 libboost-regex1.65.1
+  libboost-system1.65.1 libboost-thread1.65.1 libcpp-hocon0.1.6 libfacter3.10.0 libjs-jquery libleatherman-data libleatherman1.4.0 libopts25 libruby2.5 libyaml-cpp0.5v5
+  python-argcomplete python-ipaddr rake ruby ruby-augeas ruby-deep-merge ruby-did-you-mean ruby-json ruby-minitest ruby-net-telnet ruby-power-assert ruby-selinux ruby-shadow
+  ruby-test-unit ruby2.5 rubygems-integration sntp
+0 upgraded, 0 newly installed, 36 to remove and 243 not upgraded.
+After this operation, 39.9 MB disk space will be freed.
+Do you want to continue? [Y/n] Y
+(Reading database ... 213149 files and directories currently installed.)
+Removing facter (3.10.0-4) ...
+Removing fonts-lato (2.0-2) ...
+Removing hiera (3.2.0-2) ...
+Removing javascript-common (11) ...
+Removing libfacter3.10.0:amd64 (3.10.0-4) ...
+Removing libcpp-hocon0.1.6:amd64 (0.1.6-1) ...
+Removing libleatherman1.4.0:amd64 (1.4.0+dfsg-1) ...
+Removing libboost-log1.65.1 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-filesystem1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-locale1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-program-options1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-regex1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-thread1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-system1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libjs-jquery (3.2.1-1) ...
+Removing libleatherman-data (1.4.0+dfsg-1) ...
+Removing sntp (1:4.2.8p10+dfsg-5ubuntu7.2) ...
+Removing libopts25:amd64 (1:5.18.12-4) ...
+Removing ruby-shadow (2.5.0-1build1) ...
+Removing libyaml-cpp0.5v5:amd64 (0.5.2-4ubuntu1) ...
+Removing python-argcomplete (1.8.1-1ubuntu1) ...
+Removing python-ipaddr (2.2.0-1) ...
+Removing ruby-augeas (1:0.5.0-3build6) ...
+Removing ruby-deep-merge (1.1.1-1) ...
+Removing ruby-json (2.1.0+dfsg-2) ...
+Removing ruby-selinux (2.7-2build2) ...
+Removing ruby (1:2.5.1) ...
+Removing ruby2.5 (2.5.1-1ubuntu1.6) ...
+Removing libruby2.5:amd64 (2.5.1-1ubuntu1.6) ...
+Removing rake (12.3.1-1ubuntu0.1) ...
+Removing ruby-did-you-mean (1.2.0-2) ...
+Removing ruby-minitest (5.10.3-1) ...
+Removing ruby-net-telnet (0.1.1-2) ...
+Removing ruby-test-unit (3.2.5-1) ...
+Removing ruby-power-assert (0.3.0-1) ...
+Removing rubygems-integration (1.11) ...
+Processing triggers for libc-bin (2.27-3ubuntu1) ...
+Processing triggers for man-db (2.8.3-2) ...
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# apt-get install srvadmin-deng-snmp
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+srvadmin-deng-snmp is already the newest version (9.3.0).
+srvadmin-deng-snmp set to manually installed.
+0 upgraded, 0 newly installed, 0 to remove and 243 not upgraded.
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# /opt/dell/srvadmin/sbin/srvadmin-services.sh start
+root@ds-splunk-nidx01:~# less /var/log/syslog
+root@ds-splunk-nidx01:~# /opt/dell/srvadmin/sbin/srvadmin-services.sh status
+● instsvcdrv.service - Systems Management Device Drivers
+   Loaded: loaded (/etc/systemd/system/instsvcdrv.service; enabled; vendor preset: enabled)
+   Active: active (exited) since Tue 2020-09-08 17:48:40 MSK; 18h ago
+    Tasks: 0 (limit: 6143)
+   CGroup: /system.slice/instsvcdrv.service
+
+Sep 08 17:48:37 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Systems Management Device Drivers...
+Sep 08 17:48:40 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Systems Management Device Drivers.
+● dsm_sa_datamgrd.service - Systems Management Data Engine
+   Loaded: loaded (/etc/systemd/system/dsm_sa_datamgrd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2020-09-08 17:48:59 MSK; 18h ago
+ Main PID: 3541 (dsm_sa_datamgrd)
+    Tasks: 17 (limit: 6143)
+   CGroup: /system.slice/dsm_sa_datamgrd.service
+           ├─3541 /opt/dell/srvadmin/sbin/dsm_sa_datamgrd
+           └─4963 /opt/dell/srvadmin/sbin/dsm_sa_datamgrd
+
+Sep 08 17:48:40 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Systems Management Data Engine...
+Sep 08 17:48:59 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Systems Management Data Engine.
+● dsm_sa_eventmgrd.service - Systems Management Event Management
+   Loaded: loaded (/etc/systemd/system/dsm_sa_eventmgrd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2020-09-08 17:48:38 MSK; 18h ago
+ Main PID: 3172 (dsm_sa_eventmgr)
+    Tasks: 3 (limit: 6143)
+   CGroup: /system.slice/dsm_sa_eventmgrd.service
+           └─3172 /opt/dell/srvadmin/sbin/dsm_sa_eventmgrd
+
+Sep 08 17:48:37 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Systems Management Event Management...
+Sep 08 17:48:38 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Systems Management Event Management.
+Sep 08 17:48:59 ds-splunk-nidx01.tcsbank.ru Server_Administrator[3172]: 3172 1000 - Instrumentation Service  Server Administrator starting
+Sep 08 17:48:59 ds-splunk-nidx01.tcsbank.ru Server_Administrator[3172]: 3172 1012 - Instrumentation Service  IPMI status
+                                                                        Interface: OS
+Sep 08 17:48:59 ds-splunk-nidx01.tcsbank.ru Server_Administrator[3172]: 3172 1001 - Instrumentation Service  Server Administrator startup complete
+Sep 08 17:48:59 ds-splunk-nidx01.tcsbank.ru Server_Administrator[3172]: 3172 1008 - Instrumentation Service  Systems Management Data Manager Started
+Sep 08 17:49:41 ds-splunk-nidx01.tcsbank.ru Server_Administrator[3172]: 3172 1404 - Instrumentation Service  Memory device status is critical
+                                                                        Memory device location: A5
+                                                                        Possible memory module event cause:Single bit warning error rate exceeded,Single bit failure error rate exceede
+Sep 08 17:49:41 ds-splunk-nidx01.tcsbank.ru Server_Administrator[3172]: 3172 1404 - Instrumentation Service  Memory device status is critical
+                                                                        Memory device location: A5
+                                                                        Possible memory module event cause:Single bit warning error rate exceeded,Single bit failure error rate exceede
+
+root@ds-splunk-nidx01:~#
+
+
+
+
+root@ds-splunk-nidx01:~# systemctl stop snmpd
+root@ds-splunk-nidx01:~# vim /etc/snmp/snmpd.conf
+root@ds-splunk-nidx01:~# systemctl start snmpd
+root@ds-splunk-nidx01:~# systemctl status snmpd
+● snmpd.service - Simple Network Management Protocol (SNMP) Daemon.
+   Loaded: loaded (/lib/systemd/system/snmpd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Wed 2020-09-09 12:10:10 MSK; 4s ago
+  Process: 33687 ExecStartPre=/bin/mkdir -p /var/run/agentx (code=exited, status=0/SUCCESS)
+ Main PID: 33693 (snmpd)
+    Tasks: 1 (limit: 6143)
+   CGroup: /system.slice/snmpd.service
+           └─33693 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux mteTrigger mteTriggerConf -f
+
+Sep 09 12:10:10 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Simple Network Management Protocol (SNMP) Daemon....
+Sep 09 12:10:10 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Simple Network Management Protocol (SNMP) Daemon..
+Sep 09 12:10:10 ds-splunk-nidx01.tcsbank.ru snmpd[33693]: /etc/snmp/snmpd.conf: line 22: Warning: Unknown token: smuxpeer.
+Sep 09 12:10:10 ds-splunk-nidx01.tcsbank.ru snmpd[33693]: NET-SNMP version 5.7.3
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# /opt/dell/srvadmin/sbin/srvadmin-services.sh restart
+root@ds-splunk-nidx01:~# systemctl start snmpd
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# /opt/dell/srvadmin/sbin/srvadmin-services.sh status
+● instsvcdrv.service - Systems Management Device Drivers
+   Loaded: loaded (/etc/systemd/system/instsvcdrv.service; enabled; vendor preset: enabled)
+   Active: active (exited) since Wed 2020-09-09 12:12:44 MSK; 58s ago
+  Process: 33849 ExecStop=/usr/libexec/instsvcdrv-helper stop (code=exited, status=0/SUCCESS)
+  Process: 33894 ExecStart=/usr/libexec/instsvcdrv-helper start (code=exited, status=0/SUCCESS)
+
+Sep 09 12:12:44 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Systems Management Device Drivers...
+Sep 09 12:12:44 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Systems Management Device Drivers.
+● dsm_sa_datamgrd.service - Systems Management Data Engine
+   Loaded: loaded (/etc/systemd/system/dsm_sa_datamgrd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Wed 2020-09-09 12:12:54 MSK; 48s ago
+  Process: 33961 ExecStart=/opt/dell/srvadmin/sbin/dsm_sa_datamgrd (code=exited, status=0/SUCCESS)
+ Main PID: 33967 (dsm_sa_datamgrd)
+    Tasks: 17 (limit: 6143)
+   CGroup: /system.slice/dsm_sa_datamgrd.service
+           ├─33967 /opt/dell/srvadmin/sbin/dsm_sa_datamgrd
+           └─34044 /opt/dell/srvadmin/sbin/dsm_sa_datamgrd
+
+Sep 09 12:12:44 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Systems Management Data Engine...
+Sep 09 12:12:54 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Systems Management Data Engine.
+● dsm_sa_eventmgrd.service - Systems Management Event Management
+   Loaded: loaded (/etc/systemd/system/dsm_sa_eventmgrd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Wed 2020-09-09 12:12:44 MSK; 58s ago
+  Process: 33945 ExecStart=/opt/dell/srvadmin/sbin/dsm_sa_eventmgrd (code=exited, status=0/SUCCESS)
+ Main PID: 33951 (dsm_sa_eventmgr)
+    Tasks: 3 (limit: 6143)
+   CGroup: /system.slice/dsm_sa_eventmgrd.service
+           └─33951 /opt/dell/srvadmin/sbin/dsm_sa_eventmgrd
+
+Sep 09 12:12:44 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Systems Management Event Management...
+Sep 09 12:12:44 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Systems Management Event Management.
+Sep 09 12:12:55 ds-splunk-nidx01.tcsbank.ru Server_Administrator[33951]: 33951 1000 - Instrumentation Service  Server Administrator starting
+Sep 09 12:12:55 ds-splunk-nidx01.tcsbank.ru Server_Administrator[33951]: 33951 1012 - Instrumentation Service  IPMI status
+                                                                         Interface: OS
+Sep 09 12:12:55 ds-splunk-nidx01.tcsbank.ru Server_Administrator[33951]: 33951 1001 - Instrumentation Service  Server Administrator startup complete
+Sep 09 12:12:55 ds-splunk-nidx01.tcsbank.ru Server_Administrator[33951]: 33951 1008 - Instrumentation Service  Systems Management Data Manager Started
+Sep 09 12:13:00 ds-splunk-nidx01.tcsbank.ru Server_Administrator[33951]: 33951 1404 - Instrumentation Service  Memory device status is critical
+                                                                         Memory device location: A5
+                                                                         Possible memory module event cause:Single bit warning error rate exceeded,Single bit failure error rate exceed
+
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# find /etc -type f -iname *snmp*
+/etc/snmp-mibs-downloader/snmp-mibs-downloader.conf
+/etc/snmp/snmp.conf
+/etc/snmp/snmpd.conf
+/etc/init.d/snmpd
+/etc/systemd/system/dsm_sa_snmpd.service
+/etc/default/snmpd
+root@ds-splunk-nidx01:~#
+
+
+root@ds-splunk-nidx01:~# racadm getniccfg | head
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.135
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# omreport about
+
+Product name : Dell EMC OpenManage Server Administrator
+Version      : 9.3.0
+Copyright    : Copyright (C) Dell Inc. 1995-2020 All rights reserved.
+Company      : Dell Inc.
+
+iDRAC Service Module (iSM) is a lightweight software service that better integrates operating system (OS) related features with iDRAC and can be installed on Dell EMC 12th or later generations of PowerEdge servers. iSM has very little impact on the host processor and smaller memory footprint than "in-band" agents such as Dell EMC OpenManage Server Administrator (OMSA), thus expanding iDRAC management into supported host operating systems. Refer here for more details: https://www.dell.com/support/ism
+root@ds-splunk-nidx01:~#
+root@ds-splunk-nidx01:~# omreport system summary | head
+System Summary
+
+------------------
+Software Profile
+------------------
+Systems Management
+Name                       : Dell EMC OpenManage Server Administrator
+Version                    : 9.3.0
+Description                : Systems Management Software
+Contains                   : Apache Tomcat Webserver 9.0.8
+root@ds-splunk-nidx01:~#
+root@ds-splunk-nidx01:~# omconfig about
+
+Product name : Dell EMC OpenManage Server Administrator
+Version      : 9.3.0
+Copyright    : Copyright (C) Dell Inc. 1995-2020 All rights reserved.
+Company      : Dell Inc.
+
+iDRAC Service Module (iSM) is a lightweight software service that better integrates operating system (OS) related features with iDRAC and can be installed on Dell EMC 12th or later generations of PowerEdge servers. iSM has very little impact on the host processor and smaller memory footprint than "in-band" agents such as Dell EMC OpenManage Server Administrator (OMSA), thus expanding iDRAC management into supported host operating systems. Refer here for more details: https://www.dell.com/support/ism
+root@ds-splunk-nidx01:~#
+root@ds-splunk-nidx01:~# ps aux | grep snm[p]
+root     34012  0.0  0.0 374292 10772 ?        Ssl  12:12   0:00 /opt/dell/srvadmin/sbin/dsm_sa_snmpd
+root@ds-splunk-nidx01:~# systemctl start snmpd
+root@ds-splunk-nidx01:~# ps aux | grep snm[p]
+root     34012  0.0  0.0 374292 10772 ?        Ssl  12:12   0:00 /opt/dell/srvadmin/sbin/dsm_sa_snmpd
+Debian-+ 35521  1.0  0.0  78888 11816 ?        Ss   12:32   0:00 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux mteTrigger mteTriggerConf -f
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# vim /etc/default/snmpd
+root@ds-splunk-nidx01:~# systemctl restart snmpd
+root@ds-splunk-nidx01:~# ps aux | grep snm[p]
+root     34012  0.0  0.0 374292 10772 ?        Ssl  12:12   0:00 /opt/dell/srvadmin/sbin/dsm_sa_snmpd
+Debian-+ 35577  0.7  0.0  78888 12012 ?        Ss   12:33   0:00 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux mteTrigger mteTriggerConf -f
+root@ds-splunk-nidx01:~# grep -irle "smux" /etc/
+/etc/snmp-mibs-downloader/rfcmibs.diff
+/etc/snmp-mibs-downloader/rfclist
+/etc/services
+/etc/snmp/snmpd.conf
+/etc/default/snmpd
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+[root@vd-nag4-tst-1 objects]# snmpwalk -v 2c -c tcspub 10.216.42.73 1.3.6.1.4.1 | head
+UCD-SNMP-MIB::memIndex.0 = INTEGER: 0
+UCD-SNMP-MIB::memErrorName.0 = STRING: swap
+UCD-SNMP-MIB::memTotalSwap.0 = INTEGER: 987132 kB
+UCD-SNMP-MIB::memAvailSwap.0 = INTEGER: 987132 kB
+UCD-SNMP-MIB::memTotalReal.0 = INTEGER: 264043132 kB
+UCD-SNMP-MIB::memAvailReal.0 = INTEGER: 123696232 kB
+UCD-SNMP-MIB::memTotalFree.0 = INTEGER: 124683364 kB
+UCD-SNMP-MIB::memMinimumSwap.0 = INTEGER: 16000 kB
+UCD-SNMP-MIB::memShared.0 = INTEGER: 62628 kB
+UCD-SNMP-MIB::memBuffer.0 = INTEGER: 469132 kB
+[root@vd-nag4-tst-1 objects]# /usr/lib64/nagios/plugins/check_openmanage -H 10.216.42.73 -C tcspub -P 2c -p
+ERROR: (SNMP) OpenManage is not installed or is not working correctly
+[root@vd-nag4-tst-1 objects]# snmpwalk -v 2c -c tcspub 10.216.42.73 1.3.6.1.4.1.674.10892.1 | head
+SNMPv2-SMI::enterprises.674.10892.1 = No Such Object available on this agent at this OID
+[root@vd-nag4-tst-1 objects]#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# netstat -nl | grep -ie 1311
+tcp6       0      0 :::1311                 :::*                    LISTEN
+root@ds-splunk-nidx01:~#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# cat /lib/systemd/system/snmpd.service
+[Unit]
+Description=Simple Network Management Protocol (SNMP) Daemon.
+After=network.target
+ConditionPathExists=/etc/snmp/snmpd.conf
+
+[Service]
+Environment="MIBSDIR=/usr/share/snmp/mibs:/usr/share/snmp/mibs/iana:/usr/share/snmp/mibs/ietf:/usr/share/mibs/site:/usr/share/snmp/mibs:/usr/share/mibs/iana:/usr/share/mibs/ietf:/usr/share/mibs/netsnmp"
+Environment="MIBS="
+Type=simple
+ExecStartPre=/bin/mkdir -p /var/run/agentx
+ExecStart=/usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux,mteTrigger,mteTriggerConf -f
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# vim /lib/systemd/system/snmpd.service
+root@ds-splunk-nidx01:~# cat /lib/systemd/system/snmpd.service
+[Unit]
+Description=Simple Network Management Protocol (SNMP) Daemon.
+After=network.target
+ConditionPathExists=/etc/snmp/snmpd.conf
+
+[Service]
+Environment="MIBSDIR=/usr/share/snmp/mibs:/usr/share/snmp/mibs/iana:/usr/share/snmp/mibs/ietf:/usr/share/mibs/site:/usr/share/snmp/mibs:/usr/share/mibs/iana:/usr/share/mibs/ietf:/usr/share/mibs/netsnmp"
+Environment="MIBS="
+Type=simple
+ExecStartPre=/bin/mkdir -p /var/run/agentx
+ExecStart=/usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -f
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# systemctl daemon-reload && service snmpd restart
+root@ds-splunk-nidx01:~# systemctl status snmpd
+● snmpd.service - Simple Network Management Protocol (SNMP) Daemon.
+   Loaded: loaded (/lib/systemd/system/snmpd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Wed 2020-09-09 12:49:40 MSK; 12s ago
+  Process: 36566 ExecStartPre=/bin/mkdir -p /var/run/agentx (code=exited, status=0/SUCCESS)
+ Main PID: 36572 (snmpd)
+    Tasks: 1 (limit: 6143)
+   CGroup: /system.slice/snmpd.service
+           └─36572 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -f
+
+Sep 09 12:49:40 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Simple Network Management Protocol (SNMP) Daemon....
+Sep 09 12:49:40 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Simple Network Management Protocol (SNMP) Daemon..
+Sep 09 12:49:40 ds-splunk-nidx01.tcsbank.ru snmpd[36572]: NET-SNMP version 5.7.3
+Sep 09 12:49:42 ds-splunk-nidx01.tcsbank.ru snmpd[36572]: [smux_accept] accepted fd 15 from 127.0.0.1:41436
+Sep 09 12:49:42 ds-splunk-nidx01.tcsbank.ru snmpd[36572]: accepted smux peer: oid iso.3.6.1.4.1.674.10892.1, descr Systems Management SNMP MIB Plug-in Manager
+Sep 09 12:49:47 ds-splunk-nidx01.tcsbank.ru snmpd[36572]: Got trap from peer on fd 15
+Sep 09 12:49:48 ds-splunk-nidx01.tcsbank.ru snmpd[36572]: Got trap from peer on fd 15
+Sep 09 12:49:49 ds-splunk-nidx01.tcsbank.ru snmpd[36572]: Got trap from peer on fd 15
+Sep 09 12:49:50 ds-splunk-nidx01.tcsbank.ru snmpd[36572]: Got trap from peer on fd 15
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# ps aux | grep snm[p]
+root     34012  0.0  0.0 439828 10772 ?        Ssl  12:12   0:00 /opt/dell/srvadmin/sbin/dsm_sa_snmpd
+Debian-+ 36572  0.1  0.0  79412 12476 ?        Ss   12:49   0:00 /usr/sbin/snmpd -Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -f
+root@ds-splunk-nidx01:~#
+
+[root@vd-nag4-tst-1 objects]# /usr/lib64/nagios/plugins/check_openmanage -H 10.216.42.73 -C tcspub -P 2c -p
+Memory module 4 [A5, 16384 MB]: ECC single bit correction warning rate exceeded, ECC single bit correction failure rate exceeded|T0_System_Board_Inlet=21C;42;47 T1_System_Board_Exhaust=39C;70;75 T2_CPU1=45C;87;92 T3_CPU2=44C;87;92 W2_System_Board_Pwr_Consumption=266W;0;0 A0_PS1_Current_1=0.6A;0;0 A1_PS2_Current_2=0.6A;0;0 V26_PS1_Voltage_1=230V;0;0 V27_PS2_Voltage_2=226V;0;0 F0_System_Board_Fan1=4080rpm;0;0 F1_System_Board_Fan2=4080rpm;0;0 F2_System_Board_Fan3=4080rpm;0;0 F3_System_Board_Fan4=3960rpm;0;0 F4_System_Board_Fan5=4080rpm;0;0 F5_System_Board_Fan6=4080rpm;0;0
+[root@vd-nag4-tst-1 objects]#
+
+................................................................................
+
+root@ds-splunk-nidx01:~# cat /etc/snmp/snmpd.conf
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+# rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser  default       tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+# includeDir /etc/snmp/config.d
+root@ds-splunk-nidx01:~#
+
+root@ds-splunk-nidx01:~# cat /etc/default/snmpd
+# This file controls the behaviour of /etc/init.d/snmpd
+# but not of the corresponding systemd service file.
+# If needed, create an override file in
+# /etc/systemd/system/snmpd.service.d/local.conf
+# see man 5 systemd.unit and man 5 systemd.service
+
+# Don't load any MIBs by default.
+# You might comment this lines once you have the MIBs downloaded.
+export MIBS=
+
+# snmpd control (yes means start daemon).
+SNMPDRUN=yes
+
+# snmpd options (use syslog, close stdin/out/err).
+# SNMPDOPTS='-Lsd -Lf /dev/null -u Debian-snmp -g Debian-snmp -I -smux,mteTrigger,mteTriggerConf -p /run/snmpd.pid'
+SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid'
+root@ds-splunk-nidx01:~#
+
+
+................................................................................
+
+root@ds-splunk-nidx02:~# omreport system summary
+System Summary
+
+------------------
+Software Profile
+------------------
+Systems Management
+Name                       : Dell EMC OpenManage Server Administrator
+Version                    : 9.3.0
+Description                : Systems Management Software
+Contains                   : Apache Tomcat Webserver 9.0.8
+                           : Data Engine 9.3.0
+                           : Data Engine SNMP 9.3.0
+                           : Disney SNMP 9.3.0
+                           : Hardware Abstraction Programming Interface 9.3.0
+                           : Instrumentation Services 9.3.0
+                           : Integrated Tunnel Provider 9.3.0
+                           : Meta package for installing all Server Administrator features 9.3.0
+                           : Meta package for installing the Server Administrator Storage Services feature 9.3.0
+                           : Meta package for installing the Server Administrator Web Server feature 9.3.0
+                           : Meta package for installing the Server Administrator server cli component 9.3.0
+                           : Meta package for installing the Server Administrator snmp component 9.3.0
+                           : Meta package for installing the Server Agent 9.3.0
+                           : Meta package for installing the Standard Server Agent 9.3.0
+                           : Meta package for storageservices-cli 9.3.0
+                           : Meta package for storageservices-snmp 9.3.0
+                           : Metapackage for libsysfs2 9.3.0
+                           : OS Logging Control 9.3.0
+                           : Oracle Java Runtime Environment 11.0.4
+                           : Server Administrator CLI 9.3.0
+                           : Server Administrator Common Framework 9.3.0
+                           : Server Administrator Common Services 9.3.0
+                           : Server Administrator Core 9.3.0
+                           : Server Administrator XML Support SDK 9.3.0
+                           : Storage Management SNMP component 9.3.0
+                           : Storage Management accessors package 9.3.0
+                           : Storage Management cli component 9.3.0
+                           : Storage Management common files for GUI and CLI 9.3.0
+                           : Storage Management package for GUI component 9.3.0
+                           : StoreLib package for storage management 9.3.0
+                           : The command line user interface to the Remote Access Controller (RAC). 9.3.0
+                           : The command line user interface to the Remote Access Controller (RAC). 9.3.0
+                           : This package contains CLI utils that provide virtual media features from the management station to the iDRAC in the remote system. 9.3.0
+                           : This package provides the libaries to manage BOSS controllers. 9.3.0
+                           : This package provides the libaries to manage Micron devices. 9.3.0
+                           : This package provides the libaries to manage NVMe devices. 9.3.0
+                           : Webserver Migrate Support for JRE 1.8 9.3.0
+
+Operating System
+Name                       : Ubuntu
+Version                    : 18.04.1 LTS (Bionic Beaver) Kernel 4.15.0-29-generic (x86_64)
+System Time                : Wed Sep  9 17:53:48 2020
+System Bootup Time         : Thu Sep  3 15:58:26 2020
+
+--------
+System
+--------
+System
+Host Name                  : ds-splunk-nidx02.tcsbank.ru
+System Location            : Please set the value
+Lifecycle Controller       : Enabled
+
+---------------------
+Main System Chassis
+---------------------
+Chassis Information
+Chassis Model              : PowerEdge R730xd
+Chassis Service Tag        : CV48RG2
+Express Service Code       : 28002966770
+Chassis Lock               : Present
+Chassis Asset Tag          : Unknown
+Node Id                    : CV48RG2
+
+Remote Access Information
+Remote Access Device       : iDRAC8 Enterprise
+vFlash Media               : Absent
+
+Processor 1
+Processor Brand            : Intel(R) Xeon(R) CPU E5-2640 v4 @ 2.40GHz
+Processor Version          : Model 79 Stepping 1
+Voltage                    : 1300 mV
+
+Processor 2
+Processor Brand            : Intel(R) Xeon(R) CPU E5-2640 v4 @ 2.40GHz
+Processor Version          : Model 79 Stepping 1
+Voltage                    : 1300 mV
+
+Memory
+Total Installed Capacity   : 262144  MB
+Memory Available to the OS : 257855  MB
+Total Maximum Capacity     : 3145728  MB
+Memory Array Count         : 1
+
+Memory Array 1
+Location                   : System Board or Motherboard
+Use                        : System Memory
+Installed Capacity         : 262144  MB
+Maximum Capacity           : 3145728  MB
+Slots Available            : 24
+Slots Used                 : 16
+ECC Type                   : Multibit ECC
+
+Slot PCIe Slot 1
+Adapter                    : [Not Occupied]
+Type                       : PCI E Gen 3 X16
+Data Bus Width             : 8x or x8
+Speed                      : [Not Obtained, see card documentation]
+Slot Length                : Long
+Voltage Supply             : 3.3 Volts
+
+Slot PCIe Slot 2
+Adapter                    : [Not Occupied]
+Type                       : PCI E Gen 3 X16
+Data Bus Width             : 8x or x8
+Speed                      : [Not Obtained, see card documentation]
+Slot Length                : Long
+Voltage Supply             : 3.3 Volts
+
+Slot PCIe Slot 3
+Adapter                    : [Not Occupied]
+Type                       : PCI E Gen 3 X16
+Data Bus Width             : 8x or x8
+Speed                      : [Not Obtained, see card documentation]
+Slot Length                : Long
+Voltage Supply             : 3.3 Volts
+
+Slot PCIe Slot 4
+Adapter                    : [Not Occupied]
+Type                       : PCI E Gen 3
+Data Bus Width             : 16x or x16
+Speed                      : [Not Obtained, see card documentation]
+Slot Length                : Long
+Voltage Supply             : 3.3 Volts
+
+Slot PCIe Slot 5
+Adapter                    : [Not Occupied]
+Type                       : PCI E Gen 3 X16
+Data Bus Width             : 8x or x8
+Speed                      : [Not Obtained, see card documentation]
+Slot Length                : Long
+Voltage Supply             : 3.3 Volts
+
+Slot PCIe Slot 6
+Adapter                    : [Not Occupied]
+Type                       : PCI E Gen 3
+Data Bus Width             : 16x or x16
+Speed                      : [Not Obtained, see card documentation]
+Slot Length                : Long
+Voltage Supply             : 3.3 Volts
+
+BIOS Information
+Manufacturer               : Dell Inc.
+Version                    : 2.8.0
+Release Date               : 005/17/2018
+
+Firmware Information
+Name                       : iDRAC8
+Version                    : 2.61.60.60 (Build 8)
+
+Firmware Information
+Name                       : Lifecycle Controller
+Version                    : 2.61.60.60
+
+--------------------------
+Remote Access Controller
+--------------------------
+Remote Access Controller Information
+Product                    : iDRAC8 Enterprise
+IP Address                 : 10.219.11.136
+IP Subnet                  : 255.255.255.0
+IP Gateway                 : 10.219.11.254
+IPv6 Address 1             : ::
+IPv6 Address 2             : ::
+IPv6 Gateway               : ::
+
+--------------
+Network Data
+--------------
+Network Interface 0
+IP Address                 : [No Value]
+MAC Address                : DE:37:88:E5:2C:AD
+
+Network Interface 1
+IP Address                 : [No Value]
+MAC Address                : DE:37:88:E5:2C:AD
+
+Network Interface 2
+IP Address                 : [No Value]
+MAC Address                : 18:66:DA:7B:AC:2F
+
+Network Interface 3
+IP Address                 : [No Value]
+MAC Address                : 18:66:DA:7B:AC:31
+
+Team Interface 0
+IP Address                 : 10.216.42.74
+Subnet Mask                : 255.255.255.0
+Default Gateway            : 10.216.42.254
+MAC Address                : DE:37:88:E5:2C:AD
+
+--------------------
+Storage Enclosures
+--------------------
+Storage Enclosures
+Name                       : Backplane
+
+root@ds-splunk-nidx02:~#
+
+................................................................................
+
+root@ds-splunk-nidx02:~# apt autoremove
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages will be REMOVED:
+  facter fonts-lato hiera javascript-common libboost-filesystem1.65.1 libboost-locale1.65.1 libboost-log1.65.1 libboost-program-options1.65.1 libboost-regex1.65.1
+  libboost-system1.65.1 libboost-thread1.65.1 libcpp-hocon0.1.6 libfacter3.10.0 libjs-jquery libleatherman-data libleatherman1.4.0 libopts25 libruby2.5 libyaml-cpp0.5v5
+  python-argcomplete python-ipaddr rake ruby ruby-augeas ruby-deep-merge ruby-did-you-mean ruby-json ruby-minitest ruby-net-telnet ruby-power-assert ruby-selinux ruby-shadow
+  ruby-test-unit ruby2.5 rubygems-integration sntp
+0 upgraded, 0 newly installed, 36 to remove and 243 not upgraded.
+After this operation, 39.9 MB disk space will be freed.
+Do you want to continue? [Y/n] n
+(Reading database ... 102657 files and directories currently installed.)
+Removing facter (3.10.0-4) ...
+Removing fonts-lato (2.0-2) ...
+Removing hiera (3.2.0-2) ...
+Removing javascript-common (11) ...
+Removing libfacter3.10.0:amd64 (3.10.0-4) ...
+Removing libcpp-hocon0.1.6:amd64 (0.1.6-1) ...
+Removing libleatherman1.4.0:amd64 (1.4.0+dfsg-1) ...
+Removing libboost-log1.65.1 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-filesystem1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-locale1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-program-options1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-regex1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-thread1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libboost-system1.65.1:amd64 (1.65.1+dfsg-0ubuntu5) ...
+Removing libjs-jquery (3.2.1-1) ...
+Removing libleatherman-data (1.4.0+dfsg-1) ...
+Removing sntp (1:4.2.8p10+dfsg-5ubuntu7.2) ...
+Removing libopts25:amd64 (1:5.18.12-4) ...
+Removing ruby-shadow (2.5.0-1build1) ...
+Removing libyaml-cpp0.5v5:amd64 (0.5.2-4ubuntu1) ...
+Removing python-argcomplete (1.8.1-1ubuntu1) ...
+Removing python-ipaddr (2.2.0-1) ...
+Removing ruby-augeas (1:0.5.0-3build6) ...
+Removing ruby-deep-merge (1.1.1-1) ...
+Removing ruby-json (2.1.0+dfsg-2) ...
+Removing ruby-selinux (2.7-2build2) ...
+Removing ruby (1:2.5.1) ...
+Removing ruby2.5 (2.5.1-1ubuntu1.6) ...
+Removing libruby2.5:amd64 (2.5.1-1ubuntu1.6) ...
+Removing rake (12.3.1-1ubuntu0.1) ...
+Removing ruby-did-you-mean (1.2.0-2) ...
+Removing ruby-minitest (5.10.3-1) ...
+Removing ruby-net-telnet (0.1.1-2) ...
+Removing ruby-test-unit (3.2.5-1) ...
+Removing ruby-power-assert (0.3.0-1) ...
+Removing rubygems-integration (1.11) ...
+Processing triggers for libc-bin (2.27-3ubuntu1) ...
+Processing triggers for man-db (2.8.3-2) ...
+root@ds-splunk-nidx02:~#
+
+................................................................................
+
+[root@vd-nag4-tst-1 objects]# git commit --author='Belogrud <s.belogrud@tinkoff.ru>' -m "JIRA#IN-396. Install new OS on servers. Monitoring for this servers was returned." servers/dc-
+ds/linux/ds-splunk-nidx0{1..5}.cfg servers/dc-m1/linux/m1-splunk-nidx0{1..5}.cfg
+[master 84f6c07] JIRA#IN-396. Install new OS on servers. Monitoring for this servers was returned.
+ Author: Belogrud <s.belogrud@tinkoff.ru>
+ 10 files changed, 272 insertions(+), 296 deletions(-)
+You have mail in /var/spool/mail/root
+[root@vd-nag4-tst-1 objects]# git pull && git push
+Already up-to-date.
+Counting objects: 30, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (18/18), done.
+Writing objects: 100% (18/18), 2.06 KiB, done.
+Total 18 (delta 17), reused 0 (delta 0)
+To git@vm-gitlab01.tcsbank.ru:nagios-core/nag4-base.git
+   3ad93b4..84f6c07  master -> master
+[root@vd-nag4-tst-1 objects]#
+
+................................................................................
+
+

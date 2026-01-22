@@ -1,0 +1,149 @@
+
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="vm-dbamon01" --quiet                                                                                    /usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01-avaya.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Jobs
+        check_command                   check_nrpe!check_tcs_mon_pg_sme_jobs
+        check_interval           1
+        first_notification_delay        0
+        contacts                      a.burin_sms, s.dergach_sms, n.yatsishena_sms, processing_duty_sms, cards_24x7_email, paym_infogate_email, a.a.syachinov_sms
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+    notification_interval         5
+}
+
+................................................................................
+
+[root@vm-dbamon01 ~]# awk '/check_tcs_mon_pg_sme_jobs/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_pg2.cfg     command[check_tcs_mon_pg_sme_jobs]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_mon_sme_jobs.sh
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 pg2]# cp pg2-check_tcs_mon_sme_jobs.sh  pg2-check_tcs_sme_check_fail_reverse.sh
+[root@vm-dbamon01 pg2]# cp pg2-check_tcs_mon_sme_jobs.sql  pg2-check_tcs_sme_check_fail_reverse.sql
+
+[root@vm-dbamon01 pg2]# vim -o pg2-check_tcs_sme_check_fail_reverse.sh pg2-check_tcs_sme_check_fail_reverse.sql
+
+[root@vm-dbamon01 pg2]# ./pg2-check_tcs_sme_check_fail_reverse.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 pg2]#
+
+[root@vm-dbamon01 pg2]# vim /etc/nrpe.d/check_db_pg2.cfg
+...
+command[check_tcs_sme_check_fail_reverse]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_check_fail_reverse.sh
+
+[root@vm-dbamon01 pg2]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 pg2]#
+
+
+    service_description      PG_SME - Failed Cain Payments
+    contacts                 paym_sme_email,a.b.popov_sms,k.v.lepenkov_sms
+
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Reversals
+        check_command                   check_nrpe!check_tcs_sme_check_fail_reverse
+        check_interval                  60
+        retry_interval                  1
+        first_notification_delay        0
+        contacts                        paym_sme_email,a.b.popov_sms,k.v.lepenkov_sms
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           60
+}
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# addcontact
+Adding new contact to Nagios
+Full name: paym_sme
+Email: paym_sme@tinkoff.ru
+Mobile (10 numbers):
+WARNING! /usr/local/nagios/etc/objects/contacts/paym_sme.cfg already exists!
+Do you want overrite it? [y/N]: N
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="paym_sme"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+paym_sme_email       paym_sme@tinkoff.ru  /usr/local/nagios/etc/objects/contacts/paym_sme.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#282770. Created one check." servers/vmware/vm-dbamon01.cfg                                             [master 40566df] SD#282770. Created one check.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 649 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   bad0941..40566df  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+#
+#   The second check is similar as previous.
+#   Consequently I used already received info.
+#
+
+[root@vm-dbamon01 pg2]# cp pg2-check_tcs_mon_sme_jobs.sh pg2-check_tcs_sme_check_paused_cain.sh
+[root@vm-dbamon01 pg2]# cp pg2-check_tcs_mon_sme_jobs.sql pg2-check_tcs_sme_check_paused_cain.sql
+
+[root@vm-dbamon01 pg2]# vim -o pg2-check_tcs_sme_check_paused_cain.sh pg2-check_tcs_sme_check_paused_cain.sql
+
+[root@vm-dbamon01 pg2]# vim /etc/nrpe.d/check_db_pg2.cfg
+
+[root@vm-dbamon01 pg2]# vim /etc/nrpe.d/check_db_pg2.cfg
+...
+command[check_tcs_sme_check_paused_cain]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_check_paused_cain.sh
+
+[root@vm-dbamon01 pg2]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 pg2]#
+
+................................................................................
+................................................................................
+
+#
+#   20170412
+#
+#   Error still here.
+#
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_check_paused_cain.sh
+ERROR. Result=Paused on agreement 7000700505; Paused on agreement 7001923239; | result=Paused on agreement 7000700505; Paused on agreement 7001923239;
+[root@vm-dbamon01 ~]#
+
+#
+#   20170419
+#
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_check_paused_cain.sh
+ERROR. Result=Paused on agreement 7000700505; Paused on agreement 7001923239; | result=Paused on agreement 7000700505; Paused on agreement 7001923239;
+[root@vm-dbamon01 ~]#
+
+
+
+

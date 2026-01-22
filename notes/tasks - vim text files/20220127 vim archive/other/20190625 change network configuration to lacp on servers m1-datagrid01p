@@ -1,0 +1,1110 @@
+
+................................................................................
+
+[root@m1-datagrid01p ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 7.2 (Maipo)
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# dmidecode -t system
+# dmidecode 2.12-dmifs
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R930
+        Version: Not Specified
+        Serial Number: 1TWLSG2
+        UUID: 4C4C4544-0054-5710-804C-B1C04F534732
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R930
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-datagrid01p ~]#
+[root@m1-datagrid01p ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.4.39/24 brd 10.216.4.255 scope global bond0
+    inet 10.216.26.23/24 brd 10.216.26.255 scope global bond1
+    inet 10.217.64.146/24 brd 10.217.64.255 scope global bond2
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+[root@m1-datagrid01p ~]#
+[root@m1-datagrid01p ~]# ip route
+default via 10.216.26.254 dev bond1
+10.216.0.0/21 via 10.216.4.254 dev bond0
+10.216.4.0/24 dev bond0  proto kernel  scope link  src 10.216.4.39
+10.216.26.0/24 dev bond1  proto kernel  scope link  src 10.216.26.23
+10.217.64.0/24 dev bond2  proto kernel  scope link  src 10.217.64.146
+10.217.100.0/23 via 10.216.4.254 dev bond0
+169.254.0.0/16 dev em2  scope link  metric 1003
+169.254.0.0/16 dev p4p2  scope link  metric 1007
+169.254.0.0/16 dev bond0  scope link  metric 1008
+169.254.0.0/16 dev bond1  scope link  metric 1009
+169.254.0.0/16 dev bond2  scope link  metric 1034
+172.17.0.0/16 dev docker0  proto kernel  scope link  src 172.17.0.1
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# ifconfig | grep flags=
+bond0: flags=5187<UP,BROADCAST,RUNNING,MASTER,MULTICAST>  mtu 1500
+bond1: flags=5187<UP,BROADCAST,RUNNING,MASTER,MULTICAST>  mtu 9000
+bond2: flags=5187<UP,BROADCAST,RUNNING,MASTER,MULTICAST>  mtu 9000
+docker0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+em1: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 1500
+em2: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 9000
+em2.1626: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 9000
+em2.1764: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 9000
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+p4p2: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 9000
+p4p2.1626: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 9000
+p4p2.1764: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 9000
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# for var1 in $(ifconfig -a | grep flags= | awk '{ printf $1" " }') ; do printf "${var1}\t" ; ethtool ${var1} | grep -ie "Link detected" ; done
+bond0:          Link detected: yes
+bond1:          Link detected: yes
+bond2:          Link detected: yes
+docker0:                Link detected: no
+em1:            Link detected: yes
+em2:            Link detected: yes
+em3:            Link detected: no
+em4:            Link detected: no
+em2.1626:               Link detected: yes
+em2.1764:               Link detected: yes
+lo:             Link detected: yes
+p4p1:           Link detected: no
+p4p2:           Link detected: yes
+p4p2.1626:              Link detected: yes
+p4p2.1764:              Link detected: yes
+[root@m1-datagrid01p ~]#
+
+# 
+# bond0 - em1 - 10.216.4.39
+# bond1 - em2.1626, p4p2.1626 - 10.216.26.23, DEFROUTE=yes
+# bond2 - em2.1764, p4p2.1664 - 10.217.64.146, MTU=9000
+# 
+
+[root@m1-datagrid01p ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+BOOTPROTO=none
+IPADDR=10.216.4.39
+PREFIX=24
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+BONDING_OPTS="mode=1 miimon=100"
+
+/etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+BOOTPROTO=none
+IPADDR=10.216.26.23
+PREFIX=24
+GATEWAY=10.216.26.254
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+BONDING_OPTS="mode=1 miimon=100"
+
+/etc/sysconfig/network-scripts/ifcfg-bond2
+DEVICE=bond2
+BOOTPROTO=none
+IPADDR=10.217.64.146
+PREFIX=24
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+BONDING_OPTS="mode=1 miimon=100"
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em1
+#UUID=965e9caf-d19d-4933-83cc-7504cd6b4c34
+DEVICE=em1
+ONBOOT=yes
+BOOTPROTO=none
+#DNS1=10.216.40.4
+#DNS2=10.216.42.5
+#DOMAIN=tcsbank.ru
+#IPADDR=10.216.4.39
+#PREFIX=24
+#GATEWAY=10.216.4.254
+SLAVE=yes
+MASTER=bond0
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em2.1626
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2.1626
+DEVICE=em2.1626
+BOOTPROTO=none
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond1
+
+/etc/sysconfig/network-scripts/ifcfg-em2.1764
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2.1764
+DEVICE=em2.1764
+BOOTPROTO=none
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond2
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em3
+UUID=4398a00c-a8d6-4940-be1f-6fcbd04e6d3e
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em4
+UUID=9be3741c-042e-4752-b090-1c37d143ec5d
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-p4p1
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p1
+DEVICE=p4p1
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond0
+
+/etc/sysconfig/network-scripts/ifcfg-p4p2
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2
+DEVICE=p4p2
+ONBOOT=yes
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-p4p2.1626
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2.1626
+DEVICE=p4p2.1626
+BOOTPROTO=none
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond1
+
+/etc/sysconfig/network-scripts/ifcfg-p4p2.1764
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2.1764
+DEVICE=p4p2.1764
+BOOTPROTO=none
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond2
+MTU=9000
+
+/etc/sysconfig/network-scripts/route-bond0
+#ip route add 10.216.0.0/21 via 10.216.4.254
+10.216.0.0/21 via 10.216.4.254 dev bond0
+10.217.100.0/23 via 10.216.4.254 dev bond0
+[root@m1-datagrid01p ~]#
+
+
+[root@m1-datagrid01p ~]# cat /proc/net/bonding/bond0
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: em1
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+Slave Interface: em1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 1
+Permanent HW addr: 18:66:da:7b:f8:66
+Slave queue ID: 0
+[root@m1-datagrid01p ~]#
+[root@m1-datagrid01p ~]# cat /proc/net/bonding/bond1
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: em2.1626
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+Slave Interface: em2.1626
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 1
+Permanent HW addr: 18:66:da:7b:f8:68
+Slave queue ID: 0
+
+Slave Interface: p4p2.1626
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 2
+Permanent HW addr: 18:66:da:7b:f8:68
+Slave queue ID: 0
+[root@m1-datagrid01p ~]#
+[root@m1-datagrid01p ~]# cat /proc/net/bonding/bond2
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: em2.1764
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+Slave Interface: em2.1764
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 1
+Permanent HW addr: 18:66:da:7b:f8:68
+Slave queue ID: 0
+
+Slave Interface: p4p2.1764
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 2
+Permanent HW addr: 18:66:da:7b:f8:68
+Slave queue ID: 0
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# findmnt -t nfs -o SOURCE,TARGET
+SOURCE                         TARGET
+fs-nfsdata:/dwh_ods2_unloads   /mnt/ods2_unloads
+fs-unixfiles:/dwh_ods2_exports /mnt/ods2_exports
+[root@m1-datagrid01p ~]#
+[root@m1-datagrid01p ~]# w
+ 16:30:12 up 642 days,  5:07,  2 users,  load average: 0.01, 0.02, 0.05
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+idrk     pts/0    tcs2898.tcsbank. 13Jun19 13days 12:25   0.06s -bash
+bsv      pts/3    tcs4357.tcsbank. Tue12    4.00s  0.11s  0.02s sshd: bsv [priv]
+[root@m1-datagrid01p ~]#
+
+................................................................................
+
+#
+#	Example.
+#
+[16:51:01 root@m1-gp-prod-sdw01 ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+TYPE=Ethernet
+BOOTPROTO=none
+IPADDR=10.216.2.1
+NETMASK=255.255.255.128
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+DEVICE=em1
+ONBOOT=yes
+HWADDR=44:A8:42:32:01:3A
+SLAVE=yes
+MASTER=bond0
+HOTPLUG=no
+TYPE=Ethernet
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+DEVICE=em2
+ONBOOT=yes
+HWADDR=44:A8:42:32:01:3C
+SLAVE=yes
+MASTER=bond0
+HOTPLUG=no
+TYPE=Ethernet
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=6f0f3b09-9f44-4928-9a3f-0559e5cd42ee
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=a811ac5d-0e34-4d6e-b2aa-b1ea86c291f5
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-idrac
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=idrac
+UUID=410a43fc-432a-4568-acda-b6be282ab02d
+DEVICE=idrac
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+[16:51:35 root@m1-gp-prod-sdw01 ~]#
+
+
+
+#
+#	Another one example.
+#	Here one bonding temporary turnged off - commented out - and become single one plain interface ip.
+#
+[root@m1-gp-prod-mdw ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+#ONBOOT=yes
+ONBOOT=no
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+IPADDR=10.216.2.100
+NETMASK=255.255.255.128
+DEFROUTE=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1626
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1626
+DEVICE=bond1.1626
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1626
+IPADDR=10.216.26.15
+PREFIX=24
+GATEWAY=10.216.26.254
+DNS1=10.219.50.4
+DNS2=10.219.50.5
+DEFROUTE=yes
+ZONE=external
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-eno1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno1
+UUID=c931fe69-1ea3-481d-969d-977aa7104e5d
+DEVICE=eno1
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-eno2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno2
+UUID=ea840507-17d5-460a-bcdf-bdc037882596
+DEVICE=eno2
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-eno3
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno3
+UUID=16ce5b6d-b006-48d1-897e-2c8867484168
+DEVICE=eno3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-eno4
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno4
+UUID=9ed50ef1-0048-4a68-8759-b8486593e2ef
+DEVICE=eno4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-eno5
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno5
+UUID=c877c62b-a5b9-481e-8600-83434139d16d
+DEVICE=eno5
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-eno6
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno6
+UUID=90719bf7-c195-4069-8ead-912e8455ae09
+DEVICE=eno6
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-ens2f0
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=ens2f0
+#UUID=f0dd9194-0028-421f-8958-5376dc2ccb87
+DEVICE=ens2f0
+ONBOOT=yes
+IPADDR=10.216.2.100
+NETMASK=255.255.255.128
+ZONE=public
+#SLAVE=yes
+#MASTER=bond0
+#MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-ens2f1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=ens2f1
+UUID=fb485f86-e6e7-4f4f-a80d-53870ecbc0b8
+DEVICE=ens2f1
+#ONBOOT=yes
+ONBOOT=no
+ZONE=public
+#SLAVE=yes
+#MASTER=bond0
+#MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+[root@m1-gp-prod-mdw ~]#
+
+[root@m1-gp-prod-mdw ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.2.100/25 brd 10.216.2.127 scope global ens2f0
+    inet 10.216.26.15/24 brd 10.216.26.255 scope global bond1.1626
+[root@m1-gp-prod-mdw ~]#
+[root@m1-gp-prod-mdw ~]# ip route
+default via 10.216.26.254 dev bond1.1626
+10.216.2.0/25 dev ens2f0 proto kernel scope link src 10.216.2.100
+10.216.26.0/24 dev bond1.1626 proto kernel scope link src 10.216.26.15
+[root@m1-gp-prod-mdw ~]#
+[root@m1-gp-prod-mdw ~]# ifconfig | grep flags=
+bond1: flags=5187<UP,BROADCAST,RUNNING,MASTER,MULTICAST>  mtu 9000
+bond1.1626: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+eno5: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 9000
+eno6: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 9000
+ens2f0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+[root@m1-gp-prod-mdw ~]#
+[root@m1-gp-prod-mdw ~]# for var1 in $(ifconfig -a | grep flags= | awk '{ printf $1" " }') ; do printf "${var1}\t" ; ethtool ${var1} | grep -ie "Link detected" ; done
+bond0:          Link detected: no
+bond1:          Link detected: yes
+bond1.1626:             Link detected: yes
+eno1:           Link detected: no
+eno2:           Link detected: no
+eno3:           Link detected: no
+eno4:           Link detected: no
+eno5:           Link detected: yes
+eno6:           Link detected: yes
+ens2f0:         Link detected: yes
+ens2f1:         Link detected: no
+lo:             Link detected: yes
+[root@m1-gp-prod-mdw ~]#
+
+................................................................................
+
+[root@m1-datagrid01p 20190626-1711]# for var1 in $(find . -maxdepth 1 \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+./ifcfg-bond0
+DEVICE=bond0
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+IPADDR=10.216.2.52
+NETMASK=255.255.255.128
+DEFROUTE=no
+MTU=9000
+
+./ifcfg-bond1
+DEVICE=bond1
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+MTU=9000
+
+./ifcfg-bond1.1626
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1626
+DEVICE=bond1.1626
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1626
+IPADDR=10.216.26.23
+PREFIX=24
+GATEWAY=10.216.26.254
+DNS1=10.219.50.4
+DNS2=10.219.50.5
+DEFROUTE=yes
+ZONE=external
+MTU=1500
+
+./ifcfg-bond1.1764
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1764
+DEVICE=bond1.1764
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1764
+IPADDR=10.217.64.146
+PREFIX=24
+DEFROUTE=no
+ZONE=external
+MTU=9000
+
+./ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+DEVICE=em1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+
+./ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+./ifcfg-p4p1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p1
+DEVICE=p4p1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+
+./ifcfg-p4p2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p2
+DEVICE=p4p2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+./route-bond0
+10.217.100.0/23 via 10.216.2.126
+10.216.0.0/21 via 10.216.2.126
+[root@m1-datagrid01p 20190626-1711]#
+
+................................................................................
+
+
+[root@m1-datagrid01p ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+IPADDR=10.216.2.52
+NETMASK=255.255.255.128
+DEFROUTE=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1626
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1626
+DEVICE=bond1.1626
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1626
+IPADDR=10.216.26.23
+PREFIX=24
+GATEWAY=10.216.26.254
+DNS1=10.219.50.4
+DNS2=10.219.50.5
+DEFROUTE=yes
+ZONE=external
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1764
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1764
+DEVICE=bond1.1764
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1764
+IPADDR=10.217.64.146
+PREFIX=24
+DEFROUTE=no
+ZONE=external
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+DEVICE=em1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em3
+UUID=4398a00c-a8d6-4940-be1f-6fcbd04e6d3e
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em4
+UUID=9be3741c-042e-4752-b090-1c37d143ec5d
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-p4p1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p1
+DEVICE=p4p1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-p4p2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p2
+DEVICE=p4p2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+/etc/sysconfig/network-scripts/route-bond0
+10.217.100.0/23 via 10.216.2.126
+10.216.0.0/21 via 10.216.2.126
+[root@m1-datagrid01p ~]#
+
+................................................................................
+
+
+

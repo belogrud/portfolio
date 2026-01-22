@@ -1,0 +1,168 @@
+................................................................................
+
+Добрый день.
+
+ 
+
+С Zabbix 10.250.126.6 не уходят оповещения на адреса *@cpm.ru:
+
+ 
+
+Dec 27 13:22:58 vm-mvno-zbx01p sendEmail[31069]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 550 5.7.1 Unable to relay
+
+Dec 27 13:22:58 vm-mvno-zbx01p sendEmail[31069]: DEBUG => evalSMTPresponse() - Found SMTP error code: 550
+
+Dec 27 13:22:58 vm-mvno-zbx01p sendEmail[31069]: WARNING => The recipient <d.nepochatykh@cpm.ru> was rejected by the mail server, error follows:
+
+Dec 27 13:22:58 vm-mvno-zbx01p sendEmail[31069]: WARNING => Received:   550 5.7.1 Unable to relay
+
+Dec 27 13:22:58 vm-mvno-zbx01p sendEmail[31069]: ERROR => Exiting. No recipients were accepted for delivery by the mail server.
+
+[root@vm-mvno-zbx01p alertscripts]#
+
+ 
+
+ 
+
+На наши адреса отправка есть.
+
+................................................................................
+
+[root@vm-mvno-zbx01p ~]# zabbix_server --version
+zabbix_server (Zabbix) 3.4.8
+Revision 79252 3 April 2018, compilation time: Apr  3 2018 11:20:44
+
+Copyright (C) 2018 Zabbix SIA
+License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it according to
+the license. There is NO WARRANTY, to the extent permitted by law.
+[root@vm-mvno-zbx01p ~]#
+
+................................................................................
+
+[root@vm-mvno-zbx01p ~]# cat /etc/redhat-release
+CentOS Linux release 7.4.1708 (Core)
+[root@vm-mvno-zbx01p ~]#
+
+[root@vm-mvno-zbx01p ~]# cat /etc/zabbix/zabbix_server.conf | grep AlertScriptsPath
+### Option: AlertScriptsPath
+# AlertScriptsPath=${datadir}/zabbix/alertscripts
+AlertScriptsPath=/usr/lib/zabbix/alertscripts
+[root@vm-mvno-zbx01p ~]# ls -Alh /usr/lib/zabbix/alertscripts
+total 12K
+-rwxr-xr-x. 1 root root 167 May 22  2018 notify-by-nagsms.sh
+-rwxr-xr-x. 1 root root 357 Dec 27 13:21 send-email.sh
+-rwxr-xr-x. 1 root root 943 May 22  2018 sms_mfm.sh
+[root@vm-mvno-zbx01p ~]#
+
+[root@vm-mvno-zbx01p ~]# cat /usr/lib/zabbix/alertscripts/send-email.sh
+#!/bin/sh
+
+export smtpemailfrom=hlr_alarm@tinkoff.ru
+export zabbixemailto=$1
+export zabbixsubject=$2
+export zabbixbody=$3
+export smtpserver=smtp.tcsbank.ru
+export smtplogin=hlr_alarm
+export smtppass=6}2GJlO0*BUuwxb
+
+/usr/bin/sendEmail -f $smtpemailfrom -t $zabbixemailto -u $zabbixsubject -m $zabbixbody -s $smtpserver:25 -xu $smtplogin -xp $smtppass -vvv
+[root@vm-mvno-zbx01p ~]#
+
+[root@vm-mvno-zbx01p ~]# rpm -qf /usr/bin/sendEmail
+sendemail-1.56-1.el7.noarch
+[root@vm-mvno-zbx01p ~]#
+
+[root@vm-mvno-zbx01p ~]# grep -ire 'sendEmail' /var/log/
+/var/log/messages-20181230:Dec 27 13:22:51 vm-mvno-zbx01p yum[30858]: Installed: sendemail-1.56-1.el7.noarch
+/var/log/yum.log-20190101:Dec 27 13:22:51 Installed: sendemail-1.56-1.el7.noarch
+[root@vm-mvno-zbx01p ~]#
+
+
+[root@vm-mvno-zbx01p ~]# ls -Alh /var/log/maillog*
+-rw-------. 1 root root 0 Jan  7 03:27 /var/log/maillog
+-rw-------. 1 root root 0 Dec 10 03:30 /var/log/maillog-20181216
+-rw-------. 1 root root 0 Dec 16 03:14 /var/log/maillog-20181223
+-rw-------. 1 root root 0 Dec 23 03:25 /var/log/maillog-20181230
+-rw-------. 1 root root 0 Dec 30 03:45 /var/log/maillog-20190107
+[root@vm-mvno-zbx01p ~]#
+
+................................................................................
+
+[root@vm-mvno-zbx01p ~]# read -s smtppass ; export smtppass
+[root@vm-mvno-zbx01p ~]# smtpemailfrom=hlr_alarm@tinkoff.ru ; smtpserver=smtp.tcsbank.ru ; smtplogin=hlr_alarm ; /usr/bin/sendEmail -f $smtpemailfrom -t "s.belogrud@tinkoff.ru" -u "test_from_vm-mvno-zbx01
+p" -m "test_from_vm-mvno-zbx01p" -s $smtpserver:25 -xu $smtplogin -xp $smtppass -vvv
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => Connecting to smtp.tcsbank.ru:25
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => My IP address is: 10.250.126.6
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 220 ds-msk-mail1301.tcsbank.ru Microsoft ESMTP MAIL Service ready at Wed, 9 Jan 2019 12:38:35 +0300
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Found SMTP success code: 220
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: SUCCESS => Received:    220 ds-msk-mail1301.tcsbank.ru Microsoft ESMTP MAIL Service ready at Wed, 9 Jan 2019 12:38:35 +0300
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: INFO => Sending:        EHLO vm-mvno-zbx01p.tcsbank.ru
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 250-ds-msk-mail1301.tcsbank.ru Hello [10.219.0.235], 250-SIZE 52428800, 250-PIPELINING, 250-DSN, 250-ENHANCEDSTATUSCODES, 250-8BITMIME, 250-BINARYMIME, 250 CHUNKING
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Found SMTP success code: 250
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: SUCCESS => Received:    250-ds-msk-mail1301.tcsbank.ru Hello [10.219.0.235], 250-SIZE 52428800, 250-PIPELINING, 250-DSN, 250-ENHANCEDSTATUSCODES, 250-8BITMIME, 250-BINARYMIME, 250 CHUNKING
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => The remote SMTP server does NOT support TLS :(
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: NOTICE => Authentication not supported by the remote SMTP server!
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: INFO => Sending:        MAIL FROM:<hlr_alarm@tinkoff.ru>
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 250 2.1.0 Sender OK
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Found SMTP success code: 250
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: SUCCESS => Received:    250 2.1.0 Sender OK
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: INFO => Sending:        RCPT TO:<s.belogrud@tinkoff.ru>
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 250 2.1.5 Recipient OK
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Found SMTP success code: 250
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: SUCCESS => Received:    250 2.1.5 Recipient OK
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: INFO => Sending:        DATA
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 354 Start mail input; end with <CRLF>.<CRLF>
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Found SMTP success code: 354
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: SUCCESS => Received:    354 Start mail input; end with <CRLF>.<CRLF>
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: INFO => Sending message body
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: Setting content-type: text/plain
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 250 2.6.0 <397209.624151827-sendEmail@vm-mvno-zbx01p> [InternalId=3285649989867, Hostname=ds-msk-mail1313.tcsbank.ru] Queued mail for delivery
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: DEBUG => evalSMTPresponse() - Found SMTP success code: 250
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: SUCCESS => Received:    250 2.6.0 <397209.624151827-sendEmail@vm-mvno-zbx01p> [InternalId=3285649989867, Hostname=ds-msk-mail1313.tcsbank.ru] Queued mail for delivery
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: Generating a detailed exit message
+Jan 09 12:38:36 vm-mvno-zbx01p sendEmail[1650]: Email was sent successfully!  From: <hlr_alarm@tinkoff.ru> To: <s.belogrud@tinkoff.ru> Subject: [test_from_vm-mvno-zbx01p] Server: [smtp.tcsbank.ru:25]
+[root@vm-mvno-zbx01p ~]#
+
+
+
+[root@vm-mvno-zbx01p ~]# smtpemailfrom=hlr_alarm@tinkoff.ru ; smtpserver=smtp.tcsbank.ru ; smtplogin=hlr_alarm ; /usr/bin/sendEmail -f $smtpemailfrom -t "d.nepochatykh@cpm.ru" -u "test_from_vm-mvno-zbx01p
+" -m "test_from_vm-mvno-zbx01p" -s $smtpserver:25 -xu $smtplogin -xp $smtppass -vvv
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => Connecting to smtp.tcsbank.ru:25
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => My IP address is: 10.250.126.6
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 220 ds-msk-mail1302.tcsbank.ru Microsoft ESMTP MAIL Service ready at Wed, 9 Jan 2019 12:43:11 +0300
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Found SMTP success code: 220
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: SUCCESS => Received:    220 ds-msk-mail1302.tcsbank.ru Microsoft ESMTP MAIL Service ready at Wed, 9 Jan 2019 12:43:11 +0300
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: INFO => Sending:        EHLO vm-mvno-zbx01p.tcsbank.ru
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 250-ds-msk-mail1302.tcsbank.ru Hello [10.219.0.226], 250-SIZE 52428800, 250-PIPELINING, 250-DSN, 250-ENHANCEDSTATUSCODES, 250-8BITMIME, 250-BINARYMIME, 250 CHUNKING
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Found SMTP success code: 250
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: SUCCESS => Received:    250-ds-msk-mail1302.tcsbank.ru Hello [10.219.0.226], 250-SIZE 52428800, 250-PIPELINING, 250-DSN, 250-ENHANCEDSTATUSCODES, 250-8BITMIME, 250-BINARYMIME, 250 CHUNKING
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => The remote SMTP server does NOT support TLS :(
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: NOTICE => Authentication not supported by the remote SMTP server!
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: INFO => Sending:        MAIL FROM:<hlr_alarm@tinkoff.ru>
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 250 2.1.0 Sender OK
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Found SMTP success code: 250
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: SUCCESS => Received:    250 2.1.0 Sender OK
+Jan 09 12:43:10 vm-mvno-zbx01p sendEmail[4794]: INFO => Sending:        RCPT TO:<d.nepochatykh@cpm.ru>
+Jan 09 12:43:15 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Checking for SMTP success or error status in the message: 550 5.7.1 Unable to relay
+Jan 09 12:43:15 vm-mvno-zbx01p sendEmail[4794]: DEBUG => evalSMTPresponse() - Found SMTP error code: 550
+Jan 09 12:43:15 vm-mvno-zbx01p sendEmail[4794]: WARNING => The recipient <d.nepochatykh@cpm.ru> was rejected by the mail server, error follows:
+Jan 09 12:43:15 vm-mvno-zbx01p sendEmail[4794]: WARNING => Received:    550 5.7.1 Unable to relay
+Jan 09 12:43:15 vm-mvno-zbx01p sendEmail[4794]: ERROR => Exiting. No recipients were accepted for delivery by the mail server.
+[root@vm-mvno-zbx01p ~]#
+
+
+................................................................................
+
+
+https://habr.com/post/267523/
+Настройка отправки почтовых уведомлений в Zabbix на CentOS 7
+
+
+https://serveradmin.ru/nastroyka-email-opoveshheniy-v-zabbix/
+Отправка email уведомлений в zabbix 2.4
+
+
+................................................................................
+
+

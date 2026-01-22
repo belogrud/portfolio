@@ -1,0 +1,205 @@
+
+
+
+................................................................................
+................................................................................
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   938981
+Название    №938981
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  15.07.2016 12:57
+Дата регистрации    15.07.2016 12:57
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день.
+
+Необходимо на серверах vm-iib-tst01, vm-iib-tst02, vm-wmq-tst01, vm-wmq-tst02 смонтировать шару:
+
+\\v6250-ds\integration_esb$<file:///\\v6250-ds\integration_esb$> в точку /mnt/integration_esb
+
+Дать права на чтение/запись пользователю mqm.
+uid=517(mqm) gid=517(mqm)
+
+Спасибо.
+
+С уважением, Сергей.
+Текущее состояние   Принят на обработку
+Автор   system
+Ответственный за запрос Белогруд Сергей / unix-admins
+
+................................................................................
+
+
+#SD 938981
+v6250-ds:/vol/common/all_docs/integration_esb   /mnt/integration_esb                    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+~
+~
+~
+"/etc/fstab" 39L, 2203C written
+[root@vm-iib-tst01 ~]# mount /mnt/integration_esb
+[root@vm-iib-tst01 ~]# df -h !$
+df -h /mnt/integration_esb
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+                       14T   12T  2.7T  82% /mnt/integration_esb
+[root@vm-iib-tst01 ~]#
+
+................................................................................
+
+[root@vm-iib-tst02 ~]# mount /mnt/integration_esb
+[root@vm-iib-tst02 ~]# df -h !$
+df -h /mnt/integration_esb
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+                       14T   12T  2.7T  82% /mnt/integration_esb
+[root@vm-iib-tst02 ~]#
+
+[root@vm-iib-tst02 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.33.11/24 brd 10.216.33.255 scope global eth0
+[root@vm-iib-tst02 ~]#
+
+[root@vm-iib-tst02 ~]# ip route
+10.216.33.0/24 dev eth0  proto kernel  scope link  src 10.216.33.11
+169.254.0.0/16 dev eth0  scope link  metric 1002
+default via 10.216.33.254 dev eth0
+[root@vm-iib-tst02 ~]#
+
+................................................................................
+
+[support@centos00 2006.07.27]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@vm-wmq-tst01
+Last login: Mon Jul 18 15:32:50 2016 from tcs4500.tcsbank.ru
+[bsv@vm-wmq-tst01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-wmq-tst01 ~]# showmount -e v6250-ds | grep -e "/vol/common/all_docs/integration_esb"
+^C
+[root@vm-wmq-tst01 ~]#
+
+[root@vm-wmq-tst01 ~]# mount /mnt/integration_esb
+mount.nfs: backgrounding "v6250-ds:/vol/common/all_docs/integration_esb"
+mount.nfs: mount options: "bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9"
+[root@vm-wmq-tst01 ~]#
+
+[root@vm-wmq-tst01 ~]# showmount -e v6250-ds | grep -e "/vol/common/all_docs/integration_esb"
+clnt_create: RPC: Port mapper failure - Timed out
+[root@vm-wmq-tst01 ~]#
+
+................................................................................
+
+[root@vm-wmq-tst02 ~]# mount /mnt/integration_esb
+mount.nfs: backgrounding "v6250-ds:/vol/common/all_docs/integration_esb"
+mount.nfs: mount options: "bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9"
+[root@vm-wmq-tst02 ~]#
+
+[root@vm-wmq-tst02 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    inet 10.216.33.42/24 brd 10.216.33.255 scope global eth0
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    inet 10.217.64.205/24 brd 10.217.64.255 scope global eth1
+[root@vm-wmq-tst02 ~]# ip route
+10.216.33.0/24 dev eth0  proto kernel  scope link  src 10.216.33.42
+10.217.64.0/24 dev eth1  proto kernel  scope link  src 10.217.64.205
+169.254.0.0/16 dev eth0  scope link  metric 1002
+169.254.0.0/16 dev eth1  scope link  metric 1003
+default via 10.216.33.254 dev eth0
+[root@vm-wmq-tst02 ~]#
+
+................................................................................
+
+Дата
+Комментарий Автор
+18.07.2016 17:42    Смонтирован nfs-ресурс на серверах vm-iib-tst01, vm-iib-tst02.
+
+[root@vm-iib-tst01 ~]# df -h /mnt/integration_esb
+Filesystem Size Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+14T 12T 2.7T 82% /mnt/integration_esb
+[root@vm-iib-tst01 ~]#
+
+[root@vm-iib-tst02 ~]# df -h /mnt/integration_esb
+Filesystem Size Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+14T 12T 2.7T 82% /mnt/integration_esb
+[root@vm-iib-tst02 ~]#
+
+
+С серверов vm-wmq-tst01, vm-wmq-tst02 доступ к nfs-ресурсу отсутствует.
+
+[root@vm-wmq-tst01 ~]# showmount -e v6250-ds | grep -e "/vol/common/all_docs/integration_esb"
+clnt_create: RPC: Port mapper failure - Timed out
+[root@vm-wmq-tst01 ~]#
+
+[root@vm-wmq-tst02 ~]# mount -v /mnt/integration_esb
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: portmap query failed: RPC: Timed out
+mount.nfs: backgrounding "v6250-ds:/vol/common/all_docs/integration_esb"
+mount.nfs: mount options: "bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9"
+[root@vm-wmq-tst02 ~]#  Белогруд Сергей В
+15.07.2016 17:07    v6250-ds:/vol/common/all_docs/integration_esb
+
+права серверам прописал, если прав у пользователя не будет - на win-admins добавить права для пользователя unix_mqm Мялин Дмитрий
+
+................................................................................
+
+[root@vm-wmq-tst01 ~]# df -h /mnt/integration_esb
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+                       14T   12T  2.5T  83% /mnt/integration_esb
+[root@vm-wmq-tst01 ~]#
+
+[root@vm-wmq-tst02 ~]# df -h !$
+df -h /mnt/integration_esb
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+                       14T   12T  2.5T  83% /mnt/integration_esb
+[root@vm-wmq-tst02 ~]#
+
+................................................................................
+
+Дата
+Комментарий Автор
+18.07.2016 18:30    После предоставления доступа администраторами ЛВС, nfs-ресурсы на оставшихся двух серверах смонтированы.
+
+[root@vm-wmq-tst01 ~]# df -h /mnt/integration_esb
+Filesystem Size Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+14T 12T 2.5T 83% /mnt/integration_esb
+[root@vm-wmq-tst01 ~]#
+
+[root@vm-wmq-tst02 ~]# df -h /mnt/integration_esb
+Filesystem Size Used Avail Use% Mounted on
+v6250-ds:/vol/common/all_docs/integration_esb
+14T 12T 2.5T 83% /mnt/integration_esb
+[root@vm-wmq-tst02 ~]#
+
+Белогруд Сергей В
+
+................................................................................
+
+[root@vm-wmq-tst01 ~]# su - mqm
+[18:31:28] mqm@vm-wmq-tst01:~ $ ls /mnt/integration_esb/
+1 (tcsbank.rucommon) (O) - Ярлык.lnk  admins  books  developer  tree3.far
+[18:31:36] mqm@vm-wmq-tst01:~ $ touch /mnt/integration_esb/test1.tmp
+[18:31:49] mqm@vm-wmq-tst01:~ $ rm !$
+rm /mnt/integration_esb/test1.tmp
+[18:31:53] mqm@vm-wmq-tst01:~ $
+
+................................................................................
+
+
+
+
+

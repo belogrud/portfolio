@@ -1,0 +1,438 @@
+
+
+................................................................................
+
+
+
+From: Ovchinnikov Dmitriy Sergeevich
+Sent: Friday, April 08, 2016 2:09 PM
+To: unix-admins
+Cc: dwh-adm
+Subject: Подозрение на неисправный диск
+
+Добрый день!
+Коллеги, в последнее время заметна сильная деградация производительности на тесте GP. Sdw7 выделяется на фоне остальных серверов, на картинке в верхней части показан % нагрузки только на 1 сервер, в нижней части на всех серверах кластера, за одинаковый промежуток времени.
+Можете пожалуйста посмотреть ошибки на дисках и динамику роста, если найдём подозреваемого предлагаю заменить его взяв из ZIP.
+
+
+
+С уважением,
+
+Дмитрий Овчинников
+Администратор DWH
+
+................................................................................
+................................................................................
+
+[root@m1-gp-tst-sdw7 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ31450H6B
+        UUID: 39333835-3431-5A43-3331-343530483642
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-tst-sdw7 ~]#
+
+
+[root@m1-gp-tst-sdw7 ~]# lsscsi -g
+[0:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sda   /dev/sg1
+[0:3:0:0]    storage HP       P410i            6.64  -         /dev/sg0
+[1:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sdb   /dev/sg3
+[1:3:0:0]    storage HP       P410             6.64  -         /dev/sg2
+[root@m1-gp-tst-sdw7 ~]#
+
+[root@m1-gp-tst-sdw7 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg3 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:        EA01PB80VHD21133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0    2200268.329           0
+write:         0        0         0         0          0     779856.435           0
+Non-medium error count:     6768
+
+Count: 1
+Serial number:        EA01PB80VHC01133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       46         0         0          0    2182233.293           0
+write:         0        0         0         0          0     782697.108           0
+Non-medium error count:     6768
+
+Count: 2
+Serial number:        EA01PB80V5YE1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        4         0         0          0    2133363.904           0
+write:         0        0         0         0          0     781939.516           0
+Non-medium error count:     6767
+
+Count: 3
+Serial number:        EA01PB80UYFA1132
+Elements in grown defect list: 141
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    27008         0        18          0    2158933.207         147
+write:         0        0         0         0          0     798776.831           0
+Non-medium error count:     6769
+
+Count: 4
+Serial number:        EA01PB80VHCR1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0    2102946.090           0
+write:         0        0         0         0          0     781715.479           0
+Non-medium error count:     6767
+
+Count: 5
+Serial number:        EA01PB80VHCH1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0    2164158.268           0
+write:         0        0         0         0          0     780149.714           0
+Non-medium error count:     6767
+
+Count: 6
+Serial number:        EA01PB80VHCU1133
+Elements in grown defect list: 2
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      660         0         1          0    2189044.985           1
+write:         0        0         0         0          0     781124.775           0
+Non-medium error count:     6767
+
+Count: 7
+Serial number:        EA01PB80VHBN1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        4         0         0          0    2279432.805           0
+write:         0        0         0         0          0     787405.675           0
+Non-medium error count:     6767
+[root@m1-gp-tst-sdw7 ~]#
+
+[root@m1-gp-tst-sdw7 20160408-1557]# smartctl -x -d cciss,3 /dev/sg3 | tee -a $(pwd)/$(date +%Y%m%d-%H%M).smartctl.cciss.3.txt
+[root@m1-gp-tst-sdw7 20160408-1557]# smartctl -x -d cciss,6 /dev/sg3 | tee -a $(pwd)/$(date +%Y%m%d-%H%M).smartctl.cciss.6.txt
+
+................................................................................
+
+[root@m1-gp-tst-sdw7 ~]# hpssacli controller all diag file=$(pwd)/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip
+
+   Generating diagnostic report...done
+
+[root@m1-gp-tst-sdw7 ~]#
+
+#   Here we can accurately define, that slot=1 belongs /dev/sdb block device.
+#
+[root@m1-gp-tst-sdw7 ~]# hpssacli controller slot=1 logicaldrive 1 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      Logical Drive: 1
+         Size: 3.8 TB
+         Fault Tolerance: 5
+         Heads: 255
+         Sectors Per Track: 32
+         Cylinders: 65535
+         Strip Size: 256 KB
+         Full Stripe Size: 1792 KB
+         Status: OK
+         Caching:  Enabled
+         Parity Initialization Status: Initialization Completed
+         Unique Identifier: 600508B1001C8E56BB3352760A7BB7AE
+         Disk Name: /dev/sdb
+         Mount Points: /duet 97.7 GB Partition Number 2, /data2 3.7 TB Partition Number 3
+         OS Status: LOCKED
+         Logical Drive Label: A61FEE02PACCRID11320D0W9B83
+         Drive Type: Data
+         LD Acceleration Method: Controller Cache
+
+[root@m1-gp-tst-sdw7 ~]#
+
+
+[root@m1-gp-tst-sdw7 20160408-1557]# hpacucli controller slot=1 show config detail | grep -e Slot -e Array -e physicaldrive -e Serial\ Number
+Smart Array P410 in Slot 1
+   Slot: 1
+   Serial Number: PACCRID11320D0W
+   Cache Serial Number: PBCDF0CRH1A0P6
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:5
+         Serial Number: EA01PB80VHD21133
+      physicaldrive 1I:1:6
+         Serial Number: EA01PB80VHC01133
+      physicaldrive 1I:1:7
+         Serial Number: EA01PB80V5YE1133
+      physicaldrive 1I:1:8
+         Serial Number: EA01PB80UYFA1132
+      physicaldrive 2I:1:1
+         Serial Number: EA01PB80VHCR1133
+      physicaldrive 2I:1:2
+         Serial Number: EA01PB80VHCH1133
+      physicaldrive 2I:1:3
+         Serial Number: EA01PB80VHCU1133
+      physicaldrive 2I:1:4
+         Serial Number: EA01PB80VHBN1133
+[root@m1-gp-tst-sdw7 20160408-1557]#
+
+[root@m1-gp-tst-sdw7 20160408-1557]# hpacucli controller slot=1 physicaldrive 1I:1:8 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 1I:1:8
+         Port: 1I
+         Box: 1
+         Bay: 8
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Rotational Speed: 10000
+         Firmware Revision: HPD6
+         Serial Number: EA01PB80UYFA1132
+         Model: HP      EG0600FBDSR
+         Current Temperature (C): 32
+         Maximum Temperature (C): 38
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@m1-gp-tst-sdw7 20160408-1557]#
+
+[root@m1-gp-tst-sdw7 20160408-1557]# hpacucli controller slot=1 physicaldrive 2I:1:3 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 2I:1:3
+         Port: 2I
+         Box: 1
+         Bay: 3
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Rotational Speed: 10000
+         Firmware Revision: HPD6
+         Serial Number: EA01PB80VHCU1133
+         Model: HP      EG0600FBDSR
+         Current Temperature (C): 29
+         Maximum Temperature (C): 34
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@m1-gp-tst-sdw7 20160408-1557]#
+
+................................................................................
+................................................................................
+
+
+From: Ovchinnikov Dmitriy Sergeevich
+Sent: Friday, April 08, 2016 3:50 PM
+To: Belogrud Sergey Vladimirovich
+Cc: dwh-adm; unix-admins
+Subject: RE: Подозрение на неисправный диск
+
+Пока оставим как есть, посмотрим какая ситуация будет на выходных и понедельник+ сколько ошибок накопится за это время. А дальше уже будем принимать решение. Спасибо за информацию
+
+
+Дмитрий Овчинников
+Администратор DWH
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, April 08, 2016 3:46 PM
+To: Ovchinnikov Dmitriy Sergeevich <d.ovchinnikov@tinkoff.ru>
+Cc: dwh-adm <dwh-adm@tinkoff.ru>; unix-admins <unix-admins@tinkoff.ru>
+Subject: RE: Подозрение на неисправный диск
+
+Добрый день.
+
+Возможных кандидатов на замену может быть несколько.
+Один из кандидатов выделяется более другого.
+
+Count: 0
+Serial number:        EA01PB80VHD21133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0    2200268.329           0
+write:         0        0         0         0          0     779856.435           0
+Non-medium error count:     6768
+
+Count: 1
+Serial number:        EA01PB80VHC01133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       46         0         0          0    2182233.293           0
+write:         0        0         0         0          0     782697.108           0
+Non-medium error count:     6768
+
+Count: 2
+Serial number:        EA01PB80V5YE1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        4         0         0          0    2133363.904           0
+write:         0        0         0         0          0     781939.516           0
+Non-medium error count:     6767
+
+Count: 3
+Serial number:        EA01PB80UYFA1132
+Elements in grown defect list: 141
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    27008         0        18          0    2158933.207         147
+write:         0        0         0         0          0     798776.831           0
+Non-medium error count:     6769
+
+Count: 4
+Serial number:        EA01PB80VHCR1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0    2102946.090           0
+write:         0        0         0         0          0     781715.479           0
+Non-medium error count:     6767
+
+Count: 5
+Serial number:        EA01PB80VHCH1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0    2164158.268           0
+write:         0        0         0         0          0     780149.714           0
+Non-medium error count:     6767
+
+Count: 6
+Serial number:        EA01PB80VHCU1133
+Elements in grown defect list: 2
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      660         0         1          0    2189044.985           1
+write:         0        0         0         0          0     781124.775           0
+Non-medium error count:     6767
+
+Count: 7
+Serial number:        EA01PB80VHBN1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        4         0         0          0    2279432.805           0
+write:         0        0         0         0          0     787405.675           0
+Non-medium error count:     6767
+
+Я могу открыть кейс в HP с просьбой продиагностировать состояние дисков на сервере и заменить один или более дисков, на которых замечены ошибки.
+Замечу, что, как я помню, последние наши попытки менять подобные диски встречали серьёзное сопротивление техподдержки HP.  Техподдержка HP отказывалась менять подобные диски, даже когда наш диалог доходил в определённом смысле до скандала. У Вас должны быть в почте эти диалоги.
+
+Диском из ЗИП заменить можно, но тогда встанет вопрос, что делать с условно неисправным диском?
+Варианты уже давно были определены:
+1. Если техподдержка HP согласится предоставить новый исправный, то вопросов нет.
+2. Если техподдержка HP не согласится предоставить новый исправный, то вариантов два:
+2.1. Умышленно сделать диск неисправным и обратиться к техподдержке HP с просьбой заменить уже неисправный диск. Этот вариант ещё ни разу не был опробован.
+2.2. Кто-то купит новый диск.
+3. Альтернативный Ваш вариант решения.
+
+Каково будет Ваше предложение?
+
+................................................................................
+................................................................................
+
+#
+# Mon Apr 25 11:08:17 MSK 2016
+#
+
+
+[root@m1-gp-tst-sdw7 20160408-1557]# hpssacli controller all diag file=$(pwd)/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip
+[root@m1-gp-tst-sdw7 20160408-1557]# smartctl -x -d cciss,3 /dev/sg3 | tee -a $(pwd)/$(date +%Y%m%d-%H%M).smartctl.cciss.3.txt
+[root@m1-gp-tst-sdw7 20160408-1557]# smartctl -x -d cciss,6 /dev/sg3 | tee -a $(pwd)/$(date +%Y%m%d-%H%M).smartctl.cciss.6.txt
+
+[root@m1-gp-tst-sdw7 20160408-1557]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg3 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done | tee -a $(pwd)/$(date +%Y%m%d-%H%M).smartctl.cciss.errors.txt
+
+Count: 0
+Serial number:        EA01PB80VHD21133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0    2233681.424           0
+write:         0        0         0         0          0     799369.036           0
+Non-medium error count:     6770
+
+Count: 1
+Serial number:        EA01PB80VHC01133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       46         0         0          0    2214454.044           0
+write:         0        0         0         0          0     802092.448           0
+Non-medium error count:     6770
+
+Count: 2
+Serial number:        EA01PB80V5YE1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        4         0         0          0    2164305.847           0
+write:         0        0         0         0          0     801270.085           0
+Non-medium error count:     6769
+
+Count: 3
+Serial number:        EA01PB80UYFA1132
+Elements in grown defect list: 141
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    27444         0        18          0    2188627.124         147
+write:         0        0         0         0          0     818778.146           0
+Non-medium error count:     6771
+
+Count: 4
+Serial number:        EA01PB80VHCR1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        1         0         0          0    2132316.226           0
+write:         0        0         0         0          0     801293.827           0
+Non-medium error count:     6769
+
+Count: 5
+Serial number:        EA01PB80VHCH1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0    2195909.407           0
+write:         0        0         0         0          0     799523.516           0
+Non-medium error count:     6769
+
+Count: 6
+Serial number:        EA01PB80VHCU1133
+Elements in grown defect list: 2
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      662         0         1          0    2222498.575           1
+write:         0        0         0         0          0     800484.723           0
+Non-medium error count:     6769
+
+Count: 7
+Serial number:        EA01PB80VHBN1133
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        4         0         0          0    2314154.672           0
+write:         0        0         0         0          0     806756.165           0
+Non-medium error count:     6769
+[root@m1-gp-tst-sdw7 20160408-1557]#
+
+
+[root@m1-gp-tst-sdw7 20160408-1557]# ll                                                                                                                                                              total 672
+-rw-r--r-- 1 root root 317037 Apr  8 15:57 20160408-1550.hpssacli.diag.m1-gp-tst-sdw7.tcsbank.ru.zip
+-rw-r--r-- 1 root root   9506 Apr  8 15:59 20160408-1559.smartctl.cciss.3.txt
+-rw-r--r-- 1 root root   4251 Apr  8 16:00 20160408-1600.smartctl.cciss.6.txt
+-rw-r--r-- 1 root root 319910 Apr 25 11:05 20160425-1105.hpssacli.diag.m1-gp-tst-sdw7.tcsbank.ru.zip
+-rw-r--r-- 1 root root   8556 Apr 25 11:05 20160425-1105.smartctl.cciss.3.txt
+-rw-r--r-- 1 root root   4251 Apr 25 11:06 20160425-1106.smartctl.cciss.6.txt
+-rw-r--r-- 1 root root   2938 Apr 25 11:07 20160425-1107.smartctl.cciss.errors.txt
+[root@m1-gp-tst-sdw7 20160408-1557]#
+
+
+................................................................................
+................................................................................
+

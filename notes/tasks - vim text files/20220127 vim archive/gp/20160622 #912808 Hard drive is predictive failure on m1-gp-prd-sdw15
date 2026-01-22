@@ -1,0 +1,273 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   912808
+Название    №912808
+Приоритет   Низкий
+Класс обслуживания  24x7
+Дата и время обращения  22.06.2016 18:57
+Дата регистрации    22.06.2016 18:57
+Тип запроса Nagios запрос
+Категория
+Критичность 3 - Высокая
+Срочность   Высокая
+Описание запроса
+** PROBLEM Service Alert: m1-gp-prd-sdw15/HP System Health Application is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: HP System Health Application
+Host: m1-gp-prd-sdw15
+Address: 10.216.4.15
+State: CRITICAL
+
+Date/Time: Wed Jun 22 18:56:29 MSK 2016
+
+Additional Info:
+
+CRITICAL - physical drive 2:7 is degraded, da controller 2 in slot 2 needs attention, System: proliant dl380p gen8, S/N: CZ23290BNP, ROM: P70 08/02/2014
+
+................................................................................
+
+
+
+
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw15 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BNP
+        UUID: 32333536-3030-5A43-3233-323930424E50
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-prd-sdw15 ~]#
+
+[root@m1-gp-prd-sdw15 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.6 (Santiago)
+[root@m1-gp-prd-sdw15 ~]#
+
+[root@m1-gp-prd-sdw15 ~]# hpssacli controller slot=2 show config
+
+Smart Array P420 in Slot 2                (sn: PDSXK0ARH4W2UL)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (2.2 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, Predictive Failure)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 5001438027631A8F)
+
+[root@m1-gp-prd-sdw15 ~]#
+
+[root@m1-gp-prd-sdw15 ~]# hpssacli controller slot=2 array a physicaldrive 1I:1:4 show detail
+
+Smart Array P420 in Slot 2
+
+   array A
+
+      physicaldrive 1I:1:4
+         Port: 1I
+         Box: 1
+         Bay: 4
+         Status: Predictive Failure
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number: KNH9GR1F
+         Model: HP      EG0600FBVFP
+         Current Temperature (C): 30
+         Maximum Temperature (C): 39
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Drive Authentication Status: OK
+         Carrier Application Version: 11
+         Carrier Bootloader Version: 6
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-prd-sdw15 ~]# hpssacli ctrl all diag file=/tmp/20160622-1913.m1-gp-prd-sdw15.hpssacli.diag.zip
+
+   Generating diagnostic report...done
+
+[root@m1-gp-prd-sdw15 ~]#
+
+[root@m1-gp-prd-sdw15 ~]# chown bsv:bsv /tmp/20160622-1913.m1-gp-prd-sdw15.hpssacli.diag.zip
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-gp-prd-sdw15:/tmp/20160622-1913.m1-gp-prd-sdw15.hpssacli.diag.zip ~/mnt/share/20160622-1923.m1-gp-prd-sdw15/
+Warning: Permanently added 'm1-gp-prd-sdw15,10.216.4.15' (RSA) to the list of known hosts.
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+Your case was successfully submitted. Please note your Case ID: 5309753739 for future reference.
+An email confirmation will be sent to the case contact. HP will contact you to begin work on your problem based on your contract or warranty coverage.    Clicking image will open a new window displaying help information.
+Add attachments to case:    Clicking image will open a new window displaying help information.
+Click this link to send attachment to gsd_csc_case_mngmt@hpe.com(Maximum size is 10 MB)
+Case information
+Case ID:    5309753739
+Case title:
+Hard disk drive predictive failure
+Severity    2-Critical Degraded
+Service Agreement ID:   107857825291
+Product serial number:  CZ23290BNP
+Product number: 653200-B21
+Submitted:  6/22/2016 5:48:01 PM
+Last updated:   6/22/2016 5:48:01 PM
+Source: Web
+Case status:    Received by HP
+Case details
+Operating system/version:   Red Hat Enterprise Linux Server release 6.6 (Santiago)
+Product:    ProLiant DL Servers
+Product vendor:
+Problem description:
+Здравствуйте.
+Необходимо заменить неисправный HDD на новый.
+При необходимости выгрузки дополнительных данных, пожалуйста сообщите реквизиты доступа к Вашему ftp-порталу.
+
+Присутствие инженера HP для замены детали не требуется.
+
+Доставить новую деталь можно по адресу:
+123060, г. Москва, ул. 1-й Волоколамский проезд, д.10, стр.1. (бизнес-центр Диапазон).
+Troubleshooting steps taken:
+[root@m1-gp-prd-sdw15 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+Manufacturer: HP
+Product Name: ProLiant DL380p Gen8
+Version: Not Specified
+Serial Number: CZ23290BNP
+UUID: 32333536-3030-5A43-3233-323930424E50
+Wake-up Type: Power Switch
+SKU Number: 653200-B21
+Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+Status: No errors detected
+
+[root@m1-gp-prd-sdw15 ~]#
+
+[root@m1-gp-prd-sdw15 ~]# hpssacli controller slot=2 show config
+
+Smart Array P420 in Slot 2 (sn: PDSXK0ARH4W2UL)
+
+
+Internal Drive Cage at Port 1I, Box 1, OK
+
+Internal Drive Cage at Port 2I, Box 1, OK
+array A (SAS, Unused Space: 0 MB)
+
+
+logicaldrive 1 (2.2 TB, RAID 1+0, OK)
+
+physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, Predictive Failure)
+physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380 (WWID: 5001438027631A8F)
+
+[root@m1-gp-prd-sdw15 ~]#
+
+[root@m1-gp-prd-sdw15 ~]# hpssacli controller slot=2 array a physicaldrive 1I:1:4 show detail
+
+Smart Array P420 in Slot 2
+
+array A
+
+physicaldrive 1I:1:4
+Port: 1I
+Box: 1
+Bay: 4
+Status: Predictive Failure
+Drive Type: Data Drive
+Interface Type: SAS
+Size: 600 GB
+Drive exposed to OS: False
+Native Block Size: 512
+Rotational Speed: 10000
+Firmware Revision: HPDC
+Serial Number: KNH9GR1F
+Model: HP EG0600FBVFP
+Current Temperature (C): 30
+Maximum Temperature (C): 39
+PHY Count: 2
+PHY Transfer Rate: 6.0Gbps, Unknown
+Drive Authentication Status: OK
+Carrier Application Version: 11
+Carrier Bootloader Version: 6
+Sanitize Erase Supported: False
+
+
+[root@m1-gp-prd-sdw15 ~]#
+Contact & equipment location information
+Contact
+Equipment
+First name: Sergey
+Last name:  Belogrud    Equipment contact phone:    +79150464278
+Phone number:   +79150464278 2173   Company name:   TCS Bank
+Alternate Phone:
++79150464278    Address line 1: ул. 1-й Волоколамский проезд, д.10. строение 1. Бизнес-центр Диапазон
+Email address:  s.belogrud@tinkoff.ru
+City/Town:  г Москва
+State/Province: Москва
+Zip/Postal code:    123060
+Country/Region: RUSSIA
+
+Contact (2)
+First name: Leonov
+Last name:  Aleksey
+Phone number:   +7495648100 2536
+Alternate Phone:
++79096319617
+Email address:  a.leonov@tinkoff.ru
+
+................................................................................
+................................................................................
+
+

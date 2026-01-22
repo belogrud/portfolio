@@ -1,0 +1,232 @@
+
+................................................................................
+
+ запроса
+[редактировать критичность]
+Номер   682780
+Название    №682780
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  30.12.2015 20:12
+Дата регистрации    30.12.2015 20:12
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Для мониторинга канала между эквайринговым и эмитентским ONLINE требуется создать новый алерт на базе ONLINE4
+
+ONLINE4 =
+(DESCRIPTION =
+(ADDRESS = (PROTOCOL = TCP)(HOST = 10.217.50.76)(PORT = 1522))
+(CONNECT_DATA =
+(SERVER = DEDICATED)
+(SERVICE_NAME = ONLINE4)
+)
+)
+
+Описание алерта:
+
+Пользователь: TCS_MONITOR
+Пароль: прежний
+Имя view: TCTDBS.TCS_MONITOR_ONUS
+Имя алерта: ONLINE - ON-US ACQUIRING
+Интервал опроса: 1 минута
+Список оповещения: Как у alert ONLINE - MC NSPC + Болдырев Алексей, +79853423309
+Уровень оповещения: 0 - OK, в случае появления другог сообщения - SMS с названием проверки и полученным текстом
+
+Болдырев Алексей
+Отдел фронтальных систем
+Управление Процессинга и Технологий
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Болдырев Алексей
+Соглашение  Базовое соглашение
+Сервис  Другое
+Контактное лицо Болдырев Алексей
+Контактный e-mail   a.boldyrev@tinkoff.ru
+Контактные телефоны 79853423309, 2608
+
+................................................................................
+
+[root@vm-dbamon01 ~]# cd /opt/TCS/scripts/nagios/plugins/online4/
+[root@vm-dbamon01 online4]# ls -A1
+online4-check_tcs_mon_c2cnoresponses.sh
+online4-check_tcs_mon_c2cnoresponses.sql
+online4-check_tcs_monitor_00_rc.sh
+online4-check_tcs_monitor_00_rc.sql
+online4-check_tcs_monitor_01_rc.sh
+online4-check_tcs_monitor_01_rc.sql
+online4-check_tcs_monitor_acquring.sh
+online4-check_tcs_monitor_acquring.sql
+online4-check_tcs_monitor_auth_ucs.sh
+online4-check_tcs_monitor_auth_ucs.sql
+online4-check_tcs_monitor_bad_rc.sh
+online4-check_tcs_monitor_bad_rc.sql
+online4-check_tcs_monitor_c2c_acquring.sh
+online4-check_tcs_monitor_c2c_acquring.sql
+online4-check_tcs_monitor_debit.sh
+online4-check_tcs_monitor_debit.sql
+online4-check_tcs_monitor_ecom_acquring.sh
+online4-check_tcs_monitor_ecom_acquring.sql
+online4-check_tcs_monitoring_acq_nspc_mc.sh
+online4-check_tcs_monitoring_acq_nspc_mc.sql
+online4-check_tcs_monitoring_auth_dhi.sh
+online4-check_tcs_monitoring_auth_dhi.sql
+online4-check_tcs_monitoring_auth_mc_nspc.sh
+online4-check_tcs_monitoring_auth_mc_nspc.sql
+online4-check_tcs_monitoring_auth_mc.sh
+online4-check_tcs_monitoring_auth_mc.sql
+online4-check_tcs_monitoring_auth_nspc.sh
+online4-check_tcs_monitoring_auth_nspc.sql
+online4-check_tcs_monitoring_auth_visa.sh
+online4-check_tcs_monitoring_auth_visa.sql
+online4-check_tcs_monitoring_sms_auth_queue.sh
+online4-check_tcs_monitoring_sms_auth_queue.sql
+online4-check_tcs_monitor_mc_nspc.sh
+online4-check_tcs_monitor_mc_nspc.sql
+online4-check_tcs_monitor_mc.sh
+online4-check_tcs_monitor_mc.sql
+online4-check_tcs_monitor_qtbl_caoverride.sh
+online4-check_tcs_monitor_qtbl_caoverride.sql
+online4-check_tcs_monitor_sky_express.sh
+online4-check_tcs_monitor_sky_express.sql
+online4-check_tcs_monitor_tcs_tinkoff_1.sh
+online4-check_tcs_monitor_tcs_tinkoff_1.sql
+online4-check_tcs_monitor_visa_nspc.sh
+online4-check_tcs_monitor_visa_nspc.sql
+online4-check_tcs_monitor_visa.sh
+online4-check_tcs_monitor_visa.sql
+[root@vm-dbamon01 online4]#
+
+
+
+................................................................................
+
+#   For example.
+[root@vm-vol-nag01t nagios]# vim ./objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             ONLINE - MC NSPC
+        check_command                   check_nrpe!check_tcs_monitoring_auth_mc_nspc
+        normal_check_interval           1
+        first_notification_delay        0
+        contact_groups                  empty-group
+        contacts                        m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           5
+}
+
+................................................................................
+
+[root@vm-dbamon01 online4]# ls -A1 | grep mc_nspc
+online4-check_tcs_monitoring_auth_mc_nspc.sh
+online4-check_tcs_monitoring_auth_mc_nspc.sql
+online4-check_tcs_monitor_mc_nspc.sh
+online4-check_tcs_monitor_mc_nspc.sql
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# cp online4-check_tcs_monitor_01_rc.sh online4-check_tcs_monitor_onus.sh
+
+
+[root@vm-dbamon01 online4]# cat online4-check_tcs_monitor_onus.sh
+#!/bin/bash
+
+SQL_QUERY_HOST='db-online4-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='ONLINE4'
+SQL_QUERY_USER='tcs_monitor'
+SQL_QUERY_PASSWORD='monitor_1'
+
+SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+SQL_QUERY_FILE=$SQL_QUERY_DIR/online4/online4-check_tcs_monitor_onus.sql
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+export ORACLE_HOME=/opt/oracle/products/11g/client
+export PATH=$PATH:/$ORACLE_HOME/bin
+
+RESULT=$(echo "exit" | sqlplus -s $SQL_QUERY_USER/$SQL_QUERY_PASSWORD@\"$SQL_QUERY_HOST:$SQL_QUERY_PORT/$SQL_QUERY_BASE\" @$SQL_QUERY_FILE)
+
+if [ "$RESULT" = 0 ]; then
+  echo "Connection OK. Result=$RESULT"
+  exit $STATE_OK
+else
+  echo "ERROR. Result=$RESULT"
+  exit $STATE_CRITICAL
+fi
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# cp online4-check_tcs_monitor_01_rc.sql online4-check_tcs_monitor_onus.sql
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# cat online4-check_tcs_monitor_onus.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+select * from tctdbs.tcs_monitor_onus;
+[root@vm-dbamon01 online4]#
+
+[root@vm-dbamon01 online4]# ./online4-check_tcs_monitor_onus.sh
+Connection OK. Result=0
+[root@vm-dbamon01 online4]#
+
+
+[root@vm-dbamon01 online4]# vim /etc/nrpe.d/check_db_online4.cfg
+...
+command[check_tcs_monitor_onus]=/opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_onus.sh
+
+
+[root@vm-dbamon01 online4]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 online4]#
+
+
+[root@vm-vol-nag01t nagios]# vim ./objects/servers/vmware/vm-dbamon01.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             ONLINE - ON-US ACQUIRING
+        check_command                   check_nrpe!check_tcs_monitor_onus
+        normal_check_interval           1
+        first_notification_delay        0
+        contact_groups                  empty-group
+        contacts                        m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           5
+}
+
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]# pwd
+/etc/nagios
+[root@vm-vol-nag01t nagios]# grep -r -i -e 9853423309 ./objects/contacts/
+./objects/contacts/a.boldyrev.cfg:        address1                        79853423309
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#682780. Created checks for \"ONLINE - ON-US ACQUIRING\"" objects/servers/vmware/vm-dbamon01.cfg
+[master 7ab2e1d] SD#682780. Created checks for "ONLINE - ON-US ACQUIRING"
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+[root@vm-vol-nag01t nagios]#
+
+
+

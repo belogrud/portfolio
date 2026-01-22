@@ -1,0 +1,135 @@
+
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@vm-ext-router
+Last login: Wed Sep 16 15:59:40 2015 from tcs4500.tcsbank.ru
+[bsv@vm-var-app219 ~]$ ssh bsv@vm-ext-app29
+ssh: vm-ext-app29: Name or service not known
+[bsv@vm-var-app219 ~]$
+
+[bsv@vm-var-app219 ~]$ ssh bsv@vm-ext-app9
+The authenticity of host 'vm-ext-app9 (10.100.10.9)' can't be established.
+RSA key fingerprint is 50:63:da:6c:92:8a:94:7c:bb:d0:00:80:20:09:d6:de.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'vm-ext-app9,10.100.10.9' (RSA) to the list of known hosts.
+bsv@vm-ext-app9's password:
+Permission denied, please try again.
+bsv@vm-ext-app9's password:
+Last login: Tue Feb 18 18:05:22 2014 from 10.100.10.254
+[bsv@vm-ext-app9 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-ext-app9 ~]# passwd bsv
+Changing password for user bsv.
+New UNIX password:
+Retype new UNIX password:
+passwd: all authentication tokens updated successfully.
+[root@vm-ext-app9 ~]#
+
+[root@vm-ext-app9 ~]# ssh bsv@vm-ext-app8
+The authenticity of host 'vm-ext-app8 (10.100.10.8)' can't be established.
+RSA key fingerprint is f5:40:0e:42:cd:2d:db:f3:9e:1e:01:07:7d:97:76:31.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'vm-ext-app8' (RSA) to the list of known hosts.
+bsv@vm-ext-app8's password:
+Permission denied, please try again.
+bsv@vm-ext-app8's password:
+Permission denied, please try again.
+bsv@vm-ext-app8's password:
+[bsv@vm-ext-app8 ~]$ sudo -i
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+[sudo] password for bsv:
+[root@vm-ext-app8 ~]#
+
+
+[root@vm-ext-app8 ~]# mount -t nfs
+v6250-ds:/vol/common/sas_distr on /mnt/sas_distr type nfs (rw,rsize=32768,wsize=32768,bg,nointr,hard,timeo=600,tcp,addr=10.217.67.9)
+[root@vm-ext-app8 ~]#
+
+[root@vm-ext-app8 ~]# cat /etc/fstab
+/dev/VolGroup00/LogVol00 /                       ext3    defaults        1 1
+LABEL=/var              /var                    ext3    defaults        1 2
+LABEL=/boot             /boot                   ext3    defaults        1 2
+tmpfs                   /dev/shm                tmpfs   defaults        0 0
+devpts                  /dev/pts                devpts  gid=5,mode=620  0 0
+sysfs                   /sys                    sysfs   defaults        0 0
+proc                    /proc                   proc    defaults        0 0
+/swapfile               swap                    swap    defaults        0 0
+
+/dev/mapper/vg--app--xprosp-lvol0       /mnt/app-xprosp xfs     defaults        0       0
+cube:/volume1/Distr                     /mnt/cube_distr nfs     defaults        0       0
+v6250-ds:/vol/common/sas_distr           /mnt/sas_distr          nfs     rw,rsize=32768,wsize=32768,bg,nointr,hard,timeo=600,tcp
+[root@vm-ext-app8 ~]#
+
+[root@vm-ext-app8 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+    inet 10.100.10.8/24 brd 10.100.10.255 scope global eth0
+[root@vm-ext-app8 ~]#
+
+[root@vm-ext-app8 ~]# ip route
+10.100.10.0/24 dev eth0  proto kernel  scope link  src 10.100.10.8
+169.254.0.0/16 dev eth0  scope link
+default via 10.100.10.254 dev eth0
+[root@vm-ext-app8 ~]#
+
+[root@vm-ext-app8 ~]# ip rule
+0:      from all lookup 255
+32766:  from all lookup main
+32767:  from all lookup default
+[root@vm-ext-app8 ~]#
+
+[root@vm-ext-app8 ~]# iptables -n -L -t filter ; iptables -n -L -t nat ; iptables -n -L -t  mangle
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+[root@vm-ext-app8 ~]#
+
+[root@vm-ext-app8 ~]# service iptables status
+Firewall is stopped.
+[root@vm-ext-app8 ~]#
+
+[root@vm-ext-app8 ~]# service iptables stop
+Flushing firewall rules:                                   [  OK  ]
+Setting chains to policy ACCEPT: mangle nat filter         [  OK  ]
+Unloading iptables modules:                                [  OK  ]
+[root@vm-ext-app8 ~]# service iptables status
+Firewall is stopped.
+[root@vm-ext-app8 ~]#
+
+
+

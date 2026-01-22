@@ -1,0 +1,104 @@
+
+
+
+
+define service{
+    use                     generic-service
+    host_name               ds-pr-onl01
+    service_description     Log Size Check
+    normal_check_interval   5
+    retry_check_interval    1
+    check_command           check_nrpe!check_log_size
+    contact_groups          linux-admins, processing-admins
+}
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@ds-pr-onl01
+Last login: Thu Feb 25 12:30:00 2016 from tcs4500.tcsbank.ru
+[bsv@ds-pr-onl01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-pr-onl01 ~]# grep -r check_log_size /etc/nrpe.d/
+/etc/nrpe.d/check_log_size.cfg:command[check_log_size]=/opt/TCS/scripts/nagios/plugins/check_log_size.sh
+/etc/nrpe.d/check_log_size.cfg:#/usr/bin/sudo /opt/TCS/scripts/nagios/plugins/check_log_size.sh
+[root@ds-pr-onl01 ~]#
+
+
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+
+RESULT=$(/usr/bin/du -s /home/online/log | cut -f 1)
+
+#WARNING=${WARNING:-$DEF_MIN}
+#CRITICAL=${CRITICAL:-$DEF_MAX}
+
+#RESULT=2000001
+
+if [ "$RESULT" -lt 1900000 ]; then
+  echo "LOG SIZE OK - count $RESULT | Count=$RESULT"
+  exit $STATE_OK
+elif [ "$RESULT" -ge 1900000 ]; then
+  echo "LOG SIZE CRITICAL - count $RESULT | Count=$RESULT"
+  exit $STATE_CRITICAL
+else
+  echo "UNKNOWN"
+  exit $STATE_UNKNOWN
+fi
+
+
+[root@ds-pr-onl01 ~]# /opt/TCS/scripts/nagios/plugins/check_log_size.sh
+/usr/bin/du: cannot access `/home/online/log': No such file or directory
+/opt/TCS/scripts/nagios/plugins/check_log_size.sh: line 16: [: : integer expression expected
+/opt/TCS/scripts/nagios/plugins/check_log_size.sh: line 19: [: : integer expression expected
+UNKNOWN
+[root@ds-pr-onl01 ~]#
+
+[root@ds-pr-onl01 ~]# du -s /home/online/log | cut -f 1
+du: cannot access `/home/online/log': No such file or directory
+[root@ds-pr-onl01 ~]#
+
+[root@ds-pr-onl01 ~]# du -s /home/online/logs | cut -f 1
+4
+[root@ds-pr-onl01 ~]#
+
+
+        [root@ds-pr-onl01 ~]# cat /opt/TCS/scripts/nagios/plugins/check_log_size.sh
+        #!/bin/bash
+
+        STATE_OK=0
+        STATE_WARNING=1
+        STATE_CRITICAL=2
+        STATE_UNKNOWN=3
+
+
+#>      RESULT=$(/usr/bin/du -s /home/online/logs | cut -f 1)
+
+        #WARNING=${WARNING:-$DEF_MIN}
+        #CRITICAL=${CRITICAL:-$DEF_MAX}
+
+        #RESULT=2000001
+
+        if [ "$RESULT" -lt 1900000 ]; then
+          echo "LOG SIZE OK - count $RESULT | Count=$RESULT"
+          exit $STATE_OK
+        elif [ "$RESULT" -ge 1900000 ]; then
+          echo "LOG SIZE CRITICAL - count $RESULT | Count=$RESULT"
+          exit $STATE_CRITICAL
+        else
+          echo "UNKNOWN"
+          exit $STATE_UNKNOWN
+        fi
+        [root@ds-pr-onl01 ~]#
+
+
+[root@ds-pr-onl01 ~]# /opt/TCS/scripts/nagios/plugins/check_log_size.sh
+LOG SIZE OK - count 4 | Count=4
+[root@ds-pr-onl01 ~]#
+
+
+
+
+

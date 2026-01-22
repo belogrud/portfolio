@@ -1,0 +1,320 @@
+
+................................................................................
+
+[root@ds-sas-drbd01p ~]# pcs resource move nfs_VIP m1-sas-drbd01p
+[root@ds-sas-drbd01p ~]# pcs status
+Cluster name: drbd_cluster
+Stack: corosync
+Current DC: ds-sas-drbd01p (version 1.1.18-11.el7_5.2-2b07d5c5a9) - partition with quorum
+Last updated: Tue Jun 25 21:59:14 2019
+Last change: Tue Jun 25 21:59:05 2019 by root via crm_resource on ds-sas-drbd01p
+
+2 nodes configured
+8 resources configured
+
+Online: [ ds-sas-drbd01p m1-sas-drbd01p ]
+
+Full list of resources:
+
+ nfs_VIP        (ocf::heartbeat:IPaddr2):       Starting ds-sas-drbd01p
+ Master/Slave Set: DRBD_Master0 [drbd_dev0]
+     drbd_dev0  (ocf::linbit:drbd):     Demoting ds-sas-drbd01p
+     Slaves: [ m1-sas-drbd01p ]
+ Master/Slave Set: DRBD_Master1 [drbd_dev1]
+     Masters: [ ds-sas-drbd01p ]
+     Slaves: [ m1-sas-drbd01p ]
+ drbd0_fs       (ocf::heartbeat:Filesystem):    FAILED ds-sas-drbd01p (blocked)
+ drbd1_fs       (ocf::heartbeat:Filesystem):    Started ds-sas-drbd01p
+ VIP    (ocf::heartbeat:IPaddr2):       Starting ds-sas-drbd01p
+
+Failed Actions:
+* drbd0_fs_stop_0 on ds-sas-drbd01p 'unknown error' (1): call=387, status=complete, exitreason='Couldn't unmount /drbd0, giving up!',
+    last-rc-change='Tue Jun 25 21:59:06 2019', queued=7ms, exec=6701ms
+* VIP_monitor_10000 on ds-sas-drbd01p 'unknown error' (1): call=379, status=Timed Out, exitreason='',
+    last-rc-change='Tue Apr  2 12:18:07 2019', queued=0ms, exec=0ms
+
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
+[root@ds-sas-drbd01p ~]# pcs resource cleanup nfs_VIP
+Cleaned up nfs_VIP on ds-sas-drbd01p
+Cleaned up nfs_VIP on m1-sas-drbd01p
+[root@ds-sas-drbd01p ~]# pcs status
+Cluster name: drbd_cluster
+Stack: corosync
+Current DC: ds-sas-drbd01p (version 1.1.18-11.el7_5.2-2b07d5c5a9) - partition with quorum
+Last updated: Tue Jun 25 22:02:30 2019
+Last change: Tue Jun 25 21:59:05 2019 by root via crm_resource on ds-sas-drbd01p
+
+2 nodes configured
+8 resources configured
+
+Online: [ ds-sas-drbd01p m1-sas-drbd01p ]
+
+Full list of resources:
+
+ nfs_VIP        (ocf::heartbeat:IPaddr2):       Started ds-sas-drbd01p
+ Master/Slave Set: DRBD_Master0 [drbd_dev0]
+     drbd_dev0  (ocf::linbit:drbd):     FAILED ds-sas-drbd01p (blocked)
+     drbd_dev0  (ocf::linbit:drbd):     Promoting m1-sas-drbd01p
+ Master/Slave Set: DRBD_Master1 [drbd_dev1]
+     Masters: [ ds-sas-drbd01p ]
+     Slaves: [ m1-sas-drbd01p ]
+ drbd0_fs       (ocf::heartbeat:Filesystem):    FAILED ds-sas-drbd01p (blocked)
+ drbd1_fs       (ocf::heartbeat:Filesystem):    Started ds-sas-drbd01p
+ VIP    (ocf::heartbeat:IPaddr2):       Started ds-sas-drbd01p
+
+Failed Actions:
+* drbd_dev0_stop_0 on ds-sas-drbd01p 'unknown error' (1): call=399, status=Timed Out, exitreason='',
+    last-rc-change='Tue Jun 25 22:00:43 2019', queued=0ms, exec=100004ms
+* drbd0_fs_stop_0 on ds-sas-drbd01p 'unknown error' (1): call=387, status=complete, exitreason='Couldn't unmount /drbd0, giving up!',
+    last-rc-change='Tue Jun 25 21:59:06 2019', queued=7ms, exec=6701ms
+* VIP_monitor_10000 on ds-sas-drbd01p 'unknown error' (1): call=379, status=Timed Out, exitreason='',
+    last-rc-change='Tue Apr  2 12:18:07 2019', queued=0ms, exec=0ms
+
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
+[root@ds-sas-drbd01p ~]#
+
+
+[root@ds-sas-drbd01p ~]#  pcs constraint --full
+Location Constraints:
+  Resource: nfs_VIP
+    Enabled on: m1-sas-drbd01p (score:INFINITY) (role: Started) (id:cli-prefer-nfs_VIP)
+Ordering Constraints:
+  promote DRBD_Master0 then start drbd0_fs (kind:Mandatory) (id:order-DRBD_Master0-drbd0_fs-mandatory)
+  promote DRBD_Master1 then start drbd1_fs (kind:Mandatory) (id:order-DRBD_Master1-drbd1_fs-mandatory)
+Colocation Constraints:
+  drbd0_fs with DRBD_Master0 (score:INFINITY) (with-rsc-role:Master) (id:colocation-drbd0_fs-DRBD_Master0-INFINITY)
+  drbd1_fs with DRBD_Master1 (score:INFINITY) (with-rsc-role:Master) (id:colocation-drbd1_fs-DRBD_Master1-INFINITY)
+  nfs_VIP with drbd0_fs (score:INFINITY) (id:colocation-nfs_VIP-drbd0_fs-INFINITY)
+  VIP with drbd0_fs (score:INFINITY) (id:colocation-VIP-drbd0_fs-INFINITY)
+Ticket Constraints:
+[root@ds-sas-drbd01p ~]#
+
+
+................................................................................
+
+Jun 25 22:06:16 ds-sas-drbd01p crmd[2743]:  notice: State transition S_IDLE -> S_POLICY_ENGINE
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]:  notice: On loss of CCM Quorum: Ignore
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd_dev0:0 on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd_dev0:0 on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd0_fs on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd0_fs on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op monitor for VIP on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op promote for drbd_dev0:1 on m1-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Forcing DRBD_Master0 away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Forcing DRBD_Master0 away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Forcing drbd0_fs away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]:  notice: Calculated transition 38263, saving inputs in /var/lib/pacemaker/pengine/pe-input-332.bz2
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]:  notice: On loss of CCM Quorum: Ignore
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd_dev0:0 on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd_dev0:0 on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd0_fs on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd0_fs on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op monitor for VIP on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op promote for drbd_dev0:1 on m1-sas-drbd01p: unknown error (1)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Forcing DRBD_Master0 away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Forcing DRBD_Master0 away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]: warning: Forcing drbd0_fs away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:06:16 ds-sas-drbd01p crmd[2743]:  notice: Transition 38264 (Complete=0, Pending=0, Fired=0, Skipped=0, Incomplete=0, Source=/var/lib/pacemaker/pengine/pe-input-333.bz2): Complete
+Jun 25 22:06:16 ds-sas-drbd01p crmd[2743]:  notice: State transition S_TRANSITION_ENGINE -> S_IDLE
+Jun 25 22:06:16 ds-sas-drbd01p pengine[2742]:  notice: Calculated transition 38264, saving inputs in /var/lib/pacemaker/pengine/pe-input-333.bz2
+Jun 25 22:10:01 ds-sas-drbd01p systemd: Started Session 67221 of user root.
+Jun 25 22:10:01 ds-sas-drbd01p systemd: Starting Session 67221 of user root.
+Jun 25 22:20:01 ds-sas-drbd01p systemd: Started Session 67222 of user root.
+Jun 25 22:20:01 ds-sas-drbd01p systemd: Starting Session 67222 of user root.
+Jun 25 22:21:16 ds-sas-drbd01p crmd[2743]:  notice: State transition S_IDLE -> S_POLICY_ENGINE
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]:  notice: On loss of CCM Quorum: Ignore
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd_dev0:0 on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd_dev0:0 on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd0_fs on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op stop for drbd0_fs on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op monitor for VIP on ds-sas-drbd01p: unknown error (1)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Processing failed op promote for drbd_dev0:1 on m1-sas-drbd01p: unknown error (1)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Forcing DRBD_Master0 away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Forcing DRBD_Master0 away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]: warning: Forcing drbd0_fs away from ds-sas-drbd01p after 1000000 failures (max=1000000)
+Jun 25 22:21:16 ds-sas-drbd01p pengine[2742]:  notice: Calculated transition 38265, saving inputs in /var/lib/pacemaker/pengine/pe-input-333.bz2
+Jun 25 22:21:16 ds-sas-drbd01p crmd[2743]:  notice: Transition 38265 (Complete=0, Pending=0, Fired=0, Skipped=0, Incomplete=0, Source=/var/lib/pacemaker/pengine/pe-input-333.bz2): Complete
+Jun 25 22:21:16 ds-sas-drbd01p crmd[2743]:  notice: State transition S_TRANSITION_ENGINE -> S_IDLE
+(END)
+
+................................................................................
+
+[root@ds-sas-drbd01p ~]# umount /drbd0
+umount: /drbd0: target is busy.
+        (In some cases useful info about processes that use
+         the device is found by lsof(8) or fuser(1))
+[root@ds-sas-drbd01p ~]# fuser /drbd0
+[root@ds-sas-drbd01p ~]# fuser -m /drbd0
+[root@ds-sas-drbd01p ~]# umount -f /drbd0
+umount: /drbd0: target is busy.
+        (In some cases useful info about processes that use
+         the device is found by lsof(8) or fuser(1))
+[root@ds-sas-drbd01p ~]# lsof -o /drbd0
+[root@ds-sas-drbd01p ~]# lsof -O /drbd0
+[root@ds-sas-drbd01p ~]#
+
+................................................................................
+
+[root@m1-sasfront02p ~]# fuser -m /mnt/drbd_analyst_data
+Cannot stat /mnt/drbd_analyst_data: Stale NFS file handle
+Cannot stat /mnt/drbd_analyst_data: Stale NFS file handle
+Cannot stat /mnt/drbd_analyst_data: Stale NFS file handle
+Cannot stat file /proc/26253/fd/49: Stale NFS file handle
+Cannot stat file /proc/26253/fd/51: Stale NFS file handle
+Cannot stat file /proc/51864/fd/50: Stale NFS file handle
+Cannot stat file /proc/51864/fd/51: Stale NFS file handle
+[root@m1-sasfront02p ~]# umount -f -l /mnt/drbd_analyst_data
+[root@m1-sasfront02p ~]# mount /mnt/drbd_analyst_data
+mount.nfs: backgrounding "ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data"
+mount.nfs: mount options: "bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.65.157"
+[root@m1-sasfront02p ~]#
+[root@m1-sasfront02p ~]#
+[root@m1-sasfront02p ~]# grep -ie "ha-drbd01p-metro.tcsbank.ru" /etc/fstab
+ha-drbd01p-metro.tcsbank.ru:/drbd0 /mnt/data2ma_drdb_new nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data /mnt/drbd_analyst_data nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+[root@m1-sasfront02p ~]# ls /mnt/data2ma_drdb_new
+[root@m1-sasfront02p ~]# ls /mnt/drbd_analyst_data
+[root@m1-sasfront02p ~]# df -hT /mnt/data2ma_drdb_new /mnt/drbd_analyst_data
+Filesystem    Type    Size  Used Avail Use% Mounted on
+/dev/sda1     ext4     16G  8.0G  6.9G  54% /
+/dev/sda1     ext4     16G  8.0G  6.9G  54% /
+[root@m1-sasfront02p ~]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@ds-sasfront02p
+Last login: Tue Apr 30 18:05:37 2019 from tcs4357.tcsbank.ru
+[bsv@ds-sasfront02p ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-sasfront02p ~]# grep -ie "ha-drbd01p-metro.tcsbank.ru" /etc/fstab
+ha-drbd01p-metro.tcsbank.ru:/drbd0 /mnt/data2ma_drdb_new nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data /mnt/drbd_analyst_data nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+[root@ds-sasfront02p ~]# ls /mnt/data2ma_drdb_new
+ls: cannot access /mnt/data2ma_drdb_new: Stale NFS file handle
+[root@ds-sasfront02p ~]# ls /mnt/drbd_analyst_data
+ls: cannot access /mnt/drbd_analyst_data: Stale NFS file handle
+[root@ds-sasfront02p ~]# umount /mnt/data2ma_drdb_new
+[root@ds-sasfront02p ~]# umount /mnt/drbd_analyst_data
+
+[root@ds-sasfront02p ~]# umount -f -l /mnt/drbd_analyst_data
+umount.nfs: /mnt/drbd_analyst_data: not mounted
+umount.nfs: /mnt/drbd_analyst_data: not mounted
+[root@ds-sasfront02p ~]# mount /mnt/data2ma_drdb_new
+mount.nfs: backgrounding "ha-drbd01p-metro.tcsbank.ru:/drbd0"
+mount.nfs: mount options: "bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.65.157"
+[root@ds-sasfront02p ~]# mount /mnt/drbd_analyst_data
+mount.nfs: backgrounding "ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data"
+mount.nfs: mount options: "bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.65.157"
+[root@ds-sasfront02p ~]# df -hT /mnt/data2ma_drdb_new /mnt/drbd_analyst_data
+Filesystem    Type    Size  Used Avail Use% Mounted on
+/dev/sda1     ext4     16G  7.4G  7.5G  50% /
+/dev/sda1     ext4     16G  7.4G  7.5G  50% /
+[root@ds-sasfront02p ~]#
+
+
+#
+#	After 2-5 minutes.
+#
+[root@ds-sasfront02p ~]# ls /mnt/data2ma_drdb_new /mnt/drbd_analyst_data
+/mnt/data2ma_drdb_new:
+projects  tf_dreports  tf_reports_data  u0projects
+
+/mnt/drbd_analyst_data:
+tf_usr
+[root@ds-sasfront02p ~]# df -hT /mnt/data2ma_drdb_new /mnt/drbd_analyst_data
+Filesystem    Type    Size  Used Avail Use% Mounted on
+ha-drbd01p-metro.tcsbank.ru:/drbd0
+               nfs    6.6T  5.5T  1.1T  84% /mnt/data2ma_drdb_new
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data
+               nfs    6.6T  5.4T  1.2T  82% /mnt/drbd_analyst_data
+[root@ds-sasfront02p ~]#
+
+
+#
+#	On all other two sas-servers nfs-resources become mounted with correct sizes: 6.6T.
+#	Here are sas-serves that use this drbd nfs-resources.
+#	m1-sasfront02p, ds-sasfront02p, m1-sasfront01p, ds-sasfront01p
+#
+................................................................................
+
+#
+#	Errors was disapeared.... to somewhere.... for unknown reasons...
+#   I suppose because of it - nfs-resources on sas-servers start mounting and get its right sizes 6.6T.
+#
+
+[root@m1-sas-drbd01p ~]# pcs status
+Cluster name: drbd_cluster
+Stack: corosync
+Current DC: m1-sas-drbd01p (version 1.1.18-11.el7_5.2-2b07d5c5a9) - partition with quorum
+Last updated: Tue Jun 25 23:24:18 2019
+Last change: Tue Jun 25 23:14:17 2019 by hacluster via crmd on ds-sas-drbd01p
+
+2 nodes configured
+8 resources configured
+
+Online: [ ds-sas-drbd01p m1-sas-drbd01p ]
+
+Full list of resources:
+
+ nfs_VIP        (ocf::heartbeat:IPaddr2):       Started m1-sas-drbd01p
+ Master/Slave Set: DRBD_Master0 [drbd_dev0]
+     Masters: [ m1-sas-drbd01p ]
+     Slaves: [ ds-sas-drbd01p ]
+ Master/Slave Set: DRBD_Master1 [drbd_dev1]
+     Masters: [ m1-sas-drbd01p ]
+     Slaves: [ ds-sas-drbd01p ]
+ drbd0_fs       (ocf::heartbeat:Filesystem):    Started m1-sas-drbd01p
+ drbd1_fs       (ocf::heartbeat:Filesystem):    Started m1-sas-drbd01p
+ VIP    (ocf::heartbeat:IPaddr2):       Started m1-sas-drbd01p
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
+[root@m1-sas-drbd01p ~]#
+
+
+[root@ds-sas-drbd01p ~]# pcs status
+Cluster name: drbd_cluster
+Stack: corosync
+Current DC: m1-sas-drbd01p (version 1.1.18-11.el7_5.2-2b07d5c5a9) - partition with quorum
+Last updated: Tue Jun 25 23:25:04 2019
+Last change: Tue Jun 25 23:14:17 2019 by hacluster via crmd on ds-sas-drbd01p
+
+2 nodes configured
+8 resources configured
+
+Online: [ ds-sas-drbd01p m1-sas-drbd01p ]
+
+Full list of resources:
+
+ nfs_VIP        (ocf::heartbeat:IPaddr2):       Started m1-sas-drbd01p
+ Master/Slave Set: DRBD_Master0 [drbd_dev0]
+     Masters: [ m1-sas-drbd01p ]
+     Slaves: [ ds-sas-drbd01p ]
+ Master/Slave Set: DRBD_Master1 [drbd_dev1]
+     Masters: [ m1-sas-drbd01p ]
+     Slaves: [ ds-sas-drbd01p ]
+ drbd0_fs       (ocf::heartbeat:Filesystem):    Started m1-sas-drbd01p
+ drbd1_fs       (ocf::heartbeat:Filesystem):    Started m1-sas-drbd01p
+ VIP    (ocf::heartbeat:IPaddr2):       Started m1-sas-drbd01p
+
+Daemon Status:
+  corosync: active/enabled
+  pacemaker: active/enabled
+  pcsd: active/enabled
+[root@ds-sas-drbd01p ~]#
+
+................................................................................
+
+
+
+

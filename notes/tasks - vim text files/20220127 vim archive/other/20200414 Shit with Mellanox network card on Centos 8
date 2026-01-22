@@ -1,0 +1,844 @@
+
+
+................................................................................................................................................................
+
+[root@m1-soc-ls1 ~]# dmidecode -t system
+# dmidecode 3.2
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2.1 present.
+# SMBIOS implementations newer than version 3.2.0 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x0089, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL360 Gen10
+        Version: Not Specified
+        Serial Number: CZJ00204R7
+        UUID: 37393150-3636-5a43-4a30-303230345237
+        Wake-up Type: Power Switch
+        SKU Number: P19766-B21
+        Family: ProLiant
+
+Handle 0x00AA, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-soc-ls1 ~]#
+
+
+
+[root@m1-soc-ls1 ~]# tail -n 5 /var/log/messages
+Apr 14 17:52:38 m1-soc-ls1 kernel: bond0: An illegal loopback occurred on adapter (eno5)#012Check the configuration to verify that all adapters are connected to 802.3ad compliant switch ports
+Apr 14 17:52:39 m1-soc-ls1 kernel: bond0: An illegal loopback occurred on adapter (eno5)#012Check the configuration to verify that all adapters are connected to 802.3ad compliant switch ports
+Apr 14 17:52:40 m1-soc-ls1 kernel: bond0: An illegal loopback occurred on adapter (eno5)#012Check the configuration to verify that all adapters are connected to 802.3ad compliant switch ports
+Apr 14 17:52:41 m1-soc-ls1 kernel: bond0: An illegal loopback occurred on adapter (eno5)#012Check the configuration to verify that all adapters are connected to 802.3ad compliant switch ports
+Apr 14 17:52:42 m1-soc-ls1 kernel: bond0: An illegal loopback occurred on adapter (eno5)#012Check the configuration to verify that all adapters are connected to 802.3ad compliant switch ports
+[root@m1-soc-ls1 ~]#
+
+................................................................................
+
+#	https://access.redhat.com/solutions/56604
+
+#	https://access.redhat.com/solutions/4863081
+
+
+
+................................................................................
+
+[root@m1-soc-ls1 ~]# ethtool -i eno5
+driver: mlx5_core
+version: 5.0-0
+firmware-version: 14.26.1040 (HP_2690110034)
+expansion-rom-version:
+bus-info: 0000:5d:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: yes
+[root@m1-soc-ls1 ~]# lspci -s 0000:5d:00.0
+5d:00.0 Ethernet controller: Mellanox Technologies MT27710 Family [ConnectX-4 Lx]
+[root@m1-soc-ls1 ~]# lspci -s 0000:5d:00.1
+5d:00.1 Ethernet controller: Mellanox Technologies MT27710 Family [ConnectX-4 Lx]
+[root@m1-soc-ls1 ~]#
+
+[root@m1-soc-ls1 ~]# ethtool eno5
+Settings for eno5:
+        Supported ports: [ Backplane ]
+        Supported link modes:   1000baseKX/Full
+                                10000baseKR/Full
+                                25000baseCR/Full
+                                25000baseKR/Full
+                                25000baseSR/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: None BaseR
+        Advertised link modes:  1000baseKX/Full
+                                10000baseKR/Full
+                                25000baseCR/Full
+                                25000baseKR/Full
+                                25000baseSR/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: None
+        Speed: 10000Mb/s
+        Duplex: Full
+        Port: Direct Attach Copper
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: on
+        Supports Wake-on: g
+        Wake-on: g
+        Current message level: 0x00000004 (4)
+                               link
+        Link detected: yes
+[root@m1-soc-ls1 ~]# ethtool eno6
+Settings for eno6:
+        Supported ports: [ FIBRE ]
+        Supported link modes:   1000baseKX/Full
+                                10000baseKR/Full
+                                25000baseCR/Full
+                                25000baseKR/Full
+                                25000baseSR/Full
+        Supported pause frame use: Symmetric
+        Supports auto-negotiation: Yes
+        Supported FEC modes: None BaseR
+        Advertised link modes:  1000baseKX/Full
+                                10000baseKR/Full
+                                25000baseCR/Full
+                                25000baseKR/Full
+                                25000baseSR/Full
+        Advertised pause frame use: Symmetric
+        Advertised auto-negotiation: Yes
+        Advertised FEC modes: None
+        Speed: 10000Mb/s
+        Duplex: Full
+        Port: FIBRE
+        PHYAD: 0
+        Transceiver: internal
+        Auto-negotiation: on
+        Supports Wake-on: g
+        Wake-on: d
+        Current message level: 0x00000004 (4)
+                               link
+        Link detected: yes
+[root@m1-soc-ls1 ~]# 
+................................................................................
+
+[root@m1-soc-ls1 ~]# cat >> /etc/yum.repos.d/tcs-nexus-centos-8-base.repo
+[tcs-nexus-centos-8-base]
+name=Nexus - CentOS-8 - Base
+baseurl=http://repo-linux.tcsbank.ru/repository/centos/centos/8/BaseOS/$basearch/os/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-8
+skip_if_unavailable=True
+proxy=_none_
+[root@m1-soc-ls1 ~]# yum repolist
+Nexus - CentOS-8 - Base                                                                                                                                             2.6 MB/s | 6.0 MB     00:02
+Last metadata expiration check: 0:00:01 ago on Tue 14 Apr 2020 06:13:28 PM MSK.
+Modular dependency problems:
+
+ Problem 1: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBD-MySQL:4.046:8010020191114030811:073fa5fe-0.x86_64
+ Problem 2: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBI:1.641:8010020191113222731:16b3ab4d-0.x86_64
+repo id                                                                                        repo name                                                                                      status
+tcs-nexus-centos-8-base                                                                        Nexus - CentOS-8 - Base                                                                        2,233
+[root@m1-soc-ls1 ~]# 
+
+................................................................................
+
+#
+#	Ansible doesn't work on just installed Centos 8.
+#
+(env) [support@centos msp-scm]$ ansible-playbook playbook-dco-bootstrap.yml -i list_of_hosts --become --extra-vars "ansible_user=root ansible_password=$(pass common/linux-default) ansible_sudo_pass=$(pass common/linux-default) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no -oUserKnownHostsFile=/dev/null'"
+
+PLAY [all[0]] *****************************************************************************************************************************************************************************************
+
+TASK [assert] *****************************************************************************************************************************************************************************************
+Tuesday 14 April 2020  18:07:40 +0300 (0:00:00.361)       0:00:00.361 ********* 
+ok: [m1-soc-ls1.tcsbank.ru] => {
+    "changed": false
+}
+
+MSG:
+
+All assertions passed
+
+
+PLAY [all:!localhost] *********************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************
+Tuesday 14 April 2020  18:07:40 +0300 (0:00:00.093)       0:00:00.455 ********* 
+fatal: [m1-soc-ls1.tcsbank.ru]: FAILED! => {
+    "changed": false,
+    "rc": 127
+}
+
+MSG:
+
+MODULE FAILURE
+See stdout/stderr for the exact error
+
+
+MODULE_STDOUT:
+
+/bin/sh: /usr/bin/python: No such file or directory
+
+
+
+MODULE_STDERR:
+
+Shared connection to m1-soc-ls1.tcsbank.ru closed.
+
+
+
+NO MORE HOSTS LEFT ************************************************************************************************************************************************************************************
+
+NO MORE HOSTS LEFT ************************************************************************************************************************************************************************************
+
+PLAY RECAP ********************************************************************************************************************************************************************************************
+m1-soc-ls1.tcsbank.ru      : ok=1    changed=0    unreachable=0    failed=1   
+
+Tuesday 14 April 2020  18:07:47 +0300 (0:00:06.743)       0:00:07.199 ********* 
+=============================================================================== 
+Gathering Facts -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- 6.74s
+assert ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- 0.09s
+(env) [support@centos msp-scm]$
+
+
+#
+#	This is solution!!!
+#	https://www.toptechskills.com/ansible-tutorials-courses/how-to-fix-usr-bin-python-not-found-error-tutorial/
+#
+
+ln --symbolic /usr/bin/python3 /usr/bin/python
+
+
+#
+#	But anyway for Centos 8 not prepaired appropriate repos in ansible playbook!
+#
+	fatal: [m1-soc-ls1.tcsbank.ru]: FAILED! => {
+		"changed": false,
+		"rc": 1,
+		"results": []
+	}
+
+	MSG:
+
+	Failed to synchronize repodata: Failed to download metadata for repo 'CentOS-Base'
+
+
+	NO MORE HOSTS LEFT ************************************************************************************************************************************************************************************
+
+	NO MORE HOSTS LEFT ************************************************************************************************************************************************************************************
+
+	PLAY RECAP ********************************************************************************************************************************************************************************************
+	m1-soc-ls1.tcsbank.ru      : ok=24   changed=8    unreachable=0    failed=1 
+
+
+
+
+[root@m1-soc-ls1 yum.repos.d]# cat tcs-nexus-epel.repo
+
+[tcs-nexus-epel]
+name=Nexus - Extra Packages for Enterprise Linux
+baseurl=http://repo-linux.tcsbank.ru/repository/epel/$releasever/$basearch/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+skip_if_unavailable=True
+proxy=_none_
+[root@m1-soc-ls1 yum.repos.d]#
+
+#
+#	Still unavailable to find package flint or msflint.
+#
+
+#	https://centos.pkgs.org/8/centos-appstream-x86_64/mstflint-4.12.0-1.el8.x86_64.rpm.html
+
+[s.belogrud@TCS4357]# wget http://mirror.centos.org/centos/8/AppStream/x86_64/os/Packages/mstflint-4.12.0-1.el8.x86_64.rpm
+--2020-04-14 19:44:54--  http://mirror.centos.org/centos/8/AppStream/x86_64/os/Packages/mstflint-4.12.0-1.el8.x86_64.rpm
+Resolving mirror.centos.org... 81.171.33.194
+Connecting to mirror.centos.org|81.171.33.194|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 3582276 (3.4M) [application/x-rpm]
+Saving to: `mstflint-4.12.0-1.el8.x86_64.rpm'
+
+100%[==========================================================================================================================================================>] 3,582,276   7.23M/s   in 0.5s
+
+2020-04-14 19:44:55 (7.23 MB/s) - `mstflint-4.12.0-1.el8.x86_64.rpm' saved [3582276/3582276]
+
+[s.belogrud@TCS4357]# scp mstflint-4.12.0-1.el8.x86_64.rpm root@m1-soc-ls1:/tmp/
+mstflint-4.12.0-1.el8.x86_64.rpm                                                                                                                                  100% 3498KB  16.1MB/s   00:00
+[s.belogrud@TCS4357]#
+
+
+[root@m1-soc-ls1 work]# yum localinstall 20200414-1941/mstflint-4.12.0-1.el8.x86_64.rpm
+Last metadata expiration check: 0:08:05 ago on Tue 14 Apr 2020 07:38:50 PM MSK.
+Modular dependency problems:
+
+ Problem 1: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBD-MySQL:4.046:8010020191114030811:073fa5fe-0.x86_64
+ Problem 2: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBI:1.641:8010020191113222731:16b3ab4d-0.x86_64
+Error:
+ Problem: conflicting requests
+  - nothing provides libboost_regex.so.1.66.0()(64bit) needed by mstflint-4.12.0-1.el8.x86_64
+(try to add '--skip-broken' to skip uninstallable packages or '--nobest' to use not only best candidate packages)
+[root@m1-soc-ls1 work]#
+[root@m1-soc-ls1 work]#
+
+[root@m1-soc-ls1 work]# yum localinstall --skip-broken 20200414-1941/mstflint-4.12.0-1.el8.x86_64.rpm
+Last metadata expiration check: 0:10:10 ago on Tue 14 Apr 2020 07:38:50 PM MSK.
+Modular dependency problems:
+
+ Problem 1: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBD-MySQL:4.046:8010020191114030811:073fa5fe-0.x86_64
+ Problem 2: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBI:1.641:8010020191113222731:16b3ab4d-0.x86_64
+Dependencies resolved.
+Nothing to do.
+Complete!
+[root@m1-soc-ls1 work]#
+
+[s.belogrud@TCS4357]# wget ftp://ftp.pbone.net/mirror/ftp.centos.org/8-stream/AppStream/x86_64/os/Packages/boost-regex-1.66.0-6.el8.x86_64.rpm
+--2020-04-14 19:55:42--  ftp://ftp.pbone.net/mirror/ftp.centos.org/8-stream/AppStream/x86_64/os/Packages/boost-regex-1.66.0-6.el8.x86_64.rpm
+           => `boost-regex-1.66.0-6.el8.x86_64.rpm'
+Resolving ftp.pbone.net... 93.179.225.212
+Connecting to ftp.pbone.net|93.179.225.212|:21... connected.
+Logging in as anonymous ... Logged in!
+==> SYST ... done.    ==> PWD ... done.
+==> TYPE I ... done.  ==> CWD (1) /mirror/ftp.centos.org/8-stream/AppStream/x86_64/os/Packages ... done.
+==> SIZE boost-regex-1.66.0-6.el8.x86_64.rpm ... 292624
+==> PASV ... done.    ==> RETR boost-regex-1.66.0-6.el8.x86_64.rpm ... done.
+Length: 292624 (286K) (unauthoritative)
+
+100%[==========================================================================================================================================================>] 292,624      689K/s   in 0.4s
+
+2020-04-14 19:55:44 (689 KB/s) - `boost-regex-1.66.0-6.el8.x86_64.rpm' saved [292624]
+
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# scp boost-regex-1.66.0-6.el8.x86_64.rpm root@m1-soc-ls1:/tmp/
+boost-regex-1.66.0-6.el8.x86_64.rpm                                                                                                                               100%  286KB  14.8MB/s   00:00
+[s.belogrud@TCS4357]#
+
+
+
+[root@m1-soc-ls1 20200414-1941]# yum localinstall mstflint-4.12.0-1.el8.x86_64.rpm boost-regex-1.66.0-6.el8.x86_64.rpm
+Last metadata expiration check: 0:17:22 ago on Tue 14 Apr 2020 07:38:50 PM MSK.
+Modular dependency problems:
+
+ Problem 1: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBD-MySQL:4.046:8010020191114030811:073fa5fe-0.x86_64
+ Problem 2: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBI:1.641:8010020191113222731:16b3ab4d-0.x86_64
+Dependencies resolved.
+====================================================================================================================================================================================================
+ Package                                         Architecture                               Version                                          Repository                                        Size
+====================================================================================================================================================================================================
+Installing:
+ mstflint                                        x86_64                                     4.12.0-1.el8                                     @commandline                                     3.4 M
+ boost-regex                                     x86_64                                     1.66.0-6.el8                                     @commandline                                     286 k
+
+Transaction Summary
+====================================================================================================================================================================================================
+Install  2 Packages
+
+Total size: 3.7 M
+Installed size: 18 M
+Is this ok [y/N]: y
+Downloading Packages:
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                            1/1
+  Installing       : boost-regex-1.66.0-6.el8.x86_64                                                                                                                                            1/2
+  Running scriptlet: boost-regex-1.66.0-6.el8.x86_64                                                                                                                                            1/2
+  Installing       : mstflint-4.12.0-1.el8.x86_64                                                                                                                                               2/2
+  Running scriptlet: mstflint-4.12.0-1.el8.x86_64                                                                                                                                               2/2
+  Verifying        : mstflint-4.12.0-1.el8.x86_64                                                                                                                                               1/2
+  Verifying        : boost-regex-1.66.0-6.el8.x86_64                                                                                                                                            2/2
+
+Installed:
+  mstflint-4.12.0-1.el8.x86_64                                                                    boost-regex-1.66.0-6.el8.x86_64
+
+Complete!
+[root@m1-soc-ls1 20200414-1941]#
+
+
+
+................................................................................
+
+#
+#	https://www.mellanox.com/support/firmware/nic
+#
+
+		[s.belogrud@TCS4357]# wget --no-check-certificate https://www.openfabrics.org/downloads/mstflint/mstflint-4.4.0.tar.gz
+		--2020-04-14 18:46:45--  https://www.openfabrics.org/downloads/mstflint/mstflint-4.4.0.tar.gz
+		Resolving www.openfabrics.org... 69.55.231.76
+		Connecting to www.openfabrics.org|69.55.231.76|:443... connected.
+		WARNING: cannot verify www.openfabrics.org's certificate, issued by `/C=RU/ST=Moscow/L=Moscow/O=Tinkoff Bank/CN=SI':
+		  Unable to locally verify the issuer's authority.
+		HTTP request sent, awaiting response... 200 OK
+		Length: 1348758 (1.3M) [application/x-gzip]
+		Saving to: `mstflint-4.4.0.tar.gz'
+		
+		100%[==========================================================================================================================================================>] 1,348,758    967K/s   in 1.4s
+		
+		2020-04-14 18:46:48 (967 KB/s) - `mstflint-4.4.0.tar.gz' saved [1348758/1348758]
+		
+		[s.belogrud@TCS4357]#
+		
+		
+		[s.belogrud@TCS4357]# scp mstflint-4.4.0.tar.gz root@m1-soc-ls1:/tmp/
+		mstflint-4.4.0.tar.gz                                                                                                                                             100% 1317KB  15.8MB/s   00:00
+		[s.belogrud@TCS4357]#
+		
+		[root@m1-soc-ls1 yum.repos.d]# mkdir -p ~/work/20200414-1848
+		[root@m1-soc-ls1 yum.repos.d]# cp /tmp/mstflint-4.4.0.tar.gz ~/work/20200414-1848/
+		[root@m1-soc-ls1 yum.repos.d]# cd ~/work/20200414-1848/
+		[root@m1-soc-ls1 20200414-1848]# gunzip mstflint-4.4.0.tar.gz
+		[root@m1-soc-ls1 20200414-1848]#
+		
+		[root@m1-soc-ls1 20200414-1848]# tar -xf mstflint-4.4.0.tar
+		[root@m1-soc-ls1 20200414-1848]# ll
+		total 6376
+		drwxr-xr-x 23 3189  101    4096 May 24  2016 mstflint-4.4.0
+		-rw-r--r--  1 root root 6522880 Apr 14 18:47 mstflint-4.4.0.tar
+		[root@m1-soc-ls1 20200414-1848]#
+		
+		[root@m1-soc-ls1 mstflint-4.4.0]# ./configure --disable-dc --disable-inband
+		
+		
+		
+		[root@m1-soc-ls1 mstflint-4.4.0]# yum install make
+		Nexus - Extra Packages for Enterprise Linux                                                                                                                         353 kB/s | 2.0 kB     00:00
+		Failed to download metadata for repo 'tcs-nexus-epel'
+		Ignoring repositories: tcs-nexus-epel
+		Last metadata expiration check: 0:20:18 ago on Tue 14 Apr 2020 06:31:26 PM MSK.
+		Modular dependency problems:
+		
+		 Problem 1: conflicting requests
+		  - nothing provides module(perl:5.26) needed by module perl-DBD-MySQL:4.046:8010020191114030811:073fa5fe-0.x86_64
+		 Problem 2: conflicting requests
+		  - nothing provides module(perl:5.26) needed by module perl-DBI:1.641:8010020191113222731:16b3ab4d-0.x86_64
+		Dependencies resolved.
+		====================================================================================================================================================================================================
+		 Package                                Architecture                             Version                                            Repository                                                 Size
+		====================================================================================================================================================================================================
+		Installing:
+		 make                                   x86_64                                   1:4.2.1-9.el8                                      tcs-nexus-centos-8-base                                   498 k
+		
+		Transaction Summary
+		====================================================================================================================================================================================================
+		Install  1 Package
+		
+		Total download size: 498 k
+		Installed size: 1.4 M
+		Is this ok [y/N]: y
+		Downloading Packages:
+		make-4.2.1-9.el8.x86_64.rpm                                                                                                                                         512 kB/s | 498 kB     00:00
+		----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		Total                                                                                                                                                               511 kB/s | 498 kB     00:00
+		warning: /var/cache/dnf/tcs-nexus-centos-8-base-1363f4b2d5422939/packages/make-4.2.1-9.el8.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 8483c65d: NOKEY
+		Nexus - CentOS-8 - Base                                                                                                                                             0.0  B/s |   0  B     00:00
+		Curl error (37): Couldn't read a file:// file for file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-8 [Couldn't open file /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-8]
+		The downloaded packages were saved in cache until the next successful transaction.
+		You can remove cached packages by executing 'dnf clean packages'.
+		[root@m1-soc-ls1 mstflint-4.4.0]#
+		
+		
+		[root@m1-soc-ls1 mstflint-4.4.0]# dnf clean packages
+		2 files removed
+		[root@m1-soc-ls1 mstflint-4.4.0]#
+		
+		#
+		#	I've turned off gpgcheck.
+		#
+		[root@m1-soc-ls1 mstflint-4.4.0]# vim /etc/yum.repos.d/tcs-nexus-centos-8-base.repo
+		[root@m1-soc-ls1 mstflint-4.4.0]# yum install make
+		Nexus - CentOS-8 - Base                                                                                                                                             798 kB/s | 3.8 kB     00:00
+		Nexus - Extra Packages for Enterprise Linux                                                                                                                         444 kB/s | 2.0 kB     00:00
+		Failed to download metadata for repo 'tcs-nexus-epel'
+		Ignoring repositories: tcs-nexus-epel
+		Modular dependency problems:
+		
+		 Problem 1: conflicting requests
+		  - nothing provides module(perl:5.26) needed by module perl-DBD-MySQL:4.046:8010020191114030811:073fa5fe-0.x86_64
+		 Problem 2: conflicting requests
+		  - nothing provides module(perl:5.26) needed by module perl-DBI:1.641:8010020191113222731:16b3ab4d-0.x86_64
+		Dependencies resolved.
+		====================================================================================================================================================================================================
+		 Package                                Architecture                             Version                                            Repository                                                 Size
+		====================================================================================================================================================================================================
+		Installing:
+		 make                                   x86_64                                   1:4.2.1-9.el8                                      tcs-nexus-centos-8-base                                   498 k
+		
+		Transaction Summary
+		====================================================================================================================================================================================================
+		Install  1 Package
+		
+		Total size: 498 k
+		Installed size: 1.4 M
+		Is this ok [y/N]: y
+		Downloading Packages:
+		[SKIPPED] make-4.2.1-9.el8.x86_64.rpm: Already downloaded
+		Running transaction check
+		Transaction check succeeded.
+		Running transaction test
+		Transaction test succeeded.
+		Running transaction
+		  Preparing        :                                                                                                                                                                            1/1
+		  Installing       : make-1:4.2.1-9.el8.x86_64                                                                                                                                                  1/1
+		  Running scriptlet: make-1:4.2.1-9.el8.x86_64                                                                                                                                                  1/1
+		  Verifying        : make-1:4.2.1-9.el8.x86_64                                                                                                                                                  1/1
+		
+		Installed:
+		  make-1:4.2.1-9.el8.x86_64
+		
+		Complete!
+		[root@m1-soc-ls1 mstflint-4.4.0]#
+		
+		
+		[root@m1-soc-ls1 mstflint-4.4.0]# make
+		make  all-recursive
+		make[1]: Entering directory '/root/work/20200414-1848/mstflint-4.4.0'
+		Making all in common
+		make[2]: Entering directory '/root/work/20200414-1848/mstflint-4.4.0/common'
+		make[2]: Nothing to be done for 'all'.
+		make[2]: Leaving directory '/root/work/20200414-1848/mstflint-4.4.0/common'
+		Making all in mft_utils
+		make[2]: Entering directory '/root/work/20200414-1848/mstflint-4.4.0/mft_utils'
+		source='mft_sig_handler.c' object='mft_sig_handler.o' libtool=no \
+		DEPDIR=.deps depmode=none /bin/sh ../config/depcomp \
+		gcc -DHAVE_CONFIG_H -I. -I..  -I. -I../common  -MD -pipe -Wall -W -Werror -g -O2 -Werror -DMST_UL -c mft_sig_handler.c
+		source='errmsg.cpp' object='errmsg.o' libtool=no \
+		DEPDIR=.deps depmode=none /bin/sh ../config/depcomp \
+		g++ -DHAVE_CONFIG_H -I. -I..  -I. -I../common   -DHAVE_TERMIOS_H -Werror -DMST_UL -c -o errmsg.o errmsg.cpp
+		../config/depcomp: line 772: exec: g++: not found
+		make[2]: *** [Makefile:428: errmsg.o] Error 127
+		make[2]: Leaving directory '/root/work/20200414-1848/mstflint-4.4.0/mft_utils'
+		make[1]: *** [Makefile:508: all-recursive] Error 1
+		make[1]: Leaving directory '/root/work/20200414-1848/mstflint-4.4.0'
+		make: *** [Makefile:394: all] Error 2
+		[root@m1-soc-ls1 mstflint-4.4.0]#
+
+................................................................................
+
+[root@m1-soc-ls1 20200414-1941]# mstflint -d 0000:5d:00.0 q
+Image type:            FS3
+FW Version:            14.26.1040
+FW Release Date:       26.9.2019
+Product Version:       14.26.1040
+Rom Info:              type=UEFI version=14.19.14 cpu=AMD64
+                       type=PXE version=3.5.803 cpu=AMD64
+Description:           UID                GuidsNumber
+Base GUID:             9440c9ffff71e164        16
+Base MAC:              9440c971e164            16
+Image VSD:             N/A
+Device VSD:            N/A
+PSID:                  HP_2690110034
+Security Attributes:   N/A
+[root@m1-soc-ls1 20200414-1941]# mstflint -d 0000:5d:00.1 q
+Image type:            FS3
+FW Version:            14.26.1040
+FW Release Date:       26.9.2019
+Product Version:       14.26.1040
+Rom Info:              type=UEFI version=14.19.14 cpu=AMD64
+                       type=PXE version=3.5.803 cpu=AMD64
+Description:           UID                GuidsNumber
+Base GUID:             9440c9ffff71e164        16
+Base MAC:              9440c971e164            16
+Image VSD:             N/A
+Device VSD:            N/A
+PSID:                  HP_2690110034
+Security Attributes:   N/A
+[root@m1-soc-ls1 20200414-1941]#
+
+................................................................................
+
+#
+#	https://support.hpe.com/hpsc/swd/public/detail?swItemId=MTX_c93c3bae8f7c4b3a9c7b5e026b#tab3
+#
+[s.belogrud@TCS4357]# scp /drives/c/Users/s.belogrud/Downloads/firmware-* root@m1-soc-ls1:/tmp/
+firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.compsig                                                                                                     100% 2153   291.0KB/s   00:00
+firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.rpm                                                                                                         100% 7492KB  16.7MB/s   00:00
+[s.belogrud@TCS4357]#
+
+[root@m1-soc-ls1 20200414-2021]# rpm -qi firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.rpm
+warning: firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 26c2b797: NOKEY
+Name        : firmware-nic-mellanox-ethernet-only
+Version     : 1.0.11
+Release     : 1.1
+Architecture: x86_64
+Install Date: (not installed)
+Group       : Applications/System
+Size        : 57598839
+License     : 2012 Hewlett Packard Enterprise Development LP
+Signature   : RSA/SHA256, Thu 31 Oct 2019 12:55:30 PM MSK, Key ID c208adde26c2b797
+Source RPM  : firmware-nic-mellanox-ethernet-only-1.0.11-1.1.src.rpm
+Build Date  : Thu 31 Oct 2019 12:35:05 PM MSK
+Build Host  : localhost
+Relocations : (not relocatable)
+Packager    : Hewlett Packard Enterprise <Linux_SWdeliverables@groups.ext.hpe.com>
+Vendor      : Hewlett Packard Enterprise
+URL         : http://www.hpe.com/info/proliantlinux
+Summary     : Online Firmware Upgrade Utility (Linux x86_64) for HPE Mellanox Ethernet only adapters firmware
+Description :
+This package contains the Online Firmware Upgrade Utility (Linux x86_64) for HPE Mellanox Ethernet only adapters firmware
+[root@m1-soc-ls1 20200414-2021]# rpm -ivh firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.rpm
+warning: firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 26c2b797: NOKEY
+Verifying...                          ################################# [100%]
+Preparing...                          ################################# [100%]
+Updating / installing...
+   1:firmware-nic-mellanox-ethernet-on################################# [100%]
+[root@m1-soc-ls1 20200414-2021]#
+
+[root@m1-soc-ls1 20200414-2021]# rpm -qpl firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.rpm
+warning: firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 26c2b797: NOKEY
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/.cpq_package.inc
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/.setup
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/CP040051.xml
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/getmlnxinfo
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/hpsetup
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw/NICFWData.xml
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw/fw-ConnectX3Pro-full-rel-2_42_5044-779793-B21_0A-CLP-8025-UEFI-14.11.48-FlexBoot-3.4.754.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw/fw-ConnectX3Pro-full-rel-2_42_5044-779799-B21_Ax-CLP-8025-UEFI-14.11.48-FlexBoot-3.4.754.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw/fw-ConnectX4Lx-rel-14_26_1040-817749-B21_Ax-UEFI-14.19.14-FlexBoot-3.5.803.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw/fw-ConnectX4Lx-rel-14_26_1040-817753-B21_Ax-UEFI-14.19.14-FlexBoot-3.5.803.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw/fw-ConnectX5-rel-16_26_1040-874253-B21_Ax-UEFI-14.19.14-FlexBoot-3.5.803.signed.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/nic_fw/mstflint
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/payload.json
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/setup
+/usr/lib/x86_64-linux-gnu/hp-scexe-compat
+/usr/lib/x86_64-linux-gnu/hp-scexe-compat/CP040051.scexe
+/usr/lib/x86_64-linux-gnu/scexe-compat
+/usr/lib/x86_64-linux-gnu/scexe-compat/CP040051.scexe
+[root@m1-soc-ls1 20200414-2021]#
+
+[root@m1-soc-ls1 20200414-2021]# /usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.11-1.1/setup
+
+##################################################################################################
+HPE Mellanox InfiniBand Online Firmware Upgrade Utility for Linux
+Copyright (c) 2011 Hewlett-Packard Enterprise Development Company, L.P.
+##################################################################################################
+
+SecureBoot is disabled.
+List of Network Adapters detected on the Server.................
+[0] 0000:12:00.0 Broadcom Inc. and subsidiaries
+[1] 0000:5d:00.0 Mellanox Technologies
+
+If PSID or FW_Version is not found for some interfaces, please check /tmp/datazL530h
+
+Interface 0000:12:00.0 is not Mellanox one.
+
+Mellanox card info for 0000:5d:00.0 = FW_VERSION 14.26.1040, BUS_INFO 0000:5d:00.0, PSID HP_2690110034
+0000:5d:00.0
+DEVICE INFO---------->15b3 1015 1590 d3
+pciIdString-------------->15B3-1015-1590-00D3-HP_2690110034
+
+
+Current Firmware Version is 14.26.1040 on 0000:5d:00.0
+Repository has these firmware versions............[1] Image Version  14.26.1040
+Repository doesn't have newer firmware version, Installed firmware version is the latest one..........Please Quit the updation.
+Would you like to flash the firmware?
+ y/n/q (n):y
+
+    Current FW version on flash:  14.26.1040
+    New FW version:               14.26.1040
+
+    Note: The new FW version is the same as the current FW version on flash.
+
+ Do you want to continue ? (y/n) [n] : y
+
+Initializing image partition -   OK
+Writing Boot image component -   OK
+-I- To load new FW run mstfwreset or reboot machine.
+Firmware Flashed:       SUCCESS  for interface 0000:5d:00.0
+
+
+
+Please Reboot node for new image to be loaded into silicon
+
+[root@m1-soc-ls1 20200414-2021]#
+
+#
+#	There is no results.
+#	Shit continue drops.
+#
+
+
+................................................................................
+
+#
+#	On this server no problem with Mellanox card.
+#	Version firmware is 14.24.9006
+
+[root@ds-soc-ls1 ~]# ethtool -i eno5
+driver: mlx5_core
+version: 5.0-0
+firmware-version: 14.24.9006 (HP_2690110034)
+expansion-rom-version:
+bus-info: 0000:5d:00.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: no
+supports-register-dump: no
+supports-priv-flags: yes
+[root@ds-soc-ls1 ~]# lspci -s 0000:5d:00.0
+5d:00.0 Ethernet controller: Mellanox Technologies MT27710 Family [ConnectX-4 Lx]
+[root@ds-soc-ls1 ~]#
+
+................................................................................
+
+#
+#	https://support.hpe.com/hpsc/swd/public/detail?swItemId=MTX_d0e63d0a446746b2bc8d096096#tab4
+#
+
+[s.belogrud@TCS4357]# scp /drives/c/Users/s.belogrud/Downloads/firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm root@m1-soc-ls1:/tmp/
+firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm                                                                                                         100% 8042KB  15.1MB/s   00:00
+[s.belogrud@TCS4357]#
+
+[root@m1-soc-ls1 work]# mkdir 20200414-2043
+[root@m1-soc-ls1 work]# cd 20200414-2043
+[root@m1-soc-ls1 20200414-2043]# cp /tmp/firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm .
+[root@m1-soc-ls1 20200414-2043]# rpm -ivh firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm
+warning: firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 26c2b797: NOKEY
+Verifying...                          ################################# [100%]
+Preparing...                          ################################# [100%]
+        package firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64 (which is newer than firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64) is already installed
+[root@m1-soc-ls1 20200414-2043]# rpm -qpl firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm
+warning: firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 26c2b797: NOKEY
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/.cpq_package.inc
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/.setup
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/CP038539.xml
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/getmlnxinfo
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/hpsetup
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/NICFWData.xml
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/fw-ConnectX3Pro-full-rel-2_42_5044-779793-B21_0A-CLP-8025-UEFI-14.11.48-FlexBoot-3.4.754.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/fw-ConnectX3Pro-full-rel-2_42_5044-779799-B21_Ax-CLP-8025-UEFI-14.11.48-FlexBoot-3.4.754.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/fw-ConnectX4-rel-12_24_9000-868779-B21_Ax-UEFI-14.17.13-FlexBoot-3.5.603.signed.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/fw-ConnectX4Lx-rel-14_24_9000-817753-B21_Ax-UEFI-14.17.13-FlexBoot-3.5.603.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/fw-ConnectX4Lx-rel-14_24_9006-817749-B21_Ax-UEFI-14.17.13-FlexBoot-3.5.603.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/fw-ConnectX5-rel-16_24_9000-874253-B21_Ax-UEFI-14.17.13-FlexBoot-3.5.603.signed.bin
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/nic_fw/mstflint
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/payload.json
+/usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/setup
+/usr/lib/x86_64-linux-gnu/hp-scexe-compat
+/usr/lib/x86_64-linux-gnu/hp-scexe-compat/CP038539.scexe
+/usr/lib/x86_64-linux-gnu/scexe-compat
+/usr/lib/x86_64-linux-gnu/scexe-compat/CP038539.scexe
+[root@m1-soc-ls1 20200414-2043]#
+
+[root@m1-soc-ls1 20200414-2043]# yum remove firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64
+Modular dependency problems:
+
+ Problem 1: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBD-MySQL:4.046:8010020191114030811:073fa5fe-0.x86_64
+ Problem 2: conflicting requests
+  - nothing provides module(perl:5.26) needed by module perl-DBI:1.641:8010020191113222731:16b3ab4d-0.x86_64
+Dependencies resolved.
+====================================================================================================================================================================================================
+ Package                                                            Architecture                          Version                                      Repository                              Size
+====================================================================================================================================================================================================
+Removing:
+ firmware-nic-mellanox-ethernet-only                                x86_64                                1.0.11-1.1                                   @System                                 55 M
+
+Transaction Summary
+====================================================================================================================================================================================================
+Remove  1 Package
+
+Freed space: 55 M
+Is this ok [y/N]: y
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                            1/1
+  Erasing          : firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64                                                                                                                      1/1
+  Running scriptlet: firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64                                                                                                                      1/1
+  Verifying        : firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64                                                                                                                      1/1
+
+Removed:
+  firmware-nic-mellanox-ethernet-only-1.0.11-1.1.x86_64
+
+Complete!
+[root@m1-soc-ls1 20200414-2043]#
+
+[root@m1-soc-ls1 20200414-2043]# rpm -ivh firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm
+warning: firmware-nic-mellanox-ethernet-only-1.0.10-1.1.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID 26c2b797: NOKEY
+Verifying...                          ################################# [100%]
+Preparing...                          ################################# [100%]
+Updating / installing...
+   1:firmware-nic-mellanox-ethernet-on################################# [100%]
+[root@m1-soc-ls1 20200414-2043]#
+
+
+[root@m1-soc-ls1 20200414-2043]# /usr/lib/x86_64-linux-gnu/firmware-nic-mellanox-ethernet-only-1.0.10-1.1/setup
+
+##################################################################################################
+HPE Mellanox InfiniBand Online Firmware Upgrade Utility for Linux
+Copyright (c) 2011 Hewlett-Packard Enterprise Development Company, L.P.
+##################################################################################################
+
+SecureBoot is disabled.
+List of Network Adapters detected on the Server.................
+[0] 0000:12:00.0 Broadcom Inc. and subsidiaries
+[1] 0000:5d:00.0 Mellanox Technologies
+
+If PSID or FW_Version is not found for some interfaces, please check /tmp/datanjDv8b
+
+Interface 0000:12:00.0 is not Mellanox one.
+
+Mellanox card info for 0000:5d:00.0 = FW_VERSION 14.26.1040, BUS_INFO 0000:5d:00.0, PSID HP_2690110034
+0000:5d:00.0
+DEVICE INFO---------->15b3 1015 1590 d3
+pciIdString-------------->15B3-1015-1590-00D3-HP_2690110034
+
+
+Current Firmware Version is 14.26.1040 on 0000:5d:00.0
+Repository has these firmware versions............[1] Image Version  14.24.9006
+Repository doesn't have newer firmware version, Installed firmware version is the latest one..........Please Quit the updation.
+Would you like to flash the firmware?
+ y/n/q (n):y
+
+    Current FW version on flash:  14.26.1040
+    New FW version:               14.24.9006
+
+    Note: The new FW version is older than the current FW version on flash.
+
+ Do you want to continue ? (y/n) [n] : y
+
+Initializing image partition -   OK
+Writing Boot image component -   OK
+-I- To load new FW run mlxfwreset or reboot machine.
+Firmware Flashed:       SUCCESS  for interface 0000:5d:00.0
+
+
+
+Please Reboot node for new image to be loaded into silicon
+
+[root@m1-soc-ls1 20200414-2043]#
+
+
+................................................................................
+
+
+
+
+
+
+
+
+
+

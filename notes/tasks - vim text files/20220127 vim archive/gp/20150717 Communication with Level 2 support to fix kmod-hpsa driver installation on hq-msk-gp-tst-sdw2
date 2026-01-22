@@ -1,0 +1,1576 @@
+
+................................................................................
+
+tom.sana@hp.com
+tomchou-n.sana@hp.com
+Bangalor India.
+GMT+5.30
+
+................................................................................
+
+[support@centos00 .vim]$ sshpass -e scp /media/sf_share/hp/cfg2html/cfg2html-linux-2.94-20140811_all/cfg2html-linux-2.94-2.noarch.rpm bsv@hq-msk-gp-tst-sm:/tmp
+[support@centos00 .vim]
+
+................................................................................
+................................................................................
+
+#   Try to update hpsa driver on hq-msk-gp-tst-sm server.
+
+[root@hq-msk-gp-tst-smdw 20150717-1613]# uname -a
+Linux smdw 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+[root@hq-msk-gp-tst-smdw 20150717-1613]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+[root@hq-msk-gp-tst-smdw 20150717-1613]#
+
+[root@hq-msk-gp-tst-smdw 20150717-1613]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ314824F7
+        UUID: 39333835-3431-5A43-3331-343832344637
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@hq-msk-gp-tst-smdw 20150717-1613]# hpasmcli -s "show server"
+
+System        : ProLiant DL380 G7
+Serial No.    : CZ314824F7
+ROM version   : P67 07/02/2013
+iLo present   : Yes
+Embedded NICs : 4
+        NIC1 MAC: 3c:d9:2b:04:7e:7e
+        NIC2 MAC: 3c:d9:2b:04:7e:80
+        NIC3 MAC: 3c:d9:2b:04:7e:82
+        NIC4 MAC: 3c:d9:2b:04:7e:84
+
+Processor: 0
+        Name         : Intel Xeon
+        Stepping     : 2
+        Speed        : 2800 MHz
+        Bus          : 133 MHz
+        Core         : 6
+        Thread       : 12
+        Socket       : 1
+        Level1 Cache : 192 KBytes
+        Level2 Cache : 1536 KBytes
+        Level3 Cache : 12288 KBytes
+        Status       : Ok
+
+Processor: 1
+        Name         : Intel Xeon
+        Stepping     : 2
+        Speed        : 2800 MHz
+        Bus          : 133 MHz
+        Core         : 6
+        Thread       : 12
+        Socket       : 2
+        Level1 Cache : 192 KBytes
+        Level2 Cache : 1536 KBytes
+        Level3 Cache : 12288 KBytes
+        Status       : Ok
+
+Processor total  : 2
+
+Memory installed : 131072 MBytes
+ECC supported    : Yes
+
+
+[root@hq-msk-gp-tst-smdw ~]# hpssacli controller all show status
+
+Smart Array P410i in Slot 0 (Embedded)
+   Controller Status: OK
+   Cache Status: OK
+   Battery/Capacitor Status: OK
+
+
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+
+[root@hq-msk-gp-tst-smdw 20150717-1613]#
+
+[root@hq-msk-gp-tst-smdw 20150717-1613]# lsblk
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda      8:0    0  1.7T  0 disk
+├─sda1   8:1    0    1G  0 part /boot
+├─sda2   8:2    0  128G  0 part [SWAP]
+├─sda3   8:3    0   48G  0 part /
+├─sda4   8:4    0    1K  0 part
+├─sda5   8:5    0  1.3T  0 part /data
+└─sda6   8:6    0  150G  0 part /work
+[root@hq-msk-gp-tst-smdw 20150717-1613]#
+
+................................................................................
+
+
+[support@centos00 .vim]$ ssh-add ~/.ssh/id_dsa.for.ilo.administrator
+Enter passphrase for /home/support/.ssh/id_dsa.for.ilo.administrator:
+Identity added: /home/support/.ssh/id_dsa.for.ilo.administrator (/home/support/.ssh/id_dsa.for.ilo.administrator)
+[support@centos00 .vim]$
+
+[support@centos00 .vim]$ ssh Administrator@CZ314824F7.mgmt.tcsbank.ru "uid^M"
+uid
+status=0
+status_tag=COMMAND COMPLETED
+Fri Jul 17 16:49:13 2015
+
+
+The UID light is currently: Off
+
+
+
+[support@centos00 .vim]$
+
+................................................................................
+
+
+[root@hq-msk-gp-tst-smdw 20150717-1613]# cd 20150717-1622.modern.kmod-hpsa/
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]# ll
+total 116
+-rw-r--r-- 1 root root 58320 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u5.x86_64.rpm
+-rw-r--r-- 1 root root 56268 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]# rpm -Uvh kmod-hpsa-3.4.10-120.rhel6u5.x86_64.rpm
+warning: kmod-hpsa-3.4.10-120.rhel6u5.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]#
+
+................................................................................
+
+#   It's work after reboot...
+
+[root@hq-msk-gp-tst-smdw ~]# modinfo hpsa
+filename:       /lib/modules/2.6.32-504.12.2.el6.x86_64/weak-updates/hpsa/hpsa.ko
+license:        GPL
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+author:         Hewlett-Packard Company
+srcversion:     695C55EFE833740027F298D
+alias:          pci:v00000E11d*sv*sd*bc01sc04i*
+alias:          pci:v0000103Cd*sv*sd*bc01sc04i*
+alias:          pci:v00001590d00000075sv00001590sd00000089bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000088bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000087bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000077bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd0000007Dbc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000076bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000333Fbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003233bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000585bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000584bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000583bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000582bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000581bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000580bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd00002208bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CDbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CCbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CBbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CAbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C9bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C8bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C7bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C6bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C5bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C4bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C3bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C2bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C1bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C0bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BFbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BDbc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd0000192Abc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001929bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001928bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001926bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001925bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001924bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001923bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001922bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001921bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001920bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000334Dbc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003356bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003355bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003354bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003353bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003352bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003351bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003350bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Bbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Abc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003249bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003247bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003245bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003243bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003241bc*sc*i*
+depends:
+vermagic:       2.6.32-431.el6.x86_64 SMP mod_unload modversions
+parm:           hpsa_allow_any:Allow hpsa driver to access unknown HP Smart Array hardware (int)
+parm:           hpsa_simple_mode:Use 'simple mode' rather than 'performant mode' (int)
+parm:           reply_queues:Specify desired number of reply queues. 1-16, default is 4, not to exceed number of online CPUs. (int)
+[root@hq-msk-gp-tst-smdw ~]#
+
+................................................................................
+................................................................................
+
+#   This attempt I try to use rhel6u6 hpsa package.
+
+[root@hq-msk-gp-tst-smdw 20150717-1613]# cd 20150717-1622.modern.kmod-hpsa/
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]# ll
+total 116
+-rw-r--r-- 1 root root 58320 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u5.x86_64.rpm
+-rw-r--r-- 1 root root 56268 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]# rpm -Uvh kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]#
+
+
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]# rpm -q kmod-hpsa
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64
+[root@hq-msk-gp-tst-smdw 20150717-1622.modern.kmod-hpsa]#
+
+................................................................................
+
+[root@hq-msk-gp-tst-smdw ~]# modinfo hpsa
+filename:       /lib/modules/2.6.32-504.12.2.el6.x86_64/weak-updates/hpsa/hpsa.ko
+license:        GPL
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+author:         Hewlett-Packard Company
+srcversion:     695C55EFE833740027F298D
+alias:          pci:v00000E11d*sv*sd*bc01sc04i*
+alias:          pci:v0000103Cd*sv*sd*bc01sc04i*
+alias:          pci:v00001590d00000075sv00001590sd00000089bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000088bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000087bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000077bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd0000007Dbc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000076bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000333Fbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003233bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000585bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000584bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000583bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000582bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000581bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000580bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd00002208bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CDbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CCbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CBbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CAbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C9bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C8bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C7bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C6bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C5bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C4bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C3bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C2bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C1bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C0bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BFbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BDbc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd0000192Abc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001929bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001928bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001926bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001925bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001924bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001923bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001922bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001921bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001920bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000334Dbc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003356bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003355bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003354bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003353bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003352bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003351bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003350bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Bbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Abc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003249bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003247bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003245bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003243bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003241bc*sc*i*
+depends:
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+parm:           hpsa_allow_any:Allow hpsa driver to access unknown HP Smart Array hardware (int)
+parm:           hpsa_simple_mode:Use 'simple mode' rather than 'performant mode' (int)
+parm:           reply_queues:Specify desired number of reply queues. 1-16, default is 4, not to exceed number of online CPUs. (int)
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+[root@hq-msk-gp-tst-smdw ~]# lsinitrd /boot/initramfs-2.6.32-504.12.2.el6.x86_64.img | grep hpsa
+drwxr-xr-x   2 root     root            0 Jul 17 17:11 lib/modules/2.6.32-504.12.2.el6.x86_64/weak-updates/hpsa
+-rw-r--r--   1 root     root       162400 Jul 17 17:11 lib/modules/2.6.32-504.12.2.el6.x86_64/weak-updates/hpsa/hpsa.ko
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+................................................................................
+................................................................................
+
+
+Fri Jul 17 19:00:36 MSK 2015
+#   Collect ifno from successfully updated (hpsa) server.
+
+
+[root@hq-msk-gp-tst-smdw ~]# mkdir ~/work/20150717-1858
+[root@hq-msk-gp-tst-smdw ~]# cd !$
+cd ~/work/20150717-1858
+[root@hq-msk-gp-tst-smdw 20150717-1858]# cfg2html
+
+**  HP Proliant Server detected; executing with HP Proliant Server logs  **
+
+---=[ http://www.cfg2html.com ]=-----------------------------------------------
+Starting          cfg2html-linux version 2.94-2014/05/07
+Path to Cfg2Html  /usr/bin/cfg2html-linux
+HTML Output File  ./smdw.html
+Text Output File  ./smdw.txt
+Partitions        ./smdw.partitions.save
+Errors logged to  ./smdw.err
+Started at        2015-07-17 18:58:59
+WARNING           USE AT YOUR OWN RISK!!! :-))           <<<<<
+---=[ http://www.cfg2html.com ]=-----------------------------------------------
+
+Collecting:  Linux System (Red Hat Enterprise Linux Server release 6.5 (Santiago))  ...............................................
+Collecting:  Cron and At  ...................
+Collecting:  Hardware  ...............
+Collecting:  Software  ........
+Collecting:  Filesystems, Dump- and Swapconfiguration  ..........
+Collecting:  LVM  ..
+Collecting:  Network Settings  ..........................................
+Collecting:  Kernel, Modules and Libraries  .................
+Collecting:  System Enhancements  .
+Collecting:  Applications and Subsystems  .......
+Collecting:  Puppet Configuration Management System  ..........
+Collecting:  hp ProLiant Server Log- and configuration Files  .HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.80 Device type = iLO 3 Driver name = hpilo
+Management Processor configuration is successfully written to file "/tmp/cfg2html_temp/ilo.cfg"
+................
+   Generating diagnostic report...done
+
+..
+Collecting:  Local files  .
+The following files are included in your gzipped tarball file:
+
+The tar file can be mailed to your support supplier if needed
+
+
+---=[ http://www.cfg2html.com ]=-----------------------------------------------
+You have new mail in /var/spool/mail/root
+[root@hq-msk-gp-tst-smdw 20150717-1858]# ll
+total 2904
+-rw-r--r-- 1 root root    2256 Jul 17 19:01 smdw.err
+-rw-r--r-- 1 root root 1429944 Jul 17 19:01 smdw.html
+-rw-r--r-- 1 root root     364 Jul 17 18:59 smdw.partitions.save
+-rw-r--r-- 1 root root  147331 Jul 17 19:01 smdw.tar.gz
+-rw-r--r-- 1 root root 1384148 Jul 17 19:01 smdw.txt
+[root@hq-msk-gp-tst-smdw 20150717-1858]# ls /tmp/201507*
+/tmp/20150713-1840.hpssacli.diag.hq-msk-gp-tst-sdw2.zip  /tmp/20150717-1542.hq-msk-gp-tst-sdw2.cfg2html.tar.gz
+[root@hq-msk-gp-tst-smdw 20150717-1858]# cp smdw.tar.gz /tmp/20150717-1902.hq-msk-gp-tst-smdw.cfg2html.tar.gz
+[root@hq-msk-gp-tst-smdw 20150717-1858]# chmod bsv:bsv !$
+chmod bsv:bsv /tmp/20150717-1902.hq-msk-gp-tst-smdw.cfg2html.tar.gz
+chmod: invalid mode: `bsv:bsv'
+Try `chmod --help' for more information.
+[root@hq-msk-gp-tst-smdw 20150717-1858]# chown bsv:bsv /tmp/20150717-1902.hq-msk-gp-tst-smdw.cfg2html.tar.gz
+[root@hq-msk-gp-tst-smdw 20150717-1858]#
+
+
+
+[root@hq-msk-gp-tst-smdw 20150717-1858]# sosreport
+
+sosreport (version 2.2)
+
+
+  This command will collect diagnostic and configuration
+information from this Red Hat Enterprise Linux system and
+installed applications.
+
+  An archive containing the collected information will be
+generated in /tmp and may be provided to a Red Hat support
+representative.
+
+  Any information provided to Red Hat will be treated in
+accordance with the published support policies at:
+
+
+  https://access.redhat.com/support/
+
+  The generated archive may contain data considered
+sensitive and its content should be reviewed by the
+originating organization before being passed to any third
+party.
+
+  No changes will be made to system configuration.
+
+Press ENTER to continue, or CTRL-C to quit.
+
+Please enter your first initial and last name [smdw]: Sergey Belogrud
+Please enter the case number that you are generating this report for [None]: 4651770022
+
+
+Error reading cpu information: <class 'up2date_client.up2dateErrors.CommunicationError'>
+  Running plugins. Please wait ...
+
+  Completed [65/65] ...
+Creating compressed archive...
+
+Your sosreport has been generated and saved in:
+  /tmp/sosreport-SergeyBelogrud.4651770022-20150717190806-0388.tar.xz
+
+The md5sum is: 59035e460e7f86cdec956dd58df10388
+
+Please send this file to your support representative.
+
+[root@hq-msk-gp-tst-smdw 20150717-1858]#
+[root@hq-msk-gp-tst-smdw 20150717-1858]#
+
+
+................................................................................
+................................................................................
+
+
+Mon Jul 20 18:31:52 MSK 2015
+
+
+[root@hq-msk-gp-tst-smdw ~]# rpm -q hp-firmware-smartarray-14ef73e580-6.64-1.1.x86_64
+hp-firmware-smartarray-14ef73e580-6.64-1.1.x86_64
+[root@hq-msk-gp-tst-smdw ~]# rpm -qi hp-firmware-smartarray-14ef73e580-6.64-1.1.x86_64
+Name        : hp-firmware-smartarray-14ef73e580  Relocations: (not relocatable)
+Version     : 6.64                              Vendor: Hewlett-Packard Company
+Release     : 1.1                           Build Date: Fri 27 Mar 2015 11:39:36 PM MSK
+Install Date: Mon 06 Jul 2015 03:35:40 PM MSK      Build Host: bldeb6u3x64003.SDG
+Group       : Applications/System           Source RPM: hp-firmware-smartarray-14ef73e580-6.64-1.1.src.rpm
+Size        : 15788305                         License: 2012 Hewlett-Packard Development Company, L.P.
+Signature   : RSA/SHA1, Fri 27 Mar 2015 11:39:44 PM MSK, Key ID b070680a5ce2d476
+Packager    : Hewlett-Packard Company
+URL         : http://www.hp.com/go/proliantlinux
+Summary     : Smart Array P212, P410, P410i, P411, P711m, P712m, and P812 firmware
+Description :
+This package contains the Smart Array P212, P410, P410i, P411, P711m, P712m, and P812 firmware
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+[root@hq-msk-gp-tst-sdw2 ~]# hpssacli controller all show detail | grep Firmware
+   Firmware Version: 6.64
+   Firmware Version: 6.64
+[root@hq-msk-gp-tst-sdw2 ~]#
+
+
+................................................................................
+................................................................................
+
+
+Tue Jul 21 11:54:09 MSK 2015
+#   Below is our today plan.
+
+From: N, Tomchou Sana [mailto:tomchou-n.sana@hp.com]
+Sent: Monday, July 20, 2015 6:10 PM
+To: Belogrud Sergey Vladimirovich
+Cc: Shishkunov, Sergey
+Subject: RE: Just a handshake || HP case reference 4651770022-461 - hpsa driver issue
+
+Hi Sergey,
+
+As discussed over the phone, below are the points we agreed to try.
+
+1)     Try a different version of hpsa driver on “sdw2” host and check the issue, you can try (3.4.8 (A)(30 Mar 2015)) and the link is provided below.
+http://h20564.www2.hp.com/hpsc/swd/public/detail?sp4ts.oid=4091567&swItemId=MTX_45c5e89471264327bc5842c650&swEnvOid=4103
+2)     If the above step fails with similar errors then capture the errors and probably a screenshot will be more helpful.
+3)     Try to remove the “pci=nomsi” from the kernel line of “sdw2” host and check the issue and capture the result.
+4)     As said earlier, if DL380p Gen8 server is available for testing hpsa upgrade, then please do at your convenient time and share the results.
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-tst-sdw5 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BN2
+        UUID: 32333536-3030-5A43-3233-323930424E32
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@hq-msk-gp-tst-sdw5 ~]#
+
+
+[root@hq-msk-gp-tst-sdw5 ~]# hpasmcli -s "show server"
+
+System        : ProLiant DL380p Gen8
+Serial No.    : CZ23290BN2
+ROM version   : P70 08/02/2014
+iLo present   : Yes
+Embedded NICs : 2
+        NIC1 MAC: ac:16:2d:ab:d7:f0
+        NIC2 MAC: ac:16:2d:ab:d7:f4
+
+Processor: 0
+        Name         : Intel Xeon
+        Stepping     : 7
+        Speed        : 2200 MHz
+        Bus          : 100 MHz
+        Core         : 8
+        Thread       : 16
+        Socket       : 1
+        Level1 Cache : 256 KBytes
+        Level2 Cache : 2048 KBytes
+        Level3 Cache : 20480 KBytes
+        Status       : Ok
+
+Processor: 1
+        Name         : Intel Xeon
+        Stepping     : 7
+        Speed        : 2200 MHz
+        Bus          : 100 MHz
+        Core         : 8
+        Thread       : 16
+        Socket       : 2
+        Level1 Cache : 256 KBytes
+        Level2 Cache : 2048 KBytes
+        Level3 Cache : 20480 KBytes
+        Status       : Ok
+
+Processor total  : 2
+
+Memory installed : 131072 MBytes
+ECC supported    : Yes
+
+[root@hq-msk-gp-tst-sdw5 ~]#
+
+
+[root@hq-msk-gp-tst-sdw5 ~]# hpssacli controller all show status
+
+Smart Array P420 in Slot 2
+   Controller Status: OK
+   Cache Status: OK
+   Battery/Capacitor Status: OK
+
+Smart Array P420i in Slot 0 (Embedded)
+   Controller Status: OK
+   Cache Status: OK
+   Battery/Capacitor Status: OK
+
+
+[root@hq-msk-gp-tst-sdw5 ~]#
+
+................................................................................
+
+[root@hq-msk-gp-tst-sdw5 20150721-1159]# uname -a
+Linux sdw5 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+[root@hq-msk-gp-tst-sdw5 20150721-1159]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+[root@hq-msk-gp-tst-sdw5 20150721-1159]# rpm -q kernel kernel-firmware kmod-hpsa
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+[root@hq-msk-gp-tst-sdw5 20150721-1159]#
+
+[root@hq-msk-gp-tst-sdw5 20150721-1452.backup.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel-2.6.32-504.12.2.el6.x86_64 kernel-firmware-2.6.32-504.12.2.el6.noarch kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+Loaded plugins: product-id
+tcs-epel-6-x86_64                                                                                                                                                              | 3.0 kB     00:00
+tcs-epel-6-x86_64/primary_db                                                                                                                                                   | 8.8 MB     00:00
+tcs-hp-hpsum                                                                                                                                                                   | 2.9 kB     00:00
+tcs-hp-hpsum/primary_db                                                                                                                                                        | 219 kB     00:00
+tcs-hp-spp                                                                                                                                                                     | 2.9 kB     00:00
+tcs-hp-spp/primary_db                                                                                                                                                          | 902 kB     00:00
+tcs-hp-stk                                                                                                                                                                     | 2.9 kB     00:00
+tcs-hp-stk/primary_db                                                                                                                                                          |  14 kB     00:00
+tcs-lldpad                                                                                                                                                                     | 2.9 kB     00:00
+tcs-ossec-2.7-x86_64                                                                                                                                                           | 2.9 kB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64                                                                                                                                        | 2.9 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64                                                                                                                                            | 2.9 kB     00:00
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+tcs-remi-enterprise-6-remi-x86_64                                                                                                                                              | 2.9 kB     00:00
+tcs-remi-enterprise-6-remi-x86_64/primary_db                                                                                                                                   | 2.2 MB     00:00
+tcs-rhel-6.1-x86_64-iso                                                                                                                                                        | 3.8 kB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                       | 3.4 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                            |  33 MB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                              | 3.0 kB     00:00
+tcs-rhel-x86_64-server-optional-6/primary_db                                                                                                                                   | 2.9 MB     00:00
+tcs-rpmforge-redhat-el6-en-x86_64                                                                                                                                              | 2.9 kB     00:00
+tcs-rpmforge-redhat-el6-en-x86_64/primary_db                                                                                                                                   | 2.4 MB     00:00
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-504.12.2.el6 will be installed
+---> Package kernel-firmware.noarch 0:2.6.32-504.12.2.el6 will be reinstalled
+---> Package kmod-hpsa.x86_64 0:3.4.4_1_RH1-1.el6_5 will be reinstalled
+--> Finished Dependency Resolution
+kernel-2.6.32-504.12.2.el6.x86_64.rpm                                                                                                                                          |  29 MB     00:00
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm                                                                                                                                 |  14 MB     00:00
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm                                                                                                                                       |  50 kB     00:00
+[root@hq-msk-gp-tst-sdw5 20150721-1452.backup.kernel.kernel-firmware.kmod-hpsa]# ll
+total 44636
+-rw-r--r-- 1 root root 30517464 Mar 11 17:47 kernel-2.6.32-504.12.2.el6.x86_64.rpm
+-rw-r--r-- 1 root root 15133060 Mar 11 17:51 kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm
+-rw-r--r-- 1 root root    51612 Jul 16  2014 kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+[root@hq-msk-gp-tst-sdw5 20150721-1452.backup.kernel.kernel-firmware.kmod-hpsa]#
+
+
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel kernel-firmware kmod-hpsa                                                             Loaded plugins: product-id
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-504.30.3.el6 will be installed
+--> Processing Dependency: dracut-kernel >= 004-356.el6_6.3 for package: kernel-2.6.32-504.30.3.el6.x86_64
+---> Package kernel-firmware.noarch 0:2.6.32-504.30.3.el6 will be installed
+---> Package kmod-hpsa.x86_64 0:3.4.10-120.rhel6u6 will be installed
+--> Running transaction check
+---> Package dracut-kernel.noarch 0:004-356.el6_6.1 will be updated
+---> Package dracut-kernel.noarch 0:004-356.el6_6.3 will be an update
+--> Processing Dependency: dracut = 004-356.el6_6.3 for package: dracut-kernel-004-356.el6_6.3.noarch
+--> Running transaction check
+---> Package dracut.noarch 0:004-356.el6_6.1 will be updated
+---> Package dracut.noarch 0:004-356.el6_6.3 will be an update
+--> Finished Dependency Resolution
+kernel-2.6.32-504.30.3.el6.x86_64.rpm                                                                                                                                          |  29 MB     00:00
+kernel-firmware-2.6.32-504.30.3.el6.noarch.rpm                                                                                                                                 |  14 MB     00:00
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+dracut-kernel-004-356.el6_6.1.noarch.rpm                                                                                                                                       |  25 kB     00:00
+dracut-004-356.el6_6.1.noarch.rpm                                                                                                                                              | 123 kB     00:00
+dracut-004-356.el6_6.3.noarch.rpm                                                                                                                                              | 123 kB     00:00
+dracut-kernel-004-356.el6_6.3.noarch.rpm                                                                                                                                       |  25 kB     00:00
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# ll
+total 45008
+-rw-r--r-- 1 root root   125768 Mar  9 13:12 dracut-004-356.el6_6.1.noarch.rpm
+-rw-r--r-- 1 root root   126048 Jul 14 12:57 dracut-004-356.el6_6.3.noarch.rpm
+-rw-r--r-- 1 root root    25384 Mar  9 13:12 dracut-kernel-004-356.el6_6.1.noarch.rpm
+-rw-r--r-- 1 root root    25616 Jul 14 12:57 dracut-kernel-004-356.el6_6.3.noarch.rpm
+-rw-r--r-- 1 root root 30553600 Jul 14 17:31 kernel-2.6.32-504.30.3.el6.x86_64.rpm
+-rw-r--r-- 1 root root 15160192 Jul 14 17:27 kernel-firmware-2.6.32-504.30.3.el6.noarch.rpm
+-rw-r--r-- 1 root root    56268 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]#
+
+
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kmod-hpsa-3.4.10-120.rhel6u5.x86_64
+Loaded plugins: product-id
+--> Running transaction check
+---> Package kmod-hpsa.x86_64 0:3.4.10-120.rhel6u5 will be installed
+--> Finished Dependency Resolution
+kmod-hpsa-3.4.10-120.rhel6u5.x86_64.rpm                                                                                                                                        |  57 kB     00:00
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]#
+
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kmod-hpsa-3.4.8-140.rhel6u{5,6}.x86_64
+Loaded plugins: product-id
+--> Running transaction check
+---> Package kmod-hpsa.x86_64 0:3.4.8-140.rhel6u5 will be installed
+---> Package kmod-hpsa.x86_64 0:3.4.8-140.rhel6u6 will be installed
+--> Finished Dependency Resolution
+kmod-hpsa-3.4.8-140.rhel6u5.x86_64.rpm                                                                                                                                         |  57 kB     00:00
+kmod-hpsa-3.4.8-140.rhel6u6.x86_64.rpm                                                                                                                                         |  55 kB     00:00
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# ll
+total 45184
+-rw-r--r-- 1 root root   125768 Mar  9 13:12 dracut-004-356.el6_6.1.noarch.rpm
+-rw-r--r-- 1 root root   126048 Jul 14 12:57 dracut-004-356.el6_6.3.noarch.rpm
+-rw-r--r-- 1 root root    25384 Mar  9 13:12 dracut-kernel-004-356.el6_6.1.noarch.rpm
+-rw-r--r-- 1 root root    25616 Jul 14 12:57 dracut-kernel-004-356.el6_6.3.noarch.rpm
+-rw-r--r-- 1 root root 30553600 Jul 14 17:31 kernel-2.6.32-504.30.3.el6.x86_64.rpm
+-rw-r--r-- 1 root root 15160192 Jul 14 17:27 kernel-firmware-2.6.32-504.30.3.el6.noarch.rpm
+-rw-r--r-- 1 root root    58320 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u5.x86_64.rpm
+-rw-r--r-- 1 root root    56268 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+-rw-r--r-- 1 root root    58547 Mar 18 18:50 kmod-hpsa-3.4.8-140.rhel6u5.x86_64.rpm
+-rw-r--r-- 1 root root    56606 Mar 18 18:50 kmod-hpsa-3.4.8-140.rhel6u6.x86_64.rpm
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]#
+
+................................................................................
+................................................................................
+
+#   Here I have download same packages at sdw2 server.
+
+[root@hq-msk-gp-tst-sdw2 20150721-1159]# rpm -q kernel kernel-firmware kmod-hpsa
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+[root@hq-msk-gp-tst-sdw2 20150721-1159]#
+
+[root@hq-msk-gp-tst-sdw2 20150721-1452.backup.current.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel-2.6.32-504.12.2.el6.x86_64 kernel-firmware-2.6.32-504.12.2.el6.noarch kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+Loaded plugins: product-id
+tcs-epel-6-x86_64                                                                                                                                                              | 3.0 kB     00:00
+tcs-epel-6-x86_64/primary_db                                                                                                                                                   | 8.8 MB     00:00
+tcs-hp-hpsum                                                                                                                                                                   | 2.9 kB     00:00
+tcs-hp-spp                                                                                                                                                                     | 2.9 kB     00:00
+tcs-hp-spp/primary_db                                                                                                                                                          | 902 kB     00:00
+tcs-hp-stk                                                                                                                                                                     | 2.9 kB     00:00
+tcs-lldpad                                                                                                                                                                     | 2.9 kB     00:00
+tcs-ossec-2.7-x86_64                                                                                                                                                           | 2.9 kB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64                                                                                                                                        | 2.9 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64                                                                                                                                            | 2.9 kB     00:00
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+tcs-remi-enterprise-6-remi-x86_64                                                                                                                                              | 2.9 kB     00:00
+tcs-rhel-6.1-x86_64-iso                                                                                                                                                        | 3.8 kB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                       | 3.4 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                            |  33 MB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                              | 3.0 kB     00:00
+tcs-rpmforge-redhat-el6-en-x86_64                                                                                                                                              | 2.9 kB     00:00
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-504.12.2.el6 will be installed
+---> Package kernel-firmware.noarch 0:2.6.32-504.12.2.el6 will be reinstalled
+---> Package kmod-hpsa.x86_64 0:3.4.4_1_RH1-1.el6_5 will be reinstalled
+--> Finished Dependency Resolution
+kernel-2.6.32-504.12.2.el6.x86_64.rpm                                                                                                                                          |  29 MB     00:00
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm                                                                                                                                 |  14 MB     00:00
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm                                                                                                                                       |  50 kB     00:00
+[root@hq-msk-gp-tst-sdw2 20150721-1452.backup.current.kernel.kernel-firmware.kmod-hpsa]#
+
+
+[root@hq-msk-gp-tst-sdw2 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel kernel-firmware kmod-hpsa                                                             Loaded plugins: product-id
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-504.30.3.el6 will be installed
+--> Processing Dependency: dracut-kernel >= 004-356.el6_6.3 for package: kernel-2.6.32-504.30.3.el6.x86_64
+---> Package kernel-firmware.noarch 0:2.6.32-504.30.3.el6 will be installed
+---> Package kmod-hpsa.x86_64 0:3.4.10-120.rhel6u6 will be installed
+--> Running transaction check
+---> Package dracut-kernel.noarch 0:004-356.el6_6.1 will be updated
+---> Package dracut-kernel.noarch 0:004-356.el6_6.3 will be an update
+--> Processing Dependency: dracut = 004-356.el6_6.3 for package: dracut-kernel-004-356.el6_6.3.noarch
+--> Running transaction check
+---> Package dracut.noarch 0:004-356.el6_6.1 will be updated
+---> Package dracut.noarch 0:004-356.el6_6.3 will be an update
+--> Finished Dependency Resolution
+kernel-2.6.32-504.30.3.el6.x86_64.rpm                                                                                                                                          |  29 MB     00:00
+kernel-firmware-2.6.32-504.30.3.el6.noarch.rpm                                                                                                                                 |  14 MB     00:00
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+dracut-kernel-004-356.el6_6.1.noarch.rpm                                                                                                                                       |  25 kB     00:00
+dracut-004-356.el6_6.1.noarch.rpm                                                                                                                                              | 123 kB     00:00
+dracut-004-356.el6_6.3.noarch.rpm                                                                                                                                              | 123 kB     00:00
+dracut-kernel-004-356.el6_6.3.noarch.rpm                                                                                                                                       |  25 kB     00:00
+[root@hq-msk-gp-tst-sdw2 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]#
+
+................................................................................
+
+[root@hq-msk-gp-tst-sdw2 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# rpm -Uvh kmod-hpsa-3.4.8-140.rhel6u6.x86_64.rpm
+warning: kmod-hpsa-3.4.8-140.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+[root@hq-msk-gp-tst-sdw2 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]#
+
+#   Then server sent to reboot.
+#   After reboot still have unbootable server.
+#   Boot from live dvd. Try to remove kernel parameter.
+#   Server gone to reboot.
+#   And server boots correctly!
+
+[root@hq-msk-gp-tst-sdw2 ~]# modinfo hpsa
+filename:       /lib/modules/2.6.32-504.12.2.el6.x86_64/weak-updates/hpsa/hpsa.ko
+license:        GPL
+version:        3.4.8-140
+description:    Driver for HP Smart Array Controller version 3.4.8-140 (d16/s100)
+author:         Hewlett-Packard Company
+srcversion:     02DBAFC5FF2498169223C44
+alias:          pci:v00000E11d*sv*sd*bc01sc04i*
+alias:          pci:v0000103Cd*sv*sd*bc01sc04i*
+alias:          pci:v00001590d00000075sv00001590sd00000089bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000088bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000087bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000077bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd0000007Dbc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000076bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000333Fbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003233bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CDbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CCbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CBbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CAbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C9bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C8bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C7bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C6bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C5bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C4bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C3bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C2bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C1bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C0bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BFbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BDbc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd0000192Abc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001929bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001928bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001926bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001925bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001924bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001923bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001922bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001921bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001920bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000334Dbc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003356bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003355bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003354bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003353bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003352bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003351bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003350bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Bbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Abc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003249bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003247bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003245bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003243bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003241bc*sc*i*
+depends:
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+parm:           hpsa_allow_any:Allow hpsa driver to access unknown HP Smart Array hardware (int)
+parm:           hpsa_simple_mode:Use 'simple mode' rather than 'performant mode' (int)
+parm:           reply_queues:Specify desired number of reply queues. 1-16, default is 4, not to exceed number of online CPUs. (int)
+[root@hq-msk-gp-tst-sdw2 ~]#
+
+#   I have install the latest version of drivers.
+[root@hq-msk-gp-tst-sdw2 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# rpm -Uvh kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+[root@hq-msk-gp-tst-sdw2 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]#
+
+#   And have sent server to reboot again.
+
+[root@hq-msk-gp-tst-sdw2 ~]# modinfo hpsa
+filename:       /lib/modules/2.6.32-504.12.2.el6.x86_64/weak-updates/hpsa/hpsa.ko
+license:        GPL
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+author:         Hewlett-Packard Company
+srcversion:     695C55EFE833740027F298D
+alias:          pci:v00000E11d*sv*sd*bc01sc04i*
+alias:          pci:v0000103Cd*sv*sd*bc01sc04i*
+alias:          pci:v00001590d00000075sv00001590sd00000089bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000088bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000087bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000077bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd0000007Dbc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000076bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000333Fbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003233bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000585bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000584bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000583bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000582bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000581bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000580bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd00002208bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CDbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CCbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CBbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CAbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C9bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C8bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C7bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C6bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C5bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C4bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C3bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C2bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C1bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C0bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BFbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BDbc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd0000192Abc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001929bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001928bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001926bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001925bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001924bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001923bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001922bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001921bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001920bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000334Dbc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003356bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003355bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003354bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003353bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003352bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003351bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003350bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Bbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Abc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003249bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003247bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003245bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003243bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003241bc*sc*i*
+depends:
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+parm:           hpsa_allow_any:Allow hpsa driver to access unknown HP Smart Array hardware (int)
+parm:           hpsa_simple_mode:Use 'simple mode' rather than 'performant mode' (int)
+parm:           reply_queues:Specify desired number of reply queues. 1-16, default is 4, not to exceed number of online CPUs. (int)
+[root@hq-msk-gp-tst-sdw2 ~]#
+
+#   Everything looks excellent.
+
+
+................................................................................
+
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]# rpm -Uvh kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+[root@hq-msk-gp-tst-sdw5 20150721-1458.modern.kernel.kernel-firmware.kmod-hpsa]#
+
+#   Server have sent to reboot.
+#   And server was successfully reboot.
+
+[root@hq-msk-gp-tst-smdw ~]# ssh sdw5
+Last login: Tue Jul 21 19:13:41 2015 from smdw
+[root@hq-msk-gp-tst-sdw5 ~]#
+[root@hq-msk-gp-tst-sdw5 ~]# modinfo hpsa
+filename:       /lib/modules/2.6.32-504.12.2.el6.x86_64/weak-updates/hpsa/hpsa.ko
+license:        GPL
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+author:         Hewlett-Packard Company
+srcversion:     695C55EFE833740027F298D
+alias:          pci:v00000E11d*sv*sd*bc01sc04i*
+alias:          pci:v0000103Cd*sv*sd*bc01sc04i*
+alias:          pci:v00001590d00000075sv00001590sd00000089bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000088bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000087bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000077bc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd0000007Dbc*sc*i*
+alias:          pci:v00001590d00000075sv00001590sd00000076bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000333Fbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003233bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000585bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000584bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000583bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000582bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000581bc*sc*i*
+alias:          pci:v00009005d00000290sv00009005sd00000580bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd00002208bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CDbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CCbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CBbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021CAbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C9bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C8bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C7bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C6bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C5bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C4bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C3bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C2bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C1bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021C0bc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BFbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BEbc*sc*i*
+alias:          pci:v0000103Cd00003239sv0000103Csd000021BDbc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd0000192Abc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001929bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001928bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001926bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001925bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001924bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001923bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001922bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001921bc*sc*i*
+alias:          pci:v0000103Cd0000323Csv0000103Csd00001920bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd0000334Dbc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003356bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003355bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003354bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003353bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003352bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003351bc*sc*i*
+alias:          pci:v0000103Cd0000323Bsv0000103Csd00003350bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Bbc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd0000324Abc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003249bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003247bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003245bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003243bc*sc*i*
+alias:          pci:v0000103Cd0000323Asv0000103Csd00003241bc*sc*i*
+depends:
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+parm:           hpsa_allow_any:Allow hpsa driver to access unknown HP Smart Array hardware (int)
+parm:           hpsa_simple_mode:Use 'simple mode' rather than 'performant mode' (int)
+parm:           reply_queues:Specify desired number of reply queues. 1-16, default is 4, not to exceed number of online CPUs. (int)
+[root@hq-msk-gp-tst-sdw5 ~]#
+
+................................................................................
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw{6..8} ; do ssh ${var1} "( hostname ; dmidecode -t system | grep Serial\ Number )" ; done
+sdw6
+        Serial Number: CZ23290BN9
+sdw7
+        Serial Number: CZ23290BN0
+sdw8
+        Serial Number: CZ23290BNG
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} ; do ssh ${var1} "( hostname ; dmidecode -t system | grep Serial\ Number )" ; done
+sdw1
+        Serial Number: CZ31450H69
+sdw3
+        Serial Number: CZ31450H6F
+sdw4
+        Serial Number: CZ31450H65
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; grep -e pci=nomsi /boot/grub/grub.conf  )" ; done
+sdw1
+sdw3
+        kernel /vmlinuz-2.6.32-504.12.2.el6.x86_64 ro root=UUID=60f322ed-1dc1-4709-b822-c4af800c41b4 rd_NO_LUKS rd_NO_LVM rd_NO_MD rd_NO_DM LANG=en_US.UTF-8 SYSFONT=latarcyrheb-sun16 KEYBOARDTYPE=pc KEYTABLE=us crashkernel=128M@16M pci=nomsi rhgb quiet
+        kernel /vmlinuz-2.6.32-358.23.2.el6.x86_64 ro root=UUID=60f322ed-1dc1-4709-b822-c4af800c41b4 rd_NO_LUKS rd_NO_LVM rd_NO_MD rd_NO_DM LANG=en_US.UTF-8 SYSFONT=latarcyrheb-sun16 KEYBOARDTYPE=pc KEYTABLE=us crashkernel=128M@16M pci=nomsi rhgb quiet
+sdw4
+        kernel /vmlinuz-2.6.32-504.12.2.el6.x86_64 ro root=UUID=b6eb9b8e-3cb3-4dcb-9b13-daf6ec1e04e9 rd_NO_LUKS rd_NO_LVM rd_NO_MD rd_NO_DM LANG=en_US.UTF-8 SYSFONT=latarcyrheb-sun16 KEYBOARDTYPE=pc KEYTABLE=us crashkernel=128M@16M pci=nomsi rhgb quiet
+        kernel /vmlinuz-2.6.32-358.23.2.el6.x86_64 ro root=UUID=b6eb9b8e-3cb3-4dcb-9b13-daf6ec1e04e9 rd_NO_LUKS rd_NO_LVM rd_NO_MD rd_NO_DM LANG=en_US.UTF-8 SYSFONT=latarcyrheb-sun16 KEYBOARDTYPE=pc KEYTABLE=us crashkernel=128M@16M pci=nomsi rhgb quiet
+sdw6
+sdw7
+sdw8
+[root@hq-msk-gp-tst-smdw ~]#
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; mkdir -p ~/work/20150721-1953  )" ; done
+sdw1
+sdw3
+sdw4
+sdw6
+sdw7
+sdw8
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; cp -r /boot/ ~/work/20150721-1953/20150721-53.backup.boot/  )" ; done
+sdw1
+sdw3
+sdw4
+sdw6
+sdw7
+sdw8
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; ls ~/work/20150721-1953/20150721-53.backup.boot/  )" ; done
+sdw1
+config-2.6.32-358.23.2.el6.x86_64
+config-2.6.32-504.12.2.el6.x86_64
+efi
+grub
+initramfs-2.6.32-358.23.2.el6.x86_64.img
+initramfs-2.6.32-504.12.2.el6.x86_64.img
+lost+found
+symvers-2.6.32-358.23.2.el6.x86_64.gz
+symvers-2.6.32-504.12.2.el6.x86_64.gz
+System.map-2.6.32-358.23.2.el6.x86_64
+System.map-2.6.32-504.12.2.el6.x86_64
+vmlinuz-2.6.32-358.23.2.el6.x86_64
+vmlinuz-2.6.32-504.12.2.el6.x86_64
+sdw3
+config-2.6.32-358.23.2.el6.x86_64
+config-2.6.32-504.12.2.el6.x86_64
+efi
+grub
+initramfs-2.6.32-358.23.2.el6.x86_64.img
+initramfs-2.6.32-504.12.2.el6.x86_64.img
+lost+found
+symvers-2.6.32-358.23.2.el6.x86_64.gz
+symvers-2.6.32-504.12.2.el6.x86_64.gz
+System.map-2.6.32-358.23.2.el6.x86_64
+System.map-2.6.32-504.12.2.el6.x86_64
+vmlinuz-2.6.32-358.23.2.el6.x86_64
+vmlinuz-2.6.32-504.12.2.el6.x86_64
+sdw4
+config-2.6.32-358.23.2.el6.x86_64
+config-2.6.32-504.12.2.el6.x86_64
+efi
+grub
+initramfs-2.6.32-358.23.2.el6.x86_64.img
+initramfs-2.6.32-504.12.2.el6.x86_64.img
+lost+found
+symvers-2.6.32-358.23.2.el6.x86_64.gz
+symvers-2.6.32-504.12.2.el6.x86_64.gz
+System.map-2.6.32-358.23.2.el6.x86_64
+System.map-2.6.32-504.12.2.el6.x86_64
+vmlinuz-2.6.32-358.23.2.el6.x86_64
+vmlinuz-2.6.32-504.12.2.el6.x86_64
+sdw6
+config-2.6.32-358.23.2.el6.x86_64
+config-2.6.32-504.12.2.el6.x86_64
+efi
+grub
+initramfs-2.6.32-358.23.2.el6.x86_64.img
+initramfs-2.6.32-504.12.2.el6.x86_64.img
+initrd-2.6.32-358.23.2.el6.x86_64kdump.img
+initrd-2.6.32-504.12.2.el6.x86_64kdump.img
+lost+found
+symvers-2.6.32-358.23.2.el6.x86_64.gz
+symvers-2.6.32-504.12.2.el6.x86_64.gz
+System.map-2.6.32-358.23.2.el6.x86_64
+System.map-2.6.32-504.12.2.el6.x86_64
+vmlinuz-2.6.32-358.23.2.el6.x86_64
+vmlinuz-2.6.32-504.12.2.el6.x86_64
+sdw7
+config-2.6.32-358.23.2.el6.x86_64
+config-2.6.32-504.12.2.el6.x86_64
+efi
+grub
+initramfs-2.6.32-358.23.2.el6.x86_64.img
+initramfs-2.6.32-504.12.2.el6.x86_64.img
+initrd-2.6.32-358.23.2.el6.x86_64kdump.img
+initrd-2.6.32-504.12.2.el6.x86_64kdump.img
+lost+found
+symvers-2.6.32-358.23.2.el6.x86_64.gz
+symvers-2.6.32-504.12.2.el6.x86_64.gz
+System.map-2.6.32-358.23.2.el6.x86_64
+System.map-2.6.32-504.12.2.el6.x86_64
+vmlinuz-2.6.32-358.23.2.el6.x86_64
+vmlinuz-2.6.32-504.12.2.el6.x86_64
+sdw8
+config-2.6.32-358.23.2.el6.x86_64
+config-2.6.32-504.12.2.el6.x86_64
+efi
+grub
+initramfs-2.6.32-358.23.2.el6.x86_64.img
+initramfs-2.6.32-504.12.2.el6.x86_64.img
+initrd-2.6.32-358.23.2.el6.x86_64kdump.img
+initrd-2.6.32-504.12.2.el6.x86_64kdump.img
+lost+found
+symvers-2.6.32-358.23.2.el6.x86_64.gz
+symvers-2.6.32-504.12.2.el6.x86_64.gz
+System.map-2.6.32-358.23.2.el6.x86_64
+System.map-2.6.32-504.12.2.el6.x86_64
+vmlinuz-2.6.32-358.23.2.el6.x86_64
+vmlinuz-2.6.32-504.12.2.el6.x86_64
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; rpm -q kernel kernel-firmware kmod-hpsa  )" ; done
+sdw1
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+sdw3
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+sdw4
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+sdw6
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+sdw7
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+sdw8
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; mkdir ~/work/20150721-1953/20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa  )" ; done
+sdw1
+sdw3
+sdw4
+sdw6
+sdw7
+sdw8
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; cd ~/work/20150721-1953/20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa ; yumdownloader kernel-2.6.32-504.12.2.el6.x86_64 kernel-firmware-2.6.32-504.12.2.el6.noarch kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64  )" ; done
+sdw1
+Loaded plugins: product-id
+sdw3
+Loaded plugins: product-id
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+sdw4
+Loaded plugins: product-id
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+sdw6
+Loaded plugins: product-id
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+sdw7
+Loaded plugins: product-id
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+sdw8
+Loaded plugins: product-id
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+[root@hq-msk-gp-tst-smdw ~]#
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh ${var1} "( hostname ; ls ~/work/20150721-1953/20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa  )" ; done             sdw1
+kernel-2.6.32-504.12.2.el6.x86_64.rpm
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+sdw3
+kernel-2.6.32-504.12.2.el6.x86_64.rpm
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+sdw4
+kernel-2.6.32-504.12.2.el6.x86_64.rpm
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+sdw6
+kernel-2.6.32-504.12.2.el6.x86_64.rpm
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+sdw7
+kernel-2.6.32-504.12.2.el6.x86_64.rpm
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+sdw8
+kernel-2.6.32-504.12.2.el6.x86_64.rpm
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+[root@hq-msk-gp-tst-smdw ~]#
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh -t ${var1} "( hostname ; mkdir  ~/work/20150721-1953/20150721-2009.modern.version.kmod-hpsa )" ; done
+sdw1
+Connection to sdw1 closed.
+sdw3
+Connection to sdw3 closed.
+sdw4
+Connection to sdw4 closed.
+sdw6
+Connection to sdw6 closed.
+sdw7
+Connection to sdw7 closed.
+sdw8
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh -t ${var1} "( hostname ; cd ~/work/20150721-1953/20150721-2009.modern.version.kmod-hpsa ; yumdownloader kmod-hpsa )" ; done
+sdw1
+Loaded plugins: product-id
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+Connection to sdw1 closed.
+sdw3
+Loaded plugins: product-id
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+Connection to sdw3 closed.
+sdw4
+Loaded plugins: product-id
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+Connection to sdw4 closed.
+sdw6
+Loaded plugins: product-id
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+Connection to sdw6 closed.
+sdw7
+Loaded plugins: product-id
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+Connection to sdw7 closed.
+sdw8
+Loaded plugins: product-id
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh -t ${var1} "( hostname ; cd ~/work/20150721-1953/20150721-2009.modern.version.kmod-hpsa ; rpm -Uvh kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm )" ; done
+sdw1
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+Connection to sdw1 closed.
+sdw3
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+Connection to sdw3 closed.
+sdw4
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+Connection to sdw4 closed.
+sdw6
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+Connection to sdw6 closed.
+sdw7
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+Connection to sdw7 closed.
+sdw8
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw ~]#
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh -t ${var1} "( hostname ; shutdown -r now )" ; done                                                                         sdw1
+
+Broadcast message from root@sdw1
+        (/dev/pts/1) at 20:21 ...
+
+The system is going down for reboot NOW!
+Connection to sdw1 closed.
+sdw3
+
+Broadcast message from root@sdw3
+        (/dev/pts/0) at 20:21 ...
+
+The system is going down for reboot NOW!
+Connection to sdw3 closed.
+sdw4
+
+Broadcast message from root@sdw4
+        (/dev/pts/0) at 20:21 ...
+
+The system is going down for reboot NOW!
+Connection to sdw4 closed.
+sdw6
+
+Broadcast message from root@sdw6
+        (/dev/pts/0) at 20:21 ...
+
+The system is going down for reboot NOW!
+Connection to sdw6 closed.
+sdw7
+
+Broadcast message from root@sdw7
+        (/dev/pts/0) at 20:21 ...
+
+The system is going down for reboot NOW!
+Connection to sdw7 closed.
+sdw8
+
+Broadcast message from root@sdw8
+        (/dev/pts/0) at 20:21 ...
+
+The system is going down for reboot NOW!
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw ~]#
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in sdw1 sdw{3..4} sdw{6..8} ; do ssh -t ${var1} "( hostname ; modinfo hpsa | grep version )" ; done
+sdw1
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+srcversion:     695C55EFE833740027F298D
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+Connection to sdw1 closed.
+sdw3
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+srcversion:     695C55EFE833740027F298D
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+Connection to sdw3 closed.
+sdw4
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+srcversion:     695C55EFE833740027F298D
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+Connection to sdw4 closed.
+sdw6
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+srcversion:     695C55EFE833740027F298D
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+Connection to sdw6 closed.
+sdw7
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+srcversion:     695C55EFE833740027F298D
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+Connection to sdw7 closed.
+sdw8
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+srcversion:     695C55EFE833740027F298D
+vermagic:       2.6.32-504.el6.x86_64 SMP mod_unload modversions
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw ~]#
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-tst-mdw ~]# mkdir -p ~/work/20150721-1953
+[root@hq-msk-gp-tst-mdw ~]# cp -r /boot/ ~/work/20150721-1953/20150721-53.backup.boot/
+[root@hq-msk-gp-tst-mdw ~]# ls ~/work/20150721-1953/20150721-53.backup.boot/
+config-2.6.32-220.23.1.el6.x86_64  grub                                      initrd-2.6.32-358.23.2.el6.x86_64kdump.img  symvers-2.6.32-358.23.2.el6.x86_64.gz  System.map-2.6.32-504.12.2.el6.x86_64
+config-2.6.32-358.23.2.el6.x86_64  initramfs-2.6.32-220.23.1.el6.x86_64.img  initrd-2.6.32-504.12.2.el6.x86_64kdump.img  symvers-2.6.32-504.12.2.el6.x86_64.gz  vmlinuz-2.6.32-220.23.1.el6.x86_64
+config-2.6.32-504.12.2.el6.x86_64  initramfs-2.6.32-358.23.2.el6.x86_64.img  lost+found                                  System.map-2.6.32-220.23.1.el6.x86_64  vmlinuz-2.6.32-358.23.2.el6.x86_64
+efi                                initramfs-2.6.32-504.12.2.el6.x86_64.img  symvers-2.6.32-220.23.1.el6.x86_64.gz       System.map-2.6.32-358.23.2.el6.x86_64  vmlinuz-2.6.32-504.12.2.el6.x86_64
+[root@hq-msk-gp-tst-mdw ~]# rpm -q kernel kernel-firmware kmod-hpsa
+
+kernel-2.6.32-220.23.1.el6.x86_64
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.12.2.el6.x86_64
+kernel-firmware-2.6.32-504.12.2.el6.noarch
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+[root@hq-msk-gp-tst-mdw ~]#
+[root@hq-msk-gp-tst-mdw ~]# mkdir ~/work/20150721-1953/20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa
+[root@hq-msk-gp-tst-mdw ~]# cd ~/work/20150721-1953/20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa ; yumdownloader kernel-2.6.32-504.12.2.el6.x86_64 kernel-firmware-2.6.32-504.12.2.el6.noarch kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+cloudera-cdh5-redhat-6-x86_64-5.1.2                                                                                                                                            |  951 B     00:00
+tcs-epel-6-x86_64                                                                                                                                                              | 3.0 kB     00:00
+tcs-epel-6-x86_64/primary_db                                                                                                                                                   | 8.8 MB     00:00
+tcs-hp-hpsum                                                                                                                                                                   | 2.9 kB     00:00
+tcs-hp-spp                                                                                                                                                                     | 2.9 kB     00:00
+tcs-hp-spp/primary_db                                                                                                                                                          | 902 kB     00:00
+tcs-hp-stk                                                                                                                                                                     | 2.9 kB     00:00
+tcs-lldpad                                                                                                                                                                     | 2.9 kB     00:00
+tcs-ossec-2.7-x86_64                                                                                                                                                           | 2.9 kB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64                                                                                                                                        | 2.9 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64                                                                                                                                            | 2.9 kB     00:00
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+tcs-remi-enterprise-6-remi-x86_64                                                                                                                                              | 2.9 kB     00:00
+tcs-rhel-6.1-x86_64-iso                                                                                                                                                        | 3.8 kB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                       | 3.4 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                            |  33 MB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                              | 3.0 kB     00:00
+tcs-rpmforge-redhat-el6-en-x86_64                                                                                                                                              | 2.9 kB     00:00
+tcs-zabbix-2.2-rhel-6-x86_64                                                                                                                                                   | 2.9 kB     00:00
+kernel-2.6.32-504.12.2.el6.x86_64.rpm                                                                                                                                          |  29 MB     00:00
+kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm                                                                                                                                 |  14 MB     00:00
+kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm                                                                                                                                       |  50 kB     00:00
+[root@hq-msk-gp-tst-mdw 20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa]# ls ~/work/20150721-1953/20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa
+kernel-2.6.32-504.12.2.el6.x86_64.rpm  kernel-firmware-2.6.32-504.12.2.el6.noarch.rpm  kmod-hpsa-3.4.4_1_RH1-1.el6_5.x86_64.rpm
+[root@hq-msk-gp-tst-mdw 20150721-1957.backup.kernel.kernel-firmware.kmod-hpsa]# cd ..
+[root@hq-msk-gp-tst-mdw 20150721-1953]# mkdir  ~/work/20150721-1953/20150721-2009.modern.version.kmod-hpsa
+[root@hq-msk-gp-tst-mdw 20150721-1953]# cd ~/work/20150721-1953/20150721-2009.modern.version.kmod-hpsa ; yumdownloader kmod-hpsa
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm                                                                                                                                        |  55 kB     00:00
+[root@hq-msk-gp-tst-mdw 20150721-2009.modern.version.kmod-hpsa]# cd ~/work/20150721-1953/20150721-2009.modern.version.kmod-hpsa ; rpm -Uvh kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm
+warning: kmod-hpsa-3.4.10-120.rhel6u6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+[root@hq-msk-gp-tst-mdw 20150721-2009.modern.version.kmod-hpsa]# dmidecode -t system | grep Serial\ Number
+        Serial Number: CZ314824F3
+[root@hq-msk-gp-tst-mdw 20150721-2009.modern.version.kmod-hpsa]#
+
+[root@hq-msk-gp-tst-mdw 20150721-2009.modern.version.kmod-hpsa]# dmidecode -t system | grep Serial\ Number
+        Serial Number: CZ314824F3
+[root@hq-msk-gp-tst-mdw 20150721-2009.modern.version.kmod-hpsa]# hponcfg -g
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+ERROR: Error communicating with ILO
+ERROR: Unable to communicate with the Management Processor.
+`7Q[root@hq-msk-gp-tst-mdw 20150721-2009.modern.version.kmod-hpsa]#
+
+
+................................................................................
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh ${var1} "( hostname ; modinfo hpsa | grep -e ^version: -e description: )" ; done
+mdw
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+smdw
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw1
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw2
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw3
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw4
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw5
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw6
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw7
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+sdw8
+version:        3.4.10-120
+description:    Driver for HP Smart Array Controller version 3.4.10-120 (d38/s216)
+[root@hq-msk-gp-tst-smdw ~]#
+
+................................................................................
+
+
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, July 24, 2015 2:56 PM
+To: 'N, Tomchou Sana'
+Cc: Shishkunov, Sergey
+Subject: RE: Just a handshake || HP case reference 4651770022-461 - hpsa driver issue
+
+Hello Tomchou.
+
+I have successfully updated hpsa driver on next our GreenPlum contour that contain 18 servers.
+Before, of course, I have removed, parameter pci=nomsi from grub.conf.
+
+Very soon will be updated other our GreenPlum contours.
+
+I think, this Case may be closed.
+
+Thank you for cooperation.
+
+From: N, Tomchou Sana [mailto:tomchou-n.sana@hp.com]
+Sent: Friday, July 24, 2015 12:48 PM
+To: Belogrud Sergey Vladimirovich
+Cc: Shishkunov, Sergey
+Subject: RE: Just a handshake || HP case reference 4651770022-461 - hpsa driver issue
+
+Hi Sergey,
+
+I hope you have gone through the iLO3 videos and you are able to play on the right platform.
+Please let me know if we can close this case if you don’t have any more concerns.
+
+regards
+./tom
+
+................................................................................
+
+
+
+
+
+
+
+
+

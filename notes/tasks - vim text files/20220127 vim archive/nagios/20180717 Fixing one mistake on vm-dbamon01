@@ -1,0 +1,78 @@
+
+................................................................................
+
+
+From: Belogrud Sergey Vladimirovich 
+Sent: Monday, July 16, 2018 12:52 PM
+To: unix-admins <unix-admins@tinkoff.ru>
+Subject: Проверка на vm-dbamon01
+
+Добрый день.
+
+Коллеги, кто-нибудь узнаёт сделанную им проверку на vm-dbamon01, имя которой задублировалось в нескольких файлах (один из которых назван странно: /etc/nrpe.d/nrpe.cfg_ ).
+
+[root@vm-dbamon01 ~]# grep -ire "check_tcs_monitor_00_rc" /etc/nrpe.d/
+/etc/nrpe.d/check_db_online4.cfg:command[check_tcs_monitor_00_rc]=/opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+/etc/nrpe.d/nrpe.cfg_:command[check_tcs_monitor_00_rc]          = /usr/bin/sudo /usr/lib64/nagios/plugins/check_oracle_tcs -u tcs_monitor -p monitor_1 -d ONLINE4 -q "select * from tctdbs.tcs_monitor_00_rc"
+[root@vm-dbamon01 ~]#
+
+С уважением,
+
+Сергей Белогруд
+Старший системный администратор
+
+................................................................................
+
+
+#
+#	A I can see - it was the first commit for both files, that have duplicate of test.
+#
+
+................................................................................
+
+
+[root@vm-dbamon01 etc]# etckeeper vcs --no-pager log -p nrpe.d/check_db_online4.cfg | vim -
+
+:/check_tcs_monitor_00_rc
+
+commit 594ebe6b80177669fe846ba09946bb57e69e256f
+Author: root <root@vm-dbamon01.tcsbank.ru>
+Date:   Wed Feb 24 15:46:04 2016 +0300
+
+    The first initial commit
+
+diff --git a/nrpe.d/check_db_online4.cfg b/nrpe.d/check_db_online4.cfg
+new file mode 100644
+index 0000000..0699376
+--- /dev/null
++++ b/nrpe.d/check_db_online4.cfg
+@@ -0,0 +1,26 @@
+...
++command[check_tcs_monitor_00_rc]=/opt/TCS/scripts/nagios/plugins/online4/online4-check_tcs_monitor_00_rc.sh
+...
+
+................................................................................
+
+
+[root@vm-dbamon01 etc]# etckeeper vcs --no-pager log -n 1 -p nrpe.d/nrpe.cfg_
+commit 594ebe6b80177669fe846ba09946bb57e69e256f
+Author: root <root@vm-dbamon01.tcsbank.ru>
+Date:   Wed Feb 24 15:46:04 2016 +0300
+
+    The first initial commit
+
+diff --git a/nrpe.d/nrpe.cfg_ b/nrpe.d/nrpe.cfg_
+new file mode 100644
+index 0000000..200bbbe
+--- /dev/null
++++ b/nrpe.d/nrpe.cfg_
+@@ -0,0 +1,49 @@
++###ONLINE4
++command[check_tcs_monitor_00_rc]               = /usr/bin/sudo /usr/lib64/nagios/plugins/check_oracle_tcs -u tcs_monitor -p monitor_1 -d ONLINE4 -q "select * from tctdbs.tcs_monitor_00_rc"
+...
+[root@vm-dbamon01 etc]#
+
+................................................................................
+
+
+

@@ -1,0 +1,487 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   754369
+Название    №754369
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  25.02.2016 13:48
+Дата регистрации    25.02.2016 13:48
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день!
+
+Просьба настроить отправку почты с указанной ВМ аналогично m1-sasetl01p.
+
+Отправлять будем уведомления о работе наших сервисов на внутренние адреса, в том числе dwh-adm,greenplum_admins, а также на тех, кто входит в эти группы.
+
+
+С уважением,
+
+Дмитрий Немчин
+Старший системный администратор
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Немчин Дмитрий
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Немчин Дмитрий
+Контактный e-mail   d.nemchin@tinkoff.ru
+Контактные телефоны 79264249974, 2758
+
+................................................................................
+
+[root@m1-sasetl01p ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.2...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 M1-MSK-MAIL20.tcsbank.ru Microsoft ESMTP MAIL Service ready at Thu, 25 Feb 2016 14:54:17 +0300
+hello m1-sasetl01p.tcsbank.ru
+500 5.3.3 Unrecognized command
+helo m1-sasetl01p.tcsbank.ru
+250 M1-MSK-MAIL20.tcsbank.ru Hello [10.219.0.236]
+mail from: <s.belogrud@tcsbank.ru>
+250 2.1.0 Sender OK
+rcpt to: <s.belogrud@tcsbank.ru>
+250 2.1.5 Recipient OK
+data
+354 Start mail input; end with <CRLF>.<CRLF>
+subject: test 20160225-1455
+test 1
+.
+250 2.6.0 <36dd8ff8-199a-4212-9bce-87321d6f8386@M1-MSK-MAIL20.tcsbank.ru> [InternalId=53472112] Queued mail for delivery
+quit
+221 2.0.0 Service closing transmission channel
+Connection closed by foreign host.
+[root@m1-sasetl01p ~]#
+
+................................................................................
+
+[root@m1-sasetl01p ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = m1-sasetl01p
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@m1-sasetl01p ~]#
+
+[root@m1-sasetl01p ~]# mailq
+Mail queue is empty
+[root@m1-sasetl01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@m1-sasetl01p ~]# tail /var/log/maillog
+Feb 25 15:00:01 m1-sasetl01p postfix/bounce[53843]: D2D5620CA8: sender non-delivery notification: D393F20CB1
+Feb 25 15:00:01 m1-sasetl01p postfix/qmgr[4881]: D393F20CB1: from=<>, size=5654, nrcpt=1 (queue active)
+Feb 25 15:00:01 m1-sasetl01p postfix/qmgr[4881]: D2D5620CA8: removed
+Feb 25 15:00:01 m1-sasetl01p postfix/local[53801]: D393F20CB1: to=<root@m1-sasetl01p.tcsbank.ru>, relay=local, delay=0, delays=0/0/0/0, dsn=5.2.2, status=bounced (cannot update mailbox /var/mail/root for user root. error writing message: File too large)
+Feb 25 15:00:01 m1-sasetl01p postfix/qmgr[4881]: D393F20CB1: removed
+Feb 25 15:02:43 m1-sasetl01p postfix/pickup[72319]: 6354A20CB1: uid=0 from=<root>
+Feb 25 15:02:43 m1-sasetl01p postfix/cleanup[63866]: 6354A20CB1: message-id=<20160225120243.6354A20CB1@m1-sasetl01p>
+Feb 25 15:02:43 m1-sasetl01p postfix/qmgr[4881]: 6354A20CB1: from=<root@m1-sasetl01p.tcsbank.ru>, size=543, nrcpt=1 (queue active)
+Feb 25 15:02:43 m1-sasetl01p postfix/smtp[63868]: 6354A20CB1: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.49, delays=0.03/0.03/0.01/0.43, dsn=2.6.0, status=sent (250 2.6.0 <20160225120243.6354A20CB1@m1-sasetl01p> [InternalId=53472891] Queued mail for delivery)
+Feb 25 15:02:43 m1-sasetl01p postfix/qmgr[4881]: 6354A20CB1: removed
+[root@m1-sasetl01p ~]#
+
+[root@m1-sasetl01p ~]# chkconfig --list postfix
+postfix         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@m1-sasetl01p ~]#
+
+................................................................................
+................................................................................
+
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 12:15 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: Sakalkin Vladislav Viktorovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+Почту на vm-o2g01p настроил.
+Сетевики доступ к релэю тоже прописали - спасибо им, кстати.
+Можно проверять.
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 11:57 AM
+To: Nemchin Dmitriy Yuryevich
+Cc: Sakalkin Vladislav Viktorovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+
+Сейчас сделаю почту на vm-o2g01p.
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 11:56 AM
+To: Nemchin Dmitriy Yuryevich
+Cc: Sakalkin Vladislav Viktorovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+
+Млять!
+Это из-за пидорс..ой привычки писать, что нужно в Subject’е письма, бл..ть…
+
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 11:53 AM
+To: Nemchin Dmitriy Yuryevich
+Cc: Sakalkin Vladislav Viktorovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+Ну точно – про разные серверы.
+
+А какого хрена я на m1-sasaetl01p почту настраивал… спрашивается? 
+
+From: Nemchin Dmitriy Yuryevich
+Sent: Friday, February 26, 2016 11:45 AM
+To: Belogrud Sergey Vladimirovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+Погоди. Мы вообще про разные машины говорим или я не понимаю чего-то. На m1-sasaetl01p мусор почищу, и там все работает.
+
+А вот на vm-o2g01p не работает. Про доступ к релэю – его нет с ВМ, пишу на это заявку
+
+
+Дмитрий Немчин
+Старший системный администратор
+
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 11:51 AM
+To: Nemchin Dmitriy Yuryevich
+Cc: Sakalkin Vladislav Viktorovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+Кстати, я не понял, что за логи в твоём письме:
+Вот логи с сервера m1-sasetl01p, где настраивалась почта и с которого она отправляется:
+
+Feb 26 11:30:01 m1-sasetl01p postfix/sendmail[43531]: warning: the Postfix sendmail command has set-uid root file permissions
+Feb 26 11:30:01 m1-sasetl01p postfix/sendmail[43531]: warning: or the command is run from a set-uid root process
+Feb 26 11:30:01 m1-sasetl01p postfix/sendmail[43531]: warning: the Postfix sendmail command must be installed without set-uid root file permissions
+Feb 26 11:30:01 m1-sasetl01p postfix/pickup[68923]: 8EB8A20CB1: uid=1994 from=<root>
+Feb 26 11:30:01 m1-sasetl01p postfix/cleanup[43673]: 8EB8A20CB1: message-id=<20160226083001.8EB8A20CB1@m1-sasetl01p>
+Feb 26 11:30:01 m1-sasetl01p postfix/qmgr[4881]: 8EB8A20CB1: from=<root@m1-sasetl01p.tcsbank.ru>, size=3665, nrcpt=1 (queue active)
+Feb 26 11:30:01 m1-sasetl01p postfix/smtp[43675]: 8EB8A20CB1: to=<gpsys@m1-sasetl01p.tcsbank.ru>, orig_to=<gpsys>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.48, delays=0.25/0.01/0.02/0.21, dsn=2.6.0, status=sent (250 2.6.0 <20160226083001.8EB8A20CB1@m1-sasetl01p> [InternalId=53566016] Queued mail for delivery)
+Feb 26 11:30:01 m1-sasetl01p postfix/qmgr[4881]: 8EB8A20CB1: removed
+
+А это что за хрень?
+> Feb 26 11:28:04 vm-o2g01p postfix/pickup[2925]: DB7DD60907: uid=1063 from=<dwhsys>
+> Feb 26 11:28:04 vm-o2g01p postfix/cleanup[3833]: DB7DD60907: message-id=<20160226082804.DB7DD60907@vm-o2g01p.tcsbank.ru>
+> Feb 26 11:28:04 vm-o2g01p postfix/qmgr[1624]: DB7DD60907: from=<dwhsys@vm-o2g01p.tcsbank.ru>, size=551, nrcpt=1 (queue active)
+> Feb 26 11:28:04 vm-o2g01p postfix/smtp[3824]: connect to tinkoff.ru[192.168.5.96]:25: Connection refused
+> Feb 26 11:28:04 vm-o2g01p postfix/smtp[3824]: DB7DD60907: to=<d.nemchin@tinkoff.ru>, relay=none, delay=0.06, delays=0.05/0/0.01/0, dsn=4.4.1, status=deferred (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+
+
+Это так, для справки.
+[root@m1-sasetl01p ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+2: eth9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.5.50/24 brd 10.216.5.255 scope global eth9
+3: eth8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.4.50/24 brd 10.216.4.255 scope global eth8
+12: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.26.5/24 brd 10.216.26.255 scope global bond0
+15: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP
+    inet 10.217.65.54/24 brd 10.217.65.255 scope global bond1
+[root@m1-sasetl01p ~]# ip route
+10.216.5.0/24 dev eth9  proto kernel  scope link  src 10.216.5.50
+10.216.4.0/24 dev eth8  proto kernel  scope link  src 10.216.4.50
+10.217.65.0/24 dev bond1  proto kernel  scope link  src 10.217.65.54
+10.216.26.0/24 dev bond0  proto kernel  scope link  src 10.216.26.5
+default via 10.216.26.254 dev bond0
+[root@m1-sasetl01p ~]#
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 11:39 AM
+To: Nemchin Dmitriy Yuryevich
+Subject: RE: Отправка почты с vm-o2g01p
+
+Тадам!!!
+> Если следы куда оно отправилось не ясны, то нужно искать его маршрут на сервере-релэе smtp.tcsbank.ru. Доступ к нему дают сетевики – с них предлагаю и начать спрашивать – что куда отправилось.
+
+Бонусом:
+
+Вижу, что некоторые локальные почтовые ящики несут в себе кучу трэша:
+
+[root@m1-sasetl01p ~]# ls -AlSh /var/spool/mail/ | head
+total 196M
+-rw-rw----. 1 dwhsys        mail  49M Feb 25 15:00 dwhsys
+-rw-rw----  1 gpsys         mail  49M Feb 25 15:00 gpsys
+-rw-rw----. 1 avaya         mail  49M Feb 25 12:00 avaya
+-rw-------. 1 root          mail  49M Feb 25 15:00 root
+-rw-rw----. 1 sasinst       mail 8.3K Oct 23  2013 sasinst
+-rw-rw----  1 a.gulyarenko  mail    0 Nov 27 14:39 a.gulyarenko
+-rw-rw----  1 akozachek     mail    0 Oct 29 17:49 akozachek
+-rw-rw----  1 a.leonov      mail    0 Apr  2  2014 a.leonov
+-rw-rw----. 1 androsm       mail    0 Jul 24  2013 androsm
+[root@m1-sasetl01p ~]#
+
+Так выглядит трэш:
+
+[root@m1-sasetl01p ~]# mailx -f /var/spool/mail/gpsys
+& Z 10
+& 231
+
+Message 231:
+From root@m1-sasetl01p.tcsbank.ru  Fri Nov  7 09:30:01 2014
+Return-Path: <root@m1-sasetl01p.tcsbank.ru>
+X-Original-To: gpsys
+Delivered-To: gpsys@m1-sasetl01p.tcsbank.ru
+From: root@m1-sasetl01p.tcsbank.ru (Cron Daemon)
+To: gpsys@m1-sasetl01p.tcsbank.ru
+Subject: Cron <gpsys@m1-sasetl01p> /home/gpsys/run/grants/grant.sh > /u0/projects/tf_admin/logs/grants.log
+Content-Type: text/plain; charset=UTF-8
+Auto-Submitted: auto-generated
+X-Cron-Env: <SHELL=/bin/sh>
+X-Cron-Env: <HOME=/home/gpsys/>
+X-Cron-Env: <PATH=/usr/bin:/bin>
+X-Cron-Env: <LOGNAME=gpsys>
+X-Cron-Env: <USER=gpsys>
+Date: Fri,  7 Nov 2014 09:30:01 +0300 (MSK)
+Status: R
+
+psql: could not connect to server: Connection refused
+        Is the server running on host "10.216.26.22" and accepting
+        TCP/IP connections on port 5432?
+psql: could not connect to server: Connection refused
+        Is the server running on host "10.216.26.22" and accepting
+        TCP/IP connections on port 5432?
+
+Их можно было бы почистить.
+Можно просто удалить эти файлы или перенести куда-то… и сжать, например.
+
+From: Nemchin Dmitriy Yuryevich
+Sent: Friday, February 26, 2016 11:33 AM
+To: Belogrud Sergey Vladimirovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+К владельцам релэя – это к Гнитиёву?
+
+
+Дмитрий Немчин
+Старший системный администратор
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 11:32 AM
+To: Nemchin Dmitriy Yuryevich <d.nemchin@tinkoff.ru>
+Subject: RE: Отправка почты с vm-o2g01p
+
+Вижу, что твой адрес имеет доменный суффикс tinkoff.ru, а мой tcsbank.ru…
+Почувствуй разницу… называется. 
+Все вопросы к владельцам релэя.
+
+From: Nemchin Dmitriy Yuryevich
+Sent: Friday, February 26, 2016 11:30 AM
+To: Belogrud Sergey Vladimirovich
+Subject: RE: Отправка почты с vm-o2g01p
+
+Делаю тоже самое, но на свой адрес:
+
+Feb 26 11:28:04 vm-o2g01p postfix/pickup[2925]: DB7DD60907: uid=1063 from=<dwhsys>
+Feb 26 11:28:04 vm-o2g01p postfix/cleanup[3833]: DB7DD60907: message-id=<20160226082804.DB7DD60907@vm-o2g01p.tcsbank.ru>
+Feb 26 11:28:04 vm-o2g01p postfix/qmgr[1624]: DB7DD60907: from=<dwhsys@vm-o2g01p.tcsbank.ru>, size=551, nrcpt=1 (queue active)
+Feb 26 11:28:04 vm-o2g01p postfix/smtp[3824]: connect to tinkoff.ru[192.168.5.96]:25: Connection refused
+Feb 26 11:28:04 vm-o2g01p postfix/smtp[3824]: DB7DD60907: to=<d.nemchin@tinkoff.ru>, relay=none, delay=0.06, delays=0.05/0/0.01/0, dsn=4.4.1, status=deferred (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+
+
+Дмитрий Немчин
+Старший системный администратор
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 26, 2016 11:27 AM
+To: Nemchin Dmitriy Yuryevich <d.nemchin@tinkoff.ru>
+Subject: RE: Отправка почты с vm-o2g01p
+
+Добрый день.
+
+Отправляю письмо коммандой:
+
+[bsv@m1-sasetl01p ~]$ echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[bsv@m1-sasetl01p ~]$
+
+Само письмо:
+
+
+
+Заголовки пришедшего письма:
+
+Received: from m1-msk-mail1302.tcsbank.ru (10.216.58.132) by
+ds-msk-mail1301.tcsbank.ru (10.216.60.131) with Microsoft SMTP Server (TLS)
+id 15.0.1104.5 via Mailbox Transport; Fri, 26 Feb 2016 11:16:07 +0300
+Received: from ds-msk-mail1303.tcsbank.ru (10.216.60.133) by
+m1-msk-mail1302.tcsbank.ru (10.216.58.132) with Microsoft SMTP Server (TLS)
+id 15.0.1104.5; Fri, 26 Feb 2016 11:16:06 +0300
+Received: from ds-msk-mail1303.tcsbank.ru (10.216.60.133) by
+ds-msk-mail1303.tcsbank.ru (10.216.60.133) with Microsoft SMTP Server (TLS)
+id 15.0.1130.7; Fri, 26 Feb 2016 11:16:06 +0300
+Received: from M1-MSK-MAIL20.tcsbank.ru (10.216.58.37) by
+ds-msk-mail1303.tcsbank.ru (10.216.60.133) with Microsoft SMTP Server (TLS)
+id 15.0.1130.7 via Frontend Transport; Fri, 26 Feb 2016 11:16:06 +0300
+Received: from m1-sasetl01p (10.219.0.236) by M1-MSK-MAIL20.tcsbank.ru
+(10.216.58.37) with Microsoft SMTP Server id 14.3.210.2; Fri, 26 Feb 2016
+11:16:06 +0300
+Received: by m1-sasetl01p (Postfix, from userid 525)   id 5205D20CB1; Fri, 26
+Feb 2016 11:16:06 +0300 (MSK)
+Date: Fri, 26 Feb 2016 11:16:06 +0300
+To: <s.belogrud@tcsbank.ru>
+Subject: 20160226-1116 Test mail
+User-Agent: Heirloom mailx 12.4 7/29/08
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Message-ID: <20160226081606.5205D20CB1@m1-sasetl01p>
+From: Belogrud Sergey Vladimirovich <bsv@m1-sasetl01p.tcsbank.ru>
+Return-Path: bsv@m1-sasetl01p.tcsbank.ru
+X-MS-Exchange-Organization-AuthSource: M1-MSK-MAIL20.tcsbank.ru
+X-MS-Exchange-Organization-AuthAs: Internal
+X-MS-Exchange-Organization-AuthMechanism: 10
+X-MS-Exchange-Organization-MessageDirectionality: Originating
+X-MS-Exchange-Organization-Network-Message-Id: aca66a12-b46b-4040-8a16-08d33e851369
+
+
+Записи в почтовых логах об отправленном письме:
+
+[root@m1-sasetl01p ~]# tail /var/log/maillog
+…
+Feb 26 11:16:06 m1-sasetl01p postfix/pickup[68923]: 5205D20CB1: uid=525 from=<bsv>
+Feb 26 11:16:06 m1-sasetl01p postfix/cleanup[74353]: 5205D20CB1: message-id=<20160226081606.5205D20CB1@m1-sasetl01p>
+Feb 26 11:16:06 m1-sasetl01p postfix/qmgr[4881]: 5205D20CB1: from=<bsv@m1-sasetl01p.tcsbank.ru>, size=558, nrcpt=1 (queternalId=53563135] Queued mail for delivery)
+Feb 26 11:16:06 m1-sasetl01p postfix/qmgr[4881]: 5205D20CB1: removed
+[root@m1-sasetl01p ~]#
+
+
+Почтовая очередь пуста (всё, что попадало в postfix было куда-то отправлено):
+[root@m1-sasetl01p ~]# mailq
+Mail queue is empty
+[root@m1-sasetl01p ~]#
+
+Например недавнее письмо:
+[root@m1-sasetl01p ~]# tail -n 15 /var/log/maillog
+…
+Feb 26 11:00:01 m1-sasetl01p postfix/sendmail[15540]: warning: the Postfix sendmail command has set-uid root file permissions
+Feb 26 11:00:01 m1-sasetl01p postfix/sendmail[15540]: warning: or the command is run from a set-uid root process
+Feb 26 11:00:01 m1-sasetl01p postfix/sendmail[15540]: warning: the Postfix sendmail command must be installed without set-uid root file permissions
+Feb 26 11:00:02 m1-sasetl01p postfix/pickup[68923]: 08FDA20CB1: uid=1994 from=<root>
+Feb 26 11:00:02 m1-sasetl01p postfix/cleanup[15716]: 08FDA20CB1: message-id=<20160226080002.08FDA20CB1@m1-sasetl01p>
+Feb 26 11:00:02 m1-sasetl01p postfix/qmgr[4881]: 08FDA20CB1: from=<root@m1-sasetl01p.tcsbank.ru>, size=3665, nrcpt=1 (queue active)
+Feb 26 11:00:02 m1-sasetl01p postfix/smtp[15718]: 08FDA20CB1: to=<gpsys@m1-sasetl01p.tcsbank.ru>, orig_to=<gpsys>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=1.2, delays=0.32/0.01/0.01/0.89, dsn=2.6.0, status=sent (250 2.6.0 <20160226080002.08FDA20CB1@m1-sasetl01p> [InternalId=53559103] Queued mail for delivery)
+Feb 26 11:00:02 m1-sasetl01p postfix/qmgr[4881]: 08FDA20CB1: removed
+…
+
+Чем отправлялось – видимо Вам виднее. Что по этому поводу «думает» postfix – он написал.
+Статус отправки sent – это значит, что письмо отправлено.
+Если следы куда оно отправилось не ясны, то нужно искать его маршрут на сервере-релэе smtp.tcsbank.ru. Доступ к нему дают сетевики – с них предлагаю и начать спрашивать – что куда отправилось.
+
+
+From: Nemchin Dmitriy Yuryevich
+Sent: Friday, February 26, 2016 9:46 AM
+To: Belogrud Sergey Vladimirovich
+Subject: Отправка почты с vm-o2g01p
+
+Сергей, привет!
+
+Нид хелп – почта так и не отправляется с этой виртуалки, а это очень нужно.
+Там уже боевые процессы работают
+
+
+С уважением,
+
+Дмитрий Немчин
+Старший системный администратор
+
+
+
+Ленинградское шоссе, дом 39А, стр. 1
+Москва, 125212, Россия
+Тел.: +7 (495) 648 1000 (вн. 2758)
+Моб.: +7 (926) 424 9974
+Факс: +7 (495) 645 5909
+E-mail: d.nemchin@tinkoff.ru
+www.tinkoff.ru
+
+Это электронное письмо строго конфиденциально (включая все вложения). Данная информация предназначена только для получателя(ей). Если Вы не являетесь получателем, Вы не вправе каким бы то ни было образом читать, копировать, использовать или хранить данное сообщение. Просьба немедленно его удалить. Если Вы получили его по ошибке, пожалуйста, свяжитесь с Тинькофф Банком по т. +7 495 648 1000.
+
+
+................................................................................
+................................................................................
+
+[root@vm-o2g01p ~]# mailq
+-Queue ID- --Size-- ----Arrival Time---- -Sender/Recipient-------
+8A0C2608EC      780 Thu Feb 25 15:30:58  dwhsys@vm-o2g01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+
+AFC35608EA      457 Thu Feb 25 18:02:58  dwhsys@vm-o2g01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+
+1A641608E9      779 Thu Feb 25 12:48:13  dwhsys@vm-o2g01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+
+7159960911      430 Thu Feb 25 18:04:11  o2g@tinkoff.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+
+DB7DD60907      551 Fri Feb 26 11:28:04  dwhsys@vm-o2g01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+
+F280F608D2      776 Thu Feb 25 12:47:48  dwhsys@vm-o2g01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+
+-- 5 Kbytes in 6 Requests.
+[root@vm-o2g01p ~]#
+
+
+[root@vm-o2g01p ~]# sendmail -q
+[root@vm-o2g01p ~]# mailq
+Mail queue is empty
+[root@vm-o2g01p ~]#
+[root@vm-o2g01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@vm-o2g01p ~]# tail -n 5 /var/log/maillog
+Feb 26 12:13:12 vm-o2g01p postfix/qmgr[4653]: E3587608CA: removed
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: start interval Feb 26 12:12:17
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: domain lookup hits=0 miss=1 success=0%
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: address lookup hits=0 miss=1 success=0%
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: max simultaneous domains=1 addresses=1 connection=1
+[root@vm-o2g01p ~]# tail -n 15 /var/log/maillog
+Feb 26 12:12:18 vm-o2g01p postfix/qmgr[4653]: F280F608D2: removed
+Feb 26 12:12:19 vm-o2g01p postfix/pickup[4652]: A9336604AD: uid=1063 from=<root>
+Feb 26 12:12:19 vm-o2g01p postfix/cleanup[4676]: A9336604AD: message-id=<20160226091219.A9336604AD@vm-o2g01p>
+Feb 26 12:12:19 vm-o2g01p postfix/qmgr[4653]: A9336604AD: from=<root@vm-o2g01p.tcsbank.ru>, size=618916, nrcpt=1 (queue active)
+Feb 26 12:12:20 vm-o2g01p postfix/smtp[4673]: A9336604AD: to=<dwhsys@vm-o2g01p.tcsbank.ru>, orig_to=<dwhsys>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=138, delays=138/0/0.01/0.49, dsn=2.6.0, status=sent (250 2.6.0 <20160226091219.A9336604AD@vm-o2g01p> [InternalId=53575318] Queued mail for delivery)
+Feb 26 12:12:20 vm-o2g01p postfix/qmgr[4653]: A9336604AD: removed
+Feb 26 12:13:11 vm-o2g01p postfix/pickup[4652]: E3587608CA: uid=0 from=<root>
+Feb 26 12:13:11 vm-o2g01p postfix/cleanup[4676]: E3587608CA: message-id=<20160226091311.E3587608CA@vm-o2g01p>
+Feb 26 12:13:11 vm-o2g01p postfix/qmgr[4653]: E3587608CA: from=<root@vm-o2g01p.tcsbank.ru>, size=520, nrcpt=1 (queue active)
+Feb 26 12:13:12 vm-o2g01p postfix/smtp[4669]: E3587608CA: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.47, delays=0.04/0/0.01/0.43, dsn=2.6.0, status=sent (250 2.6.0 <20160226091311.E3587608CA@vm-o2g01p> [InternalId=53575485] Queued mail for delivery)
+Feb 26 12:13:12 vm-o2g01p postfix/qmgr[4653]: E3587608CA: removed
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: start interval Feb 26 12:12:17
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: domain lookup hits=0 miss=1 success=0%
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: address lookup hits=0 miss=1 success=0%
+Feb 26 12:14:52 vm-o2g01p postfix/scache[4674]: statistics: max simultaneous domains=1 addresses=1 connection=1
+[root@vm-o2g01p ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-o2g01p
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@vm-o2g01p ~]#
+
+................................................................................
+
+
+
+

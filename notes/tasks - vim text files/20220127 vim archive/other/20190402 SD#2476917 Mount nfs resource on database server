@@ -1,0 +1,373 @@
+
+...........................................................................
+
+#
+#	SD#2476917
+#
+
+День добрый
+1. Storage-admins — прошу предоставить точку с доступами к требуемому кластеру:
+ds-db28-prod1
+ds-db28-prod2
+m1-db28-dr
+a700-fwb-prod-nfs:/FWB_prod_di02        
+
+2. Unix-admins — прошу примонтировать точку через /etc/oranfstab:
+На серверах:
+Создать директорию /oramnt/FWB_prod_di02 (владелец oracle:oinstall):
+ds-db28-prod1
+ds-db28-prod2
+m1-db28-dr
+
+Монтировать точку  a700-fwb-prod-nfs:/FWB_prod_di02 как /oramnt/FWB_prod_di02
+
+3.   Unix-admins — добавить новую точку в группу FWB
+
+С уважением,
+Лоскутов Александр
+Отдел администрирования СУБД,
+г.Ростов-на-Дону
+
+...........................................................................
+
+hares -add mnt-ACQ-di03 Mount OraACQ
+hares -modify mnt-ACQ-di03 MountPoint "/oramnt/ACQ_prod_di03"
+hares -modify mnt-ACQ-di03 BlockDevice "a700-acq-prod-nfs:/ACQ_prod_di03"
+hares -modify mnt-ACQ-di03 FSType nfs
+hares -modify mnt-ACQ-di03 MountOpt "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock"
+hares -modify mnt-ACQ-di03 FsckOpt "%-n"
+hares -modify mnt-ACQ-di03 CreateMntPt 1
+hares -modify mnt-ACQ-di03 SnapUmount 0
+hares -modify mnt-ACQ-di03 CkptUmount 1
+hares -modify mnt-ACQ-di03 RecursiveMnt 0
+hares -modify mnt-ACQ-di03 VxFSMountLock 1
+hares -modify mnt-ACQ-di03 CacheRestoreAccess 0
+hares -modify mnt-ACQ-di03 Enabled 1
+hares -link GxClusterPlugin_OraACQ mnt-ACQ-di03
+hares -link mnt-ACQ-di03 proxy-ACQ-kNFS
+hares -link ora-ACQ mnt-ACQ-di03
+
+
+...........................................................................
+
+[11:59:47 root@ds-db28-prod1 ~]# grep -ie "FWB_prod_di01" /etc/VRTSvcs/conf/config/main.cmd
+hares -modify mnt-FWB-di01 MountPoint "/oramnt/FWB_prod_di01"
+hares -modify mnt-FWB-di01 BlockDevice "a700-fwb-prod-nfs:/FWB_prod_di01"
+[12:00:10 root@ds-db28-prod1 ~]#
+
+...........................................................................
+
+#
+#	I've prepared commnands, with changed names.
+hares -add mnt-FWB-di02 Mount OraACQ
+hares -modify mnt-FWB-di02 MountPoint "/oramnt/FWB_prod_di02"
+hares -modify mnt-FWB-di02 BlockDevice "a700-fwb-prod-nfs:/FWB_prod_di02"
+hares -modify mnt-FWB-di02 FSType nfs
+hares -modify mnt-FWB-di02 MountOpt "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock"
+hares -modify mnt-FWB-di02 FsckOpt "%-n"
+hares -modify mnt-FWB-di02 CreateMntPt 1
+hares -modify mnt-FWB-di02 SnapUmount 0
+hares -modify mnt-FWB-di02 CkptUmount 1
+hares -modify mnt-FWB-di02 RecursiveMnt 0
+hares -modify mnt-FWB-di02 VxFSMountLock 1
+hares -modify mnt-FWB-di02 CacheRestoreAccess 0
+hares -modify mnt-FWB-di02 Enabled 1
+#hares -link GxClusterPlugin_OraACQ mnt-FWB-di02
+#hares -link mnt-FWB-di02 proxy-ACQ-kNFS
+#hares -link ora-ACQ mnt-FWB-di02
+
+#
+#	On server ds-db28-prod1 and 
+#	on server ds-db28-prod2 and
+#	on server m1-db28-dr
+#
+mkdir /oramnt/FWB_prod_di02
+chown oracle:oinstall /oramnt/FWB_prod_di02
+chmod 755 /oramnt/FWB_prod_di02
+ls -Alhd /oramnt/FWB_prod_di02
+
+...........................................................................
+
+#
+#	It show, on what server database FWB is online.
+#
+[12:13:01 root@ds-db28-prod1 ~]# findmnt -t nfs -o SOURCE,TARGET | grep -ie "FWB_prod_di01"
+a700-fwb-prod-nfs:/FWB_prod_di01            /oramnt/FWB_prod_di01
+[12:13:16 root@ds-db28-prod1 ~]#
+
+#
+#	From previously written command "hares -modify mnt-FWB-di02 MountOpt "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock" " I take mount options.
+#
+mount -t nfs -o rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock a700-fwb-prod-nfs:/FWB_prod_di02 /oramnt/FWB_prod_di02
+
+...........................................................................
+
+[12:13:16 root@ds-db28-prod1 ~]# grep -ie "FWB_prod_di01" /etc/oranfstab
+export:/FWB_prod_di01 mount:/oramnt/FWB_prod_di01
+[12:20:14 root@ds-db28-prod1 ~]#
+
+#
+#	On server ds-db28-prod1 and 
+#	on server ds-db28-prod2 and
+#	on server m1-db28-dr
+#
+vim /etc/oranfstab
+
+export:/FWB_prod_di02 mount:/oramnt/FWB_prod_di02
+
+...........................................................................
+
+https://gitlab.tcsbank.ru/jet/ansible/blob/master/group_vars/db28-prod
+
+...........................................................................
+
+
+[s.belogrud@TCS4357]# git clone git@vm-gitlab01.tcsbank.ru:jet/ansible.git
+Cloning into 'ansible'...
+remote: Counting objects: 3834, done.
+remote: Compressing objects: 100% (11/11), done.
+remote: Total 3834 (delta 10), reused 18 (delta 9)
+Receiving objects: 100% (3834/3834), 20.54 MiB | 13.50 MiB/s, done.
+Resolving deltas: 100% (2390/2390), done.
+Checking connectivity... done.
+Checking out files: 100% (339/339), done.
+[s.belogrud@TCS4357]#
+
+
+
+[s.belogrud@TCS4357]# git checkout -b 20190402_SD2476917
+Switched to a new branch '20190402_SD2476917'
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# vim group_vars/db28-prod
+
+[s.belogrud@TCS4357]# git status
+On branch 20190402_SD2476917
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   group_vars/db28-prod
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#2476917. Was added one row in db28 variable file." group_vars/db28-prod
+[20190402_SD2476917 a3456cc] SD#2476917. Was added one row in db28 variable file.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 file changed, 1 insertion(+)
+[s.belogrud@TCS4357]# git push origin 20190402_SD2476917
+Counting objects: 4, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 415 bytes | 0 bytes/s, done.
+Total 4 (delta 3), reused 0 (delta 0)
+remote:
+remote: To create a merge request for 20190402_SD2476917, visit:
+remote:   https://vm-gitlab01.tcsbank.ru/jet/ansible/merge_requests/new?merge_request%5Bsource_branch%5D=20190402_SD2476917
+remote:
+To git@vm-gitlab01.tcsbank.ru:jet/ansible.git
+ * [new branch]      20190402_SD2476917 -> 20190402_SD2476917
+[s.belogrud@TCS4357]#
+
+...........................................................................
+
+
+[15:52:20 root@m1-db28-dr ~]# grep -ie "FWB.*di01" /etc/VRTSvcs/conf/config/main.cmd
+hares -add mnt-FWB-di01 Mount OraFWB
+hares -modify mnt-FWB-di01 MountPoint "/oramnt/FWB_prod_di01"
+hares -modify mnt-FWB-di01 BlockDevice "a700-fwb-prod-nfs:/FWB_prod_di01"
+hares -modify mnt-FWB-di01 FSType nfs
+hares -modify mnt-FWB-di01 MountOpt "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock"
+hares -modify mnt-FWB-di01 FsckOpt "%-n"
+hares -modify mnt-FWB-di01 CreateMntPt 1
+hares -modify mnt-FWB-di01 SnapUmount 0
+hares -modify mnt-FWB-di01 CkptUmount 1
+hares -modify mnt-FWB-di01 RecursiveMnt 0
+hares -modify mnt-FWB-di01 VxFSMountLock 1
+hares -modify mnt-FWB-di01 CacheRestoreAccess 0
+hares -modify mnt-FWB-di01 Enabled 1
+hares -link GxClusterPlugin_OraFWB mnt-FWB-di01
+hares -link mnt-FWB-di01 proxy-FWB-kNFS
+hares -link ora-FWB mnt-FWB-di01
+[15:52:25 root@m1-db28-dr ~]#
+
+[15:53:04 root@ds-db28-prod1 ~]# mount -t nfs -o rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock a700-fwb-prod-nfs:/FWB_prod_di02 /oramnt/FWB_prod_di02
+[15:54:15 root@ds-db28-prod1 ~]# ls -Alhd /oramnt/FWB_prod_di02
+drwxr-xr-x 2 root root 4.0K Apr  2 09:12 /oramnt/FWB_prod_di02
+[15:54:31 root@ds-db28-prod1 ~]# chown oracle:oinstall /oramnt/FWB_prod_di02
+[15:54:53 root@ds-db28-prod1 ~]# ls -Alhd /oramnt/FWB_prod_di02
+drwxr-xr-x 2 oracle oinstall 4.0K Apr  2 09:12 /oramnt/FWB_prod_di02
+[15:54:54 root@ds-db28-prod1 ~]#
+
+
+...........................................................................
+
+[support@centos ~]$ cd work
+[support@centos work]$ mkdir ansible.jet
+[support@centos work]$ cd ansible.jet
+[support@centos ansible.jet]$ git clone git@vm-gitlab01.tcsbank.ru:jet/ansible.git
+Cloning into 'ansible'...
+remote: Counting objects: 3839, done.
+remote: Compressing objects: 100% (16/16), done.
+remote: Total 3839 (delta 14), reused 16 (delta 9)
+Receiving objects: 100% (3839/3839), 20.54 MiB | 0 bytes/s, done.
+Resolving deltas: 100% (2394/2394), done.
+[support@centos ansible.jet]$
+
+
+[support@centos ansible]$ ansible-playbook -i production oracle.yml --list-tags
+
+playbook: oracle.yml
+
+  play #1 (oracle): oracle      TAGS: []
+      TASK TAGS: [backup_user, dirs, logrotate_oraconf, logrotate_oracron, logrotate_orascript, ora_user, oracron, orafake, oramnt, oranfstab, oratab, pkg, rsyslog, tuning, vmtuning]
+[support@centos ansible]$
+
+
+[support@centos ansible]$ ansible-playbook -i production oracle.yml --tags oranfstab --limit db28-prod --check --diff --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'"
+
+PLAY [oracle] ****************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************************************************************
+ok: [ds-db28-prod2]
+ok: [m1-db28-dr]
+ok: [ds-db28-prod1]
+
+TASK [oracle : Create /etc/oranfstab] ****************************************************************************************************************************************************************
+--- before: /etc/oranfstab
++++ after: /home/support/.ansible/tmp/ansible-local-14497tR45CB/tmphFkR2x/oranfstab.j2
+@@ -18,6 +18,7 @@
+ dontroute
+ export:/FWB_prod_arch mount:/oramnt/FWB_prod_arch
+ export:/FWB_prod_di01 mount:/oramnt/FWB_prod_di01
++export:/FWB_prod_di02 mount:/oramnt/FWB_prod_di02
+ export:/FWB_prod_redo mount:/oramnt/FWB_prod_redo
+ 
+ ###############################################
+
+changed: [m1-db28-dr]
+--- before: /etc/oranfstab
++++ after: /home/support/.ansible/tmp/ansible-local-14497tR45CB/tmpdI7U8Z/oranfstab.j2
+@@ -18,6 +18,7 @@
+ dontroute
+ export:/FWB_prod_arch mount:/oramnt/FWB_prod_arch
+ export:/FWB_prod_di01 mount:/oramnt/FWB_prod_di01
++export:/FWB_prod_di02 mount:/oramnt/FWB_prod_di02
+ export:/FWB_prod_redo mount:/oramnt/FWB_prod_redo
+ 
+ ###############################################
+
+changed: [ds-db28-prod1]
+--- before: /etc/oranfstab
++++ after: /home/support/.ansible/tmp/ansible-local-14497tR45CB/tmp05_yDP/oranfstab.j2
+@@ -18,6 +18,7 @@
+ dontroute
+ export:/FWB_prod_arch mount:/oramnt/FWB_prod_arch
+ export:/FWB_prod_di01 mount:/oramnt/FWB_prod_di01
++export:/FWB_prod_di02 mount:/oramnt/FWB_prod_di02
+ export:/FWB_prod_redo mount:/oramnt/FWB_prod_redo
+ 
+ ###############################################
+
+changed: [ds-db28-prod2]
+
+PLAY RECAP *******************************************************************************************************************************************************************************************
+ds-db28-prod1              : ok=2    changed=1    unreachable=0    failed=0   
+ds-db28-prod2              : ok=2    changed=1    unreachable=0    failed=0   
+m1-db28-dr                 : ok=2    changed=1    unreachable=0    failed=0   
+
+[support@centos ansible]$
+
+
+[support@centos ansible]$ ansible-playbook -i production oracle.yml --tags oranfstab --limit db28-prod  --extra-vars "ansible_user=bsv ansible_password=$(pass common/linux) ansible_sudo_pass=$(pass common/linux) ansible_ssh_common_args='-oStrictHostKeyChecking=no -oPubkeyAuthentication=no'"
+
+PLAY [oracle] ****************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************************************************************************************************************
+ok: [m1-db28-dr]
+ok: [ds-db28-prod2]
+ok: [ds-db28-prod1]
+
+TASK [oracle : Create /etc/oranfstab] ****************************************************************************************************************************************************************
+changed: [ds-db28-prod2]
+changed: [m1-db28-dr]
+changed: [ds-db28-prod1]
+
+PLAY RECAP *******************************************************************************************************************************************************************************************
+ds-db28-prod1              : ok=2    changed=1    unreachable=0    failed=0   
+ds-db28-prod2              : ok=2    changed=1    unreachable=0    failed=0   
+m1-db28-dr                 : ok=2    changed=1    unreachable=0    failed=0   
+
+[support@centos ansible]$
+
+...........................................................................
+
+hares -add mnt-FWB-di02 Mount OraFWB
+hares -modify mnt-FWB-di02 MountPoint "/oramnt/FWB_prod_di02"
+hares -modify mnt-FWB-di02 BlockDevice "a700-fwb-prod-nfs:/FWB_prod_di02"
+hares -modify mnt-FWB-di02 FSType nfs
+hares -modify mnt-FWB-di02 MountOpt "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock"
+hares -modify mnt-FWB-di02 FsckOpt "%-n"
+hares -modify mnt-FWB-di02 CreateMntPt 1
+hares -modify mnt-FWB-di02 SnapUmount 0
+hares -modify mnt-FWB-di02 CkptUmount 1
+hares -modify mnt-FWB-di02 RecursiveMnt 0
+hares -modify mnt-FWB-di02 VxFSMountLock 1
+hares -modify mnt-FWB-di02 CacheRestoreAccess 0
+
+#	Was added manually.
+hares -modify mnt-FWB-di02 Critical 0
+
+hares -modify mnt-FWB-di02 Enabled 1
+hares -link GxClusterPlugin_OraFWB mnt-FWB-di02
+
+#	Take this commnad from that cluster, where we will apply these commnad. It's important to be sure that "kNFS" is used on this cluster. On other resources on other clusters we could meet "vNFS".
+hares -link mnt-FWB-di02 proxy-FWB-kNFS
+hares -link ora-FWB mnt-FWB-di02
+
+...........................................................................
+
+[16:06:23 root@m1-db28-dr ~]# cat > /tmp/20190402.sh
+hares -add mnt-FWB-di02 Mount OraFWB
+hares -modify mnt-FWB-di02 MountPoint "/oramnt/FWB_prod_di02"
+hares -modify mnt-FWB-di02 BlockDevice "a700-fwb-prod-nfs:/FWB_prod_di02"
+hares -modify mnt-FWB-di02 FSType nfs
+hares -modify mnt-FWB-di02 MountOpt "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock"
+hares -modify mnt-FWB-di02 FsckOpt "%-n"
+hares -modify mnt-FWB-di02 CreateMntPt 1
+hares -modify mnt-FWB-di02 SnapUmount 0
+hares -modify mnt-FWB-di02 CkptUmount 1
+...
+
+#
+#	Recommended to run Veritas Cluster GUI.
+#
+
+
+#
+#	Were commented latest two lines with link command.
+[16:10:40 root@m1-db28-dr ~]# haconf -makerw
+
+[16:10:57 root@m1-db28-dr ~]# . /tmp/20190402.sh
+
+[16:12:48 root@m1-db28-dr ~]# hares -link mnt-FWB-di02 proxy-FWB-kNFS
+[16:13:46 root@m1-db28-dr ~]# hares -link ora-FWB mnt-FWB-di02
+[16:17:46 root@m1-db28-dr ~]# hares -modify mnt-FWB-di02 Critical 1
+[16:17:55 root@m1-db28-dr ~]# haconf -dump -makero
+[16:17:59 root@m1-db28-dr ~]#
+
+...........................................................................
+
+Раздел /oramnt/FWB_prod_di02 смонтирован на ds-db28-prod1 и в кластерную конфигурацию добавлен.
+
+...........................................................................
+
+
+#
+#	Ask for someone of colleagues to test added resource on cluster.
+
+...........................................................................
+
+
+

@@ -1,0 +1,119 @@
+
+
+[root@vm-vol-nag4-tst objects]# find . -name m1-sasonline01p*
+./servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# cat contacts/d.s.pavlov.cfg
+define contact{
+        contact_name            d.s.pavlov_email
+        use                     generic-contact
+        alias                   Pavlov Dmitriy
+        email                   d.s.pavlov@tcsbank.ru
+}
+
+define contact{
+        contact_name            d.s.pavlov_sms
+        use                     generic-contact-critical
+        alias                   Pavlov Dmitriy
+        email                   d.s.pavlov@tcsbank.ru
+        address1                79169038738
+}
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim ./servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager diff ./servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+diff --git a/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg b/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+index 7f48d7c..6237e08 100644
+--- a/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg
++++ b/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+@@ -79,7 +79,7 @@ define service{
+     use                     generic-service
+     host_name               m1-sasonline01p
+     service_description     Disk IO - sda
+-    contacts                empty_contact
++    contacts                d.s.pavlov_email,d.s.pavlov_sms
+     contact_groups          empty-group
+     service_groups          Disk IO - Service Group
+     normal_check_interval   1
+@@ -91,7 +91,7 @@ define service{
+     use                     generic-service
+     host_name               m1-sasonline01p
+     service_description     Disk IO - sdb
+-    contacts                empty_contact
++    contacts                d.s.pavlov_email,d.s.pavlov_sms
+     contact_groups          empty-group
+     service_groups          Disk IO - Service Group
+     normal_check_interval   1
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "Forced definition person, who responsible of services, that work wrong and no one hurry to fix it." servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+[master f4ddfe1] Forced definition person, who responsible of services, that work wrong and no one hurry to fix it.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p ./servers/dc-m1/linux/sas/m1-sasonline01p.cfg                                                                                             commit f4ddfe1ce84a3106d98a53f41518808e4a4fb663
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Fri Sep 30 15:07:57 2016 +0300
+
+    Forced definition person, who responsible of services, that work wrong and no one hurry to fix it.
+
+diff --git a/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg b/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+index 7f48d7c..6237e08 100644
+--- a/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg
++++ b/objects/servers/dc-m1/linux/sas/m1-sasonline01p.cfg
+@@ -79,7 +79,7 @@ define service{
+     use                     generic-service
+     host_name               m1-sasonline01p
+     service_description     Disk IO - sda
+-    contacts                empty_contact
++    contacts                d.s.pavlov_email,d.s.pavlov_sms
+     contact_groups          empty-group
+     service_groups          Disk IO - Service Group
+     normal_check_interval   1
+@@ -91,7 +91,7 @@ define service{
+     use                     generic-service
+     host_name               m1-sasonline01p
+     service_description     Disk IO - sdb
+-    contacts                empty_contact
++    contacts                d.s.pavlov_email,d.s.pavlov_sms
+     contact_groups          empty-group
+     service_groups          Disk IO - Service Group
+     normal_check_interval   1
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@m1-sasonline01p ~]# grep check_io /etc/nrpe.d/*
+/etc/nrpe.d/check_io.cfg:command[check_io_sda]=/opt/TCS/nagios/plugins/check_iostat -d sda -w 900,900,900 -c 1000,1000,1001
+/etc/nrpe.d/check_io.cfg:command[check_io_sdb]=/opt/TCS/nagios/plugins/check_iostat -d sdb -w 900,900,900 -c 1000,1000,1001
+[root@m1-sasonline01p ~]# /opt/TCS/nagios/plugins/check_iostat -d sdb -w 900,900,900 -c 1000,1000,1001
+CRITICAL - I/O stats tps=21.31 KB_read/s=24.44 KB_written/s=1371.89 | 'tps'=21.31; 'KB_read/s'=24.44; 'KB_written/s'=1371.89;
+[root@m1-sasonline01p ~]#
+
+[root@m1-sasonline01p ~]# /opt/TCS/nagios/plugins/check_iostat --help
+/opt/TCS/nagios/plugins/check_iostat: illegal option -- -
+
+        This plugin shows the I/O usage of the specified disk, using the iostat external program.
+        It prints three statistics: Transactions per second (tps), Kilobytes per second
+        read from the disk (KB_read/s) and and written to the disk (KB_written/s)
+
+/opt/TCS/nagios/plugins/check_iostat:
+        -d <disk>               Device to be checked (without the full path, eg. sda)
+        -c <tps>,<read>,<wrtn>  Sets the CRITICAL level for tps, KB_read/s and KB_written/s, respectively
+        -w <tps>,<read>,<wrtn>  Sets the WARNING level for tps, KB_read/s and KB_written/s, respectively
+
+[root@m1-sasonline01p ~]# grep "check_io*sdb" /etc/nrpe.d/*
+[root@m1-sasonline01p ~]# grep "check_io.*sdb" /etc/nrpe.d/*
+/etc/nrpe.d/check_io.cfg:command[check_io_sdb]=/opt/TCS/nagios/plugins/check_iostat -d sdb -w 900,900,900 -c 1000,1000,1001
+[root@m1-sasonline01p ~]#
+
+
+
+
+

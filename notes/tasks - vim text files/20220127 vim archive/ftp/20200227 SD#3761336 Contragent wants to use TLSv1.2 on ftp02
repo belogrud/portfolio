@@ -1,0 +1,275 @@
+
+................................................................................
+
+#
+#	http://lftp.tech/lftp-man.html
+#
+
+
+       ftp:ssl-allow (boolean)
+              if  true,  try  to  negotiate SSL connection with FTP server for non-anonymous access.
+              Default is true. This and other SSL settings are only available if lftp  was  compiled
+              with an ssl/tls library.
+
+       ftp:ssl-auth (string)
+              the  argument for AUTH command, can be one of SSL, TLS, TLS-P, TLS-C.  See RFC4217) for
+              explanations. By default TLS or SSL will be used, depending on FEAT reply.
+
+
+
+       ssl:priority (string)
+              free form priority string for GnuTLS. If built with OpenSSL the understood values  are
+              + or - followed by SSL3.0, TLS1.0, TLS1.1 or TLS1.2, separated by :. Example:
+              set ssl:priority "NORMAL:-SSL3.0:-TLS1.0:-TLS1.1:+TLS1.2"
+
+
+#
+#	https://access.redhat.com/discussions/2525031
+#
+
+................................................................................
+
+[s.belogrud@TCS4357]# lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; debug ; ls ; bye" -u 'test','test' ftp05.tcsbank.ru
+---- Соединение с ftp05.tcsbank.ru (192.168.5.76), порт 21
+<--- 220 (vsFTPd 2.2.2)
+---> FEAT
+<--- 211-Features:
+<---  AUTH SSL
+<---  AUTH TLS
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  PBSZ
+<---  PROT
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<---  UTF8
+<--- 211 End
+---> AUTH TLS
+<--- 234 Proceed with negotiation.
+---> OPTS UTF8 ON
+Certificate depth: 2; subject: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root CA; issuer: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root CA
+Certificate depth: 1; subject: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=Thawte RSA CA 2018; issuer: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root CA
+Certificate depth: 0; subject: /CN=ftp05.tinkoff.ru; issuer: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=Thawte RSA CA 2018
+WARNING: Certificate verification: subjectAltName does not match «ftp05.tcsbank.ru» (CA:DC:05:F9:71:2A:37:99:6A:CB:E9:96:72:A2:03:4A:4C:5A:7F:EA)
+<--- 200 Always in UTF8 mode.
+---> USER test
+<--- 331 Please specify the password.
+---> PASS test
+<--- 530 Login incorrect.
+---- Закрытие управляющего соединения
+ls: Ошибка регистрации: 530 Login incorrect.
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; set ftp:ssl-auth TLS ; set ssl:priority NORMAL:-SSL3.0:-TLS1.0:-TL
+S1.1:+TLS1.2 ; debug ; cd ; bye" -u 'test','test' ftp05.tcsbank.ru
+---- Соединение с ftp05.tcsbank.ru (192.168.5.76), порт 21
+<--- 220 (vsFTPd 2.2.2)
+---> FEAT
+<--- 211-Features:
+<---  AUTH SSL
+<---  AUTH TLS
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  PBSZ
+<---  PROT
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<---  UTF8
+<--- 211 End
+---> AUTH TLS
+<--- 234 Proceed with negotiation.
+ssl: applied -SSL3.0 option
+ssl: applied -TLS1.0 option
+ssl: applied -TLS1.1 option
+---> OPTS UTF8 ON
+Certificate depth: 2; subject: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root CA; issuer: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root CA
+Certificate depth: 1; subject: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=Thawte RSA CA 2018; issuer: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root CA
+Certificate depth: 0; subject: /CN=ftp05.tinkoff.ru; issuer: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=Thawte RSA CA 2018
+WARNING: Certificate verification: subjectAltName does not match «ftp05.tcsbank.ru» (CA:DC:05:F9:71:2A:37:99:6A:CB:E9:96:72:A2:03:4A:4C:5A:7F:EA)
+<--- 200 Always in UTF8 mode.
+---> USER test
+<--- 331 Please specify the password.
+---> PASS test
+<--- 530 Login incorrect.
+---- Закрытие управляющего соединения
+cd: Ошибка регистрации: 530 Login incorrect.
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+#
+#	To compare with ftp server, that has no TLSv1.2.
+#	That's nothing, what I wanted.
+#
+[s.belogrud@TCS4357]# lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; set ftp:ssl-auth TLS ; set ssl:priority NORMAL:-SSL3.0:-TLS1.0:-TLS1.1:+TLS1.2 ; debug ; cd ; bye" -u 'test','test' ftp02.tcsbank.ru
+---- Соединение с ftp02.tcsbank.ru (192.168.5.58), порт 21
+<--- 220 Welcome to FTP service
+---> FEAT
+<--- 211-Features:
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<--- 211 End
+---> AUTH TLS
+<--- 530 Please login with USER and PASS.
+---> USER test
+<--- 331 Please specify the password.
+---> PASS test
+<--- 530 Login incorrect.
+cd: Ошибка регистрации: 530 Login incorrect.
+---> PWD
+<--- 530 Please login with USER and PASS.
+---> QUIT
+<--- 221 Goodbye.
+---- Закрытие управляющего соединения
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; set ftp:ssl-auth TLS ; set ssl:priority NORMAL:-SSL3.0:+TLS1.0:-TLS1.1:+TLS1.2 ; debug ; cd ; bye" -u 'test','test' ftp02.tcsbank.ru -p 2121
+---- Соединение с ftp02.tcsbank.ru (192.168.5.58), порт 2121
+<--- 220 Welcome to FTP service
+---> FEAT
+<--- 211-Features:
+<---  AUTH SSL
+<---  AUTH TLS
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  PBSZ
+<---  PROT
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<--- 211 End
+---> AUTH TLS
+<--- 234 Proceed with negotiation.
+ssl: applied -SSL3.0 option
+ssl: applied -TLS1.1 option
+---> USER test
+Certificate depth: 0; subject: /C=RU/L=Moscow/O=Tinkoff Bank AO/CN=*.tcsbank.ru; issuer: /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=Thawte RSA CA 2018
+WARNING: Certificate verification: unable to get local issuer certificate (93:53:1F:81:13:C0:56:B9:B9:50:B6:2C:2E:CF:AE:61:B5:3B:8C:1F)
+WARNING: Certificate verification: unable to verify the first certificate (93:53:1F:81:13:C0:56:B9:B9:50:B6:2C:2E:CF:AE:61:B5:3B:8C:1F)
+Certificate verification: subjectAltName: «ftp02.tcsbank.ru» matched
+<--- 331 Please specify the password.
+---> PASS test
+<--- 530 Login incorrect.
+---- Закрытие управляющего соединения
+cd: Ошибка регистрации: 530 Login incorrect.
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; set ftp:ssl-auth TLS ; set ssl:priority NORMAL:-SSL3.0:-TLS1.0:+TL
+S1.1:+TLS1.2 ; debug ; cd ; bye" -u 'test','test' ftp02.tcsbank.ru -p 2121
+---- Соединение с ftp02.tcsbank.ru (192.168.5.58), порт 2121
+<--- 220 Welcome to FTP service
+---> FEAT
+<--- 211-Features:
+<---  AUTH SSL
+<---  AUTH TLS
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  PBSZ
+<---  PROT
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<--- 211 End
+---> AUTH TLS
+<--- 234 Proceed with negotiation.
+ssl: applied -SSL3.0 option
+ssl: applied -TLS1.0 option
+---> USER test
+**** SSL_connect: unsupported protocol
+---- Закрытие управляющего соединения
+---- Соединение с ftp02.tcsbank.ru (192.168.5.58), порт 2121
+<--- 220 Welcome to FTP service
+---> FEAT
+<--- 211-Features:
+<---  AUTH SSL
+<---  AUTH TLS
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  PBSZ
+<---  PROT
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<--- 211 End
+---> USER test
+<--- 530 Non-anonymous sessions must use encryption.
+cd: Ошибка регистрации: 530 Non-anonymous sessions must use encryption.
+---> QUIT
+<--- 221 Goodbye.
+---- Закрытие управляющего соединения
+[s.belogrud@TCS4357]#
+
+
+
+[s.belogrud@TCS4357]# lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; set ftp:ssl-auth TLS ; set ssl:priority NORMAL:-SSL3.0:-TLS1.0:-TL
+S1.1:+TLS1.2 ; debug ; cd ; bye" -u 'test','test' ftp02.tcsbank.ru -p 2121
+---- Соединение с ftp02.tcsbank.ru (192.168.5.58), порт 2121
+<--- 220 Welcome to FTP service
+---> FEAT
+<--- 211-Features:
+<---  AUTH SSL
+<---  AUTH TLS
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  PBSZ
+<---  PROT
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<--- 211 End
+---> AUTH TLS
+<--- 234 Proceed with negotiation.
+ssl: applied -SSL3.0 option
+ssl: applied -TLS1.0 option
+ssl: applied -TLS1.1 option
+---> USER test
+**** SSL_connect: unsupported protocol
+---- Закрытие управляющего соединения
+---- Соединение с ftp02.tcsbank.ru (192.168.5.58), порт 2121
+<--- 220 Welcome to FTP service
+---> FEAT
+<--- 211-Features:
+<---  AUTH SSL
+<---  AUTH TLS
+<---  EPRT
+<---  EPSV
+<---  MDTM
+<---  PASV
+<---  PBSZ
+<---  PROT
+<---  REST STREAM
+<---  SIZE
+<---  TVFS
+<--- 211 End
+---> USER test
+<--- 530 Non-anonymous sessions must use encryption.
+cd: Ошибка регистрации: 530 Non-anonymous sessions must use encryption.
+---> QUIT
+<--- 221 Goodbye.
+---- Закрытие управляющего соединения
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+

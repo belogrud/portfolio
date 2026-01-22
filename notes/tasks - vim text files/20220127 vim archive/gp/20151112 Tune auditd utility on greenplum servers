@@ -1,0 +1,1712 @@
+
+
+................................................................................
+
+[root@m1-gp-tst-smdw ~]# service auditd status
+auditd (pid  2269) is running...
+[root@m1-gp-tst-smdw ~]# auditctl -s
+AUDIT_STATUS: enabled=1 flag=1 pid=2269 rate_limit=0 backlog_limit=320 lost=0 backlog=0
+[root@m1-gp-tst-smdw ~]# auditctl -l
+No rules
+[root@m1-gp-tst-smdw ~]# cat /etc/audit/audit.rules
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# ls -Alh /etc/audit/audit.rules
+-rw-r-----. 1 root root 373 Oct  3 15:37 /etc/audit/audit.rules
+[root@m1-gp-tst-smdw ~]#
+
+................................................................................
+
+#   I want put follw text into the file /etc/audit/audit.rules
+
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+
+................................................................................
+................................................................................
+
+[root@m1-gp-tst-smdw ~]# cat > /etc/audit/audit.rules
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+[root@m1-gp-tst-smdw ~]#
+
+#   Only restart service help us.
+[root@m1-gp-tst-smdw ~]# ls -Alh /etc/audit/audit.rules
+-rw-r-----. 1 root root 1.5K Nov 12 17:24 /etc/audit/audit.rules
+[root@m1-gp-tst-smdw ~]# service auditd reload
+Reloading configuration:                                   [  OK  ]
+[root@m1-gp-tst-smdw ~]# auditctl -l
+No rules
+[root@m1-gp-tst-smdw ~]# service auditd restart
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+[root@m1-gp-tst-smdw ~]# auditctl -l
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do scp /etc/audit/audit.rules ${var1}:/etc/audit/audit.rules ; done
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; service auditd restart )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to mdw closed.
+m1-gp-tst-smdw.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to smdw closed.
+m1-gp-tst-sdw1.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw1 closed.
+m1-gp-tst-sdw2.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw2 closed.
+m1-gp-tst-sdw3.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw3 closed.
+m1-gp-tst-sdw4.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw4 closed.
+m1-gp-tst-sdw5.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw5 closed.
+m1-gp-tst-sdw6.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw6 closed.
+m1-gp-tst-sdw7.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw7 closed.
+m1-gp-tst-sdw8.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw8 closed.
+m1-gp-tst-sdw9.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw9 closed.
+m1-gp-tst-sdw10.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw10 closed.
+m1-gp-tst-sdw11.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw11 closed.
+m1-gp-tst-sdw12.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw12 closed.
+m1-gp-tst-sdw13.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw13 closed.
+m1-gp-tst-sdw14.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw14 closed.
+m1-gp-tst-sdw15.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw15 closed.
+m1-gp-tst-sdw16.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw16 closed.
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; auditctl -l )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to mdw closed.
+m1-gp-tst-smdw.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to smdw closed.
+m1-gp-tst-sdw1.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw1 closed.
+m1-gp-tst-sdw2.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw2 closed.
+m1-gp-tst-sdw3.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw3 closed.
+m1-gp-tst-sdw4.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw4 closed.
+m1-gp-tst-sdw5.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw5 closed.
+m1-gp-tst-sdw6.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw6 closed.
+m1-gp-tst-sdw7.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw7 closed.
+m1-gp-tst-sdw8.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw8 closed.
+m1-gp-tst-sdw9.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw9 closed.
+m1-gp-tst-sdw10.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw10 closed.
+m1-gp-tst-sdw11.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw11 closed.
+m1-gp-tst-sdw12.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw12 closed.
+m1-gp-tst-sdw13.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw13 closed.
+m1-gp-tst-sdw14.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw14 closed.
+m1-gp-tst-sdw15.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw15 closed.
+m1-gp-tst-sdw16.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw16 closed.
+[root@m1-gp-tst-smdw ~]#
+
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-smdw ~]# auditctl -l
+No rules
+[root@m1-gp-prd-smdw ~]# cat > /etc/audit/audit.rules
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do scp /etc/audit/audit.rules ${var1}:/etc/audit/audit.rules ; done
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; service auditd restart )" ; done
+m1-gp-prd-mdw
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to mdw closed.
+m1-gp-prd-smdw
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to smdw closed.
+m1-gp-prd-sdw1
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; auditctl -l )" ; done
+m1-gp-prd-mdw
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to mdw closed.
+m1-gp-prd-smdw
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to smdw closed.
+m1-gp-prd-sdw1
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-gp-dev-smdw ~]# auditctl -l
+No rules
+[root@ds-gp-dev-smdw ~]# cat > /etc/audit/audit.rules
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do scp /etc/audit/audit.rules ${var1}:/etc/audit/audit.rules ; done
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; service auditd restart )" ; done
+ds-gp-dev-mdw
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to mdw closed.
+ds-gp-dev-smdw
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to smdw closed.
+ds-gp-dev-sdw1
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw1 closed.
+ds-gp-dev-sdw2
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw2 closed.
+ds-gp-dev-sdw3
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw3 closed.
+ds-gp-dev-sdw4
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw4 closed.
+ds-gp-dev-sdw5
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw5 closed.
+ds-gp-dev-sdw6
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw6 closed.
+ds-gp-dev-sdw7
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw7 closed.
+ds-gp-dev-sdw8
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw8 closed.
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; auditctl -l )" ; done
+ds-gp-dev-mdw
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to mdw closed.
+ds-gp-dev-smdw
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to smdw closed.
+ds-gp-dev-sdw1
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw1 closed.
+ds-gp-dev-sdw2
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw2 closed.
+ds-gp-dev-sdw3
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw3 closed.
+ds-gp-dev-sdw4
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw4 closed.
+ds-gp-dev-sdw5
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw5 closed.
+ds-gp-dev-sdw6
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw6 closed.
+ds-gp-dev-sdw7
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw7 closed.
+ds-gp-dev-sdw8
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw8 closed.
+[root@ds-gp-dev-smdw ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-gp-prd-smdw ~]# auditctl -l
+No rules
+[root@ds-gp-prd-smdw ~]# cat > /etc/audit/audit.rules
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do scp /etc/audit/audit.rules ${var1}:/etc/audit/audit.rules ; done
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; service auditd restart )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to mdw closed.
+ds-gp-prd-smdw.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to smdw closed.
+ds-gp-prd-sdw1
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; auditctl -l )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to mdw closed.
+ds-gp-prd-smdw.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to smdw closed.
+ds-gp-prd-sdw1
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+
+
+
+

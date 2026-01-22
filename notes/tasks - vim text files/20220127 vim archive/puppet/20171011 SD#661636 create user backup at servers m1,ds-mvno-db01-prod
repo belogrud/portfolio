@@ -1,0 +1,488 @@
+
+
+
+
+................................................................................
+
+[root@m1-mvno-db01-prod ~]# cat $(puppet agent --configprint classfile)
+settings
+__node_regexp__m1ds-mvno-db01-prod.tcsbank.ru
+role::database_server
+profile::base
+profile::base::repos_el
+tcs_repos::epel
+tcs_repos::puppet5
+tcs_repos::rhel
+tcs_repos::dell
+profile::base::selinux
+selinux::params
+selinux
+selinux::package
+selinux::config
+profile::base::ntp
+ntp
+ntp::install
+ntp::config
+ntp::service
+profile::base::packages
+profile::base::sysstat_config
+profile::base::firewall
+firewall::params
+firewall
+firewall::linux
+firewall::linux::redhat
+profile::accounts::admins
+profile::accounts::oradba
+sudo::params
+sudo
+sudo::package
+sudo::configs
+profile::oracle::prerequisites
+profile::oracle::oracle_users
+profile::oracle::mounts
+[root@m1-mvno-db01-prod ~]#
+
+
+................................................................................
+
+[s.belogrud@TCS4357]# grep -irle "mvno-db01-prod" ./
+
+[s.belogrud@TCS4357]# vim ./manifests/01_mvno.pp
+
+...
+node /^(m1|ds)-mvno-db01-prod\.tcsbank\.ru$/ {
+  include role::database_server
+}
+...
+
+[s.belogrud@TCS4357]# find . -type f -iname *database_server*
+./site/role/manifests/database_server.pp
+
+[s.belogrud@TCS4357]# vim -R ./site/role/manifests/database_server.pp
+...
+class role::database_server {
+  include profile::base
+  include profile::accounts::oradba
+  include profile::oracle::prerequisites
+}
+
+
+[s.belogrud@TCS4357]# grep -irle "accounts" site/profile/manifests/
+
+
+[s.belogrud@TCS4357]# ls -Alh site/profile/manifests/accounts/
+total 100K
+-rw-r--r-- 1 s.belogrud UsersGrp 2,6K окт  4 14:53 a1s.pp
+-rw-r--r-- 1 s.belogrud UsersGrp 6,9K окт  4 14:53 admins.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  787 окт  4 14:53 adruzhkov.pp
+-rw-r--r-- 1 s.belogrud UsersGrp 1,3K окт  4 14:53 affirmed.pp
+-rw-r--r-- 1 s.belogrud UsersGrp 1,2K окт  4 14:53 aglaz.pp
+-rw-r--r-- 1 s.belogrud UsersGrp 1,2K окт  4 14:53 aki.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  932 окт  4 14:53 asusoev.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  905 окт  4 14:53 atyutyuev.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  665 окт  4 14:53 avmironov.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  843 окт  4 14:53 daaleksandrov.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  488 окт  4 14:53 dekking.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  760 окт  4 14:53 devsyukov.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  889 окт  4 14:53 dkrestyankin.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  988 окт  4 14:53 dtp.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  912 окт  4 14:53 extaanikin.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  714 окт  4 14:53 extasavich.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  730 окт  4 14:53 extekozhevnikova.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  931 окт  4 14:53 extmshakhmetov.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  916 окт  4 14:53 extvromanov.pp
+-rw-r--r-- 1 s.belogrud UsersGrp 2,8K окт  4 14:53 forward.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  483 окт  4 14:53 fwdoss.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  415 окт 11 11:06 jenkins.pp
+-rw-r--r-- 1 s.belogrud UsersGrp 3,4K окт  4 14:53 jet.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  873 окт  4 14:53 okochenova.pp
+-rw-r--r-- 1 s.belogrud UsersGrp 2,4K окт  4 14:53 oradba.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  134 окт  4 14:53 params.pp
+-rw-r--r-- 1 s.belogrud UsersGrp  650 окт  4 14:53 smorozkin.pp
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[root@m1-db01-prod ~]# id backup
+uid=1003(backup) gid=1003(backup) groups=1003(backup),1000(oinstall),1001(dba)
+[root@m1-db01-prod ~]# awk '/backup/{print}' /etc/{passwd,shadow}
+backup:x:1003:1003:Simpana backup user:/home/backup:/bin/bash
+backup:$1$WmS/L/i1$ilj1wjKRJ3Uk2M.SzRlOx/:16514:0:99999:7:::
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# sudo -l -U backup
+Matching Defaults entries for backup on this host:
+    !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS",
+    env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION
+    LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY",
+    secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User backup may run the following commands on this host:
+    (ALL) ALL
+    (oracle) ALL
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# awk '/backup/{print}' /etc/sudoers
+[root@m1-db01-prod ~]# awk '/oinstall/{print}' /etc/sudoers
+[root@m1-db01-prod ~]# awk '/dba/{print}' /etc/sudoers
+## Allows people in group dba to run all commands from user oracle
+%dba    ALL=(oracle)    ALL
+[root@m1-db01-prod ~]#
+
+
+[root@m1-mvno-db01-prod ~]# id oinstall
+id: oinstall: no such user
+[root@m1-mvno-db01-prod ~]#
+
+................................................................................
+
+[root@m1-mvno-db01-prod ~]# awk '/dba/{print}' /etc/sudoers
+
+................................................................................
+
+
+[s.belogrud@TCS4357]# ll
+total 5
+-rw-r--r-- 1 s.belogrud UsersGrp 355 окт 11 11:47 config
+drwxr-xr-x 1 s.belogrud UsersGrp   0 окт 11 11:06 control
+[s.belogrud@TCS4357]# mv control{,.old}
+[s.belogrud@TCS4357]# git clone git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+Cloning into 'control'...
+remote: Counting objects: 5630, done.
+remote: Compressing objects: 100% (2499/2499), done.
+remote: Total 5630 (delta 2903), reused 5615 (delta 2888)
+Receiving objects: 100% (5630/5630), 3.52 MiB | 1.73 MiB/s, done.
+Resolving deltas: 100% (2903/2903), done.
+Checking connectivity... done.
+[s.belogrud@TCS4357]# ll
+total 9
+-rw-r--r-- 1 s.belogrud UsersGrp 355 окт 11 11:47 config
+drwxr-xr-x 1 s.belogrud UsersGrp   0 окт 11 11:48 control
+drwxr-xr-x 1 s.belogrud UsersGrp   0 окт 11 11:06 control.old
+[s.belogrud@TCS4357]# vim config control/.git/config
+
+[s.belogrud@TCS4357]# cd control
+[s.belogrud@TCS4357]# git status
+On branch production
+Your branch is up-to-date with 'origin/production'.
+nothing to commit, working directory clean
+[s.belogrud@TCS4357]# git branch
+* production
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# git branch SD661636
+[s.belogrud@TCS4357]# git checkout !$
+git checkout SD661636
+Switched to branch 'SD661636'
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# git branch
+* SD661636
+  production
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# cd site/profile/manifests/accounts/
+
+................................................................................
+
+
+[s.belogrud@TCS4357]# grep -ire "oinstall" ../*
+...
+../oracle/oracle_users.pp:  group { "oinstall":
+../oracle/oracle_users.pp:    groups          => ['oinstall'],
+../oracle/oracle_users.pp:    require         => Group[ 'oinstall', 'dba' ]
+
+[s.belogrud@TCS4357]# vim ../oracle/oracle_users.pp
+class profile::oracle::oracle_users {
+  group { "oinstall":
+    ensure          => present,
+    gid             => 1000,
+  }
+  group { "dba":
+    ensure          => present,
+    gid             => 1001,
+  }
+  user { "oracle":
+    home            => '/opt/oracle',
+    ensure          => present,
+    uid             => '1000',
+    gid             => '1001',
+    groups          => ['oinstall'],
+    shell           => '/bin/bash',
+    comment         => 'Oracle user',
+    provider        => 'useradd',
+    managehome      => true,
+    require         => Group[ 'oinstall', 'dba' ]
+  }
+}
+
+................................................................................
+
+#
+#	20171016
+#
+
+[s.belogrud@TCS4357]# cat backup.pp
+class profile::accounts::backup {
+        class { 'sudo':
+          config_file_replace => false,
+  }
+
+  sudo::conf { 'dba':
+    priority => 10,
+    content  => "%dba ALL=(oracle) ALL",
+    require  => Group['dba'],
+  }
+
+  group { 'backup':
+      ensure           => 'present',
+          gid              => '1003',
+            }
+
+  user { 'backup':
+    ensure           => 'present',
+    comment          => 'Simpana backup user',
+    gid              => '1003',
+    groups           => ['oinstall', 'dba'],
+    home             => '/home/backup',
+    password         => '$1$WmS/L/i1$ilj1wjKRJ3Uk2M.SzRlOx/',
+    shell            => '/bin/bash',
+    uid              => '1003',
+    managehome       => true,
+    require          => Group['backup', 'oinstall', 'dba'],
+  }
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# vim ../../../role/manifests/database_server.pp
+class role::database_server {
+  include profile::base
+  include profile::accounts::oradba
+  include profile::accounts::backup
+  include profile::oracle::prerequisites
+}
+
+................................................................................
+
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#661636. To create backup user for role::database_server was created one file and one file was modified." ../../../role/manifests/database_server.pp backup.pp
+[SD661636 13674fe] SD#661636. To create backup user for role::database_server was created one file and one file was modified.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 29 insertions(+)
+ create mode 100644 site/profile/manifests/accounts/backup.pp
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# git push origin SD661636
+Counting objects: 10, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (9/9), done.
+Writing objects: 100% (10/10), 1.13 KiB | 0 bytes/s, done.
+Total 10 (delta 5), reused 0 (delta 0)
+remote: fatal: bad object 0000000000000000000000000000000000000000
+remote:
+remote: To create a merge request for SD661636, visit:
+remote:   https://vm-gitlab01.tcsbank.ru/Puppet/control/merge_requests/new?merge_request%5Bsource_branch%5D=SD661636
+remote:
+To git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+ * [new branch]      SD661636 -> SD661636
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[root@vm-puppetmaster02p ~]# /opt/puppetlabs/puppet/bin/r10k deploy environment
+WARN     -> Environment "patch-1" contained non-word characters, correcting name to patch_1
+WARN     -> Environment "patch-2" contained non-word characters, correcting name to patch_2
+WARN     -> Environment "patch-3" contained non-word characters, correcting name to patch_3
+WARN     -> Environment "patch-4" contained non-word characters, correcting name to patch_4
+WARN     -> Environment "patch-5" contained non-word characters, correcting name to patch_5
+
+[root@vm-puppetmaster02p ~]#
+
+................................................................................
+
+
+[s.belogrud@TCS4357]# mv control{,.bitch1}
+[s.belogrud@TCS4357]# git clone git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+Cloning into 'control'...
+remote: Counting objects: 5688, done.
+remote: Compressing objects: 100% (2543/2543), done.
+remote: Total 5688 (delta 2928), reused 5646 (delta 2900)
+Receiving objects: 100% (5688/5688), 3.53 MiB | 1.72 MiB/s, done.
+Resolving deltas: 100% (2928/2928), done.
+Checking connectivity... done.
+[s.belogrud@TCS4357]# ll
+total 13
+-rw-r--r-- 1 s.belogrud UsersGrp 355 окт 11 11:47 config
+drwxr-xr-x 1 s.belogrud UsersGrp   0 окт 16 15:27 control
+drwxr-xr-x 1 s.belogrud UsersGrp   0 окт 11 11:48 control.bitch1
+drwxr-xr-x 1 s.belogrud UsersGrp   0 окт 11 11:06 control.old
+[s.belogrud@TCS4357]# cd control
+[s.belogrud@TCS4357]# git branch SD661636_20171016_1528
+[s.belogrud@TCS4357]# git checkout !$
+git checkout SD661636_20171016_1528
+Switched to branch 'SD661636_20171016_1528'
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# cp ../control.bitch1/site/profile/manifests/accounts/backup.pp site/profile/manifests/accounts/
+
+
+[s.belogrud@TCS4357]# vim site/role/manifests/database_server.pp
+
+
+[s.belogrud@TCS4357]# git add site/profile/manifests/accounts/backup.pp
+
+
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#661636. To create backup u
+ser for role::database_server was created one file and one file was modified." site/role/manifests/database_server.pp
+ site/profile/manifests/accounts/backup.pp
+[SD661636_20171016_1528 83494f5] SD#661636. To create backup user for role::database_server was created one file andone file was modified.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ Committer: U-TCSBANK\s.belogrud <s.belogrud@TCS4357.tcsbank.ru>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 2 files changed, 30 insertions(+)
+ create mode 100644 site/profile/manifests/accounts/backup.pp
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# git push origin SD661636_20171016_1528
+Counting objects: 9, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (9/9), 817 bytes | 0 bytes/s, done.
+Total 9 (delta 5), reused 0 (delta 0)
+remote: fatal: bad object 0000000000000000000000000000000000000000
+remote:
+remote: To create a merge request for SD661636_20171016_1528, visit:
+remote:   https://vm-gitlab01.tcsbank.ru/Puppet/control/merge_requests/new?merge_request%5Bsource_branch%5D=SD661636_20171016_1528
+remote:
+To git@vm-gitlab01.tcsbank.ru:Puppet/control.git
+ * [new branch]      SD661636_20171016_1528 -> SD661636_20171016_1528
+[s.belogrud@TCS4357]#
+
+
+[root@vm-puppetmaster02p ~]# /opt/puppetlabs/puppet/bin/r10k deploy environment
+WARN     -> Environment "patch-1" contained non-word characters, correcting name to patch_1
+WARN     -> Environment "patch-2" contained non-word characters, correcting name to patch_2
+WARN     -> Environment "patch-3" contained non-word characters, correcting name to patch_3
+WARN     -> Environment "patch-4" contained non-word characters, correcting name to patch_4
+WARN     -> Environment "patch-5" contained non-word characters, correcting name to patch_5
+[root@vm-puppetmaster02p ~]#
+
+................................................................................
+
+[root@m1-mvno-db01-prod ~]# puppet agent -t --environment SD661636_20171016_1528 --noop
+Info: Using configured environment 'SD661636_20171016_1528'
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Error: Could not retrieve catalog from remote server: Error 500 on SERVER: Server Error: Evaluation Error: Error while evaluating a Resource Statement, Duplicate declaration: Class[Sudo] is already declared in file /etc/puppetlabs/code/environments/SD661636_20171016_1528/site/profile/manifests/accounts/oradba.pp:2; cannot redeclare at /etc/puppetlabs/code/environments/SD661636_20171016_1528/site/profile/manifests/accounts/backup.pp:2 at /etc/puppetlabs/code/environments/SD661636_20171016_1528/site/profile/manifests/accounts/backup.pp:2:2 on node m1-mvno-db01-prod.tcsbank.ru
+Warning: Not using cache on failed catalog
+Error: Could not retrieve catalog; skipping run
+[root@m1-mvno-db01-prod ~]#
+
+
+................................................................................
+
+[s.belogrud@TCS4357]# vim site/profile/manifests/accounts/backup.pp
+[s.belogrud@TCS4357]# cat site/profile/manifests/accounts/backup.pp
+class profile::accounts::backup {
+
+  group { 'backup':
+      ensure           => 'present',
+          gid              => '1003',
+            }
+
+  user { 'backup':
+    ensure           => 'present',
+    comment          => 'Simpana backup user',
+    gid              => '1003',
+    groups           => ['oinstall', 'dba'],
+    home             => '/home/backup',
+    password         => '$1$WmS/L/i1$ilj1wjKRJ3Uk2M.SzRlOx/',
+    shell            => '/bin/bash',
+    uid              => '1003',
+    managehome       => true,
+    require          => Group['backup', 'oinstall', 'dba'],
+  }
+}
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#661636. Syntax correction." site/profile/manifests/accounts/backup.pp
+[SD661636_20171016_1528 2ddf2d8] SD#661636. Syntax correction.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ Committer: U-TCSBANK\s.belogrud <s.belogrud@TCS4357.tcsbank.ru>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 1 file changed, 9 deletions(-)
+[s.belogrud@TCS4357]#
+
+[root@vm-puppetmaster02p ~]# /opt/puppetlabs/puppet/bin/r10k deploy environment
+WARN     -> Environment "patch-1" contained non-word characters, correcting name to patch_1
+WARN     -> Environment "patch-2" contained non-word characters, correcting name to patch_2
+WARN     -> Environment "patch-3" contained non-word characters, correcting name to patch_3
+WARN     -> Environment "patch-4" contained non-word characters, correcting name to patch_4
+WARN     -> Environment "patch-5" contained non-word characters, correcting name to patch_5
+[root@vm-puppetmaster02p ~]#
+
+[root@m1-mvno-db01-prod ~]# puppet agent -t --environment SD661636_20171016_1648 --noop
+Info: Using configured environment 'SD661636_20171016_1648'
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-SD661636_20171016_1648-ed07f6f41a0'
+Notice: /Stage[main]/Profile::Accounts::Backup/Group[backup]/ensure: current_value 'absent', should be 'present' (noop)
+Notice: /Stage[main]/Profile::Accounts::Backup/User[backup]/ensure: current_value 'absent', should be 'present' (noop)
+Notice: Class[Profile::Accounts::Backup]: Would have triggered 'refresh' from 2 events
+Notice: Stage[main]: Would have triggered 'refresh' from 1 event
+Notice: Applied catalog in 0.94 seconds
+[root@m1-mvno-db01-prod ~]# puppet agent -t --environment SD661636_20171016_1648
+Info: Using configured environment 'SD661636_20171016_1648'
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for m1-mvno-db01-prod.tcsbank.ru
+Info: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-SD661636_20171016_1648-ed07f6f41a0'
+Notice: /Stage[main]/Profile::Accounts::Backup/Group[backup]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Backup/User[backup]/ensure: created
+Notice: Applied catalog in 1.03 seconds
+[root@m1-mvno-db01-prod ~]#
+
+[root@m1-mvno-db01-prod ~]# id backup
+uid=1003(backup) gid=1003(backup) groups=1003(backup),1000(oinstall),1001(dba)
+[root@m1-mvno-db01-prod ~]# sudo -l -U backup
+Matching Defaults entries for backup on this host:
+    !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS",
+    env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION
+    LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User backup may run the following commands on this host:
+    (oracle) ALL
+[root@m1-mvno-db01-prod ~]#
+
+
+
+

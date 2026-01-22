@@ -1,0 +1,126 @@
+
+
+................................................................................
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+#        service_description             PG tcsapi no operations
+        service_description             ACQAPI - No operations
+        check_command                   check_nrpe!noop
+        check_interval           1
+        first_notification_delay        0
+    contacts                      m.pankevich_email,m.pankevich_sms,v.veselov_email,v.veselov_sms,paym_acquiring_email,pss_24x7_email,processing_duty_sms,d.a.makeev_sms,v.leshchuk_sms,o.babushkin_email,o.babushkin_sms,a.loshchinin_email,a.loshchinin_sms
+        contact_groups                  empty-group
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notifications_enabled           1
+    notification_interval         5
+}
+
+................................................................................
+
+[root@vm-dbamon01 ~]# awk '/noop/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_acq.cfg     command[noop]=/opt/TCS/scripts/nagios/plugins/acq/noop.sh
+/etc/nrpe.d/check_db_pg2.cfg     command[check_tcsapi_pg2_noop]=/opt/TCS/scripts/nagios/plugins/pg2/tcsapi_pg2_noop.sh
+[root@vm-dbamon01 ~]#
+
+................................................................................
+
+#
+# 1.
+[root@vm-dbamon01 acq]# cp noop.sh check_restapi_pos_alert_no_operation_view.sh
+[root@vm-dbamon01 acq]# cp noop.sql restapi_pos_alert_no_operation_view.sql
+[root@vm-dbamon01 acq]# mv {check_,}restapi_pos_alert_no_operation_view.sh
+[root@vm-dbamon01 acq]# vim -o restapi_pos_alert_no_operation_view.{sh,sql}
+2 files to edit
+[root@vm-dbamon01 acq]#
+
+[root@vm-dbamon01 acq]# ./restapi_pos_alert_no_operation_view.sh
+OK
+[root@vm-dbamon01 acq]#
+
+................................................................................
+
+#
+# 2.
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sh restapi_pos_alert_pa_err_view.sh
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sql restapi_pos_alert_pa_err_view.sql
+
+[root@vm-dbamon01 acq]# vim -o restapi_pos_alert_pa_err_view.sh restapi_pos_alert_pa_err_view.sql
+2 files to edit
+[root@vm-dbamon01 acq]# ./restapi_pos_alert_pa_err_view.sh
+OK
+[root@vm-dbamon01 acq]#
+
+
+................................................................................
+
+#
+# 3.
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sh restapi_pos_alert_ca_err_view.sh
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sql restapi_pos_alert_ca_err_view.sql
+[root@vm-dbamon01 acq]# vim -o restapi_pos_alert_ca_err_view.sh restapi_pos_alert_ca_err_view.sql
+2 files to edit
+[root@vm-dbamon01 acq]# ./restapi_pos_alert_ca_err_view.sh
+OK
+[root@vm-dbamon01 acq]#
+
+................................................................................
+
+#
+# 4.
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sh restapi_pos_alert_pa_after_ca_view.sh
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sql restapi_pos_alert_pa_after_ca_view.sql
+[root@vm-dbamon01 acq]# vim -o restapi_pos_alert_pa_after_ca_view.sh restapi_pos_alert_pa_after_ca_view.sql
+2 files to edit
+[root@vm-dbamon01 acq]# ./restapi_pos_alert_pa_after_ca_view.sh
+OK
+[root@vm-dbamon01 acq]#
+
+................................................................................
+
+#
+# 5.
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sh restapi_pos_alert_auto_ca_view.sh
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sql restapi_pos_alert_auto_ca_view.sql
+[root@vm-dbamon01 acq]# vim -o restapi_pos_alert_auto_ca_view.sh restapi_pos_alert_auto_ca_view.sql
+2 files to edit
+[root@vm-dbamon01 acq]# ./restapi_pos_alert_auto_ca_view.sh
+OK
+[root@vm-dbamon01 acq]#
+
+................................................................................
+
+#
+# 6.
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sh restapi_pos_alert_unknown_view.sh
+[root@vm-dbamon01 acq]# cp restapi_pos_alert_no_operation_view.sql restapi_pos_alert_unknown_view.sql
+[root@vm-dbamon01 acq]# vim -o restapi_pos_alert_unknown_view.sh restapi_pos_alert_unknown_view.sql
+2 files to edit
+[root@vm-dbamon01 acq]# ./restapi_pos_alert_unknown_view.sh
+OK
+[root@vm-dbamon01 acq]#
+
+................................................................................
+
+[root@vm-dbamon01 acq]# vim /etc/nrpe.d/check_db_acq.cfg
+[root@vm-dbamon01 acq]# tail -n 6 /etc/nrpe.d/check_db_acq.cfg
+command[restapi_pos_alert_no_operation_view]=/opt/TCS/scripts/nagios/plugins/acq/restapi_pos_alert_no_operation_view.sh
+command[restapi_pos_alert_pa_err_view]=/opt/TCS/scripts/nagios/plugins/acq/restapi_pos_alert_pa_err_view.sh
+command[restapi_pos_alert_ca_err_view]=/opt/TCS/scripts/nagios/plugins/acq/restapi_pos_alert_ca_err_view.sh
+command[restapi_pos_alert_pa_after_ca_view]=/opt/TCS/scripts/nagios/plugins/acq/restapi_pos_alert_pa_after_ca_view.sh
+command[restapi_pos_alert_auto_ca_view]=/opt/TCS/scripts/nagios/plugins/acq/restapi_pos_alert_auto_ca_view.sh
+command[restapi_pos_alert_unknown_view]=/opt/TCS/scripts/nagios/plugins/acq/restapi_pos_alert_unknown_view.sh
+[root@vm-dbamon01 acq]#
+
+[root@vm-dbamon01 acq]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 acq]#
+
+................................................................................
+
+
+
+

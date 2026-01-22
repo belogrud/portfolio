@@ -1,0 +1,212 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   648400
+Название    №648400
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  04.12.2015 12:11
+Дата регистрации    04.12.2015 12:11
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, просьба настроить оповещения по SMS на группу esb-admins@tinkoff.ru<mailto:esb-admins@tinkoff.ru> в случае 100% нагрузки на CPU
+Сервера для мониторинга:
+vm-bpm-app01
+vm-bpm-app02
+vm-bpm-app03
+vm-bpm-app04
+vm-bpm-app05
+vm-bpm-app06
+
+такое уже настроено на vm-ilog-app01
+
+Спасибо!
+
+С уважением,
+
+Михаил Липин
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Липин Михаил
+Соглашение  Базовое соглашение
+Сервис  Другое
+Контактное лицо Липин Михаил
+Контактный e-mail   m.lipin@tinkoff.ru
+Контактные телефоны 79263640509, 2210
+
+................................................................................
+
+Дата
+Комментарий Автор
+04.12.2015 14:59    Нужно уточнение.
+Для хоста vm-ilog-app01, где Вы пишите, что всё настроено, оповещения отсылаются на группу bpm-admins.
+В заявке же Вы просите отсылать оповещения для группы esb-admins.
+Всё верно? Нигде не опечатались?
+
+host_name vm-ilog-app01
+service_description CPU Load
+contact_groups bpm-admins, servicedesk-duty-critical-group
+Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# vim +view ./objects/servers/bpm/vm-bpm-app01.cfg -o ./objects/servers/vmware/vm-ilog-app01.cfg
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# for var1 in $(cat) ; do pynag list host_name and contact_groups where host_name="${var1}" and service_description="CPU Load" --quiet ; done
+vm-bpm-app01
+vm-bpm-app02
+vm-bpm-app03
+vm-bpm-app04
+vm-bpm-app05
+vm-bpm-app06
+vm-ilog-app01
+vm-bpm-app01         null                 dss-admins, servicedesk-duty-critical-group
+vm-bpm-app02         null                 dss-admins, servicedesk-duty-critical-group
+vm-bpm-app03         null                 dss-admins, servicedesk-duty-critical-group
+vm-bpm-app04         null                 dss-admins, servicedesk-duty-critical-group
+vm-bpm-app05         null                 dss-admins, servicedesk-duty-critical-group
+vm-bpm-app06         null                 dss-admins, servicedesk-duty-critical-group
+vm-ilog-app01        null                 bpm-admins, servicedesk-duty-critical-group
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# for var1 in $(cat) ; do pynag list host_name and contact_groups and filename where host_name="${var1}" and service_description="CPU Load" --quiet ; done
+vm-bpm-app01
+vm-bpm-app02
+vm-bpm-app03
+vm-bpm-app04
+vm-bpm-app05
+vm-bpm-app06
+vm-ilog-app01
+vm-bpm-app01         null                 dss-admins, servicedesk-duty-critical-group null                 /etc/nagios/objects/servers/bpm/vm-bpm-app01.cfg
+vm-bpm-app02         null                 dss-admins, servicedesk-duty-critical-group null                 /etc/nagios/objects/servers/bpm/vm-bpm-app02.cfg
+vm-bpm-app03         null                 dss-admins, servicedesk-duty-critical-group null                 /etc/nagios/objects/servers/bpm/vm-bpm-app03.cfg
+vm-bpm-app04         null                 dss-admins, servicedesk-duty-critical-group null                 /etc/nagios/objects/servers/bpm/vm-bpm-app04.cfg
+vm-bpm-app05         null                 dss-admins, servicedesk-duty-critical-group null                 /etc/nagios/objects/servers/bpm/vm-bpm-app05.cfg
+vm-bpm-app06         null                 dss-admins, servicedesk-duty-critical-group null                 /etc/nagios/objects/servers/bpm/vm-bpm-app06.cfg
+vm-ilog-app01        null                 bpm-admins, servicedesk-duty-critical-group null                 /etc/nagios/objects/servers/vmware/vm-ilog-app01.cfg
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# find . -name esb-admins*
+./objects/groups/contact-group/esb-admins-email.cfg
+./objects/groups/contact-group/esb-admins.cfg
+[root@vm-vol-nag01t nagios]# cat ./objects/groups/contact-group/esb-admins.cfg
+define contactgroup{
+        contactgroup_name       esb-admins
+        alias                   ESB Administrators
+        members                 a.terentyev_sms, a.terentyev_email, s.y.terentyev_email, m.lipin_email, m.lipin_sms, a.v.balandin_email, a.v.balandin_sms, s.kirsanov_sms, s.kirsanov_email, m.g.golubkov_sms, m.g.golubkov_email, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
+}
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# for var1 in $(cat) ; do pynag update set contact_groups="esb-admins, dss-admins, servicedesk-duty-critical-group"  where host_name="${var1}" and service_description="CPU Load" --quiet ; done
+vm-bpm-app01
+vm-bpm-app02
+vm-bpm-app03
+vm-bpm-app04
+vm-bpm-app05
+vm-bpm-app06
+service              vm-bpm-app01/CPU Load /etc/nagios/objects/servers/bpm/vm-bpm-app01.cfg
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/bpm/vm-bpm-app01.cfg (vm-bpm-app01/CPU Load): changed contact_groups to esb-admins, dss-admins, servicedesk-duty-critical-group
+service              vm-bpm-app02/CPU Load /etc/nagios/objects/servers/bpm/vm-bpm-app02.cfg
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/bpm/vm-bpm-app02.cfg (vm-bpm-app02/CPU Load): changed contact_groups to esb-admins, dss-admins, servicedesk-duty-critical-group
+service              vm-bpm-app03/CPU Load /etc/nagios/objects/servers/bpm/vm-bpm-app03.cfg
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/bpm/vm-bpm-app03.cfg (vm-bpm-app03/CPU Load): changed contact_groups to esb-admins, dss-admins, servicedesk-duty-critical-group
+service              vm-bpm-app04/CPU Load /etc/nagios/objects/servers/bpm/vm-bpm-app04.cfg
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/bpm/vm-bpm-app04.cfg (vm-bpm-app04/CPU Load): changed contact_groups to esb-admins, dss-admins, servicedesk-duty-critical-group
+service              vm-bpm-app05/CPU Load /etc/nagios/objects/servers/bpm/vm-bpm-app05.cfg
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/bpm/vm-bpm-app05.cfg (vm-bpm-app05/CPU Load): changed contact_groups to esb-admins, dss-admins, servicedesk-duty-critical-group
+service              vm-bpm-app06/CPU Load /etc/nagios/objects/servers/bpm/vm-bpm-app06.cfg
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/bpm/vm-bpm-app06.cfg (vm-bpm-app06/CPU Load): changed contact_groups to esb-admins, dss-admins, servicedesk-duty-critical-group
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#648400. Add notification group esb-admins for service CPU Load on hosts vm-bpm-app01-06" objects/servers/bpm/vm-bpm-app0{1..6}.cfg
+[master eeb26fa] SD#648400. Add notification group esb-admins for service CPU Load on hosts vm-bpm-app01-06
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# nagios -v /etc/nagios/nagios.cfg
+
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+
+[root@vm-vol-nag01t nagios]# for var1 in $(cat) ; do pynag list host_name contact_groups where host_name="${var1}" and service_description="CPU Load" ; done
+vm-bpm-app01
+vm-bpm-app02
+vm-bpm-app03
+vm-bpm-app04
+vm-bpm-app05
+vm-bpm-app06
+
+host_name            contact_groups
+--------------------------------------------------------------------------------
+vm-bpm-app01         esb-admins, dss-admins, servicedesk-duty-critical-group
+----------1 objects matches search condition------------------------------------
+host_name            contact_groups
+--------------------------------------------------------------------------------
+vm-bpm-app02         esb-admins, dss-admins, servicedesk-duty-critical-group
+----------1 objects matches search condition------------------------------------
+host_name            contact_groups
+--------------------------------------------------------------------------------
+vm-bpm-app03         esb-admins, dss-admins, servicedesk-duty-critical-group
+----------1 objects matches search condition------------------------------------
+host_name            contact_groups
+--------------------------------------------------------------------------------
+vm-bpm-app04         esb-admins, dss-admins, servicedesk-duty-critical-group
+----------1 objects matches search condition------------------------------------
+host_name            contact_groups
+--------------------------------------------------------------------------------
+vm-bpm-app05         esb-admins, dss-admins, servicedesk-duty-critical-group
+----------1 objects matches search condition------------------------------------
+host_name            contact_groups
+--------------------------------------------------------------------------------
+vm-bpm-app06         esb-admins, dss-admins, servicedesk-duty-critical-group
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# for var1 in $(cat) ; do pynag list host_name contact_groups where host_name="${var1}" and service_description="CPU Load" --quiet ; done
+vm-bpm-app01
+vm-bpm-app02
+vm-bpm-app03
+vm-bpm-app04
+vm-bpm-app05
+vm-bpm-app06
+
+vm-bpm-app01         esb-admins, dss-admins, servicedesk-duty-critical-group
+vm-bpm-app02         esb-admins, dss-admins, servicedesk-duty-critical-group
+vm-bpm-app03         esb-admins, dss-admins, servicedesk-duty-critical-group
+vm-bpm-app04         esb-admins, dss-admins, servicedesk-duty-critical-group
+vm-bpm-app05         esb-admins, dss-admins, servicedesk-duty-critical-group
+vm-bpm-app06         esb-admins, dss-admins, servicedesk-duty-critical-group
+[root@vm-vol-nag01t nagios]#
+
+
+
+
+

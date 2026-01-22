@@ -1,0 +1,80 @@
+
+
+................................................................................
+
+
+
+ot@ds-graylog-lb01 ~]# ls -1 /etc/keepalived/conf.d/ | sort -t "-" -k 2 -n | tail -n 5
+udp-12417-input.conf
+udp-12418-input.conf
+udp-12419-input.conf
+udp-12420-input.conf
+tcp-12900-input.conf
+[root@ds-graylog-lb01 ~]#
+
+[root@ds-graylog-lb01 ~]# cp /etc/keepalived/conf.d/udp-1242{0,1}-input.conf
+[root@ds-graylog-lb01 ~]# sed -i 's/12420/12421/' /etc/keepalived/conf.d/udp-12421-input.conf
+[root@ds-graylog-lb01 ~]# diff -Nuar /etc/keepalived/conf.d/udp-1242{0,1}-input.conf
+--- /etc/keepalived/conf.d/udp-12420-input.conf 2017-02-16 16:35:19.254718235 +0300
++++ /etc/keepalived/conf.d/udp-12421-input.conf 2017-02-17 19:05:11.027008696 +0300
+@@ -1,10 +1,10 @@
+-virtual_server 10.216.40.170 12420 {
++virtual_server 10.216.40.170 12421 {
+     delay_loop 6
+     lb_algo rr
+     lb_kind NAT
+     protocol UDP
+
+-    real_server 10.217.26.4 12420 {
++    real_server 10.217.26.4 12421 {
+         weight 1
+         SSL_GET {
+             url {
+@@ -16,7 +16,7 @@
+         }
+     }
+
+-    real_server 10.217.26.3 12420 {
++    real_server 10.217.26.3 12421 {
+         weight 1
+         SSL_GET {
+             url {
+[root@ds-graylog-lb01 ~]#
+
+
+[root@ds-graylog-lb01 ~]# /etc/init.d/keepalived restart ; sleep 2 ; ipvsadm -L -n | grep 12421
+Stopping keepalived:                                       [  OK  ]
+Starting keepalived:                                       [  OK  ]
+UDP  10.216.40.170:12421 rr
+  -> 10.217.26.3:12421            Masq    1      0          0
+  -> 10.217.26.4:12421            Masq    1      0          0
+[root@ds-graylog-lb01 ~]#
+
+
+[root@ds-graylog-lb01 ~]# scp /etc/keepalived/conf.d/udp-12421-input.conf m1-graylog-lb01:/etc/keepalived/conf.d/
+udp-12421-input.conf                                                                                                                                                      100%  610     0.6KB/s   00:00
+[root@ds-graylog-lb01 ~]# ssh -t m1-graylog-lb01 '( hostname ; /etc/init.d/keepalived restart ; sleep 2 ; ipvsadm -L -n | grep 12421 )'
+m1-graylog-lb01.tcsbank.ru
+Stopping keepalived:                                       [  OK  ]
+Starting keepalived:                                       [  OK  ]
+UDP  10.216.40.170:12421 rr
+  -> 10.217.26.3:12421            Masq    1      0          0
+  -> 10.217.26.4:12421            Masq    1      0          0
+Connection to m1-graylog-lb01 closed.
+[root@ds-graylog-lb01 ~]#
+
+................................................................................
+
+gl2_source_input:58a720c032f0673c834fa7f2
+
+................................................................................
+
+Создан udp input на ha-graylog.tcsbank.ru порт 12421.
+Отправлять логи следует на ha-graylog-input.tcsbank.ru на порт 12421 по протоколу udp.
+
+Создан stream с названием "[Genius Portal] api".
+Доступ на чтение данных в graylog предоставлен группе graylog_fintech.
+
+
+
+

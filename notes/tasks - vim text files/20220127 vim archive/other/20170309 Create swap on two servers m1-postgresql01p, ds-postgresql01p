@@ -1,0 +1,93 @@
+
+
+[root@ds-postgresql01p ~]# df -hT
+Filesystem                         Type      Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00    xfs        20G  7.7G   13G  39% /
+devtmpfs                           devtmpfs  7.8G     0  7.8G   0% /dev
+tmpfs                              tmpfs     7.8G  4.0K  7.8G   1% /dev/shm
+tmpfs                              tmpfs     7.8G  209M  7.6G   3% /run
+tmpfs                              tmpfs     7.8G     0  7.8G   0% /sys/fs/cgroup
+/dev/sda1                          xfs       241M  155M   86M  65% /boot
+v6250-m1-nfs:/vol/postgresql_logs  nfs       105G   67G   39G  64% /data/arch
+fas6280b-ds-nfs:/vol/PGSQL_prod_ds nfs       500G  3.8G  497G   1% /data/db
+tmpfs                              tmpfs     1.6G     0  1.6G   0% /run/user/505
+tmpfs                              tmpfs     1.6G     0  1.6G   0% /run/user/525
+[root@ds-postgresql01p ~]#
+
+[root@ds-postgresql01p ~]# swapon -s
+[root@ds-postgresql01p ~]#
+
+[root@ds-postgresql01p ~]# dd if=/dev/zero of=/swapfile bs=1M count=8192
+8192+0 records in
+8192+0 records out
+8589934592 bytes (8.6 GB) copied, 447.848 s, 19.2 MB/s
+[root@ds-postgresql01p ~]#
+
+[root@ds-postgresql01p ~]# chmod 0600 /swapfile
+[root@ds-postgresql01p ~]# mkswap /swapfile
+Setting up swapspace version 1, size = 8388604 KiB
+no label, UUID=385135c8-fa05-425b-bf02-7c3f401dbac9
+[root@ds-postgresql01p ~]# swapon /swapfile
+[root@ds-postgresql01p ~]#
+
+[root@ds-postgresql01p ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+/swapfile                               file    8388604 11236   -1
+[root@ds-postgresql01p ~]# cat /proc/swaps
+Filename                                Type            Size    Used    Priority
+/swapfile                               file            8388604 11228   -1
+[root@ds-postgresql01p ~]#
+[root@ds-postgresql01p ~]# free -hm
+              total        used        free      shared  buff/cache   available
+Mem:            15G         14G        247M        209M        405M        229M
+Swap:          8.0G         10M        8.0G
+[root@ds-postgresql01p ~]#
+
+................................................................................
+
+
+[root@m1-postgresql01p ~]# df -hT
+Filesystem                         Type      Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00    xfs        20G  7.0G   13G  36% /
+devtmpfs                           devtmpfs  7.8G     0  7.8G   0% /dev
+tmpfs                              tmpfs     7.8G  4.0K  7.8G   1% /dev/shm
+tmpfs                              tmpfs     7.8G  345M  7.5G   5% /run
+tmpfs                              tmpfs     7.8G     0  7.8G   0% /sys/fs/cgroup
+/dev/sda1                          xfs       241M  155M   86M  65% /boot
+v6250-m1-nfs:/vol/postgresql_logs  nfs       105G   67G   39G  64% /data/arch
+fas6280b-m1-nfs:/vol/PGSQL_prod_m1 nfs       500G  3.5G  497G   1% /data/db
+tmpfs                              tmpfs     1.6G     0  1.6G   0% /run/user/0
+tmpfs                              tmpfs     1.6G     0  1.6G   0% /run/user/505
+tmpfs                              tmpfs     1.6G     0  1.6G   0% /run/user/525
+[root@m1-postgresql01p ~]# swapon -s
+[root@m1-postgresql01p ~]#
+
+[root@m1-postgresql01p ~]# dd if=/dev/zero of=/swapfile bs=1M count=8192
+8192+0 records in
+8192+0 records out
+8589934592 bytes (8.6 GB) copied, 442.099 s, 19.4 MB/s
+[root@m1-postgresql01p ~]#
+
+[root@m1-postgresql01p ~]# chmod 0600 /swapfile
+[root@m1-postgresql01p ~]# mkswap /swapfile
+Setting up swapspace version 1, size = 8388604 KiB
+no label, UUID=239cf8b4-1403-46c7-9aa1-8fd9976dd847
+[root@m1-postgresql01p ~]# swapon /swapfile
+
+[root@m1-postgresql01p ~]# vim /etc/fstab
+...
+/swapfile          swap            swap    defaults        0 0
+...
+
+[root@m1-postgresql01p ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+/swapfile                               file    8388604 0       -1
+[root@m1-postgresql01p ~]# free -hm
+              total        used        free      shared  buff/cache   available
+Mem:            15G         14G        171M        345M        760M        309M
+Swap:          8.0G          0B        8.0G
+[root@m1-postgresql01p ~]#
+
+................................................................................
+
+

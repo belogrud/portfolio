@@ -1,0 +1,93 @@
+
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name service_description contacts where service_description__contains="RATES"
+host_name            service_description  contacts
+--------------------------------------------------------------------------------
+vm-dbamon01          RATES - No Rates from Central Bank n.yatsishena_sms,n.yatsishena_email,p.silaev_sms,a.i.levchenko_email,a.i.levchenko_sms
+vm-dbamon01          RATES - No Rates from Micex s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,p.silaev_sms,a.i.levchenko_email,a.i.levchenko_sms
+vm-dbamon01          RATES - RLS Status   s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,a.i.levchenko_email,a.i.levchenko_sms,p.silaev_email,p.silaev_sms
+----------3 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name service_description contacts where service_description__contains="RATES" and contacts__contains="levchenko"
+host_name            service_description  contacts
+--------------------------------------------------------------------------------
+vm-dbamon01          RATES - No Rates from Central Bank n.yatsishena_sms,n.yatsishena_email,p.silaev_sms,a.i.levchenko_email,a.i.levchenko_sms
+vm-dbamon01          RATES - No Rates from Micex s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,p.silaev_sms,a.i.levchenko_email,a.i.levchenko_sms
+vm-dbamon01          RATES - RLS Status   s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,a.i.levchenko_email,a.i.levchenko_sms,p.silaev_email,p.silaev_sms
+----------3 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#101691. Removed contact levchenko from notification for three services." servers/vmware/vm-dbamon01.cfg
+Running configuration check...
+ OK.
+[master 85c30ff] SD#101691. Removed contact levchenko from notification for three services.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 576 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   07354b3..85c30ff  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# find . -iname settlement*
+./groups/contact-group/settlement.cfg
+[root@vm-vol-nag4-tst objects]# cat $(find . -iname settlement*)
+define contactgroup{
+        contactgroup_name       settlement
+        members                 n.burtseva_email,v.n.ivanova_email,e.naberezhnaya_email,t.neshina_email,a.shkurko_email,i.tenilova_email,v.tkachenko_email,p.vlasov_email,i.e.zverev_email
+}
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p 85c30ff
+commit 85c30ffd0f7fef06a5a158c4b5830f4d6cf29570
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Tue Nov 29 15:12:56 2016 +0300
+
+    SD#101691. Removed contact levchenko from notification for three services.
+
+diff --git a/objects/servers/vmware/vm-dbamon01.cfg b/objects/servers/vmware/vm-dbamon01.cfg
+index 6f31264..42122c2 100644
+--- a/objects/servers/vmware/vm-dbamon01.cfg
++++ b/objects/servers/vmware/vm-dbamon01.cfg
+@@ -1265,7 +1265,7 @@ define service{
+         check_interval                  1
+         max_check_attempts              1
+         contact_groups                  servicedesk-duty-critical-group,settlement
+-           contacts                        s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,p.silaev_sms,a.i.levchenko_email,a.i.levchenko_sms
++           contacts                        s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,p.silaev_sms
+         check_command                   check_nrpe!check_tcs_monitoring_micex
+         notification_interval           5
+        flap_detection_enabled        0
+@@ -1277,7 +1277,7 @@ define service{
+         check_interval                  1
+         max_check_attempts              1
+         contact_groups                  servicedesk-duty-critical-group,settlement
+-           contacts                        s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,a.i.levchenko_email,a.i.levchenko_sms,p.silaev_email,p.silaev_sms
++           contacts                        s.belyakov_email,processing_duty_sms,n.yatsishena_sms,n.yatsishena_email,cards_24x7_email,p.silaev_email,p.silaev_sms
+         check_command                   check_nrpe!check_tcs_monitoring_rate_rls
+         notification_interval           5
+            flap_detection_enabled          0
+@@ -1308,7 +1308,7 @@ define service{
+         host_name                       vm-dbamon01
+         service_description             RATES - No Rates from Central Bank
+         contact_groups                  settlement
+-           contacts                        n.yatsishena_sms,n.yatsishena_email,p.silaev_sms,a.i.levchenko_email,a.i.levchenko_sms
++           contacts                        n.yatsishena_sms,n.yatsishena_email,p.silaev_sms
+         check_command                   check_nrpe!check_cb_monitoring
+         max_check_attempts              1
+         flap_detection_enabled          0
+[root@vm-vol-nag4-tst objects]#
+
+
+

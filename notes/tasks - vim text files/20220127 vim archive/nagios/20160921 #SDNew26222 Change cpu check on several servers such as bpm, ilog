@@ -1,0 +1,326 @@
+
+................................................................................
+
+Тема
+
+HA: nagios. проверка cpu на нодах bpm
+Номер
+
+26222
+Описание
++sd
+
+От: Nikolaenko Dmitriy
+Отправлено: 20 сентября 2016 г. 20:27
+Кому: unix-admins
+Копия: bpm-admins
+Тема: nagios. проверка cpu на нодах bpm
+
+Привет
+Можете, пож-та, увеличить порог срабатывания алертов для CPU-нагрузки на нодах BPM до 95%.
+Сейчас, похоже, стоит ~90%, а в дневное время обычная нагрузка на нодах около 85-90%. СМС приходят непрерывно в течение всего дня
+
+И добавьте, пож-та, в этот алерт проверку нагрузки на нодах Ilog (тут порог 90% - ок):
+http://vm-odm-app01.tcsbank.ru:9080
+http://vm-odm-app02.tcsbank.ru:9081
+http://vm-odm-app03.tcsbank.ru:9081
+http://vm-odm-app04.tcsbank.ru:9081
+
+Спасибо
+
+
+С уважением,
+
+Дмитрий Николаенко
+Системный администратор
+
+................................................................................
+
+Николаенко Дмитрий Сергеевич
+Поправка по поводу нод iLog:
+нужно в список ответственных за метрику "CPU Load" на перечисленных нодах включить группу "dss-admins".
+Также просьба исключить из этой группы: r.tedeev_[sms,email], d.mikheev_[sms,email] (сотрудники уже не работают в банке)
+и включить:
+m.meluzov_sms: 89264185183
+m.meluzov_email: m.meluzov@tinkoff.ru
+a.mishkin_sms: 89653246230
+a.mishkin_email: a.mishkin@tinkoff.ru
+Сегодня в 11:50
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=vm-odm-app0
+filename
+--------------------------------------------------------------------------------
+/usr/local/nagios/etc/objects/servers/vmware/vm-odm-app01.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-odm-app02.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-odm-app03.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-odm-app04.cfg
+----------4 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=bpm
+filename
+--------------------------------------------------------------------------------
+/usr/local/nagios/etc/objects/servers/cluster-resources/db-on-db06.cfg
+/usr/local/nagios/etc/objects/servers/cluster-resources/db-bpm-prod-dg.cfg
+/usr/local/nagios/etc/objects/servers/cluster-resources/db-on-db06.cfg
+/usr/local/nagios/etc/objects/servers/bpm/vm-bpm-app05.cfg
+/usr/local/nagios/etc/objects/servers/bpm/vm-bpm-app06.cfg
+/usr/local/nagios/etc/objects/servers/bpm/vm-bpm-app07.cfg
+/usr/local/nagios/etc/objects/servers/bpm/vm-bpm-app08.cfg
+/usr/local/nagios/etc/objects/servers/vmware/bpm/vm-bpm-dev02.cfg
+/usr/local/nagios/etc/objects/servers/vmware/bpm/vm-bpm-src01.cfg
+/usr/local/nagios/etc/objects/servers/vmware/bpm/vm-bpm-src01t.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-bpm-tst03.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-bpm-tst04.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-bpm-tst10.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-bpm-tst11.cfg
+----------14 objects matches search condition-----------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list members filename where contactgroup_name__contains="dss-admins"
+members              filename
+--------------------------------------------------------------------------------
+m.evrastov_email,m.evrastov_sms,a.timonich_email,a.timonich_sms,a.kireiko_email,a.kireiko_sms,a.terentyev_email,a.terentyev_sms,d.nikolaenko_email,d.nikolaenko_sms,d.mikheev_email,d.mikheev_sms,r.tedeev_sms,r.tedeev_email,servicedesk_duty_sms_critical,servicedesk_duty_khutor_sms_critical /usr/local/nagios/etc/objects/groups/contact-group/dss-admins.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="meluzov"
+contact_name         filename
+--------------------------------------------------------------------------------
+m.meluzov_email      /usr/local/nagios/etc/objects/contacts/m.meluzov.cfg
+m.meluzov_sms        /usr/local/nagios/etc/objects/contacts/m.meluzov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#   modified:   contacts/m.meluzov.cfg
+#   modified:   groups/contact-group/dss-admins.cfg
+#   modified:   servers/dc-m1/linux/sas/m1-sasfront02p.cfg
+#   modified:   servers/vmware/vm-ds-repo01.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#   servers/dc-ds/linux/ds-clickhouse01t.cfg
+#   servers/vmware/vm-bicms01t.cfg
+#   servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD:26222. Updated group memgership and phone for one contact." groups/contact-group/dss-admins.cfg contacts/m.meluzov.cfg
+[master a9fc39a] SD:26222. Updated group memgership and phone for one contact.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig                                                                                                                                           Running configuration check...
+ OK.
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 15, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 694 bytes, done.
+Total 8 (delta 7), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   e04a9ca..a9fc39a  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim -o /usr/local/nagios/etc/objects/servers/vmware/vm-odm-app0{1,2,3,4}.cfg
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD:26222. Added group dss-admins into \"CPU Load\" check." servers/vmware/vm-odm-app0{1,2,3,4}.cfg [master 7aed288] SD:26222. Added group dss-admins into "CPU Load" check.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig
+Running configuration check...
+ OK.
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 17, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (9/9), done.
+Writing objects: 100% (9/9), 808 bytes, done.
+Total 9 (delta 8), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   a9fc39a..7aed288  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager show -p 7aed2888fcffaae2012ffac22e65ddeb627541cc -p a9fc39a530f83c738f75d12d0b7ffdfcbe5623f5
+commit 7aed2888fcffaae2012ffac22e65ddeb627541cc
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Sep 21 19:34:59 2016 +0300
+
+    SD:26222. Added group dss-admins into "CPU Load" check.
+
+diff --git a/objects/servers/vmware/vm-odm-app01.cfg b/objects/servers/vmware/vm-odm-app01.cfg
+index bebc717..116190d 100644
+--- a/objects/servers/vmware/vm-odm-app01.cfg
++++ b/objects/servers/vmware/vm-odm-app01.cfg
+@@ -45,7 +45,7 @@ define service{
+         max_check_attempts      3
+         retry_interval          1
+         flap_detection_enabled  0
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+         contacts                m.lipin_email, m.lipin_sms, a.v.balandin_email, a.v.balandin_sms, s.kirsanov_sms, s.kirsanov_email, m.g.golubkov_sms, m.g.golubkov_email
+         check_command           check_nrpe!check_cpu
+ }
+diff --git a/objects/servers/vmware/vm-odm-app02.cfg b/objects/servers/vmware/vm-odm-app02.cfg
+index 158e41e..273b55c 100644
+--- a/objects/servers/vmware/vm-odm-app02.cfg
++++ b/objects/servers/vmware/vm-odm-app02.cfg
+@@ -45,7 +45,7 @@ define service{
+         max_check_attempts      3
+         retry_interval          1
+         flap_detection_enabled  0
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+         contacts                m.lipin_email, m.lipin_sms, a.v.balandin_email, a.v.balandin_sms, s.kirsanov_sms, s.kirsanov_email, m.g.golubkov_sms, m.g.golubkov_email
+         check_command           check_nrpe!check_cpu
+ }
+diff --git a/objects/servers/vmware/vm-odm-app03.cfg b/objects/servers/vmware/vm-odm-app03.cfg
+index 6454b85..fa885ab 100644
+--- a/objects/servers/vmware/vm-odm-app03.cfg
++++ b/objects/servers/vmware/vm-odm-app03.cfg
+@@ -49,7 +49,7 @@ define service{
+         max_check_attempts      3
+         retry_interval          1
+         flap_detection_enabled  0
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+         contacts                m.lipin_email, m.lipin_sms, a.v.balandin_email, a.v.balandin_sms, s.kirsanov_sms, s.kirsanov_email, m.g.golubkov_sms, m.g.golubkov_email
+         check_command           check_nrpe!check_cpu
+ }
+diff --git a/objects/servers/vmware/vm-odm-app04.cfg b/objects/servers/vmware/vm-odm-app04.cfg
+index 7959c2b..6d589d3 100644
+--- a/objects/servers/vmware/vm-odm-app04.cfg
++++ b/objects/servers/vmware/vm-odm-app04.cfg
+@@ -49,7 +49,7 @@ define service{
+         max_check_attempts      3
+         retry_interval          1
+         flap_detection_enabled  0
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+         contacts                m.lipin_email, m.lipin_sms, a.v.balandin_email, a.v.balandin_sms, s.kirsanov_sms, s.kirsanov_email, m.g.golubkov_sms, m.g.golubkov_email
+         check_command           check_nrpe!check_cpu
+ }
+
+commit a9fc39a530f83c738f75d12d0b7ffdfcbe5623f5
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Sep 21 19:28:18 2016 +0300
+
+    SD:26222. Updated group memgership and phone for one contact.
+
+diff --git a/objects/contacts/m.meluzov.cfg b/objects/contacts/m.meluzov.cfg
+index d501d30..8e8b437 100644
+--- a/objects/contacts/m.meluzov.cfg
++++ b/objects/contacts/m.meluzov.cfg
+@@ -10,5 +10,5 @@ define contact{
+         use                     generic-contact-critical
+         alias                   Meluzov Mikhail Yuryevich
+         email                   m.meluzov@tcsbank.ru
+-        address1                79164185183
++        address1                79264185183
+ }
+diff --git a/objects/groups/contact-group/dss-admins.cfg b/objects/groups/contact-group/dss-admins.cfg
+index 5413e6e..b33f5e5 100644
+--- a/objects/groups/contact-group/dss-admins.cfg
++++ b/objects/groups/contact-group/dss-admins.cfg
+@@ -1,5 +1,5 @@
+ define contactgroup{
+         contactgroup_name       dss-admins
+         alias                   Decision Support System group
+-        members                 m.evrastov_email,m.evrastov_sms,a.timonich_email,a.timonich_sms,a.kireiko_email,a.kireiko_sms,a.terentyev_email,a.terentyev_sms,d.nikolaenko_email,d.nikolaenko_sms,d.mikheev_email,d.mikheev_sms,r.tedeev_sms,r.tedeev_email,servicedesk_duty_sms_critical,servicedesk_duty_khutor_sms_critical
++        members                 m.evrastov_email,m.evrastov_sms,a.timonich_email,a.timonich_sms,a.kireiko_email,a.kireiko_sms,a.terentyev_email,a.terentyev_sms,d.nikolaenko_email,d.nikolaenko_sms,m.meluzov_email,m.meluzov_sms,servicedesk_duty_sms_critical,servicedesk_duty_khutor_sms_critical
+ }
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager show -p 7aed2888fcffaae2012ffac22e65ddeb627541cc -p a9fc39a530f83c738f75d12d0b7ffdfcbe5623f5 | tee | grep -e "^-" -e "^+"
+--- a/objects/servers/vmware/vm-odm-app01.cfg
++++ b/objects/servers/vmware/vm-odm-app01.cfg
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+--- a/objects/servers/vmware/vm-odm-app02.cfg
++++ b/objects/servers/vmware/vm-odm-app02.cfg
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+--- a/objects/servers/vmware/vm-odm-app03.cfg
++++ b/objects/servers/vmware/vm-odm-app03.cfg
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+--- a/objects/servers/vmware/vm-odm-app04.cfg
++++ b/objects/servers/vmware/vm-odm-app04.cfg
+-        contact_groups          servicedesk-duty-critical-group
++        contact_groups          servicedesk-duty-critical-group,dss-admins
+--- a/objects/contacts/m.meluzov.cfg
++++ b/objects/contacts/m.meluzov.cfg
+-        address1                79164185183
++        address1                79264185183
+--- a/objects/groups/contact-group/dss-admins.cfg
++++ b/objects/groups/contact-group/dss-admins.cfg
+-        members                 m.evrastov_email,m.evrastov_sms,a.timonich_email,a.timonich_sms,a.kireiko_email,a.kireiko_sms,a.terentyev_email,a.terentyev_sms,d.nikolaenko_email,d.nikolaenko_sms,d.mikheev_email,d.mikheev_sms,r.tedeev_sms,r.tedeev_email,servicedesk_duty_sms_critical,servicedesk_duty_khutor_sms_critical
++        members                 m.evrastov_email,m.evrastov_sms,a.timonich_email,a.timonich_sms,a.kireiko_email,a.kireiko_sms,a.terentyev_email,a.terentyev_sms,d.nikolaenko_email,d.nikolaenko_sms,m.meluzov_email,m.meluzov_sms,servicedesk_duty_sms_critical,servicedesk_duty_khutor_sms_critical
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="mishkin"
+contact_name         filename
+--------------------------------------------------------------------------------
+a.mishkin_email      /usr/local/nagios/etc/objects/contacts/a.mishkin.cfg
+a.mishkin_sms        /usr/local/nagios/etc/objects/contacts/a.mishkin.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD:26222. Updated group memgership." groups/contact-group/dss-admins.cfg                           [master 01af130] SD:26222. Updated group memgership.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 533 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   7aed288..01af130  master -> master
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

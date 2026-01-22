@@ -1,0 +1,720 @@
+
+................................................................................
+
+Добрый день,
+
+ 
+
+Хочу из-под специально заведенной для отдельного процесса учетки collection_rl на сервере ds-hadoop-client01p уметь из python писать данные в оракловую базу bpm.
+
+Для этого хочу использовать питоновскую библиотеку cx_Oracle, но она требует установки Oracle Instant Client, для этого у меня нет прав.
+
+Инструкция тут https://cx-oracle.readthedocs.io/en/latest/installation.html#install-oracle-client или тут https://oracle.github.io/odpi/doc/installation.html#linux
+
+Скачанный zip архив уже лежит в /home/collection_rl
+
+ 
+
+Аркадий
+
+................................................................................
+
+Info: Loading facts
+Info: Caching catalog for ds-hadoop-client01p.tcsbank.ru
+Info: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-production-6b2876529a5'
+Notice: /Stage[main]/Tcs_repos::Epel/Yumrepo[tcs-epel]/descr: descr changed 'Extra Packages for Enterprise Linux $releasever - $basearch' to 'Extra Packages for Enterprise Linux (v. 6/7 for x86_64)'
+Notice: /Stage[main]/Tcs_repos::Epel/Yumrepo[tcs-epel]/baseurl: baseurl changed 'http://repo-linux.tcsbank.ru/epel/$releasever/$basearch' to 'http://repo-linux.tcsbank.ru/epel/$releasever/$basearch/'
+Notice: /Stage[main]/Tcs_repos::Epel/Yumrepo[tcs-epel]/repo_gpgcheck: defined 'repo_gpgcheck' as '0'
+Notice: /Stage[main]/Tcs_repos::Puppet5/Yumrepo[tcs-puppet-5]/ensure: created
+Info: Yumrepo[tcs-puppet-5](provider=inifile): changing mode of /etc/yum.repos.d/tcs-puppet-5.repo from 600 to 644
+Notice: /Stage[main]/Tcs_repos::Rhel/Yumrepo[tcs-rhel-base]/ensure: created
+Info: Yumrepo[tcs-rhel-base](provider=inifile): changing mode of /etc/yum.repos.d/tcs-rhel-base.repo from 600 to 644
+Notice: /Stage[main]/Tcs_repos::Rhel/Yumrepo[tcs-rhel-extras]/ensure: created
+Info: Yumrepo[tcs-rhel-extras](provider=inifile): changing mode of /etc/yum.repos.d/tcs-rhel-extras.repo from 600 to 644
+Notice: /Stage[main]/Tcs_repos::Rhel/Yumrepo[tcs-rhel-optional]/ensure: created
+Info: Yumrepo[tcs-rhel-optional](provider=inifile): changing mode of /etc/yum.repos.d/tcs-rhel-optional.repo from 600 to 644
+Notice: /Stage[main]/Selinux::Package/Package[policycoreutils-python]/ensure: created
+Notice: /Stage[main]/Selinux::Config/File[/opt/puppetlabs/puppet/cache/puppet-selinux]/ensure: created
+Notice: /Stage[main]/Selinux::Config/File[/opt/puppetlabs/puppet/cache/puppet-selinux/bin]/ensure: created
+Notice: /Stage[main]/Selinux::Config/File[/opt/puppetlabs/puppet/cache/puppet-selinux/bin/selinux_build_module_simple.sh]/ensure: defined content as '{md5}e8b9bcb4566a35e69b2b2879a2014e98'
+Notice: /Stage[main]/Selinux::Config/File[/opt/puppetlabs/puppet/cache/puppet-selinux/modules]/ensure: created
+Notice: /Stage[main]/Selinux::Config/File[/opt/puppetlabs/puppet/cache/puppet-selinux/modules/tmp]/ensure: created
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]/content:
+--- /etc/ntp.conf       2015-04-07 11:42:17.671964395 +0300
++++ /tmp/puppet-file20181211-17427-1gk4zya      2018-12-11 14:49:49.745977173 +0300
+@@ -1,24 +1,26 @@
+-# Keep ntpd from panicking in the event of a large clock skew
+-# when a VM guest is suspended and resumed.
++# ntp.conf: Managed by puppet.
++#
++# Enable next tinker options:
++# panic - keep ntpd from panicking in the event of a large clock skew
++# when a VM guest is suspended and resumed;
++# stepout - allow ntpd change offset faster
+ tinker panic 0
++disable monitor
+
+ # Permit time synchronization with our time source, but do not
+ # permit the source to query or modify the service on this system.
+ restrict default kod nomodify notrap nopeer noquery
+ restrict -6 default kod nomodify notrap nopeer noquery
+-
+-# Permit all access over the loopback interface.  This could
+-# be tightened as well, but to do so would effect some of
+-# the administrative functions.
+-restrict 127.0.0.1
++restrict 127.0.0.1
+ restrict -6 ::1
+
+-# Hosts on local network are less restricted.
+-#restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap
+-
+-# Use public servers from the pool.ntp.org project.
+-# Please consider joining the pool (http://www.pool.ntp.org/join.html).
+-
++# Set up servers for ntpd with next options:
++# server - IP address or DNS name of upstream NTP server
++# iburst - allow send sync packages faster if upstream unavailable
++# prefer - select preferrable server
++# minpoll - set minimal update frequency
++# maxpoll - set maximal update frequency
++# noselect - do not sync with this server
+ server ntp01.tcsbank.ru
+ server ntp02.tcsbank.ru
+ server ntp03.tcsbank.ru
+@@ -26,29 +28,6 @@
+ server ntp05.tcsbank.ru
+ server ntp06.tcsbank.ru
+
+-#broadcast 192.168.1.255 key 42                # broadcast server
+-#broadcastclient                       # broadcast client
+-#broadcast 224.0.1.1 key 42            # multicast server
+-#multicastclient 224.0.1.1             # multicast client
+-#manycastserver 239.255.254.254                # manycast server
+-#manycastclient 239.255.254.254 key 42 # manycast client
+-
+-
+-# Drift file.  Put this in a directory which the daemon can write to.
+-# No symbolic links allowed, either, since the daemon updates the file
+-# by creating a temporary in the same directory and then rename()'ing
+-# it to the file.
++# Driftfile.
+ driftfile /var/lib/ntp/drift
+
+-# Key file containing the keys and key identifiers used when operating
+-# with symmetric key cryptography.
+-keys /etc/ntp/keys
+-
+-# Specify the key identifiers which are trusted.
+-#trustedkey 4 8 42
+-
+-# Specify the key identifier to use with the ntpdc utility.
+-#requestkey 8
+-
+-# Specify the key identifier to use with the ntpq utility.
+-#controlkey 8
+
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]/content: content changed '{md5}05a78b95625da1080a2bf18e68fd8e7b' to '{md5}da4a3d1697bcebfe63a8ea878ce4d383'
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp/step-tickers]/content:
+--- /etc/ntp/step-tickers       2013-01-10 19:14:31.000000000 +0400
++++ /tmp/puppet-file20181211-17427-152f2p0      2018-12-11 14:49:49.782977422 +0300
+@@ -1 +1,8 @@
+-# List of servers used for initial synchronization.
++# List of NTP servers used by the ntpdate service.
++
++ntp01.tcsbank.ru
++ntp02.tcsbank.ru
++ntp03.tcsbank.ru
++ntp04.tcsbank.ru
++ntp05.tcsbank.ru
++ntp06.tcsbank.ru
+
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp/step-tickers]/content: content changed '{md5}32fdc5cdf3f181e7b6987410cf607d15' to '{md5}d662083656d602dd260d2ff3668c5b5d'
+Info: Class[Ntp::Config]: Scheduling refresh of Class[Ntp::Service]
+Info: Class[Ntp::Service]: Scheduling refresh of Service[ntp]
+Notice: /Stage[main]/Ntp::Service/Service[ntp]: Triggered 'refresh' from 1 event
+Notice: /Stage[main]/Profile::Base::Packages/Package[bash-completion]/ensure: created
+Notice: Augeas[aug_sysstat_cron_config](provider=augeas):
+--- /etc/cron.d/sysstat 2012-03-28 18:08:54.000000000 +0400
++++ /etc/cron.d/sysstat.augnew  2018-12-11 14:50:01.523429741 +0300
+@@ -1,5 +1,5 @@
+ # Run system activity accounting tool every 10 minutes
+-*/10 * * * * root /usr/lib64/sa/sa1 1 1
++* * * * * root /usr/lib64/sa/sa1 1 1
+ # 0 * * * * root /usr/lib64/sa/sa1 600 6 &
+ # Generate a daily summary of process accounting at 23:53
+ 53 23 * * * root /usr/lib64/sa/sa2 -A
+
+Notice: /Stage[main]/Profile::Base::Sysstat_config/Augeas[aug_sysstat_cron_config]/returns: executed successfully
+Notice: /Stage[main]/Firewall::Linux::Redhat/Service[iptables]/ensure: ensure changed 'running' to 'stopped'
+Notice: /Stage[main]/Profile::Accounts::Admins/Ssh_authorized_key[root@centos-gw.domain.local]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Admins/User[bsv]/password: changed password
+Notice: /Stage[main]/Profile::Accounts::Admins/Ssh_authorized_key[bsv@]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Admins/Ssh_authorized_key[spa@puppet.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Admins/User[k.kurbanov]/comment: comment changed 'Kurbanov Konstantin Yuryevich' to 'Kurbanov Konstantin'
+Notice: /Stage[main]/Profile::Accounts::Admins/User[k.kurbanov]/password: changed password
+Notice: /Stage[main]/Profile::Accounts::Admins/Ssh_authorized_key[k.kurbanov@]/ensure: created
+Notice: /Stage[main]/Profile::Accounts::Nessus/User[nessus]/groups: groups changed  to ['nessus']
+Notice: /Stage[main]/Tcs_nrpe::Install/Package[nagios-plugins-all]/ensure: created
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nagios/nrpe.cfg]/content:
+--- /etc/nagios/nrpe.cfg        2013-11-21 06:53:23.173853695 +0400
++++ /tmp/puppet-file20181211-17427-gy8w7p       2018-12-11 14:50:19.181566429 +0300
+@@ -1,8 +1,8 @@
+ #############################################################################
+-# Sample NRPE Config File
++# Sample NRPE Config File
+ # Written by: Ethan Galstad (nagios@nagios.org)
+-#
+-# Last Modified: 11-23-2007
++#
++# Last Modified: 2016-05-10
+ #
+ # NOTES:
+ # This is a sample configuration file for the NRPE daemon.  It needs to be
+@@ -18,6 +18,23 @@
+
+
+
++# LOG FILE
++# If a log file is specified in this option, nrpe will write to
++# that file instead of using syslog.
++
++#log_file=/var/run/nrpe.log
++
++
++
++# DEBUGGING OPTION
++# This option determines whether or not debugging messages are logged to the
++# syslog facility.
++# Values: 0=debugging off, 1=debugging on
++
++debug=0
++
++
++
+ # PID FILE
+ # The name of the file in which the NRPE daemon should write it's process ID
+ # number.  The file is only written if the NRPE daemon is started by the root
+@@ -29,7 +46,7 @@
+
+ # PORT NUMBER
+ # Port number we should wait for connections on.
+-# NOTE: This must be a non-priviledged port (i.e. > 1024).
++# NOTE: This must be a non-privileged port (i.e. > 1024).
+ # NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+ server_port=5666
+@@ -45,10 +62,18 @@
+
+
+
++# LISTEN QUEUE SIZE
++# Listen queue size (backlog) for serving incoming connections.
++# You may want to increase this value under high load.
++
++#listen_queue_size=5
++
++
++
+ # NRPE USER
+-# This determines the effective user that the NRPE daemon should run as.
++# This determines the effective user that the NRPE daemon should run as.
+ # You can either supply a username or a UID.
+-#
++#
+ # NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+ nrpe_user=nrpe
+@@ -56,9 +81,9 @@
+
+
+ # NRPE GROUP
+-# This determines the effective group that the NRPE daemon should run as.
++# This determines the effective group that the NRPE daemon should run as.
+ # You can either supply a group name or a GID.
+-#
++#
+ # NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+ nrpe_group=nrpe
+@@ -66,9 +91,9 @@
+
+
+ # ALLOWED HOST ADDRESSES
+-# This is an optional comma-delimited list of IP address or hostnames
++# This is an optional comma-delimited list of IP address or hostnames
+ # that are allowed to talk to the NRPE daemon. Network addresses with a bit mask
+-# (i.e. 192.168.1.0/24) are also supported. Hostname wildcards are not currently
++# (i.e. 192.168.1.0/24) are also supported. Hostname wildcards are not currently
+ # supported.
+ #
+ # Note: The daemon only does rudimentary checking of the client's IP
+@@ -78,38 +103,38 @@
+ #
+ # NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+-#allowed_hosts=127.0.0.1
+-allowed_hosts=127.0.0.1,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6
++allowed_hosts=127.0.0.1,172.16.1.11,172.16.1.115,172.16.1.117,10.216.41.111,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6,mon1.tcsbank.ru,mon2.tcsbank.ru,mon3.tcsbank.ru,mon4.tcsbank.ru,mon5.tcsbank.ru,mon6.tcsbank.ru
++
+
+
+ # COMMAND ARGUMENT PROCESSING
+ # This option determines whether or not the NRPE daemon will allow clients
+ # to specify arguments to commands that are executed.  This option only works
+ # if the daemon was configured with the --enable-command-args configure script
+-# option.
++# option.
+ #
+-# *** ENABLING THIS OPTION IS A SECURITY RISK! ***
++# *** ENABLING THIS OPTION IS A SECURITY RISK! ***
+ # Read the SECURITY file for information on some of the security implications
+ # of enabling this variable.
+ #
+ # Values: 0=do not allow arguments, 1=allow command arguments
+
+-dont_blame_nrpe=0
++dont_blame_nrpe=1
+
+
+
+-# BASH COMMAND SUBTITUTION
++# BASH COMMAND SUBSTITUTION
+ # This option determines whether or not the NRPE daemon will allow clients
+ # to specify arguments that contain bash command substitutions of the form
+-# $(...).  This option only works if the daemon was configured with both
+-# the --enable-command-args and --enable-bash-command-substitution configure
++# $(...).  This option only works if the daemon was configured with both
++# the --enable-command-args and --enable-bash-command-substitution configure
+ # script options.
+ #
+-# *** ENABLING THIS OPTION IS A HIGH SECURITY RISK! ***
++# *** ENABLING THIS OPTION IS A HIGH SECURITY RISK! ***
+ # Read the SECURITY file for information on some of the security implications
+ # of enabling this variable.
+ #
+-# Values: 0=do not allow bash command substitutions,
++# Values: 0=do not allow bash command substitutions,
+ #         1=allow bash command substitutions
+
+ allow_bash_command_substitution=0
+@@ -122,9 +147,9 @@
+ # command line from the command definition.
+ #
+ # *** THIS EXAMPLE MAY POSE A POTENTIAL SECURITY RISK, SO USE WITH CAUTION! ***
+-# Usage scenario:
++# Usage scenario:
+ # Execute restricted commmands using sudo.  For this to work, you need to add
+-# the nagios user to your /etc/sudoers.  An example entry for alllowing
++# the nagios user to your /etc/sudoers.  An example entry for allowing
+ # execution of the plugins from might be:
+ #
+ # nagios          ALL=(ALL) NOPASSWD: /usr/lib/nagios/plugins/
+@@ -133,16 +158,7 @@
+ # without asking for a password.  If you do this, make sure you don't give
+ # random users write access to that directory or its contents!
+
+-# command_prefix=/usr/bin/sudo
+-
+-
+-
+-# DEBUGGING OPTION
+-# This option determines whether or not debugging messages are logged to the
+-# syslog facility.
+-# Values: 0=debugging off, 1=debugging on
+-
+-debug=0
++# command_prefix=/usr/bin/sudo
+
+
+
+@@ -165,7 +181,7 @@
+
+
+
+-# WEEK RANDOM SEED OPTION
++# WEAK RANDOM SEED OPTION
+ # This directive allows you to use SSL even if your system does not have
+ # a /dev/random or /dev/urandom (on purpose or because the necessary patches
+ # were not applied). The random number generator will be seeded from a file
+@@ -178,6 +194,74 @@
+
+
+
++# SSL/TLS OPTIONS
++# These directives allow you to specify how to use SSL/TLS.
++
++# SSL VERSION
++# This can be any of: SSLv2 (only use SSLv2), SSLv2+ (use any version),
++#        SSLv3 (only use SSLv3), SSLv3+ (use SSLv3 or above), TLSv1 (only use
++#        TLSv1), TLSv1+ (use TLSv1 or above), TLSv1.1 (only use TLSv1.1),
++#        TLSv1.1+ (use TLSv1.1 or above), TLSv1.2 (only use TLSv1.2),
++#        TLSv1.2+ (use TLSv1.2 or above)
++# If an "or above" version is used, the best will be negotiated. So if both
++# ends are able to do TLSv1.2 and use specify SSLv2, you will get TLSv1.2.
++# If you are using openssl 1.1.0 or above, the SSLv2 options are not available.
++
++#ssl_version=SSLv2+
++
++# SSL USE ADH
++# This is for backward compatibility and is DEPRECATED. Set to 1 to enable
++# ADH or 2 to require ADH. 1 is currently the default but will be changed
++# in a later version.
++
++#ssl_use_adh=1
++
++# SSL CIPHER LIST
++# This lists which ciphers can be used. For backward compatibility, this
++# defaults to 'ssl_cipher_list=ALL:!MD5:@STRENGTH' in this version but
++# will be changed to something like the example below in a later version of NRPE.
++
++#ssl_cipher_list=ALL:!MD5:@STRENGTH
++#ssl_cipher_list=ALL:!aNULL:!eNULL:!SSLv2:!LOW:!EXP:!RC4:!MD5:@STRENGTH
++
++# SSL Certificate and Private Key Files
++
++#ssl_cacert_file=/etc/ssl/servercerts/ca-cert.pem
++#ssl_cert_file=/etc/ssl/servercerts/nagios-cert.pem
++#ssl_privatekey_file=/etc/ssl/servercerts/nagios-key.pem
++
++# SSL USE CLIENT CERTS
++# This options determines client certificate usage.
++# Values: 0 = Don't ask for or require client certificates (default)
++#         1 = Ask for client certificates
++#         2 = Require client certificates
++
++#ssl_client_certs=0
++
++# SSL LOGGING
++# This option determines which SSL messages are send to syslog. OR values
++# together to specify multiple options.
++
++# Values: 0x00 (0)  = No additional logging (default)
++#         0x01 (1)  = Log startup SSL/TLS parameters
++#         0x02 (2)  = Log remote IP address
++#         0x04 (4)  = Log SSL/TLS version of connections
++#         0x08 (8)  = Log which cipher is being used for the connection
++#         0x10 (16) = Log if client has a certificate
++#         0x20 (32) = Log details of client's certificate if it has one
++#         -1 or 0xff or 0x2f = All of the above
++
++#ssl_logging=0x00
++
++
++
++# NASTY METACHARACTERS
++# This option allows you to override the list of characters that cannot
++# be passed to the NRPE daemon.
++
++# nasty_metachars="|`&><'\\[]{};\r\n"
++
++
+ # INCLUDE CONFIG FILE
+ # This directive allows you to include definitions from an external config file.
+
+@@ -185,6 +269,14 @@
+
+
+
++# INCLUDE CONFIG DIRECTORY
++# This directive allows you to include definitions from config files (with a
++# .cfg extension) in one or more directories (with recursion).
++
++include_dir=/etc/nrpe.d/
++
++
++
+ # COMMAND DEFINITIONS
+ # Command definitions that this daemon will run.  Definitions
+ # are in the following format:
+@@ -207,15 +299,15 @@
+
+ # The following examples use hardcoded command arguments...
+
+-command[check_users]=/usr/lib64/nagios/plugins/check_users -w 5 -c 10
+-command[check_load]=/usr/lib64/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+-command[check_hda1]=/usr/lib64/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
+-command[check_zombie_procs]=/usr/lib64/nagios/plugins/check_procs -w 5 -c 10 -s Z
+-command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
++#command[check_users]=/usr/lib64/nagios/plugins/check_users -w 5 -c 10
++#command[check_load]=/usr/lib64/nagios/plugins/check_load -r -w .15,.10,.05 -c .30,.25,.20
++#command[check_hda1]=/usr/lib64/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
++#command[check_zombie_procs]=/usr/lib64/nagios/plugins/check_procs -w 5 -c 10 -s Z
++#command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+
+
+ # The following examples allow user-supplied arguments and can
+-# only be used if the NRPE daemon was compiled with support for
++# only be used if the NRPE daemon was compiled with support for
+ # command arguments *AND* the dont_blame_nrpe directive in this
+ # config file is set to '1'.  This poses a potential security risk, so
+ # make sure you read the SECURITY file before doing this.
+@@ -224,11 +316,3 @@
+ #command[check_load]=/usr/lib64/nagios/plugins/check_load -w $ARG1$ -c $ARG2$
+ #command[check_disk]=/usr/lib64/nagios/plugins/check_disk -w $ARG1$ -c $ARG2$ -p $ARG3$
+ #command[check_procs]=/usr/lib64/nagios/plugins/check_procs -w $ARG1$ -c $ARG2$ -s $ARG3$
+-
+-
+-
+-# INCLUDE CONFIG DIRECTORY
+-# This directive allows you to include definitions from config files (with a
+-# .cfg extension) in one or more directories (with recursion).
+-
+-include_dir=/etc/nrpe.d/
+
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nagios/nrpe.cfg]/content: content changed '{md5}553d7bc6937387a0bed49221973319dc' to '{md5}23f75717a436958433f7250c5941ad88'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_cpu_stats.cfg]/ensure: defined content as '{md5}55df6efb7e5402ff260413bd924bb8d0'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_disks.cfg]/content:
+--- /etc/nrpe.d/check_disks.cfg 2014-09-23 11:38:22.823465082 +0400
++++ /tmp/puppet-file20181211-17427-1us2a5       2018-12-11 14:50:19.413567982 +0300
+@@ -1,3 +1,10 @@
+-command[check_root_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -u MB -w 100 -c 50 -p /
+-command[check_var_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -u MB -w 100 -c 50 -p /var
+-command[check_opt_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -u MB -w 100 -c 50 -p /opt
++command[check_root_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /
++command[check_boot_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /boot
++command[check_opt_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /opt
++command[check_var_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /var
++command[check_usr_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /usr
++command[check_data1_fs]=/usr/lib64/nagios/plugins/check_disk -W 10% -K 5% -w 10% -c 5% -p /data1
++command[check_data2_fs]=/usr/lib64/nagios/plugins/check_disk -W 10% -K 5% -w 10% -c 5% -p /data2
++command[check_duet_fs]=/usr/lib64/nagios/plugins/check_disk -W 10% -K 5% -w 10% -c 5% -p /duet
++command[check_disk]=/usr/lib64/nagios/plugins/check_disk -w $ARG1$ -c $ARG2$ -W $ARG1$ -K $ARG2$ -p $ARG3$
++command[check_disk_size]=/usr/lib64/nagios/plugins/check_disk -w $ARG1$ -c $ARG2$ -p $ARG3$
+
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_disks.cfg]/content: content changed '{md5}06ee889a8ddca49aa3efa950ff79a2b7' to '{md5}f5b7fc64315887de484f437be9473707'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_jmx.cfg]/ensure: defined content as '{md5}9045db1eb6c157ab4cd8d43947ed1a6c'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_md.cfg]/ensure: defined content as '{md5}13e4279dc2e3e5abdf9ec0fd627e3d76'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_memory.cfg]/content:
+--- /etc/nrpe.d/check_memory.cfg        2015-07-21 12:31:33.979219218 +0300
++++ /tmp/puppet-file20181211-17427-19v74mr      2018-12-11 14:50:19.536568805 +0300
+@@ -1,4 +1 @@
+-#200M -  0.03
+-#100M -  0.01
+-
+-command[check_memory_load_linux]=/usr/lib64/nagios/plugins/check_mem_linux.pl -f -w 0.03 -c 0.01 -C
++command[check_memory_load_linux]=/usr/lib64/nagios/plugins/check_mem_linux.pl -f -C -w 10 -c 5
+
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_memory.cfg]/content: content changed '{md5}61575e6cf618bfebaafd81e31630d150' to '{md5}7e08619d0923ba082d41fe20aab802af'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_openmanage.cfg]/ensure: defined content as '{md5}a7f7eb76d9d48d5977731717f2982fa7'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_passwords.cfg]/ensure: defined content as '{md5}6f1eb300cc54278f0f3d77e274c7ebd4'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_procs.cfg]/content:
+--- /etc/nrpe.d/check_procs.cfg 2013-11-21 06:54:31.816854490 +0400
++++ /tmp/puppet-file20181211-17427-19rfomc      2018-12-11 14:50:19.653569587 +0300
+@@ -1,2 +1,2 @@
+-command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
++command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 200 -c 250
+ command[check_zombie_procs]=/usr/lib64/nagios/plugins/check_procs -w 5 -c 10 -s Z
+
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_procs.cfg]/content: content changed '{md5}3014c69f76f71e5b79d4ba3e70b7f39d' to '{md5}8a17296a0ad41df1a692cb4f974f8310'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_service.cfg]/ensure: defined content as '{md5}2c8e94843062c1576d0dd2fa7e14c734'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_tcp.cfg]/ensure: defined content as '{md5}3f412b9f1b95f83eeff18b1a11685fd5'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_load.cfg]/content:
+--- /etc/nrpe.d/check_load.cfg  2013-11-21 06:54:31.681854828 +0400
++++ /tmp/puppet-file20181211-17427-165wj2r      2018-12-11 14:50:19.734570128 +0300
+@@ -1,2 +1 @@
+-#Neet to be colibrated
+-command[check_load]=/usr/lib64/nagios/plugins/check_load -w 63,63,63 -c 64,64,64
++command[check_load]=/usr/lib64/nagios/plugins/check_load -w 8,6,4 -c 14,12,10
+
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/etc/nrpe.d/check_load.cfg]/content: content changed '{md5}3d6e0ee1652a4fdeb3e5b41c9a0a5317' to '{md5}9c01e7e4083bdb5a9aeb9fb59abea380'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/]/mode: mode changed '0775' to '0755'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/check_cpu_stats.sh]/ensure: defined content as '{md5}121f14701f9b8afb794df73953553953'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/check_jmx]/ensure: defined content as '{md5}f510219daa32ab2552e8ea8a13926536'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/check_jmx.jar]/ensure: defined content as '{md5}bd347e491c7ef31421d6b7a107068567'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/check_md]/ensure: defined content as '{md5}79d92954c4643ab5fabac17bc1f9616c'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/check_openmanage]/ensure: defined content as '{md5}9696bbb3fbc258ffaaa23fff3bd50f97'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/check_systemd_service.sh]/ensure: defined content as '{md5}b711d324d7a59460820cb00c953107a7'
+Notice: /Stage[main]/Tcs_nrpe::Config/File[/usr/lib64/nagios/plugins/pwd-expire.sh]/ensure: defined content as '{md5}cbeae7e29bafa17c2bca3c62d50ad15a'
+Info: Class[Tcs_nrpe::Config]: Scheduling refresh of Class[Tcs_nrpe::Service]
+Info: Class[Tcs_nrpe::Service]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Tcs_nrpe::Service/Service[nrpe]: Triggered 'refresh' from 1 event
+Notice: /Stage[main]/Profile::Base::Puppet_agent/Service[puppet]/ensure: ensure changed 'stopped' to 'running'
+Info: /Stage[main]/Profile::Base::Puppet_agent/Service[puppet]: Unscheduling refresh on Service[puppet]
+Notice: /Stage[main]/Profile::Base::Puppet_agent/Package[puppet-agent]/ensure: ensure changed '5.5.8-1.el6' to '5.3.3'
+Notice: /Stage[main]/Sysctl::Base/File[/etc/sysctl.d]/ensure: created
+Notice: Applied catalog in 97.84 seconds
+[root@ds-hadoop-client01p ~]#
+
+
+................................................................................
+
+
+#
+#	It's unusual, but there is no server in nagios.
+#
+
+[root@ds-hadoop-client01p ~]# yum repolist
+Loaded plugins: etckeeper, product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+https://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5.12.1/repodata/repomd.xml: [Errno 14] Peer cert cannot be verified or peer cert invalid
+Trying other mirror.
+http://repo-linux.tcsbank.ru/pub/dsagent/repodata/repomd.xml: [Errno 14] PYCURL ERROR 22 - "The requested URL returned error: 404 Not Found"
+Trying other mirror.
+http://repo-linux.tcsbank.ru/pub/lldpad/repodata/repomd.xml: [Errno 14] PYCURL ERROR 22 - "The requested URL returned error: 404 Not Found"
+Trying other mirror.
+http://repo-linux.tcsbank.ru/pub/ossec/2.7/x86_64/repodata/repomd.xml: [Errno 14] PYCURL ERROR 22 - "The requested URL returned error: 404 Not Found"
+Trying other mirror.
+repo id                                                                              repo name                                                                                                 status
+cloudera-manager                                                                     Cloudera Manager, Version 5.12.1                                                                               7
+tcs-epel                                                                             Extra Packages for Enterprise Linux (v. 6/7 for x86_64)                                                   12,501
+tcs-epel-6-x86_64                                                                    Extra Packages for Enterprise Linux 6 - x86_64                                                            12,501
+tcs-hp-hpsum                                                                         HP Software Delivery Repository for hpsum rhel 6.4 x86_64                                                     14
+tcs-hp-spp                                                                           HP Software Delivery Repository for spp rhel 6.4 x86_64                                                      812
+tcs-hp-stk                                                                           HP Software Delivery Repository for stk rhel 6.4 x86_64                                                       14
+tcs-puppet-5                                                                         Puppetlabs Products (Puppet 5)                                                                               110
+tcs-puppetlabs                                                                       Puppetlabs Repo (rpm)                                                                                        110
+tcs-puppetlabs-deps                                                                  Puppet Labs Dependencies EL 6Server - x86_64                                                                  28
+tcs-puppetlabs-el-6-dependencies-x86_64                                              Puppet Labs Dependencies El 6 - x86_64                                                                        28
+tcs-puppetlabs-el-6-products-x86_64                                                  Puppet Labs Products El 6 - x86_64                                                                           267
+tcs-puppetlabs-products                                                              Puppet Labs Products EL 6Server - x86_64                                                                     267
+tcs-remi-enterprise-6-remi-x86_64                                                    Les RPM de remi pour Enterprise Linux 6 - x86_64                                                          10,490
+tcs-rhel-6.4-x86_64-iso                                                              Red Hat Enterprise Linux 6.4 rhel-server-6.4-x86_64-dvd.iso                                                3,720
+tcs-rhel-base                                                                        Red Hat Enterprise Linux Server Base(v. 6/7 for x86_64)                                                   20,581
+tcs-rhel-extras                                                                      Red Hat Enterprise Linux Server Extras(v. 6/7 for x86_64)                                                    252
+tcs-rhel-optional                                                                    Red Hat Enterprise Linux Server Optional(v. 6/7 for x86_64)                                                7,308
+tcs-rhel-x86_64-server-6                                                             Red Hat Enterprise Linux Server (v. 6 for 64-bit x86_64)                                                  18,452
+tcs-rhel-x86_64-server-optional-6                                                    RHEL Server Optional (v. 6 64-bit x86_64)                                                                  7,308
+tcs-rpmforge-redhat-el6-en-x86_64                                                    RHEL 6Server - RPMforge.net - dag                                                                          4,718
+tcs-zabbix-2.2-rhel-6-x86_64                                                         Zabbix Official Repository - x86_64                                                                          145
+tcs-zabbix-non-supported-rhel-6-x86_64                                               Zabbix Official Repository non-supported - x86_64                                                             15
+repolist: 99,648
+[root@ds-hadoop-client01p ~]#
+
+
+[root@ds-hadoop-client01p ~]# rm /etc/yum.repos.d/cloudera-manager.repo.~1~
+rm: remove regular file `/etc/yum.repos.d/cloudera-manager.repo.~1~'? y
+[root@ds-hadoop-client01p ~]# rm /etc/yum.repos.d/tcs-dsagent.repo
+rm: remove regular file `/etc/yum.repos.d/tcs-dsagent.repo'? y
+[root@ds-hadoop-client01p ~]# rm /etc/yum.repos.d/tcs-lldpad.repo
+rm: remove regular file `/etc/yum.repos.d/tcs-lldpad.repo'? y
+[root@ds-hadoop-client01p ~]# rm /etc/yum.repos.d/tcs-ossec-2.7-x86_64.repo
+rm: remove regular file `/etc/yum.repos.d/tcs-ossec-2.7-x86_64.repo'? y
+[root@ds-hadoop-client01p ~]#
+
+
+................................................................................
+
+
+#
+#	Installation instruction.
+#	https://cx-oracle.readthedocs.io/en/latest/installation.html#install-oracle-client
+#	https://oracle.github.io/odpi/doc/installation.html#linux
+#
+
+
+[root@ds-hadoop-client01p ~]# ls /home/collection_rl
+anaconda3  Anaconda3-5.2.0-Linux-x86_64.sh  collection-e1-rl  elizarova  instantclient-basic-linux.x64-18.3.0.0.0dbru.zip
+[root@ds-hadoop-client01p ~]# mkdir /opt/oracle
+[root@ds-hadoop-client01p ~]# cd /opt/oracle
+[root@ds-hadoop-client01p oracle]# ll
+total 0
+[root@ds-hadoop-client01p oracle]# unzip ~collection_rl/instantclient-basic-linux.x64-18.3.0.0.0dbru.zip
+Archive:  /home/collection_rl/instantclient-basic-linux.x64-18.3.0.0.0dbru.zip
+  inflating: instantclient_18_3/adrci
+  inflating: instantclient_18_3/BASIC_README
+  inflating: instantclient_18_3/genezi
+  inflating: instantclient_18_3/libclntshcore.so.18.1
+    linking: instantclient_18_3/libclntsh.so  -> libclntsh.so.18.1
+  inflating: instantclient_18_3/libclntsh.so.18.1
+  inflating: instantclient_18_3/libipc1.so
+  inflating: instantclient_18_3/libmql1.so
+  inflating: instantclient_18_3/libnnz18.so
+    linking: instantclient_18_3/libocci.so  -> libocci.so.18.1
+  inflating: instantclient_18_3/libocci.so.18.1
+  inflating: instantclient_18_3/libociei.so
+  inflating: instantclient_18_3/libocijdbc18.so
+  inflating: instantclient_18_3/libons.so
+  inflating: instantclient_18_3/liboramysql18.so
+   creating: instantclient_18_3/network/
+  inflating: instantclient_18_3/ojdbc8.jar
+  inflating: instantclient_18_3/ucp.jar
+  inflating: instantclient_18_3/uidrvci
+  inflating: instantclient_18_3/xstreams.jar
+   creating: instantclient_18_3/network/admin/
+  inflating: instantclient_18_3/network/admin/README
+finishing deferred symbolic links:
+  instantclient_18_3/libclntsh.so -> libclntsh.so.18.1
+  instantclient_18_3/libocci.so -> libocci.so.18.1
+[root@ds-hadoop-client01p oracle]#
+
+[root@ds-hadoop-client01p oracle]# ls -Alh
+total 4.0K
+drwxr-xr-x 3 root root 4.0K Dec 11 15:32 instantclient_18_3
+[root@ds-hadoop-client01p oracle]# yum install libaio
+Loaded plugins: etckeeper, product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Package libaio-0.3.107-10.el6.x86_64 already installed and latest version
+Nothing to do
+[root@ds-hadoop-client01p oracle]#
+
+
+[root@ds-hadoop-client01p oracle]# ls /etc/ld.so.conf.d/oracle-instantclient.conf
+ls: cannot access /etc/ld.so.conf.d/oracle-instantclient.conf: No such file or directory
+[root@ds-hadoop-client01p oracle]# echo /opt/oracle/instantclient_18_3 > /etc/ld.so.conf.d/oracle-instantclient.conf
+[root@ds-hadoop-client01p oracle]# ldconfig
+[root@ds-hadoop-client01p oracle]#
+
+[root@ds-hadoop-client01p oracle]# ls -Alh /opt/oracle/instantclient_18_3/network/admin/
+total 4.0K
+-rw-r--r-- 1 root root 502 Jun 28 13:53 README
+[root@ds-hadoop-client01p oracle]#
+
+
+[root@ds-hadoop-client01p oracle]# ls -Alh /opt/oracle/instantclient_18_3/
+total 222M
+-rwxr-xr-x 1 root root  40K Jun 28 13:53 adrci
+-rw-r--r-- 1 root root 1.3K Jun 28 13:53 BASIC_README
+-rwxr-xr-x 1 root root  57K Jun 28 13:53 genezi
+-rwxrwxr-x 1 root root 8.0M Jun 28 13:53 libclntshcore.so.18.1
+lrwxrwxrwx 1 root root   17 Dec 11 15:32 libclntsh.so -> libclntsh.so.18.1
+-rwxrwxr-x 1 root root  75M Jun 28 13:53 libclntsh.so.18.1
+-r-xr-xr-x 1 root root 3.4M Jun 28 13:53 libipc1.so
+-r-xr-xr-x 1 root root 457K Jun 28 13:53 libmql1.so
+-r-xr-xr-x 1 root root 6.4M Jun 28 13:53 libnnz18.so
+lrwxrwxrwx 1 root root   15 Dec 11 15:32 libocci.so -> libocci.so.18.1
+-rwxrwxr-x 1 root root 2.2M Jun 28 13:53 libocci.so.18.1
+-rwxr-xr-x 1 root root 122M Jun 28 13:53 libociei.so
+-r-xr-xr-x 1 root root 158K Jun 28 13:53 libocijdbc18.so
+-r-xr-xr-x 1 root root 386K Jun 28 13:53 libons.so
+-rwxrwxr-x 1 root root 116K Jun 28 13:53 liboramysql18.so
+drwxr-xr-x 3 root root 4.0K Jun 28 13:53 network
+-r--r--r-- 1 root root 4.0M Jun 28 13:53 ojdbc8.jar
+-r--r--r-- 1 root root 1.4M Jun 28 13:53 ucp.jar
+-rwxr-xr-x 1 root root 237K Jun 28 13:53 uidrvci
+-rw-r--r-- 1 root root  73K Jun 28 13:53 xstreams.jar
+[root@ds-hadoop-client01p oracle]#
+
+[root@ds-hadoop-client01p oracle]# cat /opt/oracle/instantclient_18_3/network/admin/README
+============================================================================
+This is the default directory for Oracle Network and Oracle Client
+configuration files. You can place files such as tnsnames.ora, sqlnet.ora
+and oraaccess.xml in this directory.
+NOTE:
+If you set an environment variable TNS_ADMIN to another directory containing
+configuration files, they will be used instead of the files in this default
+directory.
+============================================================================
+[root@ds-hadoop-client01p oracle]#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,70 @@
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name service_description filename where object_type=service and service_description__contains="tcs_rate_orders_status_mon"
+host_name            service_description  filename
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# grep -ire "tcs_rate_orders_status_mon" .
+./servers/vmware/vm-dbamon01.cfg:        check_command                   check_nrpe!check_tcs_rate_orders_status_mon
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# egrep -ire "a\.tolin|a\.i\.levchenko" contacts/
+
+[root@vm-vol-nag4-tst objects]# addcontact --help
+Adding new contact to Nagios
+Full name: Tolin Aleksandr Igorevich
+Email: a.tolin@tinkoff.ru
+Mobile (10 numbers): 79036270268
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# addcontact
+Adding new contact to Nagios
+Full name: Levchenko Andrey Igorevich
+Email: a.i.levchenko@tinkoff.ru
+Mobile (10 numbers): 79260733599
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# egrep -ire "a\.tolin|a\.i\.levchenko" contacts/*
+contacts/a.i.levchenko.cfg:        contact_name            a.i.levchenko_email
+contacts/a.i.levchenko.cfg:        email                   a.i.levchenko@tinkoff.ru
+contacts/a.i.levchenko.cfg:        contact_name            a.i.levchenko_sms
+contacts/a.i.levchenko.cfg:        email                   a.i.levchenko@tinkoff.ru
+contacts/a.tolin.cfg:        contact_name            a.tolin_email
+contacts/a.tolin.cfg:        email                   a.tolin@tinkoff.ru
+contacts/a.tolin.cfg:        contact_name            a.tolin_sms
+contacts/a.tolin.cfg:        email                   a.tolin@tinkoff.ru
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim -o contacts/{s.belogrud,a.tolin,a.i.levchenko}.cfg
+
+
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             Rate_Monitoring - orders_status_mon
+        check_interval                  1
+        max_check_attempts              1
+        contact_groups                  empty-group
+    contacts                      srv_dev_email, n.yatsishena_sms, p.silaev_sms,a.tolin_email,a.i.levchenko_sms
+        check_command                   check_nrpe!check_tcs_rate_orders_status_mon
+        notification_period             Daily-09_00-24_00
+    notification_interval         5
+    flap_detection_enabled        0
+}
+
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#36000. Add in notification two contacts a.tolin_email,a.i.levchenko_sms for service \"Rate_Monitoring - orders_status_mon\"." contacts/a.i.levchenko.cfg contacts/a.tolin.cfg servers/vmware/vm-dbamon01.cfg
+Running configuration check...
+ OK.
+[master e9e8951] SDN#36000. Add in notification two contacts a.tolin_email,a.i.levchenko_sms for service "Rate_Monitoring - orders_status_mon".
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 29 insertions(+), 1 deletions(-)
+ create mode 100644 objects/contacts/a.i.levchenko.cfg
+ create mode 100644 objects/contacts/a.tolin.cfg
+[root@vm-vol-nag4-tst objects]#
+
+

@@ -1,0 +1,205 @@
+
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat manifests/03_cloud.pp
+node "oracle-database-12.2.0.1.171017--rhel-7.novalocal" {
+  include role::database_server
+}
+
+node /.*\.novalocal$/ {
+  include role::cloud_instance
+}
+
+node /.*\.tinkoff\.cloud$/ {
+  include role::cloud_instance
+}
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# cat site/role/manifests/cloud_instance.pp
+class role::cloud_instance {
+  include profile::base
+  include profile::cloud_base
+}
+[s.belogrud@TCS4357]#
+
+
+................................................................................
+
+#
+#	Examples.
+#
+manifests/01_mvno.pp
+...
+node 'ds-mvno-db01-stb.tcsbank.ru' {
+  include role::database_server
+  include profile::base::etckeeper
+  include profile::accounts::atyutyuev
+}
+
+................................................................................
+
+[s.belogrud@TCS4357]# cat ./site/profile/manifests/simpana/install.pp
+class profile::simpana::install {
+    $fileserver = 'repo-linux'
+    $pname = 'simpana'
+    $pversion = '11'
+    $archname = '11_simpana_custom_unix'
+
+package { 'wget':
+        ensure => present,
+}
+
+exec {
+      'get_archive':
+        command   => "/usr/bin/wget http://${fileserver}/${pname}/${pversion}/${archname}.tar -O /tmp/${archname}.tar",
+        logoutput => 'on_failure',
+        require   => [ Package['wget'], ],
+        unless    => ['test -f /usr/bin/simpana'],
+        path      => ['/usr/bin', '/usr/sbin',],
+        before    => Exec['extract_archive'],
+}
+
+exec {
+      'extract_archive':
+        command   => "tar -xf /tmp/${archname}.tar",
+        logoutput => 'on_failure',
+        creates   => '/tmp/pkg',
+        cwd       => '/tmp',
+        unless    => ['test -f /usr/bin/simpana'],
+        require   => Exec['get_archive'],
+        path      => ['/bin',],
+}
+
+exec {
+      'install_simpana_agent':
+        command   => 'bash silent_install -silent',
+        logoutput => 'on_failure',
+        cwd       => '/tmp/pkg',
+        path      => ['/bin', '/usr/bin', '/usr/sbin', '/tmp/pkg',],
+        creates   => '/usr/bin/simpana',
+        require   => Exec['extract_archive'],
+}
+}
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+
+[s.belogrud@TCS4357]# vim manifests/0              
+00_site.pp   01_mvno.pp   02_ceph.pp   03_cloud.pp 
+[s.belogrud@TCS4357]#
+
+[root@pg-sub ~]# yum install wget
+
+[root@pg-sub ~]# wget http://repo-linux.tcsbank.ru/simpana/11/11_simpana_custom_unix.tar -O /tmp/11_simpana_custom_unix.tar
+--2017-12-11 16:11:18--  http://repo-linux.tcsbank.ru/simpana/11/11_simpana_custom_unix.tar
+Resolving repo-linux.tcsbank.ru (repo-linux.tcsbank.ru)... 10.216.42.6
+Connecting to repo-linux.tcsbank.ru (repo-linux.tcsbank.ru)|10.216.42.6|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 185989120 (177M) [application/octet-stream]
+Saving to: ‘/tmp/11_simpana_custom_unix.tar’
+
+100%[===========================================================================>] 185,989,120 61.8MB/s   in 2.9s
+
+2017-12-11 16:11:21 (61.8 MB/s) - ‘/tmp/11_simpana_custom_unix.tar’ saved [185989120/185989120]
+
+[root@pg-sub ~]#
+
+
+[root@pg-sub ~]# tar -xf /tmp/11_simpana_custom_unix.tar -C /tmp/
+
+
+[root@pg-sub ~]# cd /tmp/pkg/ ; bash silent_install -silent ; cd -
+cvZipFile = /tmp/pkg/linux-x8664/linux-glibc2.3-x86_64/BinaryPayLoad/cvzip
+/tmp/pkg/linux-x8664/LooseUpdates/Updates/linux-x8664_11.0.0B80-SP7_SP7-HotFix-1749/linux-glibc2.3-x86_64/installer/newinstall.gz
+Using installer from updates at /tmp/pkg/linux-x8664/LooseUpdates/Updates/linux-x8664_11.0.0B80-SP7_SP7-HotFix-1749/linux-glibc2.3-x86_64/installer/newinstall.gz
+Using package installer /tmp/.gxsetup/9712/newinstall:
+ - v1180534 11373KB gzipped at uslinux01 on 17-03-29 18:52:20 by pbuilder
+..
+
+
+
+[bsv@pg-sub ~]$ ps axu | grep silen[t]
+root      9712  0.0  0.0 113268  1568 pts/0    S+   16:14   0:00 /bin/sh /tmp/.gxsetup/9712/newinstall --target /tmp/.gxsetup/9712 install -silent
+root      9959  2.3  0.2 244036 45048 pts/0    S+   16:14   0:07 ./install install -silent
+[bsv@pg-sub ~]$ strace -p 9959
+
+
+[root@pg-sub ~]# yum install strace
+
+................................................................................
+................................................................................
+
+#
+#	After PTR record in DNS was written, I install distributive successfuly.
+#
+#	Тарасов Игорь Михайлович
+#		Добавил.
+#	Позавчера в 17:37
+#	Еранов Вячеслав Николаевич
+#		Просьба добавить обратную DNS  запись для хоста 
+#		pg-sub.oradba.m1.tinkoff.cloud
+#		10.219.165.3
+#	Позавчера в 17:07
+#	
+[s.belogrud@TCS4357]# ssh -i ~/.ssh/id_rsa bsv@pg-sub.oradba.m1.tinkoff.cloud
+Last login: Mon Dec 11 16:19:24 2017 from tcs4500.tcsbank.ru
+[bsv@pg-sub ~]$ sudo -i
+[sudo] password for bsv:
+[root@pg-sub ~]# cd /tmp/pkg/
+[root@pg-sub pkg]# ./silent_install -silent
+cvZipFile = /tmp/pkg/linux-x8664/linux-glibc2.3-x86_64/BinaryPayLoad/cvzip
+/tmp/pkg/linux-x8664/LooseUpdates/Updates/linux-x8664_11.0.0B80-SP7_SP7-HotFix-1749/linux-glibc2.3-x86_64/installer/newinstall.gz
+Using installer from updates at /tmp/pkg/linux-x8664/LooseUpdates/Updates/linux-x8664_11.0.0B80-SP7_SP7-HotFix-1749/linux-glibc2.3-x86_64/installer/newinstall.gz
+Using package installer /tmp/.gxsetup/9876/newinstall:
+ - v1180534 11373KB gzipped at uslinux01 on 17-03-29 18:52:20 by pbuilder
+..
+[root@pg-sub pkg]# ls -lhd /etc/CommVaultRegistry/
+drwxrwxr-x. 3 root root 40 Dec 11 16:14 /etc/CommVaultRegistry/
+[root@pg-sub pkg]# ls -lhd /opt/simpana/
+cvpkgadd             detect               pkg.xml              support
+cvpkgseed            linux-x8664/         pkg.xml.description  version
+default.xml          linux-x8664.tgz      silent_install
+[root@pg-sub pkg]# ls -lhd /opt/simpana/
+drwxr-xr-x. 3 root root 208 Nov 29 16:13 /opt/simpana/
+[root@pg-sub pkg]#
+
+[root@pg-sub pkg]# ps aux | grep -ie "commvaul[t]"
+root     10396  0.0  0.0 121752  9564 ?        Ssl  11:57   0:00 /opt/commvault/Base/cvlaunchd
+root     10397  0.1  0.6 1469108 105976 ?      Ssl  11:57   0:00 /opt/commvault/Base/cvd
+root     10398  0.1  0.2 441588 48604 ?        Ssl  11:57   0:00 /opt/commvault/Base/ClMgrS
+root     10400  0.0  0.0  16060  1088 ?        Ss   11:57   0:00 /opt/commvault/Base/cvfwd
+[root@pg-sub pkg]#
+
+................................................................................
+
+#
+#	20171218
+#
+[root@pg-sub 20171218-1547]# rm -rf /etc/CommVaultRegistry/
+[root@pg-sub 20171218-1547]#
+[root@pg-sub 20171218-1547]# rm -rf /opt/simpana/
+
+[root@pg-sub 20171218-1547]# find / -iname *simpan*
+/var/tmp/yum-root-PVhI47/simpana-agent-11.0.0-1.noarch.rpm
+/var/lib/yum/yumdb/s/ec7fed455f1bd04112e3ae29c56e03e7720301ba-simpana-agent-11.0.0-1-noarch
+/tmp/11_simpana_custom_unix.tar
+/usr/bin/simpana
+/opt/commvault/Base64/simpana
+[root@pg-sub 20171218-1547]#
+
+[root@pg-sub 20171218-1547]# rm -rf /opt/commvault/
+[root@pg-sub 20171218-1547]# rm /usr/bin/simpana
+rm: remove regular file ‘/usr/bin/simpana’? y
+[root@pg-sub 20171218-1547]#
+
+................................................................................
+
+
+
+
+
+
+

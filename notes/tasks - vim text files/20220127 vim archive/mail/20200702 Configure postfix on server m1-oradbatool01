@@ -1,0 +1,94 @@
+
+................................................................................
+
+#
+#	https://jira.tcsbank.ru/browse/IN-311
+#	Настройка почты на m1-oradbatool01.tcsbank.ru
+#
+
+[root@m1-oradbatool01 ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = m1-oradbatool01.tcsbank.ru
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@m1-oradbatool01 ~]#
+
+[root@m1-oradbatool01 ~]# systemctl status postfix
+● postfix.service - Postfix Mail Transport Agent
+   Loaded: loaded (/usr/lib/systemd/system/postfix.service; disabled; vendor preset: disabled)
+   Active: inactive (dead)
+[root@m1-oradbatool01 ~]#
+
+[root@m1-oradbatool01 ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.80.12...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 ds-msk-mail1301.tcsbank.ru Microsoft ESMTP MAIL Service ready at Thu, 2 Jul 2020 12:44:11 +0300
+^]quit
+
+telnet> quit
+Connection closed.
+[root@m1-oradbatool01 ~]#
+
+[root@m1-oradbatool01 ~]# systemctl start postfix
+[root@m1-oradbatool01 ~]# systemctl status postfix
+● postfix.service - Postfix Mail Transport Agent
+   Loaded: loaded (/usr/lib/systemd/system/postfix.service; disabled; vendor preset: disabled)
+   Active: active (running) since Thu 2020-07-02 12:44:45 MSK; 5s ago
+  Process: 13610 ExecStart=/usr/sbin/postfix start (code=exited, status=0/SUCCESS)
+  Process: 13608 ExecStartPre=/usr/libexec/postfix/chroot-update (code=exited, status=0/SUCCESS)
+  Process: 13603 ExecStartPre=/usr/libexec/postfix/aliasesdb (code=exited, status=0/SUCCESS)
+ Main PID: 13686 (master)
+    Tasks: 3 (limit: 23596)
+   Memory: 6.1M
+   CGroup: /system.slice/postfix.service
+           ├─13686 /usr/libexec/postfix/master -w
+           ├─13687 pickup -l -t unix -u
+           └─13688 qmgr -l -t unix -u
+
+Jul 02 12:44:45 m1-oradbatool01.tcsbank.ru systemd[1]: Starting Postfix Mail Transport Agent...
+Jul 02 12:44:45 m1-oradbatool01.tcsbank.ru sendmail[13605]: alias database /etc/aliases rebuilt by root
+Jul 02 12:44:45 m1-oradbatool01.tcsbank.ru aliasesdb[13603]: /etc/aliases: 76 aliases, longest 10 bytes, 771 bytes total
+Jul 02 12:44:45 m1-oradbatool01.tcsbank.ru sendmail[13605]: /etc/aliases: 76 aliases, longest 10 bytes, 771 bytes total
+Jul 02 12:44:45 m1-oradbatool01.tcsbank.ru postfix/master[13686]: daemon started -- version 3.3.1, configuration /etc/postfix
+Jul 02 12:44:45 m1-oradbatool01.tcsbank.ru systemd[1]: Started Postfix Mail Transport Agent.
+[root@m1-oradbatool01 ~]#
+
+[root@m1-oradbatool01 ~]# systemctl enable postfix
+Created symlink /etc/systemd/system/multi-user.target.wants/postfix.service → /usr/lib/systemd/system/postfix.service.
+[root@m1-oradbatool01 ~]#
+
+[root@m1-oradbatool01 ~]# mailq
+/var/spool/mqueue is empty
+                Total requests: 0
+[root@m1-oradbatool01 ~]#
+
+[root@m1-oradbatool01 ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@m1-oradbatool01 ~]# tail /var/log/maillog
+Jul  2 12:50:55 m1-oradbatool01 sendmail[14131]: 0629os11014131: to=s.belogrud@tcsbank.ru, ctladdr=bsv (525/100), delay=00:00:01, xdelay=00:00:01, mailer=relay, pri=30321, relay=[127.0.0.1] [127.0.0.1], dsn=2.0.0, stat=Sent (Ok: queued as 012EB9015127)
+Jul  2 12:50:55 m1-oradbatool01 postfix/qmgr[13688]: 012EB9015127: from=<bsv@m1-oradbatool01.tcsbank.ru>, size=842, nrcpt=1 (queue active)
+Jul  2 12:50:55 m1-oradbatool01 postfix/smtpd[14132]: disconnect from localhost[127.0.0.1] ehlo=2 starttls=1 mail=1 rcpt=1 data=1 quit=1 commands=7
+Jul  2 12:51:00 m1-oradbatool01 postfix/smtp[14137]: 012EB9015127: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.80.12]:25, delay=5.1, delays=0.06/0.02/0/5, dsn=5.7.1, status=bounced (host smtp.tcsbank.ru[10.219.80.12] said: 530 5.7.1 Client was not authenticated (in reply to MAIL FROM command))
+Jul  2 12:51:00 m1-oradbatool01 postfix/cleanup[14136]: 147019015128: message-id=<20200702095100.147019015128@m1-oradbatool01.tcsbank.ru>
+Jul  2 12:51:00 m1-oradbatool01 postfix/bounce[14138]: 012EB9015127: sender non-delivery notification: 147019015128
+Jul  2 12:51:00 m1-oradbatool01 postfix/qmgr[13688]: 147019015128: from=<>, size=3004, nrcpt=1 (queue active)
+Jul  2 12:51:00 m1-oradbatool01 postfix/qmgr[13688]: 012EB9015127: removed
+Jul  2 12:51:00 m1-oradbatool01 postfix/local[14139]: 147019015128: to=<bsv@m1-oradbatool01.tcsbank.ru>, relay=local, delay=0.04, delays=0.03/0.01/0/0, dsn=2.0.0, status=sent (delivered to mailbox)
+Jul  2 12:51:00 m1-oradbatool01 postfix/qmgr[13688]: 147019015128: removed
+[root@m1-oradbatool01 ~]#
+
+#
+#	Need to send request to net-admins to allow sending email from this server.
+#
+#	Jul  2 12:51:00 m1-oradbatool01 postfix/smtp[14137]: 012EB9015127: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.80.12]:25, delay=5.1, delays=0.06/0.02/0/5, dsn=5.7.1, status=bounced (host smtp.tcsbank.ru[10.219.80.12] said: 530 5.7.1 Client was not authenticated (in reply to MAIL FROM command))
+#
+
+
+[root@m1-oradbatool01 ~]# mailq
+/var/spool/mqueue is empty
+                Total requests: 0
+[root@m1-oradbatool01 ~]#
+
+................................................................................
+

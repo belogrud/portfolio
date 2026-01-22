@@ -1,0 +1,501 @@
+
+................................................................................
+
+#
+#	The server have 4 video cards.
+#	Now are used 3 of them.
+#
+
+root@m1-k8s-gpu02p:~# nvidia-smi
+Wed Jul  4 16:32:34 2018
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 384.130                Driver Version: 384.130                   |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  GeForce GTX 108...  Off  | 00000000:02:00.0 Off |                  N/A |
+| 16%   50C    P2    62W / 250W |  10657MiB / 11172MiB |      3%      Default |
++-------------------------------+----------------------+----------------------+
+|   1  GeForce GTX 108...  Off  | 00000000:03:00.0 Off |                  N/A |
+|ERR!   50C    P2   ERR! / 250W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   2  GeForce GTX 108...  Off  | 00000000:82:00.0 Off |                  N/A |
+|  0%   35C    P8    19W / 250W |  10625MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   3  GeForce GTX 108...  Off  | 00000000:83:00.0 Off |                  N/A |
+|  0%   38C    P8    19W / 250W |  10948MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|    0      9583      C   python                                     10647MiB |
+|    2      9583      C   python                                     10615MiB |
+|    3      9583      C   python                                       291MiB |
+|    3     37866      C   /opt/miniconda/bin/python                  10647MiB |
++-----------------------------------------------------------------------------+
+root@m1-k8s-gpu02p:~# 
+
+................................................................................
+
+#
+#	For example, how same info looks on other similar server.
+#
+
+root@m1-k8s-gpu01p:~# nvidia-smi
+Wed Jul  4 16:35:10 2018
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 384.130                Driver Version: 384.130                   |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  GeForce GTX 108...  Off  | 00000000:02:00.0 Off |                  N/A |
+| 13%   55C    P5    19W / 250W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   1  GeForce GTX 108...  Off  | 00000000:03:00.0 Off |                  N/A |
+|  0%   50C    P0    59W / 250W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   2  GeForce GTX 108...  Off  | 00000000:82:00.0 Off |                  N/A |
+|  0%   41C    P0    59W / 250W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   3  GeForce GTX 108...  Off  | 00000000:83:00.0 Off |                  N/A |
+|  0%   45C    P0    59W / 250W |      0MiB / 11172MiB |      2%      Default |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+root@m1-k8s-gpu01p:~#
+
+................................................................................
+
+root@m1-k8s-gpu02p:~# lspci | grep -ie "NVIDIA"
+02:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+02:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+03:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+03:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+82:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+82:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+83:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+83:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+
+
+root@m1-k8s-gpu02p:~# lspci -s 00000000:03:00.0
+03:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+root@m1-k8s-gpu02p:~# lspci -v -s 00000000:03:00.0
+03:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1) (prog-if 00 [VGA controller])
+        Subsystem: NVIDIA Corporation Device 120f
+        Physical Slot: 17
+        Flags: bus master, fast devsel, latency 0, IRQ 153
+        Memory at c1000000 (32-bit, non-prefetchable) [size=16M]
+        Memory at 383fb0000000 (64-bit, prefetchable) [size=256M]
+        Memory at 383fc0000000 (64-bit, prefetchable) [size=32M]
+        I/O ports at 5000 [size=128]
+        [virtual] Expansion ROM at c2000000 [disabled] [size=512K]
+        Capabilities: [60] Power Management version 3
+        Capabilities: [68] MSI: Enable+ Count=1/1 Maskable- 64bit+
+        Capabilities: [78] Express Legacy Endpoint, MSI 00
+        Capabilities: [100] Virtual Channel
+        Capabilities: [250] Latency Tolerance Reporting
+        Capabilities: [128] Power Budgeting <?>
+        Capabilities: [420] Advanced Error Reporting
+        Capabilities: [600] Vendor Specific Information: ID=0001 Rev=1 Len=024 <?>
+        Capabilities: [900] #19
+        Kernel driver in use: nvidia
+        Kernel modules: nvidiafb, nouveau, nvidia_384_drm, nvidia_384
+
+root@m1-k8s-gpu02p:~#
+
+
+root@m1-k8s-gpu02p:~# grep -ie "nvidia" /var/log/syslog
+Jul  4 13:10:55 m1-k8s-gpu02p nvidia-persistenced: Received signal 15
+Jul  4 13:10:55 m1-k8s-gpu02p systemd[1]: Stopping NVIDIA Persistence Daemon...
+Jul  4 13:10:55 m1-k8s-gpu02p nvidia-persistenced: Socket closed.
+Jul  4 13:10:55 m1-k8s-gpu02p nvidia-persistenced: PID file unlocked.
+Jul  4 13:10:55 m1-k8s-gpu02p nvidia-persistenced: PID file closed.
+Jul  4 13:10:55 m1-k8s-gpu02p nvidia-persistenced: The daemon no longer has permission to remove its runtime data directory /var/run/nvidia-persistenced
+Jul  4 13:10:55 m1-k8s-gpu02p nvidia-persistenced: Shutdown (6971)
+Jul  4 13:10:55 m1-k8s-gpu02p systemd[1]: Stopped NVIDIA Persistence Daemon.
+Jul  4 13:11:02 m1-k8s-gpu02p systemd[1]: Starting NVIDIA Persistence Daemon...
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: Verbose syslog connection opened
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: Now running with user ID 118 and group ID 128
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: Started (29068)
+Jul  4 13:11:02 m1-k8s-gpu02p systemd[1]: Started NVIDIA Persistence Daemon.
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: device 0000:02:00.0 - registered
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: device 0000:03:00.0 - registered
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: device 0000:82:00.0 - registered
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: device 0000:83:00.0 - registered
+Jul  4 13:11:02 m1-k8s-gpu02p nvidia-persistenced: Local RPC service initialized
+Jul  4 13:11:05 m1-k8s-gpu02p systemd[1]: Stopping NVIDIA Persistence Daemon...
+Jul  4 13:11:05 m1-k8s-gpu02p nvidia-persistenced: Received signal 15
+Jul  4 13:11:05 m1-k8s-gpu02p nvidia-persistenced: Socket closed.
+Jul  4 13:11:05 m1-k8s-gpu02p nvidia-persistenced: PID file unlocked.
+Jul  4 13:11:05 m1-k8s-gpu02p nvidia-persistenced: PID file closed.
+Jul  4 13:11:05 m1-k8s-gpu02p nvidia-persistenced: The daemon no longer has permission to remove its runtime data directory /var/run/nvidia-persistenced
+Jul  4 13:11:05 m1-k8s-gpu02p nvidia-persistenced: Shutdown (29068)
+Jul  4 13:11:05 m1-k8s-gpu02p systemd[1]: Stopped NVIDIA Persistence Daemon.
+Jul  4 13:11:23 m1-k8s-gpu02p systemd[1]: Starting NVIDIA Persistence Daemon...
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: Verbose syslog connection opened
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: Now running with user ID 118 and group ID 128
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: Started (29103)
+Jul  4 13:11:23 m1-k8s-gpu02p systemd[1]: Started NVIDIA Persistence Daemon.
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: device 0000:02:00.0 - registered
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: device 0000:03:00.0 - registered
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: device 0000:82:00.0 - registered
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: device 0000:83:00.0 - registered
+Jul  4 13:11:23 m1-k8s-gpu02p nvidia-persistenced: Local RPC service initialized
+root@m1-k8s-gpu02p:~#
+
+................................................................................
+
+root@m1-k8s-gpu02p:~# nvidia-smi -L
+GPU 0: GeForce GTX 1080 Ti (UUID: GPU-609d0c45-6d31-872b-b02f-2581d86c43f6)
+GPU 1: GeForce GTX 1080 Ti (UUID: GPU-b0b38e8e-8a15-cc88-1768-0bd9fa9d6395)
+GPU 2: GeForce GTX 1080 Ti (UUID: GPU-ed87a9b5-4837-7ea5-4087-40d659c9b923)
+GPU 3: GeForce GTX 1080 Ti (UUID: GPU-5485ebf9-d526-ae9b-50a2-e61faf6c3229)
+root@m1-k8s-gpu02p:~#
+
+
+root@m1-k8s-gpu02p:~# nvidia-smi -i 1
+Wed Jul  4 18:00:56 2018
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 384.130                Driver Version: 384.130                   |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   1  GeForce GTX 108...  Off  | 00000000:03:00.0 Off |                  N/A |
+|ERR!   51C    P2   ERR! / 250W |  10625MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|    1     16181      C   python                                     10615MiB |
++-----------------------------------------------------------------------------+
+root@m1-k8s-gpu02p:~#
+
+
+root@m1-k8s-gpu02p:~# nvidia-smi -i 1 -q
+
+==============NVSMI LOG==============
+
+Timestamp                           : Wed Jul  4 17:54:54 2018
+Driver Version                      : 384.130
+
+Attached GPUs                       : 4
+GPU 00000000:03:00.0
+    Product Name                    : GeForce GTX 1080 Ti
+    Product Brand                   : GeForce
+    Display Mode                    : Disabled
+    Display Active                  : Disabled
+    Persistence Mode                : Disabled
+    Accounting Mode                 : Disabled
+    Accounting Mode Buffer Size     : 1920
+    Driver Model
+        Current                     : N/A
+        Pending                     : N/A
+    Serial Number                   : N/A
+    GPU UUID                        : GPU-b0b38e8e-8a15-cc88-1768-0bd9fa9d6395
+    Minor Number                    : 1
+    VBIOS Version                   : 86.02.39.00.5A
+    MultiGPU Board                  : No
+    Board ID                        : 0x300
+    GPU Part Number                 : N/A
+    Inforom Version
+        Image Version               : Unknown Error
+        OEM Object                  : 1.1
+        ECC Object                  : N/A
+        Power Management Object     : N/A
+    GPU Operation Mode
+        Current                     : N/A
+        Pending                     : N/A
+    GPU Virtualization Mode
+        Virtualization mode         : None
+    PCI
+        Bus                         : 0x03
+        Device                      : 0x00
+        Domain                      : 0x0000
+        Device Id                   : 0x1B0610DE
+        Bus Id                      : 00000000:03:00.0
+        Sub System Id               : 0x120F10DE
+        GPU Link Info
+            PCIe Generation
+                Max                 : 3
+                Current             : 3
+            Link Width
+                Max                 : 16x
+                Current             : 16x
+        Bridge Chip
+            Type                    : N/A
+            Firmware                : N/A
+        Replays since reset         : 0
+        Tx Throughput               : 0 KB/s
+        Rx Throughput               : 0 KB/s
+    Fan Speed                       : Unknown Error
+    Performance State               : P2
+    Clocks Throttle Reasons
+        Idle                        : Active
+        Applications Clocks Setting : Not Active
+        SW Power Cap                : Not Active
+        HW Slowdown                 : Not Active
+        Sync Boost                  : Not Active
+        SW Thermal Slowdown         : Not Active
+    FB Memory Usage
+        Total                       : 11172 MiB
+        Used                        : 10625 MiB
+        Free                        : 547 MiB
+    BAR1 Memory Usage
+        Total                       : 256 MiB
+        Used                        : 2 MiB
+        Free                        : 254 MiB
+    Compute Mode                    : Default
+    Utilization
+        Gpu                         : 0 %
+        Memory                      : 0 %
+        Encoder                     : 0 %
+        Decoder                     : 0 %
+    Encoder Stats
+        Active Sessions             : 0
+        Average FPS                 : 0
+        Average Latency             : 0
+    Ecc Mode
+        Current                     : N/A
+        Pending                     : N/A
+    ECC Errors
+        Volatile
+            Single Bit
+                Device Memory       : N/A
+                Register File       : N/A
+                L1 Cache            : N/A
+                L2 Cache            : N/A
+                Texture Memory      : N/A
+                Texture Shared      : N/A
+                CBU                 : N/A
+                Total               : N/A
+            Double Bit
+                Device Memory       : N/A
+                Register File       : N/A
+                L1 Cache            : N/A
+                L2 Cache            : N/A
+                Texture Memory      : N/A
+                Texture Shared      : N/A
+                CBU                 : N/A
+                Total               : N/A
+        Aggregate
+            Single Bit
+                Device Memory       : N/A
+                Register File       : N/A
+                L1 Cache            : N/A
+                L2 Cache            : N/A
+                Texture Memory      : N/A
+                Texture Shared      : N/A
+                CBU                 : N/A
+                Total               : N/A
+            Double Bit
+                Device Memory       : N/A
+                Register File       : N/A
+                L1 Cache            : N/A
+                L2 Cache            : N/A
+                Texture Memory      : N/A
+                Texture Shared      : N/A
+                CBU                 : N/A
+                Total               : N/A
+    Retired Pages
+        Single Bit ECC              : N/A
+        Double Bit ECC              : N/A
+        Pending                     : N/A
+    Temperature
+        GPU Current Temp            : 51 C
+        GPU Shutdown Temp           : 96 C
+        GPU Slowdown Temp           : 93 C
+        GPU Max Operating Temp      : N/A
+        Memory Current Temp         : N/A
+        Memory Max Operating Temp   : N/A
+    Power Readings
+        Power Management            : Supported
+        Power Draw                  : Unknown Error
+        Power Limit                 : 250.00 W
+        Default Power Limit         : 250.00 W
+        Enforced Power Limit        : 250.00 W
+        Min Power Limit             : 125.00 W
+        Max Power Limit             : 300.00 W
+    Clocks
+        Graphics                    : Unknown Error
+        SM                          : Unknown Error
+        Memory                      : 5005 MHz
+        Video                       : Unknown Error
+    Applications Clocks
+        Graphics                    : N/A
+        Memory                      : N/A
+    Default Applications Clocks
+        Graphics                    : N/A
+        Memory                      : N/A
+    Max Clocks
+        Graphics                    : 1911 MHz
+        SM                          : 1911 MHz
+        Memory                      : 5505 MHz
+        Video                       : 1708 MHz
+    Max Customer Boost Clocks
+        Graphics                    : N/A
+    Clock Policy
+        Auto Boost                  : N/A
+        Auto Boost Default          : N/A
+    Processes
+        Process ID                  : 16181
+            Type                    : C
+            Name                    : python
+            Used GPU Memory         : 10615 MiB
+
+root@m1-k8s-gpu02p:~#
+................................................................................
+
+#
+#	20180709
+#
+
+root@m1-k8s-gpu02p:~# nvidia-smi
+Unable to determine the device handle for GPU 0000:82:00.0: Unable to communicate with GPU because it is insufficiently powered.
+This may be because not all required external power cables are
+attached, or the attached cables are not seated properly.
+
+
+root@m1-k8s-gpu02p:~# 
+root@m1-k8s-gpu02p:~# lspci | grep -ie "NVIDIA"
+02:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+02:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+03:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+03:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+82:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+82:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+83:00.0 VGA compatible controller: NVIDIA Corporation Device 1b06 (rev a1)
+83:00.1 Audio device: NVIDIA Corporation Device 10ef (rev a1)
+root@m1-k8s-gpu02p:~#
+
+root@m1-k8s-gpu02p:~# nvidia-smi -L
+GPU 0: GeForce GTX 1080 Ti (UUID: GPU-609d0c45-6d31-872b-b02f-2581d86c43f6)
+GPU 1: GeForce GTX 1080 Ti (UUID: GPU-b0b38e8e-8a15-cc88-1768-0bd9fa9d6395)
+Unable to determine the device handle for gpu 0000:82:00.0: Unable to communicate with GPU because it is insufficiently powered.
+This may be because not all required external power cables are
+attached, or the attached cables are not seated properly.
+
+
+GPU 3: GeForce GTX 1080 Ti (UUID: GPU-5485ebf9-d526-ae9b-50a2-e61faf6c3229)
+root@m1-k8s-gpu02p:~# Connection to m1-k8s-gpu02p closed by remote host.
+Connection to m1-k8s-gpu02p closed.
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+#
+# 20180711
+#
+root@m1-k8s-gpu02p:~# nvidia-smi -L
+GPU 0: GeForce GTX 1080 Ti (UUID: GPU-609d0c45-6d31-872b-b02f-2581d86c43f6)
+GPU 1: GeForce GTX 1080 Ti (UUID: GPU-b0b38e8e-8a15-cc88-1768-0bd9fa9d6395)
+GPU 2: GeForce GTX 1080 Ti (UUID: GPU-0439ef64-1efd-b760-abdf-c56b71e17308)
+GPU 3: GeForce GTX 1080 Ti (UUID: GPU-5485ebf9-d526-ae9b-50a2-e61faf6c3229)
+root@m1-k8s-gpu02p:~# nvidia-smi
+Wed Jul 11 11:24:23 2018
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 384.130                Driver Version: 384.130                   |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  GeForce GTX 108...  Off  | 00000000:02:00.0 Off |                  N/A |
+|  0%   36C    P0    62W / 250W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   1  GeForce GTX 108...  Off  | 00000000:03:00.0 Off |                  N/A |
+|  0%   42C    P0    62W / 250W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   2  GeForce GTX 108...  Off  | 00000000:82:00.0 Off |                  N/A |
+|  0%   39C    P5    13W / 280W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   3  GeForce GTX 108...  Off  | 00000000:83:00.0 Off |                  N/A |
+|  0%   41C    P0    60W / 250W |      0MiB / 11172MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+root@m1-k8s-gpu02p:~#
+
+
+root@m1-k8s-gpu02p:~# nvidia-debugdump -l
+Found 4 NVIDIA devices
+        Device ID:              0
+        Device name:            GeForce GTX 1080 Ti
+        GPU internal ID:        GPU-609d0c45-6d31-872b-b02f-2581d86c43f6
+
+        Device ID:              1
+        Device name:            GeForce GTX 1080 Ti
+        GPU internal ID:        GPU-b0b38e8e-8a15-cc88-1768-0bd9fa9d6395
+
+        Device ID:              2
+        Device name:            GeForce GTX 1080 Ti
+        GPU internal ID:        GPU-0439ef64-1efd-b760-abdf-c56b71e17308
+
+        Device ID:              3
+        Device name:            GeForce GTX 1080 Ti
+        GPU internal ID:        GPU-5485ebf9-d526-ae9b-50a2-e61faf6c3229
+
+root@m1-k8s-gpu02p:~#
+
+
+root@m1-k8s-gpu02p:~# nvidia-debugdump -D
+root@m1-k8s-gpu02p:~# ll dump.zip
+-rw-r--r-- 1 root root 275701 Jul 11 12:10 dump.zip
+root@m1-k8s-gpu02p:~# unzip -l dump.zip
+Archive:  dump.zip
+Created by NvDebugDump
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+       16  1980-00-00 00:00   debug_buffers_00.pb
+       16  1980-00-00 00:00   debug_buffers_01.pb
+       16  1980-00-00 00:00   debug_buffers_02.pb
+       16  1980-00-00 00:00   debug_buffers_03.pb
+    66896  1980-00-00 00:00   rm_00.pb
+    64032  1980-00-00 00:00   rm_01.pb
+    66448  1980-00-00 00:00   rm_02.pb
+    64304  1980-00-00 00:00   rm_03.pb
+      400  1980-00-00 00:00   system_info.pb
+     1264  1980-00-00 00:00   error_data.pb
+    17600  1980-00-00 00:00   nvlog.log
+---------                     -------
+   281008                     11 files
+root@m1-k8s-gpu02p:~#
+
+
+root@m1-k8s-gpu02p:~# mkdir 20180711-1212
+root@m1-k8s-gpu02p:~# mv dump.zip 20180711-1212/
+root@m1-k8s-gpu02p:~# cd 20180711-1212/
+root@m1-k8s-gpu02p:~/20180711-1212# unzip dump.zip
+Archive:  dump.zip
+Created by NvDebugDump
+  inflating: debug_buffers_00.pb
+  inflating: debug_buffers_01.pb
+  inflating: debug_buffers_02.pb
+  inflating: debug_buffers_03.pb
+  inflating: rm_00.pb
+  inflating: rm_01.pb
+  inflating: rm_02.pb
+  inflating: rm_03.pb
+  inflating: system_info.pb
+  inflating: error_data.pb
+  inflating: nvlog.log
+root@m1-k8s-gpu02p:~/20180711-1212#
+
+
+
+

@@ -1,0 +1,1652 @@
+
+................................................................................
+https://fsd.tcsbank.ru/case/4398971/info
+
+Тинькофф Офис - закрыть 22 порт на машине 5.9.28.136
+Текст запроса:
+Необходимо закрыть 22 порт на машине 5.9.28.136
+И разрешить ходить только vm-additional-services02p и m1-crawlig-portal-1
+Решения в категории:
+Решение №1:
+Запрос, отправленный по категории "Другое" может обрабатываться дольше других.\n\nВоспользуйтесь “поиском” для заведения запроса через корректную категорию
+Сведения о сотруднике:
+ФИО: Постовой Михаил Валерьевич
+Domain: TCSBANK
+Login: m.postovoy
+Руководитель: Сотниченко Сергей Александрович
+Внутренний номер: Неизвестно
+Почта для нотификации: m.postovoy@tinkoff.ru
+Сведения об устройстве:
+Приложение: Service Desk Bot
+Версия: 0.0.0.1
+
+Белогруд Сергей Владимирович
+@net-admins
+Дополнительное замечание.
+С моей рабочей станции (172.16.28.74), находящейся в офисе, в настоящий момент  отсутствует возможность подключиться по ssh к хосту 5.9.28.136.
+Для настройки и тестирования требуется разрешение на подключение. 
+[s.belogrud@TCS4357]# ssh bsv@5.9.28.136
+ssh: connect to host 5.9.28.136 port 22: Connection timed out
+[s.belogrud@TCS4357]#
+Сегодня 13:39
+Свернуть
+Белогруд Сергей Владимирович
+@net-admins
+Сообщите пожалуйста диапазоны внешних ip-адресов с которых из офисной локальной сети осуществляется подключение по ssh к внешнему (облачному) хосту с ip-адресом 5.9.28.136.
+Автор заявки хочет ограничить доступ по ssh (порт 22) до хоста 5.9.28.136, чтобы подключаться по ssh к этому хосту можно было только из сети банка.
+Чтобы реализовать фильтрацию по ip-адресам, нужен перечень ip-адресов, которые при подключении к хосту будут определяться, как банковские ip-адреса.
+Подробности можно уточнить у автора заявки. 
+Сегодня 13:34
+Свернуть
+Белогруд Сергей Владимирович
+Кстати, Черных Александр с 16.09 по 18.09 в отпуске. Вам желательно бы успеть. Если хотите успеть до его отпуска.
+Сегодня 12:15
+Белогруд Сергей Владимирович
+Так, если Александр Черных в курсе и занимается решением вашего вопроса, то и задачу эту вы на него назначите?
+Я как не имел доступа к 5.9.28.136, так и не имею.
+Сегодня 11:38
+Постовой Михаил Валерьевич
+Сообщил Саше Черныху
+А по ограничению доступа: Проблема в том, что СБ хотят, чтобы доступы до машины не был свободны из интернета, если например оставить доступ только для сети банка, то уже хорошо
+Сегодня 11:04
+Белогруд Сергей Владимирович
+Уточните пожалуйста текущую ситуацию по этой машине (5.9.28.136) у Александра Черных.
+Очень возможно, что всё уже давно сильно поменялось. И она перемещена в другое "Облако". А то может её и вообще уже нет...
+Вчера 19:30
+Белогруд Сергей Владимирович
+И следует прояснить, кто будет поддерживать хост и всё-всё, что с ним связано после того ограничения доступа к нему по ssh только двумя вашими хостами? Когда на него можно будет залогиниться по ssh только с ваших локальных хостов: vm-additional-services02p и m1-crawlig-portal-1?
+Очевидно, что только вы и сможете на нём что-либо и настраивать.
+Но если вы собираетесь полностью управлять хостом 5.9.28.136, то что мешает вам самим сделать на нём нужные настройки ssh сейчас?
+Вчера 19:27
+Свернуть
+Постовой Михаил Валерьевич
+обычно Саша Черных занимался этой машиной
+Вчера 19:24
+Белогруд Сергей Владимирович
+Похоже сервер 5.9.28.136 находится где-то в Интернет в "облаке". У меня напрямую по ssh доступа до этого хоста нет. Пожалуйста уточните, кто поддерживает серверы на этом "облачном" Интернет-ресурсе, что это за "облачный" ресурс и как туда попадать.
+
+................................................................................
+
+
+
+PasswordAuthentication
+PermitRootLogin
+PubkeyAuthentication
+RSAAuthentication
+
+http://manpages.ubuntu.com/manpages/focal/en/man5/sshd_config.5.html
+
+  Match   Introduces a conditional block.  If all of the criteria on the Match line are
+             satisfied, the keywords on the following lines override those set in the global
+             section of the config file, until either another Match line or the end of the file.
+             If a keyword appears in multiple Match blocks that are satisfied, only the first
+             instance of the keyword is applied.
+
+             The arguments to Match are one or more criteria-pattern pairs or the single token
+             All which matches all criteria.  The available criteria are User, Group, Host,
+             LocalAddress, LocalPort, RDomain, and Address (with RDomain representing the
+             rdomain(4) on which the connection was received).
+
+             The match patterns may consist of single entries or comma-separated lists and may
+             use the wildcard and negation operators described in the PATTERNS section of
+             ssh_config(5).
+
+             The patterns in an Address criteria may additionally contain addresses to match in
+             CIDR address/masklen format, such as 192.0.2.0/24 or 2001:db8::/32.  Note that the
+             mask length provided must be consistent with the address - it is an error to specify
+             a mask length that is too long for the address or one with bits set in this host
+             portion of the address.  For example, 192.0.2.0/33 and 192.0.2.0/8, respectively.
+
+             Only a subset of keywords may be used on the lines following a Match keyword.
+             Available keywords are AcceptEnv, AllowAgentForwarding, AllowGroups,
+             AllowStreamLocalForwarding, AllowTcpForwarding, AllowUsers, AuthenticationMethods,
+             AuthorizedKeysCommand, AuthorizedKeysCommandUser, AuthorizedKeysFile,
+             AuthorizedPrincipalsCommand, AuthorizedPrincipalsCommandUser,
+             AuthorizedPrincipalsFile, Banner, ChrootDirectory, ClientAliveCountMax,
+             ClientAliveInterval, DenyGroups, DenyUsers, ForceCommand, GatewayPorts,
+             GSSAPIAuthentication, HostbasedAcceptedKeyTypes, HostbasedAuthentication,
+             HostbasedUsesNameFromPacketOnly, Include, IPQoS, KbdInteractiveAuthentication,
+             KerberosAuthentication, LogLevel, MaxAuthTries, MaxSessions, PasswordAuthentication,
+             PermitEmptyPasswords, PermitListen, PermitOpen, PermitRootLogin, PermitTTY,
+             PermitTunnel, PermitUserRC, PubkeyAcceptedKeyTypes, PubkeyAuthentication,
+             RekeyLimit, RevokedKeys, RDomain, SetEnv, StreamLocalBindMask,
+             StreamLocalBindUnlink, TrustedUserCAKeys, X11DisplayOffset, X11Forwarding and
+             X11UseLocalhost.
+ 
+https://linux.die.net/man/5/sshd_config
+
+    Match
+Introduces a conditional block. If all of the criteria on the Match line are satisfied, the keywords on the following lines override those set in the global section of the config file, until either another Match line or the end of the file.
+The arguments to Match are one or more criteria-pattern pairs. The available criteria are User, Group, Host, and Address. The match patterns may consist of single entries or comma-separated lists and may use the wildcard and negation operators described in the PATTERNS section of ssh_config(5).
+
+The patterns in an Address criteria may additionally contain addresses to match in CIDR address/masklen format, e.g. ''192.0.2.0/24'' or ''3ffe:ffff::/32''. Note that the mask length provided must be consistent with the address - it is an error to specify a mask length that is too long for the address or one with bits set in this host portion of the address. For example, ''192.0.2.0/33'' and ''192.0.2.0/8'' respectively.
+
+Only a subset of keywords may be used on the lines following a Match keyword. Available keywords are AllowAgentForwarding, AllowTcpForwarding, Banner, ChrootDirectory, ForceCommand, GatewayPorts, GSSAPIAuthentication, HostbasedAuthentication, KbdInteractiveAuthentication, KerberosAuthentication, KerberosUseKuserok, MaxAuthTries, MaxSessions, PubkeyAuthentication, AuthorizedKeysCommand, AuthorizedKeysCommandRunAs, PasswordAuthentication, PermitEmptyPasswords, PermitOpen, PermitRootLogin, RequiredAuthentications1, RequiredAuthentications2, RhostsRSAAuthentication, RSAAuthentication, X11DisplayOffset, X11Forwarding and X11UseLocalHost.
+
+ 
+             
+https://unix.stackexchange.com/questions/406245/limit-ssh-access-to-specific-clients-by-ip-address
+
+Option 3: SSH daemon configuration
+You can configure ssh daemon in sshd_config to use different authentication method depending on the client address/hostname. If you only want to block other hosts from connecting, you should use iptables or TCP wrappers instead.
+
+First remove default authentication methods:
+
+PasswordAuthentication no
+PubkeyAuthentication no
+Then add desired authentication methods after a Match Address in the end of the file. Placing Match in the end of the file is important, since all the configuration lines after it are placed inside the conditional block until the next Match line. For example:
+
+Match Address 127.0.0.*
+    PubkeyAuthentication yes
+Other clients are still able to connect, but logins will fail because there is no available authentication methods.
+
+Match arguments and allowed conditional configuration options are documented in sshd_config man page. Match patterns are documented in ssh_config man page.             
+
+................................................................................
+
+#
+#	20200915
+#	At this moment I can connect to the host 5.9.28.136 (dmp-devel) only from my home notebook.
+#	I used my famous password for bsv.
+#
+
+[2020-09-15 12:57.57]  ~
+[belogrud.zenbook] ➤ ssh bsv@5.9.28.136
+Warning: Permanently added '5.9.28.136' (RSA) to the list of known hosts.
+bsv@5.9.28.136's password:
+X11 forwarding request failed on channel 0
+Welcome to Ubuntu 16.04.7 LTS (GNU/Linux 4.4.0-92-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+ * Kubernetes 1.19 is out! Get it in one command with:
+
+     sudo snap install microk8s --channel=1.19 --classic
+
+   https://microk8s.io/ has docs and details.
+New release '18.04.5 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Fri Apr 12 16:01:23 2019 from 88.198.167.20
+bsv@dmp-devel:~$ sudo -i
+[sudo] password for bsv:
+root@dmp-devel ~ # iptables -n -L -t filter ; iptables -n -L -t nat ; iptables -n -L -t mangle
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+ACCEPT     all  --  93.123.195.117       0.0.0.0/0
+ACCEPT     all  --  46.20.75.201         0.0.0.0/0
+ACCEPT     all  --  91.194.226.0/23      0.0.0.0/0
+ACCEPT     all  --  46.242.125.129       0.0.0.0/0
+ACCEPT     all  --  148.251.43.46        0.0.0.0/0
+ACCEPT     all  --  148.251.1.139        0.0.0.0/0
+ACCEPT     all  --  148.251.1.138        0.0.0.0/0
+ACCEPT     all  --  148.251.1.137        0.0.0.0/0
+ACCEPT     all  --  148.251.1.136        0.0.0.0/0
+ACCEPT     all  --  148.251.1.135        0.0.0.0/0
+ACCEPT     all  --  148.251.1.132        0.0.0.0/0
+ACCEPT     all  --  148.251.1.131        0.0.0.0/0
+ACCEPT     all  --  148.251.1.130        0.0.0.0/0
+ACCEPT     all  --  88.198.167.20        0.0.0.0/0
+ACCEPT     all  --  88.198.167.34        0.0.0.0/0
+ACCEPT     all  --  88.198.167.32        0.0.0.0/0
+ACCEPT     all  --  88.198.167.30        0.0.0.0/0
+ACCEPT     all  --  88.198.167.28        0.0.0.0/0
+ACCEPT     all  --  88.198.167.26        0.0.0.0/0
+ACCEPT     all  --  88.198.167.24        0.0.0.0/0
+ACCEPT     all  --  88.198.167.22        0.0.0.0/0
+ACCEPT     all  --  148.251.1.143        0.0.0.0/0
+ACCEPT     all  --  148.251.1.142        0.0.0.0/0
+ACCEPT     all  --  148.251.1.141        0.0.0.0/0
+ACCEPT     all  --  148.251.1.140        0.0.0.0/0
+ACCEPT     all  --  148.251.1.134        0.0.0.0/0
+ACCEPT     all  --  148.251.1.133        0.0.0.0/0
+ACCEPT     all  --  144.76.92.4          0.0.0.0/0
+ACCEPT     all  --  144.76.92.3          0.0.0.0/0
+ACCEPT     all  --  172.17.0.0/16        0.0.0.0/0
+ACCEPT     all  --  148.251.2.144        0.0.0.0/0
+ACCEPT     all  --  78.47.115.117        0.0.0.0/0
+ACCEPT     all  --  88.198.150.100       0.0.0.0/0
+ACCEPT     all  --  88.198.150.101       0.0.0.0/0
+ACCEPT     all  --  88.198.150.102       0.0.0.0/0
+ACCEPT     all  --  10.216.98.103        0.0.0.0/0
+ACCEPT     all  --  10.216.98.203        0.0.0.0/0
+ACCEPT     all  --  95.79.111.100        0.0.0.0/0
+ACCEPT     all  --  148.251.1.144        0.0.0.0/0
+ACCEPT     all  --  148.251.1.145        0.0.0.0/0
+ACCEPT     all  --  148.251.1.146        0.0.0.0/0
+ACCEPT     all  --  88.198.158.22        0.0.0.0/0
+ACCEPT     all  --  88.198.153.107       0.0.0.0/0
+ACCEPT     all  --  88.198.152.253       0.0.0.0/0
+ACCEPT     all  --  88.198.151.189       0.0.0.0/0
+ACCEPT     all  --  88.198.153.50        0.0.0.0/0
+ACCEPT     all  --  88.198.150.166       0.0.0.0/0
+ACCEPT     all  --  88.198.148.187       0.0.0.0/0
+ACCEPT     all  --  88.198.151.190       0.0.0.0/0
+ACCEPT     all  --  88.198.148.186       0.0.0.0/0
+ACCEPT     all  --  88.198.148.188       0.0.0.0/0
+ACCEPT     all  --  148.251.49.230       0.0.0.0/0
+ACCEPT     all  --  54.246.143.236       0.0.0.0/0
+ACCEPT     all  --  54.246.220.120       0.0.0.0/0
+ACCEPT     all  --  54.220.226.44        0.0.0.0/0
+ACCEPT     all  --  54.229.20.2          0.0.0.0/0
+ACCEPT     all  --  54.228.35.195        0.0.0.0/0
+ACCEPT     all  --  54.246.203.40        0.0.0.0/0
+ACCEPT     all  --  54.246.214.242       0.0.0.0/0
+ACCEPT     all  --  54.246.214.249       0.0.0.0/0
+ACCEPT     all  --  54.229.4.70          0.0.0.0/0
+ACCEPT     all  --  54.246.153.173       0.0.0.0/0
+ACCEPT     all  --  148.251.54.98        0.0.0.0/0
+ACCEPT     all  --  148.251.54.99        0.0.0.0/0
+ACCEPT     all  --  148.251.54.119       0.0.0.0/0
+ACCEPT     all  --  148.251.1.148        0.0.0.0/0
+ACCEPT     all  --  148.251.1.147        0.0.0.0/0
+ACCEPT     all  --  144.76.224.22        0.0.0.0/0
+ACCEPT     all  --  83.229.134.21        0.0.0.0/0
+ACCEPT     all  --  78.46.154.38         0.0.0.0/0
+ACCEPT     all  --  78.46.154.39         0.0.0.0/0
+ACCEPT     all  --  78.46.154.40         0.0.0.0/0
+ACCEPT     all  --  5.9.28.136           0.0.0.0/0
+ACCEPT     all  --  54.72.95.179         0.0.0.0/0
+ACCEPT     all  --  54.72.114.55         0.0.0.0/0
+ACCEPT     all  --  54.220.248.124       0.0.0.0/0
+ACCEPT     all  --  54.73.213.223        0.0.0.0/0
+ACCEPT     all  --  54.216.209.234       0.0.0.0/0
+ACCEPT     all  --  54.73.223.251        0.0.0.0/0
+ACCEPT     all  --  54.179.20.71         0.0.0.0/0
+ACCEPT     all  --  54.179.20.112        0.0.0.0/0
+ACCEPT     all  --  54.254.17.191        0.0.0.0/0
+ACCEPT     all  --  54.255.20.203        0.0.0.0/0
+ACCEPT     all  --  54.74.134.154        0.0.0.0/0
+ACCEPT     all  --  95.78.255.49         0.0.0.0/0
+ACCEPT     all  --  78.47.220.118        0.0.0.0/0
+ACCEPT     all  --  85.10.201.55         0.0.0.0/0
+ACCEPT     all  --  128.199.45.19        0.0.0.0/0
+ACCEPT     all  --  128.199.45.26        0.0.0.0/0
+ACCEPT     all  --  128.199.45.29        0.0.0.0/0
+ACCEPT     all  --  95.85.42.130         0.0.0.0/0
+ACCEPT     all  --  95.85.42.128         0.0.0.0/0
+ACCEPT     all  --  95.85.42.72          0.0.0.0/0
+ACCEPT     all  --  95.85.42.68          0.0.0.0/0
+ACCEPT     all  --  95.85.42.71          0.0.0.0/0
+ACCEPT     all  --  128.199.42.252       0.0.0.0/0
+ACCEPT     all  --  95.85.42.73          0.0.0.0/0
+ACCEPT     all  --  188.226.177.41       0.0.0.0/0
+ACCEPT     all  --  178.62.171.171       0.0.0.0/0
+ACCEPT     all  --  178.62.220.219       0.0.0.0/0
+ACCEPT     all  --  178.62.248.214       0.0.0.0/0
+ACCEPT     all  --  178.62.225.24        0.0.0.0/0
+ACCEPT     all  --  178.62.224.120       0.0.0.0/0
+ACCEPT     all  --  178.62.225.123       0.0.0.0/0
+ACCEPT     all  --  178.62.240.124       0.0.0.0/0
+ACCEPT     all  --  178.62.222.81        0.0.0.0/0
+ACCEPT     all  --  178.62.229.100       0.0.0.0/0
+ACCEPT     all  --  178.62.204.123       0.0.0.0/0
+ACCEPT     all  --  128.199.59.247       0.0.0.0/0
+ACCEPT     all  --  178.62.214.111       0.0.0.0/0
+ACCEPT     all  --  188.226.144.128      0.0.0.0/0
+ACCEPT     all  --  95.85.44.155         0.0.0.0/0
+ACCEPT     all  --  178.62.139.152       0.0.0.0/0
+ACCEPT     all  --  128.199.59.235       0.0.0.0/0
+ACCEPT     all  --  178.62.187.133       0.0.0.0/0
+ACCEPT     all  --  95.85.21.49          0.0.0.0/0
+ACCEPT     all  --  178.62.139.94        0.0.0.0/0
+ACCEPT     all  --  178.62.164.243       0.0.0.0/0
+ACCEPT     all  --  178.62.149.126       0.0.0.0/0
+ACCEPT     all  --  128.199.60.11        0.0.0.0/0
+ACCEPT     all  --  178.62.231.115       0.0.0.0/0
+ACCEPT     all  --  178.62.190.104       0.0.0.0/0
+ACCEPT     all  --  128.199.60.68        0.0.0.0/0
+ACCEPT     all  --  95.85.39.51          0.0.0.0/0
+ACCEPT     all  --  178.62.197.195       0.0.0.0/0
+ACCEPT     all  --  128.199.60.19        0.0.0.0/0
+ACCEPT     all  --  128.199.61.251       0.0.0.0/0
+ACCEPT     all  --  144.76.224.112       0.0.0.0/0
+ACCEPT     all  --  178.62.164.58        0.0.0.0/0
+ACCEPT     all  --  178.62.162.183       0.0.0.0/0
+ACCEPT     all  --  128.199.62.101       0.0.0.0/0
+ACCEPT     all  --  178.159.250.27       0.0.0.0/0
+ACCEPT     all  --  148.251.234.12       0.0.0.0/0
+ACCEPT     all  --  148.251.238.109      0.0.0.0/0
+ACCEPT     all  --  148.251.233.141      0.0.0.0/0
+ACCEPT     all  --  136.243.137.66       0.0.0.0/0
+ACCEPT     all  --  136.243.137.67       0.0.0.0/0
+ACCEPT     all  --  148.251.249.66       0.0.0.0/0
+ACCEPT     all  --  136.243.34.74        0.0.0.0/0
+ACCEPT     all  --  138.201.238.166      0.0.0.0/0
+ACCEPT     all  --  88.99.144.14         0.0.0.0/0
+ACCEPT     all  --  88.99.147.77         0.0.0.0/0
+ACCEPT     all  --  79.164.163.137       0.0.0.0/0
+ACCEPT     all  --  148.251.6.45         0.0.0.0/0
+ACCEPT     all  --  87.251.184.146       0.0.0.0/0
+ACCEPT     all  --  148.251.43.241       0.0.0.0/0            /* prod-hzeu-rtb-db-1.datamind.ru */
+ACCEPT     all  --  148.251.44.98        0.0.0.0/0            /* prod-hzeu-rtb-db-2.datamind.ru */
+ACCEPT     all  --  148.251.51.178       0.0.0.0/0            /* prod-hzeu-rtb-db-3.datamind.ru */
+ACCEPT     all  --  148.251.52.113       0.0.0.0/0            /* prod-hzeu-rtb-db-4.datamind.ru */
+ACCEPT     all  --  148.251.79.131       0.0.0.0/0            /* prod-hzeu-rtb-as-1.datamind.ru */
+ACCEPT     all  --  148.251.80.68        0.0.0.0/0            /* prod-hzeu-rtb-as-2.datamind.ru */
+ACCEPT     all  --  148.251.6.45         0.0.0.0/0            /* prod-hzeu-rtb-infra-ops-1.datamind.ru */
+ACCEPT     all  --  78.47.1.56           0.0.0.0/0            /* prod-hzeu-rtb-infra-vpn-1.datamind.ru */
+ACCEPT     all  --  148.251.0.221        0.0.0.0/0            /* prod-hzeu-rtb-infra-metrics-1.datamind.ru */
+ACCEPT     all  --  178.63.67.145        0.0.0.0/0            /* prod-fveu-rtb-tcs-dmp-kafka-1.datamind.ru */
+ACCEPT     all  --  178.63.69.208        0.0.0.0/0            /* prod-fveu-rtb-tcs-dmp-kafka-2.datamind.ru */
+ACCEPT     all  --  148.251.238.174      0.0.0.0/0            /* prod-hzeu-rtb-mongo-1.datamind.ru */
+ACCEPT     all  --  148.251.234.30       0.0.0.0/0            /* prod-hzeu-rtb-mongo-2.datamind.ru */
+ACCEPT     all  --  144.76.185.254       0.0.0.0/0            /* prod-hzeu-rtb-predictors-1.datamind.ru */
+ACCEPT     all  --  144.76.186.62        0.0.0.0/0            /* prod-hzeu-rtb-cdh-master-1.datamind.ru */
+ACCEPT     all  --  94.130.11.122        0.0.0.0/0            /* prod-hzeu-rtb-cdh-worker-1.datamind.ru */
+ACCEPT     all  --  94.130.11.121        0.0.0.0/0            /* prod-hzeu-rtb-cdh-worker-2.datamind.ru */
+ACCEPT     all  --  148.251.237.196      0.0.0.0/0            /* prod-hzeu-rtb-dco-core-1.datamind.ru */
+ACCEPT     all  --  148.251.238.20       0.0.0.0/0            /* prod-hzeu-rtb-dco-core-2.datamind.ru */
+ACCEPT     all  --  148.251.238.213      0.0.0.0/0            /* prod-hzeu-rtb-dco-ui-1.datamind.ru */
+ACCEPT     all  --  148.251.176.227      0.0.0.0/0            /* prod-hzeu-rtb-rnd-1.datamind.ru */
+ACCEPT     all  --  46.4.106.111         0.0.0.0/0            /* prod-hzeu-rtb-anthill-app-1.datamind.ru */
+ACCEPT     all  --  148.251.87.137       0.0.0.0/0            /* prod-hzeu-rtb-anthill-app-2.datamind.ru */
+REJECT     all  --  0.0.0.0/0            0.0.0.0/0            reject-with icmp-host-prohibited
+
+Chain FORWARD (policy DROP)
+target     prot opt source               destination
+DOCKER-USER  all  --  0.0.0.0/0            0.0.0.0/0
+DOCKER-ISOLATION  all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+DOCKER     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain DOCKER (1 references)
+target     prot opt source               destination
+
+Chain DOCKER-ISOLATION (1 references)
+target     prot opt source               destination
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain DOCKER-USER (1 references)
+target     prot opt source               destination
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain fail2ban-ssh (0 references)
+target     prot opt source               destination
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+DOCKER     all  --  0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+MASQUERADE  all  --  172.17.0.0/16        0.0.0.0/0
+
+Chain DOCKER (2 references)
+target     prot opt source               destination
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+root@dmp-devel ~ #
+
+................................................................................
+
+root@dmp-devel ~ # cat /etc/ssh/sshd_config
+# Package generated configuration file
+# See the sshd_config(5) manpage for details
+
+# What ports, IPs and protocols we listen for
+Port 22
+# Use these options to restrict which interfaces/protocols sshd will bind to
+#ListenAddress ::
+#ListenAddress 0.0.0.0
+Protocol 2
+# HostKeys for protocol version 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+#Privilege Separation is turned on for security
+UsePrivilegeSeparation yes
+
+# Lifetime and size of ephemeral version 1 server key
+KeyRegenerationInterval 3600
+ServerKeyBits 1024
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication:
+LoginGraceTime 120
+PermitRootLogin yes
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+#AuthorizedKeysFile     %h/.ssh/authorized_keys
+
+# Don't read the user's ~/.rhosts and ~/.shosts files
+IgnoreRhosts yes
+# For this to work you will also need host keys in /etc/ssh_known_hosts
+RhostsRSAAuthentication no
+# similar for protocol version 2
+HostbasedAuthentication no
+# Uncomment if you don't trust ~/.ssh/known_hosts for RhostsRSAAuthentication
+#IgnoreUserKnownHosts yes
+
+# To enable empty passwords, change to yes (NOT RECOMMENDED)
+PermitEmptyPasswords no
+
+# Change to yes to enable challenge-response passwords (beware issues with
+# some PAM modules and threads)
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+PasswordAuthentication yes
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosGetAFSToken no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+#UseLogin no
+
+#MaxStartups 10:30:60
+#Banner /etc/issue.net
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+root@dmp-devel ~ #
+
+
+
+................................................................................
+#
+#	I used vpn from Ukaraine to connect. So this ip is not constant.
+#
+root@dmp-devel ~ # grep -A5 -B5 -ie "bsv" /var/log/auth.log
+	Sep 15 12:59:01 dmp-devel CRON[929]: pam_unix(cron:session): session closed for user root
+	Sep 15 12:59:01 dmp-devel CRON[928]: pam_unix(cron:session): session closed for user root
+	Sep 15 12:59:01 dmp-devel CRON[931]: pam_unix(cron:session): session closed for user root
+	Sep 15 12:59:02 dmp-devel CRON[927]: pam_unix(cron:session): session closed for user m.postovoy
+	Sep 15 12:59:03 dmp-devel sshd[921]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=183.165.28.107  user=root
+
+Sep 15 12:59:03 dmp-devel sshd[887]: Accepted password for bsv from 45.9.236.13 port 56373 ssh2
+Sep 15 12:59:03 dmp-devel sshd[887]: pam_unix(sshd:session): session opened for user bsv by (uid=0)
+Sep 15 12:59:04 dmp-devel sshd[998]: Accepted password for bsv from 45.9.236.13 port 56381 ssh2
+Sep 15 12:59:04 dmp-devel sshd[998]: pam_unix(sshd:session): session opened for user bsv by (uid=0)
+
+	Sep 15 12:59:05 dmp-devel sshd[997]: error: Failed to allocate internet-domain X11 display socket.
+	Sep 15 12:59:05 dmp-devel sshd[921]: Failed password for root from 183.165.28.107 port 48112 ssh2
+	Sep 15 12:59:05 dmp-devel sshd[921]: Received disconnect from 183.165.28.107 port 48112:11: Bye Bye [preauth]
+	Sep 15 12:59:05 dmp-devel sshd[921]: Disconnected from 183.165.28.107 port 48112 [preauth]
+
+Sep 15 12:59:15 dmp-devel sudo:      bsv : TTY=pts/1 ; PWD=/home/bsv ; USER=root ; COMMAND=/bin/bash
+Sep 15 12:59:15 dmp-devel sudo: pam_unix(sudo:session): session opened for user root by bsv(uid=0)
+	Sep 15 12:59:17 dmp-devel sshd[1070]: Invalid user montoya from 122.51.91.131
+	Sep 15 12:59:17 dmp-devel sshd[1070]: input_userauth_request: invalid user montoya [preauth]
+	Sep 15 12:59:17 dmp-devel sshd[1070]: pam_unix(sshd:auth): check pass; user unknown
+	Sep 15 12:59:17 dmp-devel sshd[1070]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=122.51.91.131
+	Sep 15 12:59:18 dmp-devel sshd[1070]: Failed password for invalid user montoya from 122.51.91.131 port 54096 ssh2
+root@dmp-devel ~ #
+
+................................................................................
+................................................................................
+
+#
+#	20200924
+#
+
+# Мирошниченко Дмитрий Сергеевич
+# добавляйте в белый список нашу публичную подсеть 91.194.226.0/23.
+# Сетевой доступ от ПК 172.16.28.74 по ssh будет открыт автоматизировано после согл от ИБ по задаче fsd.tcsbank.ru/case/4436458/info
+
+
+root@dmp-devel ~ # egrep -ie "^PasswordAuthentication|^PermitRootLogin|^PubkeyAuthentication|^RSAAuthentication" /etc/ssh/sshd_config
+PermitRootLogin no
+RSAAuthentication no
+PubkeyAuthentication no
+PasswordAuthentication no
+root@dmp-devel ~ #
+
+root@dmp-devel ~ # tail /etc/ssh/sshd_config
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+
+Match Address 91.194.226.0/23
+        PasswordAuthentication yes
+        PermitRootLogin yes
+        PubkeyAuthentication yes
+        RSAAuthentication yes
+root@dmp-devel ~ #
+
+root@dmp-devel ~ # systemctl reload sshd
+root@dmp-devel ~ #
+
+................................................................................
+
+Белогруд Сергей Владимирович
+@net-admins
+Сообщите пожалуйста диапазоны внешних ip-адресов с которых из офисной локальной сети осуществляется подключение по ssh к внешнему (облачному) хосту с ip-адресом 5.9.28.136.
+Автор заявки хочет ограничить доступ по ssh (порт 22) до хоста 5.9.28.136, чтобы подключаться по ssh к этому хосту можно было только из сети банка.
+Чтобы реализовать фильтрацию по ip-адресам, нужен перечень ip-адресов, которые при подключении к хосту будут определяться, как банковские ip-адреса.
+Подробности можно уточнить у автора заявки. 
+
+................................................................................
+
+#
+#	Before restriction was applyed.
+#
+[2020-09-24 14:32.28]  ~
+[belogrud.zenbook] ➤ ssh bsv@5.9.28.136
+X11 forwarding request failed on channel 0
+Welcome to Ubuntu 16.04.7 LTS (GNU/Linux 4.4.0-92-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+ * Kubernetes 1.19 is out! Get it in one command with:
+
+     sudo snap install microk8s --channel=1.19 --classic
+
+   https://microk8s.io/ has docs and details.
+New release '18.04.5 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Thu Sep 24 14:32:16 2020 from 185.206.225.244
+bsv@dmp-devel:~$ logout
+Connection to 5.9.28.136 closed.
+
+#
+#	After restriction was applyed.
+#
+[2020-09-24 14:33.12]  ~
+[belogrud.zenbook] ➤ ssh bsv@5.9.28.136
+bsv@5.9.28.136's password:
+bsv@5.9.28.136's password:
+
+
+[2020-09-24 14:42.05]  ~
+[belogrud.zenbook] ➤
+
+................................................................................
+#
+#	At this moment config for sshd is follow.
+#
+
+root@dmp-devel ~ # cat /etc/ssh/sshd_config
+# Package generated configuration file
+# See the sshd_config(5) manpage for details
+
+# What ports, IPs and protocols we listen for
+Port 22
+# Use these options to restrict which interfaces/protocols sshd will bind to
+#ListenAddress ::
+#ListenAddress 0.0.0.0
+Protocol 2
+# HostKeys for protocol version 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+#Privilege Separation is turned on for security
+UsePrivilegeSeparation yes
+
+# Lifetime and size of ephemeral version 1 server key
+KeyRegenerationInterval 3600
+ServerKeyBits 1024
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication:
+LoginGraceTime 120
+PermitRootLogin no
+StrictModes yes
+
+RSAAuthentication no
+PubkeyAuthentication no
+#AuthorizedKeysFile     %h/.ssh/authorized_keys
+
+# Don't read the user's ~/.rhosts and ~/.shosts files
+IgnoreRhosts yes
+# For this to work you will also need host keys in /etc/ssh_known_hosts
+RhostsRSAAuthentication no
+# similar for protocol version 2
+HostbasedAuthentication no
+# Uncomment if you don't trust ~/.ssh/known_hosts for RhostsRSAAuthentication
+#IgnoreUserKnownHosts yes
+
+# To enable empty passwords, change to yes (NOT RECOMMENDED)
+PermitEmptyPasswords no
+
+# Change to yes to enable challenge-response passwords (beware issues with
+# some PAM modules and threads)
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+PasswordAuthentication no
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosGetAFSToken no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+#UseLogin no
+
+#MaxStartups 10:30:60
+#Banner /etc/issue.net
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+
+Match Address 91.194.226.0/23
+        PasswordAuthentication yes
+        PermitRootLogin yes
+        PubkeyAuthentication yes
+        RSAAuthentication yes
+
+root@dmp-devel ~ #
+
+
+................................................................................
+
+#
+#	20201013
+#
+
+https://fsd.tcsbank.ru/case/4501323/info
+
+Тинькофф Офис - повторно по запросу 4398971
+Текст запроса:
+Заводил задачу, по инициативе СБ: https://forge.tcsbank.ru/case/4398971/info
+Их ответ: 1) С нашего внешнего сканера, который не в сети банка доступ к сервису есть.
+
+reporter@server0:~$ telnet 5.9.28.136 22
+Trying 5.9.28.136...
+Connected to 5.9.28.136.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_7.2p2 Ubuntu-4ubuntu2.10
+^C^C^Z
+Connection closed by foreign host.
+
+2) Со смартфона такая же картина.
+
+Похоже что-то не сработало.
+
+С уважением,
+
+Александр Леонов
+Ведущий аналитик по информационной безопасности
+Тел.: +7 (495) 648 1000 (вн. 2093)
+Решения в категории:
+Решение №1:
+Запрос, отправленный по категории "Другое" может обрабатываться дольше других.\n\nВоспользуйтесь “поиском” для заведения запроса через корректную категорию
+Сведения о сотруднике:
+ФИО: Постовой Михаил Валерьевич
+Domain: TCSBANK
+Login: m.postovoy
+Руководитель: Сотниченко Сергей Александрович
+Внутренний номер: Неизвестно
+Почта для нотификации: m.postovoy@tinkoff.ru
+Сведения об устройстве:
+Приложение: Service Desk Bot
+Версия: 0.0.0.1
+
+
+
+
+Тинькофф Офис - повторно по запросу 4398971
+Текст запроса:
+Заводил задачу, по инициативе СБ: https://forge.tcsbank.ru/case/4398971/info
+Их ответ: 1) С нашего внешнего сканера, который не в сети банка доступ к сервису есть.
+
+reporter@server0:~$ telnet 5.9.28.136 22
+Trying 5.9.28.136...
+Connected to 5.9.28.136.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_7.2p2 Ubuntu-4ubuntu2.10
+^C^C^Z
+Connection closed by foreign host.
+
+2) Со смартфона такая же картина.
+
+Похоже что-то не сработало.
+
+С уважением,
+
+Александр Леонов
+Ведущий аналитик по информационной безопасности
+Тел.: +7 (495) 648 1000 (вн. 2093)
+Решения в категории:
+Решение №1:
+Запрос, отправленный по категории "Другое" может обрабатываться дольше других.\n\nВоспользуйтесь “поиском” для заведения запроса через корректную категорию
+Сведения о сотруднике:
+ФИО: Постовой Михаил Валерьевич
+Domain: TCSBANK
+Login: m.postovoy
+Руководитель: Сотниченко Сергей Александрович
+Внутренний номер: Неизвестно
+Почта для нотификации: m.postovoy@tinkoff.ru
+Сведения об устройстве:
+Приложение: Service Desk Bot
+Версия: 0.0.0.1
+
+
+
+
+
+Тинькофф Офис - повторно по запросу 4398971
+Текст запроса:
+Заводил задачу, по инициативе СБ: https://forge.tcsbank.ru/case/4398971/info
+Их ответ: 1) С нашего внешнего сканера, который не в сети банка доступ к сервису есть.
+
+reporter@server0:~$ telnet 5.9.28.136 22
+Trying 5.9.28.136...
+Connected to 5.9.28.136.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_7.2p2 Ubuntu-4ubuntu2.10
+^C^C^Z
+Connection closed by foreign host.
+
+2) Со смартфона такая же картина.
+
+Похоже что-то не сработало.
+
+С уважением,
+
+Александр Леонов
+Ведущий аналитик по информационной безопасности
+Тел.: +7 (495) 648 1000 (вн. 2093)
+Решения в категории:
+Решение №1:
+Запрос, отправленный по категории "Другое" может обрабатываться дольше других.\n\nВоспользуйтесь “поиском” для заведения запроса через корректную категорию
+Сведения о сотруднике:
+ФИО: Постовой Михаил Валерьевич
+Domain: TCSBANK
+Login: m.postovoy
+Руководитель: Сотниченко Сергей Александрович
+Внутренний номер: Неизвестно
+Почта для нотификации: m.postovoy@tinkoff.ru
+Сведения об устройстве:
+Приложение: Service Desk Bot
+Версия: 0.0.0.1
+
+
+
+
+
+Тинькофф Офис - повторно по запросу 4398971
+Текст запроса:
+Заводил задачу, по инициативе СБ: https://forge.tcsbank.ru/case/4398971/info
+Их ответ: 1) С нашего внешнего сканера, который не в сети банка доступ к сервису есть.
+
+reporter@server0:~$ telnet 5.9.28.136 22
+Trying 5.9.28.136...
+Connected to 5.9.28.136.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_7.2p2 Ubuntu-4ubuntu2.10
+^C^C^Z
+Connection closed by foreign host.
+
+2) Со смартфона такая же картина.
+
+Похоже что-то не сработало.
+
+С уважением,
+
+Александр Леонов
+Ведущий аналитик по информационной безопасности
+Тел.: +7 (495) 648 1000 (вн. 2093)
+Решения в категории:
+Решение №1:
+Запрос, отправленный по категории "Другое" может обрабатываться дольше других.\n\nВоспользуйтесь “поиском” для заведения запроса через корректную категорию
+Сведения о сотруднике:
+ФИО: Постовой Михаил Валерьевич
+Domain: TCSBANK
+Login: m.postovoy
+Руководитель: Сотниченко Сергей Александрович
+Внутренний номер: Неизвестно
+Почта для нотификации: m.postovoy@tinkoff.ru
+Сведения об устройстве:
+Приложение: Service Desk Bot
+Версия: 0.0.0.1
+
+
+.....
+
+
+Белогруд Сергей Владимирович
+Прочёл их ответное письмо.
+Закрою порт средствами iptables.
+
+Добавлю замечание на предположение, что если завтра вдруг уязвимость в ssh. Вчера и сегодня таких уязвимостей нет. Это значит, что вчера и сегодня защищаться от того, чего нет - бесполезность. И это уже состоявшийся факт, а не предположение. А если завтра вдруг уязвимость не обнаружится - это означает, что прозанимались бесполезностью. То есть уже подтверждённая бесполезность вчера и бесполезность сегодня и наиболее вероятная будущая бесполезность. Имеем круглую полную бесполезность деятельности... Как-то так выходит.
+Сегодня 15:00
+Свернуть
+Постовой Михаил Валерьевич
+Передал сообщение СБшникам
+Сегодня 12:48
+Белогруд Сергей Владимирович
+В задаче https://forge.tcsbank.ru/case/4398971/info в комментарии конкретно написано, что авторизация - НЕВОЗМОЖНА!!! с ip-адресов иных, кроме банковских (91.194.226.0/23).
+Вам безопасность нужна или недоступность telnet'ом порта 22?
+Задача безопасности решена. 
+
+Ограничения доступа по подсети для логина по ssh применены в настройках sshd (/etc/ssh/sshd_config).
+Логин по ssh не будет работать для ip адресов клиентов не принадлежащих к подсети 91.194.226.0/23.
+Запрос пароля будет, но авторизация для таких клиентов будет не возможна.
+24 сентября 2020 15:04
+Сегодня 11:13
+Развернуть
+Кудюшев Вадим Юрьевич
+пожалуйста, пропишите корректные IP tables правила с IP-диапазонами банка, чтобы закрыть проблему.
+7 октября 2020 11:22
+
+
+.......
+
+От: Pavlov Sergey Viktorovich
+Отправлено: 13 октября 2020 г. 14:59
+Кому: Postovoy Mikhail Valeryevich; Leonov Aleksandr; Petrova Yulia Anatolyevna; Kudyushev Vadim Yuryevich
+Тема: Re: открытые опасные порты 
+ 
+Михаил, предположим завтра находится уязвимость, связанная с СЕРВИСОМ SSH. Как  планируется АВТОРИЗАЦИЕЙ ЗАКРЫТЬ УЯЗВИМОСТЬ SSH? Давайте не будем додумывать за нас. 
+Еще раз, задача закрыть доступность ssh из всех адресов, кроме банковских. Если вы готовы предоставить вариант митигации данного риска, предлагайте. Но еще раз, авторизация не закрывает уязвимость самого сервиса SSH
+
+________________________________________
+От: Postovoy Mikhail Valeryevich
+Отправлено: 13 октября 2020 г. 12:40
+Кому: Leonov Aleksandr; Petrova Yulia Anatolyevna; Pavlov Sergey Viktorovich; Kudyushev Vadim Yuryevich
+Тема: Re: открытые опасные порты 
+ 
+В задаче https://forge.tcsbank.ru/case/4398971/info в комментарии конкретно написано, что авторизация - НЕВОЗМОЖНА!!! с ip-адресов иных, кроме банковских (91.194.226.0/23). Вам безопасность нужна или недоступность telnet'ом порта 22? Задача безопасности решена. Ограничения доступа по подсети для логина по ssh применены в настройках sshd (/etc/ssh/sshd_config). Логин по ssh не будет работать для ip адресов клиентов не принадлежащих к подсети 91.194.226.0/23. Запрос пароля будет, но авторизация для таких клиентов будет не возможна. 24 сентября 2020 15:04
+
+Ответ по задаче - https://forge.tcsbank.ru/case/4501323/info
+
+________________________________________
+От: Postovoy Mikhail Valeryevich
+Отправлено: 7 октября 2020 г. 13:14
+Кому: Leonov Aleksandr; Petrova Yulia Anatolyevna; Pavlov Sergey Viktorovich; Kudyushev Vadim Yuryevich
+Тема: Re: открытые опасные порты 
+ 
+https://forge.tcsbank.ru/case/4501323/info завёл новую
+________________________________________
+От: Leonov Aleksandr
+Отправлено: 7 октября 2020 г. 13:07
+Кому: Postovoy Mikhail Valeryevich; Petrova Yulia Anatolyevna; Pavlov Sergey Viktorovich; Kudyushev Vadim Yuryevich
+Тема: RE: открытые опасные порты 
+ 
+Михаил, привет!
+ 
+1)      С нашего внешнего сканера, который не в сети банка доступ к сервису есть.
+ 
+reporter@server0:~$ telnet 5.9.28.136 22
+Trying 5.9.28.136...
+Connected to 5.9.28.136.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_7.2p2 Ubuntu-4ubuntu2.10
+^C^C^Z
+Connection closed by foreign host.
+ 
+2)      Со смартфона такая же картина. 
+ 
+Похоже что-то не сработало. 
+ 
+С уважением,
+
+Александр Леонов
+Ведущий аналитик по информационной безопасности
+Тел.: +7 (495) 648 1000 (вн. 2093)
+www.tinkoff.ru
+ 
+ 
+From: Postovoy Mikhail Valeryevich 
+Sent: Wednesday, October 7, 2020 11:00 AM
+To: Petrova Yulia Anatolyevna <y.petrova1@tinkoff.ru>; Pavlov Sergey Viktorovich <s.v.pavlov@tinkoff.ru>; Kudyushev Vadim Yuryevich <v.kudyushev@tinkoff.ru>
+Cc: Leonov Aleksandr <a.leonov1@tinkoff.ru>
+Subject: Re: открытые опасные порты
+ 
+Доступ оставили открытым из сети банка
+________________________________________
+От: Petrova Yulia Anatolyevna
+Отправлено: 6 октября 2020 г. 17:59
+Кому: Postovoy Mikhail Valeryevich; Pavlov Sergey Viktorovich; Kudyushev Vadim Yuryevich
+Копия: Leonov Aleksandr
+Тема: RE: открытые опасные порты 
+ 
+задача закрыта, а порт открыт ...
+Что-то пошло не так
+ 
+С уважением,
+
+Петрова Юлия
+Тел.: +7 (495) 648 1000 (вн.2221 )
+Моб. 8(925) 344 12 22
+ 
+From: Postovoy Mikhail Valeryevich 
+Sent: Thursday, September 10, 2020 6:58 PM
+To: Pavlov Sergey Viktorovich <s.v.pavlov@tinkoff.ru>; Ryakhovskaya Yuliya Sergeevna <y.ryakhovskaya@tinkoff.ru>; Kudyushev Vadim Yuryevich <v.kudyushev@tinkoff.ru>; Petrova Yulia Anatolyevna <y.petrova1@tinkoff.ru>
+Cc: Leonov Aleksandr <a.leonov1@tinkoff.ru>; uib_ca <uib_ca@tinkoff.ru>
+Subject: Re: открытые опасные порты
+ 
+https://forge.tcsbank.ru/case/4398971 завёл задачу, ждём выполнения
+
+
+................................................................................
+
+
+root@dmp-devel ~ # iptables-save
+# Generated by iptables-save v1.6.0 on Tue Oct 13 15:53:57 2020
+*mangle
+:PREROUTING ACCEPT [840346:991143015]
+:INPUT ACCEPT [840346:991143015]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [897999:124427484]
+:POSTROUTING ACCEPT [897999:124427484]
+COMMIT
+# Completed on Tue Oct 13 15:53:57 2020
+# Generated by iptables-save v1.6.0 on Tue Oct 13 15:53:57 2020
+*nat
+:PREROUTING ACCEPT [2197484:140535484]
+:INPUT ACCEPT [1560361:98554377]
+:OUTPUT ACCEPT [120616440:7528256354]
+:POSTROUTING ACCEPT [120616440:7528256354]
+:DOCKER - [0:0]
+-A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER
+-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER
+-A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE
+-A DOCKER -i docker0 -j RETURN
+COMMIT
+# Completed on Tue Oct 13 15:53:57 2020
+# Generated by iptables-save v1.6.0 on Tue Oct 13 15:53:57 2020
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [1180780334:158722214454]
+:DOCKER - [0:0]
+:DOCKER-ISOLATION - [0:0]
+:DOCKER-USER - [0:0]
+:fail2ban-ssh - [0:0]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 93.123.195.117/32 -j ACCEPT
+-A INPUT -s 46.20.75.201/32 -j ACCEPT
+-A INPUT -s 91.194.226.0/23 -j ACCEPT
+-A INPUT -s 46.242.125.129/32 -j ACCEPT
+-A INPUT -s 148.251.43.46/32 -j ACCEPT
+-A INPUT -s 148.251.1.139/32 -j ACCEPT
+-A INPUT -s 148.251.1.138/32 -j ACCEPT
+-A INPUT -s 148.251.1.137/32 -j ACCEPT
+-A INPUT -s 148.251.1.136/32 -j ACCEPT
+-A INPUT -s 148.251.1.135/32 -j ACCEPT
+-A INPUT -s 148.251.1.132/32 -j ACCEPT
+-A INPUT -s 148.251.1.131/32 -j ACCEPT
+-A INPUT -s 148.251.1.130/32 -j ACCEPT
+-A INPUT -s 88.198.167.20/32 -j ACCEPT
+-A INPUT -s 88.198.167.34/32 -j ACCEPT
+-A INPUT -s 88.198.167.32/32 -j ACCEPT
+-A INPUT -s 88.198.167.30/32 -j ACCEPT
+-A INPUT -s 88.198.167.28/32 -j ACCEPT
+-A INPUT -s 88.198.167.26/32 -j ACCEPT
+-A INPUT -s 88.198.167.24/32 -j ACCEPT
+-A INPUT -s 88.198.167.22/32 -j ACCEPT
+-A INPUT -s 148.251.1.143/32 -j ACCEPT
+-A INPUT -s 148.251.1.142/32 -j ACCEPT
+-A INPUT -s 148.251.1.141/32 -j ACCEPT
+-A INPUT -s 148.251.1.140/32 -j ACCEPT
+-A INPUT -s 148.251.1.134/32 -j ACCEPT
+-A INPUT -s 148.251.1.133/32 -j ACCEPT
+-A INPUT -s 144.76.92.4/32 -j ACCEPT
+-A INPUT -s 144.76.92.3/32 -j ACCEPT
+-A INPUT -s 172.17.0.0/16 -j ACCEPT
+-A INPUT -s 148.251.2.144/32 -j ACCEPT
+-A INPUT -s 78.47.115.117/32 -j ACCEPT
+-A INPUT -s 88.198.150.100/32 -j ACCEPT
+-A INPUT -s 88.198.150.101/32 -j ACCEPT
+-A INPUT -s 88.198.150.102/32 -j ACCEPT
+-A INPUT -s 10.216.98.103/32 -j ACCEPT
+-A INPUT -s 10.216.98.203/32 -j ACCEPT
+-A INPUT -s 95.79.111.100/32 -j ACCEPT
+-A INPUT -s 148.251.1.144/32 -j ACCEPT
+-A INPUT -s 148.251.1.145/32 -j ACCEPT
+-A INPUT -s 148.251.1.146/32 -j ACCEPT
+-A INPUT -s 88.198.158.22/32 -j ACCEPT
+-A INPUT -s 88.198.153.107/32 -j ACCEPT
+-A INPUT -s 88.198.152.253/32 -j ACCEPT
+-A INPUT -s 88.198.151.189/32 -j ACCEPT
+-A INPUT -s 88.198.153.50/32 -j ACCEPT
+-A INPUT -s 88.198.150.166/32 -j ACCEPT
+-A INPUT -s 88.198.148.187/32 -j ACCEPT
+-A INPUT -s 88.198.151.190/32 -j ACCEPT
+-A INPUT -s 88.198.148.186/32 -j ACCEPT
+-A INPUT -s 88.198.148.188/32 -j ACCEPT
+-A INPUT -s 148.251.49.230/32 -j ACCEPT
+-A INPUT -s 54.246.143.236/32 -j ACCEPT
+-A INPUT -s 54.246.220.120/32 -j ACCEPT
+-A INPUT -s 54.220.226.44/32 -j ACCEPT
+-A INPUT -s 54.229.20.2/32 -j ACCEPT
+-A INPUT -s 54.228.35.195/32 -j ACCEPT
+-A INPUT -s 54.246.203.40/32 -j ACCEPT
+-A INPUT -s 54.246.214.242/32 -j ACCEPT
+-A INPUT -s 54.246.214.249/32 -j ACCEPT
+-A INPUT -s 54.229.4.70/32 -j ACCEPT
+-A INPUT -s 54.246.153.173/32 -j ACCEPT
+-A INPUT -s 148.251.54.98/32 -j ACCEPT
+-A INPUT -s 148.251.54.99/32 -j ACCEPT
+-A INPUT -s 148.251.54.119/32 -j ACCEPT
+-A INPUT -s 148.251.1.148/32 -j ACCEPT
+-A INPUT -s 148.251.1.147/32 -j ACCEPT
+-A INPUT -s 144.76.224.22/32 -j ACCEPT
+-A INPUT -s 83.229.134.21/32 -j ACCEPT
+-A INPUT -s 78.46.154.38/32 -j ACCEPT
+-A INPUT -s 78.46.154.39/32 -j ACCEPT
+-A INPUT -s 78.46.154.40/32 -j ACCEPT
+-A INPUT -s 5.9.28.136/32 -j ACCEPT
+-A INPUT -s 54.72.95.179/32 -j ACCEPT
+-A INPUT -s 54.72.114.55/32 -j ACCEPT
+-A INPUT -s 54.220.248.124/32 -j ACCEPT
+-A INPUT -s 54.73.213.223/32 -j ACCEPT
+-A INPUT -s 54.216.209.234/32 -j ACCEPT
+-A INPUT -s 54.73.223.251/32 -j ACCEPT
+-A INPUT -s 54.179.20.71/32 -j ACCEPT
+-A INPUT -s 54.179.20.112/32 -j ACCEPT
+-A INPUT -s 54.254.17.191/32 -j ACCEPT
+-A INPUT -s 54.255.20.203/32 -j ACCEPT
+-A INPUT -s 54.74.134.154/32 -j ACCEPT
+-A INPUT -s 95.78.255.49/32 -j ACCEPT
+-A INPUT -s 78.47.220.118/32 -j ACCEPT
+-A INPUT -s 85.10.201.55/32 -j ACCEPT
+-A INPUT -s 128.199.45.19/32 -j ACCEPT
+-A INPUT -s 128.199.45.26/32 -j ACCEPT
+-A INPUT -s 128.199.45.29/32 -j ACCEPT
+-A INPUT -s 95.85.42.130/32 -j ACCEPT
+-A INPUT -s 95.85.42.128/32 -j ACCEPT
+-A INPUT -s 95.85.42.72/32 -j ACCEPT
+-A INPUT -s 95.85.42.68/32 -j ACCEPT
+-A INPUT -s 95.85.42.71/32 -j ACCEPT
+-A INPUT -s 128.199.42.252/32 -j ACCEPT
+-A INPUT -s 95.85.42.73/32 -j ACCEPT
+-A INPUT -s 188.226.177.41/32 -j ACCEPT
+-A INPUT -s 178.62.171.171/32 -j ACCEPT
+-A INPUT -s 178.62.220.219/32 -j ACCEPT
+-A INPUT -s 178.62.248.214/32 -j ACCEPT
+-A INPUT -s 178.62.225.24/32 -j ACCEPT
+-A INPUT -s 178.62.224.120/32 -j ACCEPT
+-A INPUT -s 178.62.225.123/32 -j ACCEPT
+-A INPUT -s 178.62.240.124/32 -j ACCEPT
+-A INPUT -s 178.62.222.81/32 -j ACCEPT
+-A INPUT -s 178.62.229.100/32 -j ACCEPT
+-A INPUT -s 178.62.204.123/32 -j ACCEPT
+-A INPUT -s 128.199.59.247/32 -j ACCEPT
+-A INPUT -s 178.62.214.111/32 -j ACCEPT
+-A INPUT -s 188.226.144.128/32 -j ACCEPT
+-A INPUT -s 95.85.44.155/32 -j ACCEPT
+-A INPUT -s 178.62.139.152/32 -j ACCEPT
+-A INPUT -s 128.199.59.235/32 -j ACCEPT
+-A INPUT -s 178.62.187.133/32 -j ACCEPT
+-A INPUT -s 95.85.21.49/32 -j ACCEPT
+-A INPUT -s 178.62.139.94/32 -j ACCEPT
+-A INPUT -s 178.62.164.243/32 -j ACCEPT
+-A INPUT -s 178.62.149.126/32 -j ACCEPT
+-A INPUT -s 128.199.60.11/32 -j ACCEPT
+-A INPUT -s 178.62.231.115/32 -j ACCEPT
+-A INPUT -s 178.62.190.104/32 -j ACCEPT
+-A INPUT -s 128.199.60.68/32 -j ACCEPT
+-A INPUT -s 95.85.39.51/32 -j ACCEPT
+-A INPUT -s 178.62.197.195/32 -j ACCEPT
+-A INPUT -s 128.199.60.19/32 -j ACCEPT
+-A INPUT -s 128.199.61.251/32 -j ACCEPT
+-A INPUT -s 144.76.224.112/32 -j ACCEPT
+-A INPUT -s 178.62.164.58/32 -j ACCEPT
+-A INPUT -s 178.62.162.183/32 -j ACCEPT
+-A INPUT -s 128.199.62.101/32 -j ACCEPT
+-A INPUT -s 178.159.250.27/32 -j ACCEPT
+-A INPUT -s 148.251.234.12/32 -j ACCEPT
+-A INPUT -s 148.251.238.109/32 -j ACCEPT
+-A INPUT -s 148.251.233.141/32 -j ACCEPT
+-A INPUT -s 136.243.137.66/32 -j ACCEPT
+-A INPUT -s 136.243.137.67/32 -j ACCEPT
+-A INPUT -s 148.251.249.66/32 -j ACCEPT
+-A INPUT -s 136.243.34.74/32 -j ACCEPT
+-A INPUT -s 138.201.238.166/32 -j ACCEPT
+-A INPUT -s 88.99.144.14/32 -j ACCEPT
+-A INPUT -s 88.99.147.77/32 -j ACCEPT
+-A INPUT -s 79.164.163.137/32 -j ACCEPT
+-A INPUT -s 148.251.6.45/32 -j ACCEPT
+-A INPUT -s 87.251.184.146/32 -j ACCEPT
+-A INPUT -s 148.251.43.241/32 -m comment --comment "prod-hzeu-rtb-db-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.44.98/32 -m comment --comment "prod-hzeu-rtb-db-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.51.178/32 -m comment --comment "prod-hzeu-rtb-db-3.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.52.113/32 -m comment --comment "prod-hzeu-rtb-db-4.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.79.131/32 -m comment --comment "prod-hzeu-rtb-as-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.80.68/32 -m comment --comment "prod-hzeu-rtb-as-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.6.45/32 -m comment --comment "prod-hzeu-rtb-infra-ops-1.datamind.ru" -j ACCEPT
+-A INPUT -s 78.47.1.56/32 -m comment --comment "prod-hzeu-rtb-infra-vpn-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.0.221/32 -m comment --comment "prod-hzeu-rtb-infra-metrics-1.datamind.ru" -j ACCEPT
+-A INPUT -s 178.63.67.145/32 -m comment --comment "prod-fveu-rtb-tcs-dmp-kafka-1.datamind.ru" -j ACCEPT
+-A INPUT -s 178.63.69.208/32 -m comment --comment "prod-fveu-rtb-tcs-dmp-kafka-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.174/32 -m comment --comment "prod-hzeu-rtb-mongo-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.234.30/32 -m comment --comment "prod-hzeu-rtb-mongo-2.datamind.ru" -j ACCEPT
+-A INPUT -s 144.76.185.254/32 -m comment --comment "prod-hzeu-rtb-predictors-1.datamind.ru" -j ACCEPT
+-A INPUT -s 144.76.186.62/32 -m comment --comment "prod-hzeu-rtb-cdh-master-1.datamind.ru" -j ACCEPT
+-A INPUT -s 94.130.11.122/32 -m comment --comment "prod-hzeu-rtb-cdh-worker-1.datamind.ru" -j ACCEPT
+-A INPUT -s 94.130.11.121/32 -m comment --comment "prod-hzeu-rtb-cdh-worker-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.237.196/32 -m comment --comment "prod-hzeu-rtb-dco-core-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.20/32 -m comment --comment "prod-hzeu-rtb-dco-core-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.213/32 -m comment --comment "prod-hzeu-rtb-dco-ui-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.176.227/32 -m comment --comment "prod-hzeu-rtb-rnd-1.datamind.ru" -j ACCEPT
+-A INPUT -s 46.4.106.111/32 -m comment --comment "prod-hzeu-rtb-anthill-app-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.87.137/32 -m comment --comment "prod-hzeu-rtb-anthill-app-2.datamind.ru" -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j DOCKER-USER
+-A FORWARD -j DOCKER-ISOLATION
+-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -o docker0 -j DOCKER
+-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+-A FORWARD -i docker0 -o docker0 -j ACCEPT
+-A DOCKER-ISOLATION -j RETURN
+-A DOCKER-USER -j RETURN
+COMMIT
+# Completed on Tue Oct 13 15:53:57 2020
+root@dmp-devel ~ #
+
+root@dmp-devel ~ # iptables -S
+-P INPUT ACCEPT
+-P FORWARD DROP
+-P OUTPUT ACCEPT
+-N DOCKER
+-N DOCKER-ISOLATION
+-N DOCKER-USER
+-N fail2ban-ssh
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 93.123.195.117/32 -j ACCEPT
+-A INPUT -s 46.20.75.201/32 -j ACCEPT
+-A INPUT -s 91.194.226.0/23 -j ACCEPT
+-A INPUT -s 46.242.125.129/32 -j ACCEPT
+-A INPUT -s 148.251.43.46/32 -j ACCEPT
+-A INPUT -s 148.251.1.139/32 -j ACCEPT
+-A INPUT -s 148.251.1.138/32 -j ACCEPT
+-A INPUT -s 148.251.1.137/32 -j ACCEPT
+-A INPUT -s 148.251.1.136/32 -j ACCEPT
+-A INPUT -s 148.251.1.135/32 -j ACCEPT
+-A INPUT -s 148.251.1.132/32 -j ACCEPT
+-A INPUT -s 148.251.1.131/32 -j ACCEPT
+-A INPUT -s 148.251.1.130/32 -j ACCEPT
+-A INPUT -s 88.198.167.20/32 -j ACCEPT
+-A INPUT -s 88.198.167.34/32 -j ACCEPT
+-A INPUT -s 88.198.167.32/32 -j ACCEPT
+-A INPUT -s 88.198.167.30/32 -j ACCEPT
+-A INPUT -s 88.198.167.28/32 -j ACCEPT
+-A INPUT -s 88.198.167.26/32 -j ACCEPT
+-A INPUT -s 88.198.167.24/32 -j ACCEPT
+-A INPUT -s 88.198.167.22/32 -j ACCEPT
+-A INPUT -s 148.251.1.143/32 -j ACCEPT
+-A INPUT -s 148.251.1.142/32 -j ACCEPT
+-A INPUT -s 148.251.1.141/32 -j ACCEPT
+-A INPUT -s 148.251.1.140/32 -j ACCEPT
+-A INPUT -s 148.251.1.134/32 -j ACCEPT
+-A INPUT -s 148.251.1.133/32 -j ACCEPT
+-A INPUT -s 144.76.92.4/32 -j ACCEPT
+-A INPUT -s 144.76.92.3/32 -j ACCEPT
+-A INPUT -s 172.17.0.0/16 -j ACCEPT
+-A INPUT -s 148.251.2.144/32 -j ACCEPT
+-A INPUT -s 78.47.115.117/32 -j ACCEPT
+-A INPUT -s 88.198.150.100/32 -j ACCEPT
+-A INPUT -s 88.198.150.101/32 -j ACCEPT
+-A INPUT -s 88.198.150.102/32 -j ACCEPT
+-A INPUT -s 10.216.98.103/32 -j ACCEPT
+-A INPUT -s 10.216.98.203/32 -j ACCEPT
+-A INPUT -s 95.79.111.100/32 -j ACCEPT
+-A INPUT -s 148.251.1.144/32 -j ACCEPT
+-A INPUT -s 148.251.1.145/32 -j ACCEPT
+-A INPUT -s 148.251.1.146/32 -j ACCEPT
+-A INPUT -s 88.198.158.22/32 -j ACCEPT
+-A INPUT -s 88.198.153.107/32 -j ACCEPT
+-A INPUT -s 88.198.152.253/32 -j ACCEPT
+-A INPUT -s 88.198.151.189/32 -j ACCEPT
+-A INPUT -s 88.198.153.50/32 -j ACCEPT
+-A INPUT -s 88.198.150.166/32 -j ACCEPT
+-A INPUT -s 88.198.148.187/32 -j ACCEPT
+-A INPUT -s 88.198.151.190/32 -j ACCEPT
+-A INPUT -s 88.198.148.186/32 -j ACCEPT
+-A INPUT -s 88.198.148.188/32 -j ACCEPT
+-A INPUT -s 148.251.49.230/32 -j ACCEPT
+-A INPUT -s 54.246.143.236/32 -j ACCEPT
+-A INPUT -s 54.246.220.120/32 -j ACCEPT
+-A INPUT -s 54.220.226.44/32 -j ACCEPT
+-A INPUT -s 54.229.20.2/32 -j ACCEPT
+-A INPUT -s 54.228.35.195/32 -j ACCEPT
+-A INPUT -s 54.246.203.40/32 -j ACCEPT
+-A INPUT -s 54.246.214.242/32 -j ACCEPT
+-A INPUT -s 54.246.214.249/32 -j ACCEPT
+-A INPUT -s 54.229.4.70/32 -j ACCEPT
+-A INPUT -s 54.246.153.173/32 -j ACCEPT
+-A INPUT -s 148.251.54.98/32 -j ACCEPT
+-A INPUT -s 148.251.54.99/32 -j ACCEPT
+-A INPUT -s 148.251.54.119/32 -j ACCEPT
+-A INPUT -s 148.251.1.148/32 -j ACCEPT
+-A INPUT -s 148.251.1.147/32 -j ACCEPT
+-A INPUT -s 144.76.224.22/32 -j ACCEPT
+-A INPUT -s 83.229.134.21/32 -j ACCEPT
+-A INPUT -s 78.46.154.38/32 -j ACCEPT
+-A INPUT -s 78.46.154.39/32 -j ACCEPT
+-A INPUT -s 78.46.154.40/32 -j ACCEPT
+-A INPUT -s 5.9.28.136/32 -j ACCEPT
+-A INPUT -s 54.72.95.179/32 -j ACCEPT
+-A INPUT -s 54.72.114.55/32 -j ACCEPT
+-A INPUT -s 54.220.248.124/32 -j ACCEPT
+-A INPUT -s 54.73.213.223/32 -j ACCEPT
+-A INPUT -s 54.216.209.234/32 -j ACCEPT
+-A INPUT -s 54.73.223.251/32 -j ACCEPT
+-A INPUT -s 54.179.20.71/32 -j ACCEPT
+-A INPUT -s 54.179.20.112/32 -j ACCEPT
+-A INPUT -s 54.254.17.191/32 -j ACCEPT
+-A INPUT -s 54.255.20.203/32 -j ACCEPT
+-A INPUT -s 54.74.134.154/32 -j ACCEPT
+-A INPUT -s 95.78.255.49/32 -j ACCEPT
+-A INPUT -s 78.47.220.118/32 -j ACCEPT
+-A INPUT -s 85.10.201.55/32 -j ACCEPT
+-A INPUT -s 128.199.45.19/32 -j ACCEPT
+-A INPUT -s 128.199.45.26/32 -j ACCEPT
+-A INPUT -s 128.199.45.29/32 -j ACCEPT
+-A INPUT -s 95.85.42.130/32 -j ACCEPT
+-A INPUT -s 95.85.42.128/32 -j ACCEPT
+-A INPUT -s 95.85.42.72/32 -j ACCEPT
+-A INPUT -s 95.85.42.68/32 -j ACCEPT
+-A INPUT -s 95.85.42.71/32 -j ACCEPT
+-A INPUT -s 128.199.42.252/32 -j ACCEPT
+-A INPUT -s 95.85.42.73/32 -j ACCEPT
+-A INPUT -s 188.226.177.41/32 -j ACCEPT
+-A INPUT -s 178.62.171.171/32 -j ACCEPT
+-A INPUT -s 178.62.220.219/32 -j ACCEPT
+-A INPUT -s 178.62.248.214/32 -j ACCEPT
+-A INPUT -s 178.62.225.24/32 -j ACCEPT
+-A INPUT -s 178.62.224.120/32 -j ACCEPT
+-A INPUT -s 178.62.225.123/32 -j ACCEPT
+-A INPUT -s 178.62.240.124/32 -j ACCEPT
+-A INPUT -s 178.62.222.81/32 -j ACCEPT
+-A INPUT -s 178.62.229.100/32 -j ACCEPT
+-A INPUT -s 178.62.204.123/32 -j ACCEPT
+-A INPUT -s 128.199.59.247/32 -j ACCEPT
+-A INPUT -s 178.62.214.111/32 -j ACCEPT
+-A INPUT -s 188.226.144.128/32 -j ACCEPT
+-A INPUT -s 95.85.44.155/32 -j ACCEPT
+-A INPUT -s 178.62.139.152/32 -j ACCEPT
+-A INPUT -s 128.199.59.235/32 -j ACCEPT
+-A INPUT -s 178.62.187.133/32 -j ACCEPT
+-A INPUT -s 95.85.21.49/32 -j ACCEPT
+-A INPUT -s 178.62.139.94/32 -j ACCEPT
+-A INPUT -s 178.62.164.243/32 -j ACCEPT
+-A INPUT -s 178.62.149.126/32 -j ACCEPT
+-A INPUT -s 128.199.60.11/32 -j ACCEPT
+-A INPUT -s 178.62.231.115/32 -j ACCEPT
+-A INPUT -s 178.62.190.104/32 -j ACCEPT
+-A INPUT -s 128.199.60.68/32 -j ACCEPT
+-A INPUT -s 95.85.39.51/32 -j ACCEPT
+-A INPUT -s 178.62.197.195/32 -j ACCEPT
+-A INPUT -s 128.199.60.19/32 -j ACCEPT
+-A INPUT -s 128.199.61.251/32 -j ACCEPT
+-A INPUT -s 144.76.224.112/32 -j ACCEPT
+-A INPUT -s 178.62.164.58/32 -j ACCEPT
+-A INPUT -s 178.62.162.183/32 -j ACCEPT
+-A INPUT -s 128.199.62.101/32 -j ACCEPT
+-A INPUT -s 178.159.250.27/32 -j ACCEPT
+-A INPUT -s 148.251.234.12/32 -j ACCEPT
+-A INPUT -s 148.251.238.109/32 -j ACCEPT
+-A INPUT -s 148.251.233.141/32 -j ACCEPT
+-A INPUT -s 136.243.137.66/32 -j ACCEPT
+-A INPUT -s 136.243.137.67/32 -j ACCEPT
+-A INPUT -s 148.251.249.66/32 -j ACCEPT
+-A INPUT -s 136.243.34.74/32 -j ACCEPT
+-A INPUT -s 138.201.238.166/32 -j ACCEPT
+-A INPUT -s 88.99.144.14/32 -j ACCEPT
+-A INPUT -s 88.99.147.77/32 -j ACCEPT
+-A INPUT -s 79.164.163.137/32 -j ACCEPT
+-A INPUT -s 148.251.6.45/32 -j ACCEPT
+-A INPUT -s 87.251.184.146/32 -j ACCEPT
+-A INPUT -s 148.251.43.241/32 -m comment --comment "prod-hzeu-rtb-db-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.44.98/32 -m comment --comment "prod-hzeu-rtb-db-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.51.178/32 -m comment --comment "prod-hzeu-rtb-db-3.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.52.113/32 -m comment --comment "prod-hzeu-rtb-db-4.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.79.131/32 -m comment --comment "prod-hzeu-rtb-as-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.80.68/32 -m comment --comment "prod-hzeu-rtb-as-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.6.45/32 -m comment --comment "prod-hzeu-rtb-infra-ops-1.datamind.ru" -j ACCEPT
+-A INPUT -s 78.47.1.56/32 -m comment --comment "prod-hzeu-rtb-infra-vpn-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.0.221/32 -m comment --comment "prod-hzeu-rtb-infra-metrics-1.datamind.ru" -j ACCEPT
+-A INPUT -s 178.63.67.145/32 -m comment --comment "prod-fveu-rtb-tcs-dmp-kafka-1.datamind.ru" -j ACCEPT
+-A INPUT -s 178.63.69.208/32 -m comment --comment "prod-fveu-rtb-tcs-dmp-kafka-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.174/32 -m comment --comment "prod-hzeu-rtb-mongo-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.234.30/32 -m comment --comment "prod-hzeu-rtb-mongo-2.datamind.ru" -j ACCEPT
+-A INPUT -s 144.76.185.254/32 -m comment --comment "prod-hzeu-rtb-predictors-1.datamind.ru" -j ACCEPT
+-A INPUT -s 144.76.186.62/32 -m comment --comment "prod-hzeu-rtb-cdh-master-1.datamind.ru" -j ACCEPT
+-A INPUT -s 94.130.11.122/32 -m comment --comment "prod-hzeu-rtb-cdh-worker-1.datamind.ru" -j ACCEPT
+-A INPUT -s 94.130.11.121/32 -m comment --comment "prod-hzeu-rtb-cdh-worker-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.237.196/32 -m comment --comment "prod-hzeu-rtb-dco-core-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.20/32 -m comment --comment "prod-hzeu-rtb-dco-core-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.213/32 -m comment --comment "prod-hzeu-rtb-dco-ui-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.176.227/32 -m comment --comment "prod-hzeu-rtb-rnd-1.datamind.ru" -j ACCEPT
+-A INPUT -s 46.4.106.111/32 -m comment --comment "prod-hzeu-rtb-anthill-app-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.87.137/32 -m comment --comment "prod-hzeu-rtb-anthill-app-2.datamind.ru" -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j DOCKER-USER
+-A FORWARD -j DOCKER-ISOLATION
+-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -o docker0 -j DOCKER
+-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+-A FORWARD -i docker0 -o docker0 -j ACCEPT
+-A DOCKER-ISOLATION -j RETURN
+-A DOCKER-USER -j RETURN
+You have new mail in /var/mail/root
+root@dmp-devel ~ #
+
+
+root@dmp-devel ~ # grep -A5 -B5 -ie "bsv" /var/log/auth.log
+Oct 13 15:40:01 dmp-devel CRON[13215]: pam_unix(cron:session): session closed for user m.postovoy
+Oct 13 15:40:01 dmp-devel CRON[13219]: pam_unix(cron:session): session closed for user root
+Oct 13 15:40:01 dmp-devel CRON[13222]: pam_unix(cron:session): session closed for user root
+Oct 13 15:40:02 dmp-devel CRON[13216]: pam_unix(cron:session): session closed for user m.postovoy
+Oct 13 15:40:07 dmp-devel CRON[13214]: pam_unix(cron:session): session closed for user m.postovoy
+Oct 13 15:40:29 dmp-devel sshd[13320]: Accepted password for bsv from 91.194.227.252 port 45279 ssh2
+Oct 13 15:40:29 dmp-devel sshd[13320]: pam_unix(sshd:session): session opened for user bsv by (uid=0)
+Oct 13 15:40:39 dmp-devel sudo:      bsv : TTY=pts/0 ; PWD=/home/bsv ; USER=root ; COMMAND=/bin/bash
+Oct 13 15:40:39 dmp-devel sudo: pam_unix(sudo:session): session opened for user root by bsv(uid=0)
+Oct 13 15:41:01 dmp-devel CRON[13402]: pam_unix(cron:session): session opened for user root by (uid=0)
+Oct 13 15:41:01 dmp-devel CRON[13399]: pam_unix(cron:session): session opened for user root by (uid=0)
+Oct 13 15:41:01 dmp-devel CRON[13401]: pam_unix(cron:session): session opened for user root by (uid=0)
+Oct 13 15:41:01 dmp-devel CRON[13400]: pam_unix(cron:session): session opened for user root by (uid=0)
+Oct 13 15:41:01 dmp-devel CRON[13398]: pam_unix(cron:session): session opened for user m.postovoy by (uid=0)
+root@dmp-devel ~ #
+
+
+................................................................................
+
+root@dmp-devel ~ # iptables -A INPUT -s 91.194.226.0/23 -p tcp -m tcp --dport 22 -j ACCEPT
+root@dmp-devel ~ #
+
+root@dmp-devel ~ # iptables -S
+...
+-A INPUT -s 148.251.87.137/32 -m comment --comment "prod-hzeu-rtb-anthill-app-2.datamind.ru" -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A INPUT -s 91.194.226.0/23 -p tcp -m tcp --dport 22 -j ACCEPT
+-A FORWARD -j DOCKER-USER
+...
+root@dmp-devel ~ #
+
+
+root@dmp-devel ~ # vim /etc/iptables/rules.v4
+
+...
+-A INPUT -s 91.194.226.0/23 -p tcp -m tcp --dport 22 -j ACCEPT
+# -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+# -I INPUT -p tcp -m tcp --dport 9876 -j ACCEPT
+-I INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-I INPUT -p icmp -j ACCEPT
+...
+
+
+................................................................................
+
+root@dmp-devel ~ # netfilter-persistent reload
+run-parts: executing /usr/share/netfilter-persistent/plugins.d/15-ip4tables start
+run-parts: executing /usr/share/netfilter-persistent/plugins.d/25-ip6tables start
+root@dmp-devel ~ # iptables -S
+-P INPUT ACCEPT
+-P FORWARD ACCEPT
+-P OUTPUT ACCEPT
+-N fail2ban-ssh
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -s 93.123.195.117/32 -j ACCEPT
+-A INPUT -s 46.20.75.201/32 -j ACCEPT
+-A INPUT -s 91.194.226.0/23 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 91.194.226.0/23 -j ACCEPT
+-A INPUT -s 46.242.125.129/32 -j ACCEPT
+-A INPUT -s 148.251.43.46/32 -j ACCEPT
+-A INPUT -s 148.251.1.139/32 -j ACCEPT
+-A INPUT -s 148.251.1.138/32 -j ACCEPT
+-A INPUT -s 148.251.1.137/32 -j ACCEPT
+-A INPUT -s 148.251.1.136/32 -j ACCEPT
+-A INPUT -s 148.251.1.135/32 -j ACCEPT
+-A INPUT -s 148.251.1.132/32 -j ACCEPT
+-A INPUT -s 148.251.1.131/32 -j ACCEPT
+-A INPUT -s 148.251.1.130/32 -j ACCEPT
+-A INPUT -s 88.198.167.20/32 -j ACCEPT
+-A INPUT -s 88.198.167.34/32 -j ACCEPT
+-A INPUT -s 88.198.167.32/32 -j ACCEPT
+-A INPUT -s 88.198.167.30/32 -j ACCEPT
+-A INPUT -s 88.198.167.28/32 -j ACCEPT
+-A INPUT -s 88.198.167.26/32 -j ACCEPT
+-A INPUT -s 88.198.167.24/32 -j ACCEPT
+-A INPUT -s 88.198.167.22/32 -j ACCEPT
+-A INPUT -s 148.251.1.143/32 -j ACCEPT
+-A INPUT -s 148.251.1.142/32 -j ACCEPT
+-A INPUT -s 148.251.1.141/32 -j ACCEPT
+-A INPUT -s 148.251.1.140/32 -j ACCEPT
+-A INPUT -s 148.251.1.134/32 -j ACCEPT
+-A INPUT -s 148.251.1.133/32 -j ACCEPT
+-A INPUT -s 144.76.92.4/32 -j ACCEPT
+-A INPUT -s 144.76.92.3/32 -j ACCEPT
+-A INPUT -s 172.17.0.0/16 -j ACCEPT
+-A INPUT -s 148.251.2.144/32 -j ACCEPT
+-A INPUT -s 78.47.115.117/32 -j ACCEPT
+-A INPUT -s 88.198.150.100/32 -j ACCEPT
+-A INPUT -s 88.198.150.101/32 -j ACCEPT
+-A INPUT -s 88.198.150.102/32 -j ACCEPT
+-A INPUT -s 10.216.98.103/32 -j ACCEPT
+-A INPUT -s 10.216.98.203/32 -j ACCEPT
+-A INPUT -s 95.79.111.100/32 -j ACCEPT
+-A INPUT -s 148.251.1.144/32 -j ACCEPT
+-A INPUT -s 148.251.1.145/32 -j ACCEPT
+-A INPUT -s 148.251.1.146/32 -j ACCEPT
+-A INPUT -s 88.198.158.22/32 -j ACCEPT
+-A INPUT -s 88.198.153.107/32 -j ACCEPT
+-A INPUT -s 88.198.152.253/32 -j ACCEPT
+-A INPUT -s 88.198.151.189/32 -j ACCEPT
+-A INPUT -s 88.198.153.50/32 -j ACCEPT
+-A INPUT -s 88.198.150.166/32 -j ACCEPT
+-A INPUT -s 88.198.148.187/32 -j ACCEPT
+-A INPUT -s 88.198.151.190/32 -j ACCEPT
+-A INPUT -s 88.198.148.186/32 -j ACCEPT
+-A INPUT -s 88.198.148.188/32 -j ACCEPT
+-A INPUT -s 148.251.49.230/32 -j ACCEPT
+-A INPUT -s 54.246.143.236/32 -j ACCEPT
+-A INPUT -s 54.246.220.120/32 -j ACCEPT
+-A INPUT -s 54.220.226.44/32 -j ACCEPT
+-A INPUT -s 54.229.20.2/32 -j ACCEPT
+-A INPUT -s 54.228.35.195/32 -j ACCEPT
+-A INPUT -s 54.246.203.40/32 -j ACCEPT
+-A INPUT -s 54.246.214.242/32 -j ACCEPT
+-A INPUT -s 54.246.214.249/32 -j ACCEPT
+-A INPUT -s 54.229.4.70/32 -j ACCEPT
+-A INPUT -s 54.246.153.173/32 -j ACCEPT
+-A INPUT -s 148.251.54.98/32 -j ACCEPT
+-A INPUT -s 148.251.54.99/32 -j ACCEPT
+-A INPUT -s 148.251.54.119/32 -j ACCEPT
+-A INPUT -s 148.251.1.148/32 -j ACCEPT
+-A INPUT -s 148.251.1.147/32 -j ACCEPT
+-A INPUT -s 144.76.224.22/32 -j ACCEPT
+-A INPUT -s 83.229.134.21/32 -j ACCEPT
+-A INPUT -s 78.46.154.38/32 -j ACCEPT
+-A INPUT -s 78.46.154.39/32 -j ACCEPT
+-A INPUT -s 78.46.154.40/32 -j ACCEPT
+-A INPUT -s 5.9.28.136/32 -j ACCEPT
+-A INPUT -s 54.72.95.179/32 -j ACCEPT
+-A INPUT -s 54.72.114.55/32 -j ACCEPT
+-A INPUT -s 54.220.248.124/32 -j ACCEPT
+-A INPUT -s 54.73.213.223/32 -j ACCEPT
+-A INPUT -s 54.216.209.234/32 -j ACCEPT
+-A INPUT -s 54.73.223.251/32 -j ACCEPT
+-A INPUT -s 54.179.20.71/32 -j ACCEPT
+-A INPUT -s 54.179.20.112/32 -j ACCEPT
+-A INPUT -s 54.254.17.191/32 -j ACCEPT
+-A INPUT -s 54.255.20.203/32 -j ACCEPT
+-A INPUT -s 54.74.134.154/32 -j ACCEPT
+-A INPUT -s 95.78.255.49/32 -j ACCEPT
+-A INPUT -s 78.47.220.118/32 -j ACCEPT
+-A INPUT -s 85.10.201.55/32 -j ACCEPT
+-A INPUT -s 128.199.45.19/32 -j ACCEPT
+-A INPUT -s 128.199.45.26/32 -j ACCEPT
+-A INPUT -s 128.199.45.29/32 -j ACCEPT
+-A INPUT -s 95.85.42.130/32 -j ACCEPT
+-A INPUT -s 95.85.42.128/32 -j ACCEPT
+-A INPUT -s 95.85.42.72/32 -j ACCEPT
+-A INPUT -s 95.85.42.68/32 -j ACCEPT
+-A INPUT -s 95.85.42.71/32 -j ACCEPT
+-A INPUT -s 128.199.42.252/32 -j ACCEPT
+-A INPUT -s 95.85.42.73/32 -j ACCEPT
+-A INPUT -s 188.226.177.41/32 -j ACCEPT
+-A INPUT -s 178.62.171.171/32 -j ACCEPT
+-A INPUT -s 178.62.220.219/32 -j ACCEPT
+-A INPUT -s 178.62.248.214/32 -j ACCEPT
+-A INPUT -s 178.62.225.24/32 -j ACCEPT
+-A INPUT -s 178.62.224.120/32 -j ACCEPT
+-A INPUT -s 178.62.225.123/32 -j ACCEPT
+-A INPUT -s 178.62.240.124/32 -j ACCEPT
+-A INPUT -s 178.62.222.81/32 -j ACCEPT
+-A INPUT -s 178.62.229.100/32 -j ACCEPT
+-A INPUT -s 178.62.204.123/32 -j ACCEPT
+-A INPUT -s 128.199.59.247/32 -j ACCEPT
+-A INPUT -s 178.62.214.111/32 -j ACCEPT
+-A INPUT -s 188.226.144.128/32 -j ACCEPT
+-A INPUT -s 95.85.44.155/32 -j ACCEPT
+-A INPUT -s 178.62.139.152/32 -j ACCEPT
+-A INPUT -s 128.199.59.235/32 -j ACCEPT
+-A INPUT -s 178.62.187.133/32 -j ACCEPT
+-A INPUT -s 95.85.21.49/32 -j ACCEPT
+-A INPUT -s 178.62.139.94/32 -j ACCEPT
+-A INPUT -s 178.62.164.243/32 -j ACCEPT
+-A INPUT -s 178.62.149.126/32 -j ACCEPT
+-A INPUT -s 128.199.60.11/32 -j ACCEPT
+-A INPUT -s 178.62.231.115/32 -j ACCEPT
+-A INPUT -s 178.62.190.104/32 -j ACCEPT
+-A INPUT -s 128.199.60.68/32 -j ACCEPT
+-A INPUT -s 95.85.39.51/32 -j ACCEPT
+-A INPUT -s 178.62.197.195/32 -j ACCEPT
+-A INPUT -s 128.199.60.19/32 -j ACCEPT
+-A INPUT -s 128.199.61.251/32 -j ACCEPT
+-A INPUT -s 144.76.224.112/32 -j ACCEPT
+-A INPUT -s 178.62.164.58/32 -j ACCEPT
+-A INPUT -s 178.62.162.183/32 -j ACCEPT
+-A INPUT -s 128.199.62.101/32 -j ACCEPT
+-A INPUT -s 178.159.250.27/32 -j ACCEPT
+-A INPUT -s 148.251.234.12/32 -j ACCEPT
+-A INPUT -s 148.251.238.109/32 -j ACCEPT
+-A INPUT -s 148.251.233.141/32 -j ACCEPT
+-A INPUT -s 136.243.137.66/32 -j ACCEPT
+-A INPUT -s 136.243.137.67/32 -j ACCEPT
+-A INPUT -s 148.251.249.66/32 -j ACCEPT
+-A INPUT -s 136.243.34.74/32 -j ACCEPT
+-A INPUT -s 138.201.238.166/32 -j ACCEPT
+-A INPUT -s 88.99.144.14/32 -j ACCEPT
+-A INPUT -s 88.99.147.77/32 -j ACCEPT
+-A INPUT -s 79.164.163.137/32 -j ACCEPT
+-A INPUT -s 148.251.6.45/32 -j ACCEPT
+-A INPUT -s 87.251.184.146/32 -j ACCEPT
+-A INPUT -s 148.251.43.241/32 -m comment --comment "prod-hzeu-rtb-db-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.44.98/32 -m comment --comment "prod-hzeu-rtb-db-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.51.178/32 -m comment --comment "prod-hzeu-rtb-db-3.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.52.113/32 -m comment --comment "prod-hzeu-rtb-db-4.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.79.131/32 -m comment --comment "prod-hzeu-rtb-as-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.80.68/32 -m comment --comment "prod-hzeu-rtb-as-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.6.45/32 -m comment --comment "prod-hzeu-rtb-infra-ops-1.datamind.ru" -j ACCEPT
+-A INPUT -s 78.47.1.56/32 -m comment --comment "prod-hzeu-rtb-infra-vpn-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.0.221/32 -m comment --comment "prod-hzeu-rtb-infra-metrics-1.datamind.ru" -j ACCEPT
+-A INPUT -s 178.63.67.145/32 -m comment --comment "prod-fveu-rtb-tcs-dmp-kafka-1.datamind.ru" -j ACCEPT
+-A INPUT -s 178.63.69.208/32 -m comment --comment "prod-fveu-rtb-tcs-dmp-kafka-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.174/32 -m comment --comment "prod-hzeu-rtb-mongo-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.234.30/32 -m comment --comment "prod-hzeu-rtb-mongo-2.datamind.ru" -j ACCEPT
+-A INPUT -s 144.76.185.254/32 -m comment --comment "prod-hzeu-rtb-predictors-1.datamind.ru" -j ACCEPT
+-A INPUT -s 144.76.186.62/32 -m comment --comment "prod-hzeu-rtb-cdh-master-1.datamind.ru" -j ACCEPT
+-A INPUT -s 94.130.11.122/32 -m comment --comment "prod-hzeu-rtb-cdh-worker-1.datamind.ru" -j ACCEPT
+-A INPUT -s 94.130.11.121/32 -m comment --comment "prod-hzeu-rtb-cdh-worker-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.237.196/32 -m comment --comment "prod-hzeu-rtb-dco-core-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.20/32 -m comment --comment "prod-hzeu-rtb-dco-core-2.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.238.213/32 -m comment --comment "prod-hzeu-rtb-dco-ui-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.176.227/32 -m comment --comment "prod-hzeu-rtb-rnd-1.datamind.ru" -j ACCEPT
+-A INPUT -s 46.4.106.111/32 -m comment --comment "prod-hzeu-rtb-anthill-app-1.datamind.ru" -j ACCEPT
+-A INPUT -s 148.251.87.137/32 -m comment --comment "prod-hzeu-rtb-anthill-app-2.datamind.ru" -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+root@dmp-devel ~ #
+
+
+root@dmp-devel ~ # iptables -S | egrep -ie "dport 22|reject"
+-A INPUT -s 91.194.226.0/23 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+root@dmp-devel ~ #
+
+
+
+................................................................................
+

@@ -1,0 +1,314 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   689381
+Название    №689381
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  11.01.2016 16:22
+Дата регистрации    11.01.2016 16:22
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Алексей, привет!
+
+На серверах vm-wlp-tst01, vm-wlp-tst02, vm-wlp-tst03 необходимо:
+1. Смонтировать следующие сетевые ресурсы:
+
+v6250-ds.tcsbank.ru:/vol/scan_agents/sca n_agents_mobile_test on /mnt/scan_agents_mobile_test type nfs (rw,vers=4,addr=10.217.67.9,clientaddr=10.216.33.16)
+
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out в точку /mnt/scandoc3
+
+2. Дать права (чтение/запись) пользователю wlp на директории:
+/mnt/scan_agents_mobile_test/siebel
+/mnt/scandoc3
+
+Спасибо.
+С уважением, Сергей.
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Кирсанов Сергей
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Кирсанов Сергей
+Контактный e-mail   s.kirsanov@tinkoff.ru
+Контактные телефоны 79266716062, 2264
+
+................................................................................
+
+[root@vm-wlp-tst01 ~]# showmount -e v6250-ds | grep "/vol/scan_agents/scan_agents_mobile_test " | egrep -e "vm-wlp-tst01|vm-wlp-tst02|vm-wlp-tst03"
+[root@vm-wlp-tst01 ~]# showmount -e v6250-ds | grep -i "/vol/atx_tif/atx_tif_test" | egrep -e "vm-wlp-tst01|vm-wlp-tst02|vm-wlp-tst03"
+
+[root@vm-wlp-tst01 ~]# host vm-wlp-tst01 ; host vm-wlp-tst02 ; host vm-wlp-tst03
+vm-wlp-tst01.tcsbank.ru has address 10.216.33.54
+vm-wlp-tst02.tcsbank.ru has address 10.216.33.55
+vm-wlp-tst03.tcsbank.ru has address 10.216.33.49
+[root@vm-wlp-tst01 ~]#
+
+[root@vm-wlp-tst01 ~]# id wlp
+uid=1002(wlp) gid=1002(wlp) groups=1002(wlp)
+[root@vm-wlp-tst01 ~]#
+
+................................................................................
+
+Дата
+Комментарий Автор
+11.01.2016 19:51    Администраторам СХД.
+
+Необходимо предоставить доступ с перечисленных трёх серверов до перечисленных двух nfs ресурсов.
+
+[root@vm-wlp-tst01 ~]# showmount -e v6250-ds | grep "/vol/scan_agents/scan_agents_mobile_test " | egrep -e "vm-wlp-tst01|vm-wlp-tst02|vm-wlp-tst03"
+[root@vm-wlp-tst01 ~]# showmount -e v6250-ds | grep -i "/vol/atx_tif/atx_tif_test" | egrep -e "vm-wlp-tst01|vm-wlp-tst02|vm-wlp-tst03"
+
+[root@vm-wlp-tst01 ~]# host vm-wlp-tst01 ; host vm-wlp-tst02 ; host vm-wlp-tst03
+vm-wlp-tst01.tcsbank.ru has address 10.216.33.54
+vm-wlp-tst02.tcsbank.ru has address 10.216.33.55
+vm-wlp-tst03.tcsbank.ru has address 10.216.33.49
+[root@vm-wlp-tst01 ~]#
+
+Учётная запись должна иметь возможность чтения/записи на nfs-ресурсы.
+[root@vm-wlp-tst01 ~]# id wlp
+uid=1002(wlp) gid=1002(wlp) groups=1002(wlp)
+[root@vm-wlp-tst01 ~]#
+Белогруд Сергей В
+
+................................................................................
+
+
+#   Tue Jan 12 11:57:13 MSK 2016
+
+[root@vm-wlp-tst01 ~]# mkdir /mnt/scan_agents_mobile_test
+[root@vm-wlp-tst01 ~]# mkdir /mnt/scandoc3
+
+[root@vm-wlp-tst01 ~]# vim /etc/fstab
+...
+# SD689381
+v6250-ds.tcsbank.ru:/vol/scan_agents/scan_agents_mobile_test    /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard         0 0
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out        /mnt/scandoc3   nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard         0 0
+
+[root@vm-wlp-tst01 ~]# mount /mnt/scan_agents_mobile_test
+[root@vm-wlp-tst01 ~]# mount /mnt/scandoc3
+
+[root@vm-wlp-tst01 ~]# df -h /mnt/scan_agents_mobile_test /mnt/scandoc3
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds.tcsbank.ru:/vol/scan_agents/scan_agents_mobile_test
+                      7.0T  6.0T  1.1T  85% /mnt/scan_agents_mobile_test
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out
+                       10T  5.5T  4.6T  55% /mnt/scandoc3
+[root@vm-wlp-tst01 ~]#
+
+[root@vm-wlp-tst01 ~]# su - wlp
+[wlp@vm-wlp-tst01 servers]$ ls /mnt/scan_agents_mobile_test/siebel/
+2014  2015  2016  fieldCollection  logs
+[wlp@vm-wlp-tst01 servers]$ ls /mnt/scandoc3/
+ls: cannot open directory /mnt/scandoc3/: Permission denied
+[wlp@vm-wlp-tst01 servers]$
+
+[wlp@vm-wlp-tst01 servers]$ ls -Alhd /mnt/scan_agents_mobile_test/siebel/
+drwxrwxrwx 7 root bin 4.0K Jan 11 11:38 /mnt/scan_agents_mobile_test/siebel/
+[wlp@vm-wlp-tst01 servers]$ ls -Alhd /mnt/scandoc3/
+drwxrwxrwx 3 root root 4.0K Jan 11 14:02 /mnt/scandoc3/
+[wlp@vm-wlp-tst01 servers]$
+
+[wlp@vm-wlp-tst01 servers]$ echo "test1"> /mnt/scan_agents_mobile_test/siebel/test.tmp
+[wlp@vm-wlp-tst01 servers]$ ls -Alh !$
+ls -Alh /mnt/scan_agents_mobile_test/siebel/test.tmp
+-rwxrwxrwx 1 wlp wlp 6 Jan 12 12:05 /mnt/scan_agents_mobile_test/siebel/test.tmp
+[wlp@vm-wlp-tst01 servers]$ cat /mnt/scan_agents_mobile_test/siebel/test.tmp
+test1
+[wlp@vm-wlp-tst01 servers]$ rm /mnt/scan_agents_mobile_test/siebel/test.tmp
+[wlp@vm-wlp-tst01 servers]$
+
+................................................................................
+................................................................................
+
+[root@vm-wlp-tst03 ~]# mount /mnt/scan_agents_mobile_test ; mount /mnt/scandoc3
+mount: wrong fs type, bad option, bad superblock on v6250-ds.tcsbank.ru:/vol/scan_agents/scan_agents_mobile_test,
+       missing codepage or helper program, or other error
+       (for several filesystems (e.g. nfs, cifs) you might
+       need a /sbin/mount.<type> helper program)
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+
+mount: wrong fs type, bad option, bad superblock on v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out,
+       missing codepage or helper program, or other error
+       (for several filesystems (e.g. nfs, cifs) you might
+       need a /sbin/mount.<type> helper program)
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+
+[root@vm-wlp-tst03 ~]#
+
+[root@vm-wlp-tst03 ~]# cat /etc/redhat-release
+CentOS release 6.6 (Final)
+[root@vm-wlp-tst03 ~]# service rpc status
+rpc: unrecognized service
+[root@vm-wlp-tst03 ~]# chkconfig --list | grep rpc
+[root@vm-wlp-tst03 ~]# chkconfig --list | grep nfs
+[root@vm-wlp-tst03 ~]# yum install nfs-utils
+Loaded plugins: fastestmirror, security
+Setting up Install Process
+Determining fastest mirrors
+ * base: mirror.corbina.net
+ * extras: mirror.corbina.net
+ * updates: mirror.corbina.net
+base                                                                                                                                                                                 | 3.7 kB     00:00
+extras                                                                                                                                                                               | 2.9 kB     00:00
+extras/primary_db                                                                                                                                                                    |  33 kB     00:00
+updates                                                                                                                                                                              | 3.4 kB     00:00
+updates/primary_db                                                                                                                                                                   | 3.3 MB     00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package nfs-utils.x86_64 1:1.2.3-64.el6 will be installed
+--> Processing Dependency: nfs-utils-lib >= 1.1.0-3 for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: keyutils >= 1.4-4 for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: rpcbind for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: python-argparse for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libtirpc for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libgssglue.so.1(libgssapi_CITI_2)(64bit) for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libgssglue for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libevent for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libtirpc.so.1()(64bit) for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libnfsidmap.so.0()(64bit) for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libgssglue.so.1()(64bit) for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Processing Dependency: libevent-1.4.so.2()(64bit) for package: 1:nfs-utils-1.2.3-64.el6.x86_64
+--> Running transaction check
+---> Package keyutils.x86_64 0:1.4-5.el6 will be installed
+---> Package libevent.x86_64 0:1.4.13-4.el6 will be installed
+---> Package libgssglue.x86_64 0:0.1-11.el6 will be installed
+---> Package libtirpc.x86_64 0:0.2.1-10.el6 will be installed
+---> Package nfs-utils-lib.x86_64 0:1.1.5-11.el6 will be installed
+---> Package python-argparse.noarch 0:1.2.1-2.1.el6 will be installed
+---> Package rpcbind.x86_64 0:0.2.0-11.el6_7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+============================================================================================================================================================================================================
+ Package                                              Arch                                        Version                                                Repository                                    Size
+============================================================================================================================================================================================================
+Installing:
+ nfs-utils                                            x86_64                                      1:1.2.3-64.el6                                         base                                         331 k
+Installing for dependencies:
+ keyutils                                             x86_64                                      1.4-5.el6                                              base                                          39 k
+ libevent                                             x86_64                                      1.4.13-4.el6                                           base                                          66 k
+ libgssglue                                           x86_64                                      0.1-11.el6                                             base                                          23 k
+ libtirpc                                             x86_64                                      0.2.1-10.el6                                           base                                          79 k
+ nfs-utils-lib                                        x86_64                                      1.1.5-11.el6                                           base                                          68 k
+ python-argparse                                      noarch                                      1.2.1-2.1.el6                                          base                                          48 k
+ rpcbind                                              x86_64                                      0.2.0-11.el6_7                                         updates                                       51 k
+
+Transaction Summary
+============================================================================================================================================================================================================
+Install       8 Package(s)
+
+Total download size: 705 k
+Installed size: 1.9 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/8): keyutils-1.4-5.el6.x86_64.rpm                                                                                                                                                 |  39 kB     00:00
+(2/8): libevent-1.4.13-4.el6.x86_64.rpm                                                                                                                                              |  66 kB     00:00
+(3/8): libgssglue-0.1-11.el6.x86_64.rpm                                                                                                                                              |  23 kB     00:00
+(4/8): libtirpc-0.2.1-10.el6.x86_64.rpm                                                                                                                                              |  79 kB     00:00
+(5/8): nfs-utils-1.2.3-64.el6.x86_64.rpm                                                                                                                                             | 331 kB     00:00
+(6/8): nfs-utils-lib-1.1.5-11.el6.x86_64.rpm                                                                                                                                         |  68 kB     00:00
+(7/8): python-argparse-1.2.1-2.1.el6.noarch.rpm                                                                                                                                      |  48 kB     00:00
+(8/8): rpcbind-0.2.0-11.el6_7.x86_64.rpm                                                                                                                                             |  51 kB     00:00
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                       628 kB/s | 705 kB     00:01
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : libgssglue-0.1-11.el6.x86_64                                                                                                                                                             1/8
+  Installing : libtirpc-0.2.1-10.el6.x86_64                                                                                                                                                             2/8
+  Installing : rpcbind-0.2.0-11.el6_7.x86_64                                                                                                                                                            3/8
+  Installing : python-argparse-1.2.1-2.1.el6.noarch                                                                                                                                                     4/8
+  Installing : libevent-1.4.13-4.el6.x86_64                                                                                                                                                             5/8
+  Installing : keyutils-1.4-5.el6.x86_64                                                                                                                                                                6/8
+  Installing : nfs-utils-lib-1.1.5-11.el6.x86_64                                                                                                                                                        7/8
+  Installing : 1:nfs-utils-1.2.3-64.el6.x86_64                                                                                                                                                          8/8
+  Verifying  : rpcbind-0.2.0-11.el6_7.x86_64                                                                                                                                                            1/8
+  Verifying  : keyutils-1.4-5.el6.x86_64                                                                                                                                                                2/8
+  Verifying  : libevent-1.4.13-4.el6.x86_64                                                                                                                                                             3/8
+  Verifying  : nfs-utils-lib-1.1.5-11.el6.x86_64                                                                                                                                                        4/8
+  Verifying  : libtirpc-0.2.1-10.el6.x86_64                                                                                                                                                             5/8
+  Verifying  : 1:nfs-utils-1.2.3-64.el6.x86_64                                                                                                                                                          6/8
+  Verifying  : libgssglue-0.1-11.el6.x86_64                                                                                                                                                             7/8
+  Verifying  : python-argparse-1.2.1-2.1.el6.noarch                                                                                                                                                     8/8
+
+Installed:
+  nfs-utils.x86_64 1:1.2.3-64.el6
+
+Dependency Installed:
+  keyutils.x86_64 0:1.4-5.el6     libevent.x86_64 0:1.4.13-4.el6 libgssglue.x86_64 0:0.1-11.el6 libtirpc.x86_64 0:0.2.1-10.el6 nfs-utils-lib.x86_64 0:1.1.5-11.el6 python-argparse.noarch 0:1.2.1-2.1.el6
+  rpcbind.x86_64 0:0.2.0-11.el6_7
+
+Complete!
+[root@vm-wlp-tst03 ~]#
+
+[root@vm-wlp-tst03 ~]# chkconfig --list | grep nfs
+nfs             0:off   1:off   2:off   3:off   4:off   5:off   6:off
+nfslock         0:off   1:off   2:off   3:on    4:on    5:on    6:off
+[root@vm-wlp-tst03 ~]# chkconfig --list | grep rpc
+rpcbind         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+rpcgssd         0:off   1:off   2:off   3:on    4:on    5:on    6:off
+rpcsvcgssd      0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@vm-wlp-tst03 ~]# mount /mnt/scan_agents_mobile_test ; mount /mnt/scandoc3
+mount.nfs: rpc.statd is not running but is required for remote locking.
+mount.nfs: Either use '-o nolock' to keep locks local, or start statd.
+mount.nfs: an incorrect mount option was specified
+mount.nfs: rpc.statd is not running but is required for remote locking.
+mount.nfs: Either use '-o nolock' to keep locks local, or start statd.
+mount.nfs: an incorrect mount option was specified
+[root@vm-wlp-tst03 ~]# service rpcbind start
+Starting rpcbind:                                          [  OK  ]
+[root@vm-wlp-tst03 ~]# mount /mnt/scan_agents_mobile_test ; mount /mnt/scandoc3
+[root@vm-wlp-tst03 ~]#
+
+[root@vm-wlp-tst03 ~]# df -h /mnt/scan_agents_mobile_test /mnt/scandoc3
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds.tcsbank.ru:/vol/scan_agents/scan_agents_mobile_test
+                      7.0T  6.0T  1.1T  85% /mnt/scan_agents_mobile_test
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out
+                       10T  5.5T  4.6T  55% /mnt/scandoc3
+[root@vm-wlp-tst03 ~]#
+
+................................................................................
+
+[root@vm-wlp-tst01 ~]# umount /mnt/scandoc3/
+[root@vm-wlp-tst01 ~]# su - wlp
+[wlp@vm-wlp-tst01 servers]$ ls -Alh /mnt/scandoc3/
+total 0
+[wlp@vm-wlp-tst01 servers]$ logout
+[root@vm-wlp-tst01 ~]# mount /mnt/scandoc3/
+[root@vm-wlp-tst01 ~]# su - wlp
+[wlp@vm-wlp-tst01 servers]$ ls -Alh /mnt/scandoc3/
+ls: cannot open directory /mnt/scandoc3/: Permission denied
+[wlp@vm-wlp-tst01 servers]$
+
+[wlp@vm-wlp-tst01 servers]$ echo "test2" > /mnt/scandoc3/test.tmp
+[wlp@vm-wlp-tst01 servers]$ ls -Alh !$
+ls -Alh /mnt/scandoc3/test.tmp
+-rwxrwxrwx 1 wlp wlp 6 Jan 12 15:17 /mnt/scandoc3/test.tmp
+[wlp@vm-wlp-tst01 servers]$ cat !$
+cat /mnt/scandoc3/test.tmp
+test2
+[wlp@vm-wlp-tst01 servers]$ rm !$
+rm /mnt/scandoc3/test.tmp
+[wlp@vm-wlp-tst01 servers]$
+
+
+
+
+
+
+
+
+

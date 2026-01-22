@@ -1,0 +1,154 @@
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="DS-PDU-E2-L" or object_type=host and host_name__contains="DS-PDU-E2-R"
+filename
+--------------------------------------------------------------------------------
+/usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-L.cfg
+/usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-R.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-L.cfg -o /usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-R.cfg
+...
+#электрика
+define service{
+    use                     generic-service
+    host_name               DS-PDU-E2-L
+    service_description     current bank1 A
+    check_command           rpdu2_current_bank1
+}
+define service{
+    use                     generic-service
+    host_name               DS-PDU-E2-L
+    service_description     current bank2 A
+    check_command           rpdu2_current_bank2
+}
+/usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-L.cfg [FORMAT=unix] [TYPE=CFG] [ASCII=1>3] [HEX=0>3] [POS=0025,0010][43%] [LEN=57]
+#электрика
+define service{
+    use                     generic-service
+    host_name               DS-PDU-E2-R
+    service_description     current bank1 A
+    check_command           rpdu2_current_bank1
+}
+define service{
+    use                     generic-service
+    host_name               DS-PDU-E2-R
+    service_description     current bank2 A
+    check_command           rpdu2_current_bank2
+}
+
+
+
+[root@vm-vol-nag4-tst objects]# grep -e rpdu2_current_bank1 -A 3 -B 3 commands.cfg
+...
+define command{
+                command_name rpdu2_current_bank1
+                #Limits MUST me multiplied by 10
+                command_line /usr/local/nagios/libexec/opt/plugins/snmp_temp_divide10.sh -H $HOSTADDRESS$ -w 77 -c 79 -C tcspub_123 -o .1.3.6.1.4.1.318.1.1.26.8.3.1.5.1 -P 2c
+}
+
+[root@vm-vol-nag4-tst objects]# grep -e rpdu2_current_bank2 -A 3 -B 3 commands.cfg
+...
+define command{
+                command_name rpdu2_current_bank2
+                #Limits MUST me multiplied by 10
+                command_line /usr/local/nagios/libexec/opt/plugins/snmp_temp_divide10.sh -H $HOSTADDRESS$ -w 77 -c 79 -C tcspub_123 -o .1.3.6.1.4.1.318.1.1.26.8.3.1.5.2 -P 2c
+}
+
+
+[root@vm-vol-nag4-tst objects]# head -n 5 /usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-L.cfg /usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-R.cfg
+==> /usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-L.cfg <==
+define host{
+    use                     pdu
+    host_name               DS-PDU-E2-L
+    address                 10.219.18.3
+    hostgroups              pdu-devices,ds-pdu-devices,ds-pdu-devices-rowe
+
+==> /usr/local/nagios/etc/objects/pdu/ds/DS-PDU-E2-R.cfg <==
+define host{
+    use                     pdu
+    host_name               DS-PDU-E2-R
+    address                 10.219.18.4
+    hostgroups              pdu-devices,ds-pdu-devices,ds-pdu-devices-rowe
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/opt/plugins/snmp_temp_divide10.sh -H 10.219.18.3 -w 77 -c 79 -C tcspub_123 -o .1.3.6.1.4.1.318.1.1.26.8.3.1.5.2 -P 2c
+SNMP OK - 2.8 | iso.3.6.1.4.1.318.1.1.26.8.3.1.5.2=2.8
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# cat /usr/local/nagios/libexec/opt/plugins/snmp_temp_divide10.sh
+#!/bin/bash
+
+STATE_OK=0
+STATE_WARN=1
+STATE_CRIT=2
+STATE_UNKNOWN=3
+
+
+snmp=`/usr/lib64/nagios/plugins/check_snmp $@`
+
+STATE=$?
+
+if [ $STATE -ge $STATE_UNKNOWN ] ; then
+    echo "SNMP problem - No data received from host"
+    exit $STATE_UNKNOWN
+fi
+
+val=`echo $snmp|cut -d" " -f4`
+val1=${val//\*/}
+if [[ $val1 -lt 0 || "$val1" == "No" ]]; then
+  ####No Such Object available on this agent at this OID
+  echo "No valid data returned"
+  exit $STATE_UNKNOWN
+fi
+
+echo ${snmp//\*/}|awk '{ $4 = $4 / 10; split($6,a,"="); $6 = a[1] "=" (a[2] / 10); print $0 }'
+exit $STATE
+
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_snmp -H 10.219.18.3 -w 77 -c 79 -C tcspub_123 -o .1.3.6.1.4.1.318.1.1.26.8.3.1.5.2 -P 2c
+SNMP OK - 28 | iso.3.6.1.4.1.318.1.1.26.8.3.1.5.2=28
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_snmp --help
+...
+ -w, --warning=THRESHOLD(s)
+    Warning threshold range(s)
+ -c, --critical=THRESHOLD(s)
+    Critical threshold range(s)
+...
+
+
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_snmp -H 10.219.18.3 -w 27 -c 79 -C tcspub_123 -o .1.3.6.1.4.1.318.1.1.26.8.3.1.5.2 -P 2c
+SNMP WARNING - *28* | iso.3.6.1.4.1.318.1.1.26.8.3.1.5.2=28
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_snmp -H 10.219.18.3 -w 27 -c 28 -C tcspub_123 -o .1.3.6.1.4.1.318.1.1.26.8.3.1.5.2 -P 2c
+SNMP WARNING - *28* | iso.3.6.1.4.1.318.1.1.26.8.3.1.5.2=28
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_snmp -H 10.219.18.3 -w 26 -c 27 -C tcspub_123 -o .1.3.6.1.4.1.318.1.1.26.8.3.1.5.2 -P 2c
+SNMP CRITICAL - *28* | iso.3.6.1.4.1.318.1.1.26.8.3.1.5.2=28
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# snmp="tes1" ; echo ${snmp//\*/}
+tes1
+[root@vm-vol-nag4-tst objects]# snmp="tes1 ok" ; echo ${snmp//\*/}
+tes1 ok
+[root@vm-vol-nag4-tst objects]# snmp="tes1 ok asd" ; echo ${snmp//\*/}
+tes1 ok asd
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+
+
+

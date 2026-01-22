@@ -1,0 +1,575 @@
+
+................................................................................
+
+root@ds-stp-prod-app09:~# cat /etc/os-release
+NAME="Ubuntu"
+VERSION="16.04.6 LTS (Xenial Xerus)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 16.04.6 LTS"
+VERSION_ID="16.04"
+HOME_URL="http://www.ubuntu.com/"
+SUPPORT_URL="http://help.ubuntu.com/"
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+VERSION_CODENAME=xenial
+UBUNTU_CODENAME=xenial
+
+root@ds-stp-prod-app09:~# ls -Alh /opt/logs/stp-cadb-api.log
+-rw-r--r-- 1 root root 21M Sep  9 17:21 /opt/logs/stp-cadb-api.log
+
+root@ds-stp-prod-app09:~# systemctl status collector-sidecar
+● collector-sidecar.service
+   Loaded: not-found (Reason: No such file or directory)
+   Active: inactive (dead)
+root@ds-stp-prod-app09:~#
+
+#
+#	http://docs.graylog.org/en/3.1/pages/sidecar.html
+#
+#	https://github.com/Graylog2/collector-sidecar/releases
+#
+[s.belogrud@TCS4357]# scp /drives/c/Users/s.belogrud/Downloads/graylog-sidecar_1.0.2-1_amd64.deb bsv@ds-stp-prod-app09:/tmp/
+graylog-sidecar_1.0.2-1_amd64.deb                                                                                                                                             100% 2895KB  16.8MB/s   00:00
+[s.belogrud@TCS4357]#
+
+root@ds-stp-prod-app09:~# dpkg -i /tmp/graylog-sidecar_1.0.2-1_amd64.deb
+Selecting previously unselected package graylog-sidecar.
+(Reading database ... 133274 files and directories currently installed.)
+Preparing to unpack .../graylog-sidecar_1.0.2-1_amd64.deb ...
+Unpacking graylog-sidecar (1.0.2-1) ...
+Setting up graylog-sidecar (1.0.2-1) ...
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# sudo graylog-sidecar -service install
+
+root@ds-stp-prod-app09:~# systemctl status graylog-sidecar
+● graylog-sidecar.service - Wrapper service for Graylog controlled collector
+   Loaded: loaded (/etc/systemd/system/graylog-sidecar.service; enabled; vendor preset: enabled)
+   Active: inactive (dead)
+root@ds-stp-prod-app09:~#
+
+
+................................................................................
+
+root@ds-stp-prod-app09:~# systemctl start graylog-sidecar
+root@ds-stp-prod-app09:~# systemctl status graylog-sidecar
+● graylog-sidecar.service - Wrapper service for Graylog controlled collector
+   Loaded: loaded (/etc/systemd/system/graylog-sidecar.service; enabled; vendor preset: enabled)
+   Active: activating (auto-restart) (Result: exit-code) since Mon 2019-09-09 18:23:48 MSK; 8s ago
+  Process: 30417 ExecStart=/usr/bin/graylog-sidecar (code=exited, status=1/FAILURE)
+ Main PID: 30417 (code=exited, status=1/FAILURE)
+
+Sep 09 18:23:48 ds-stp-prod-app09.tcsbank.ru systemd[1]: graylog-sidecar.service: Unit entered failed state.
+Sep 09 18:23:48 ds-stp-prod-app09.tcsbank.ru systemd[1]: graylog-sidecar.service: Failed with result 'exit-code'.
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# less /var/log/syslog
+...
+Sep  9 11:25:48 ds-stp-prod-app09 graylog-sidecar[30545]: time="2019-09-09T18:25:48+03:00" level=fatal msg="No API token was configured."
+Sep  9 11:25:48 ds-stp-prod-app09 systemd[1]: graylog-sidecar.service: Main process exited, code=exited, status=1/FAILURE
+Sep  9 11:25:48 ds-stp-prod-app09 systemd[1]: graylog-sidecar.service: Unit entered failed state.
+Sep  9 11:25:48 ds-stp-prod-app09 systemd[1]: graylog-sidecar.service: Failed with result 'exit-code'.
+...
+
+................................................................................
+
+root@ds-stp-prod-app09:~# mkdir ~/work/20190909-1829
+root@ds-stp-prod-app09:~# cp /etc/graylog/sidecar/sidecar.yml ~/work/20190909-1829/
+root@ds-stp-prod-app09:~# rm /etc/graylog/sidecar/sidecar.yml
+root@ds-stp-prod-app09:~# systemctl start graylog-sidecar
+root@ds-stp-prod-app09:~# systemctl status graylog-sidecar
+● graylog-sidecar.service - Wrapper service for Graylog controlled collector
+   Loaded: loaded (/etc/systemd/system/graylog-sidecar.service; enabled; vendor preset: enabled)
+   Active: activating (auto-restart) (Result: exit-code) since Mon 2019-09-09 18:31:49 MSK; 7s ago
+  Process: 30930 ExecStart=/usr/bin/graylog-sidecar (code=exited, status=1/FAILURE)
+ Main PID: 30930 (code=exited, status=1/FAILURE)
+
+Sep 09 18:31:49 ds-stp-prod-app09.tcsbank.ru systemd[1]: graylog-sidecar.service: Unit entered failed state.
+Sep 09 18:31:49 ds-stp-prod-app09.tcsbank.ru systemd[1]: graylog-sidecar.service: Failed with result 'exit-code'.
+root@ds-stp-prod-app09:~#
+
+................................................................................
+
+root@ds-stp-prod-app09:~# curl -i -H 'Accept: application/json' 'https://graylog.tcsbank.ru/api/?pretty=true'
+curl: (60) server certificate verification failed. CAfile: /etc/ssl/certs/ca-certificates.crt CRLfile: none
+More details here: http://curl.haxx.se/docs/sslcerts.html
+
+curl performs SSL certificate verification by default, using a "bundle"
+ of Certificate Authority (CA) public keys (CA certs). If the default
+ bundle file isn't adequate, you can specify an alternate file
+ using the --cacert option.
+If this HTTPS server uses a certificate signed by a CA represented in
+ the bundle, the certificate verification probably failed due to a
+ problem with the certificate (it might be expired, or the name might
+ not match the domain name in the URL).
+If you'd like to turn off curl's verification of the certificate, use
+ the -k (or --insecure) option.
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# curl -k -i -H 'Accept: application/json' 'https://graylog.tcsbank.ru/api/?pretty=true'
+HTTP/1.1 200 OK
+Server: nginx/1.12.2
+Date: Mon, 09 Sep 2019 15:44:07 GMT
+Content-Type: application/json
+Content-Length: 222
+Connection: keep-alive
+X-Graylog-Node-ID: ds01p
+X-Runtime-Microseconds: 528
+
+{
+  "cluster_id" : "255cc8bf-dc46-49b9-99b4-8ab91fd28d3e",
+  "node_id" : "ds01p",
+  "version" : "2.5.2+4f6d123",
+  "tagline" : "Manage your logs in the dark and have lasers going and make it look like you're from space!"
+}root@ds-stp-prod-app09:~#
+
+................................................................................
+................................................................................
+
+[s.belogrud@TCS4357]# scp /drives/c/Users/s.belogrud/Downloads/collector-sidecar_0.1.8-1_amd64.deb bsv@ds-stp-prod-app09:/tmp/
+collector-sidecar_0.1.8-1_amd64.deb                                                                                                                                           100%   13MB  25.9MB/s   00:00
+[s.belogrud@TCS4357]#
+
+root@ds-stp-prod-app09:~# graylog-sidecar -service uninstall
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# apt-get remove graylog-sidecar
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  libtomcrypt0 libtommath0 linux-headers-4.4.0-143 linux-headers-4.4.0-143-generic linux-modules-4.4.0-143-generic timelimit
+Use 'sudo apt autoremove' to remove them.
+The following packages will be REMOVED:
+  graylog-sidecar
+0 upgraded, 0 newly installed, 1 to remove and 57 not upgraded.
+After this operation, 7,668 kB disk space will be freed.
+Do you want to continue? [Y/n] Y
+(Reading database ... 133284 files and directories currently installed.)
+Removing graylog-sidecar (1.0.2-1) ...
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# dpkg -i /tmp/collector-sidecar_0.1.8-1_amd64.deb
+Selecting previously unselected package collector-sidecar.
+(Reading database ... 133277 files and directories currently installed.)
+Preparing to unpack .../collector-sidecar_0.1.8-1_amd64.deb ...
+Unpacking collector-sidecar (0.1.8-1) ...
+Setting up collector-sidecar (0.1.8-1) ...
+root@ds-stp-prod-app09:~#
+
+#
+#	Was removed previous installation directory and file.
+#
+root@ds-stp-prod-app09:~# rm /etc/graylog/sidecar/sidecar.yml
+root@ds-stp-prod-app09:~# rmdir /etc/graylog/sidecar/
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# ls -Alh /etc/graylog/collector-sidecar/
+total 8.0K
+-rw-rw-r-- 1 root root  668 Jan 22  2019 collector_sidecar.yml
+drwxrwxr-x 2 root root 4.0K Jan 22  2019 generated
+root@ds-stp-prod-app09:~# ls -Alh /etc/graylog/collector-sidecar/generated/
+total 0
+root@ds-stp-prod-app09:~#
+
+#
+#	Default value of the file.
+#
+root@ds-stp-prod-app09:~# vim /etc/graylog/collector-sidecar/collector_sidecar.yml
+server_url: http://127.0.0.1:9000/api/
+update_interval: 10
+tls_skip_verify: false
+send_status: true
+list_log_files:
+collector_id: file:/etc/graylog/collector-sidecar/collector-id
+cache_path: /var/cache/graylog/collector-sidecar
+log_path: /var/log/graylog/collector-sidecar
+log_rotation_time: 86400
+log_max_age: 604800
+tags:
+    - linux
+    - apache
+backends:
+    - name: nxlog
+      enabled: false
+      binary_path: /usr/bin/nxlog
+      configuration_path: /etc/graylog/collector-sidecar/generated/nxlog.conf
+    - name: filebeat
+      enabled: true
+      binary_path: /usr/bin/filebeat
+      configuration_path: /etc/graylog/collector-sidecar/generated/filebeat.yml
+
+#
+#	I've made only three changes.
+#
+root@ds-stp-prod-app09:~# diff -Nuar ~/work/20190910-1155/graylog/collector-sidecar/collector_sidecar.yml /etc/graylog/collector-sidecar/collector_sidecar.yml
+--- /root/work/20190910-1155/graylog/collector-sidecar/collector_sidecar.yml    2019-09-10 11:55:54.885681675 +0300
++++ /etc/graylog/collector-sidecar/collector_sidecar.yml        2019-09-10 12:05:43.473168020 +0300
+@@ -1,6 +1,6 @@
+-server_url: http://127.0.0.1:9000/api/
++server_url: https://graylog.tcsbank.ru/api/
+ update_interval: 10
+-tls_skip_verify: false
++tls_skip_verify: true
+ send_status: true
+ list_log_files:
+ collector_id: file:/etc/graylog/collector-sidecar/collector-id
+@@ -9,8 +9,7 @@
+ log_rotation_time: 86400
+ log_max_age: 604800
+ tags:
+-    - linux
+-    - apache
++    - stp-cadb-api
+ backends:
+     - name: nxlog
+       enabled: false
+root@ds-stp-prod-app09:~#
+
+
+
+#		#	Wrong attempt.
+#		root@ds-stp-prod-app09:~# diff -Nuar /etc/graylog/collector-sidecar/collector_sidecar.yml ~/work/20190910-1155/graylog/collector-sidecar/collector_sidecar.yml
+#		--- /etc/graylog/collector-sidecar/collector_sidecar.yml        2019-09-10 11:58:55.603978219 +0300
+#		+++ /root/work/20190910-1155/graylog/collector-sidecar/collector_sidecar.yml    2019-09-10 11:55:54.885681675 +0300
+#		@@ -1,6 +1,6 @@
+#		-server_url: https://graylog.tcsbank.ru/api/
+#		+server_url: http://127.0.0.1:9000/api/
+#		 update_interval: 10
+#		-tls_skip_verify: true
+#		+tls_skip_verify: false
+#		 send_status: true
+#		 list_log_files:
+#		 collector_id: file:/etc/graylog/collector-sidecar/collector-id
+#		root@ds-stp-prod-app09:~#
+
+#
+#	Here is about version 2.5 of graylog.
+#	http://docs.graylog.org/en/2.5/pages/collector_sidecar.html
+#
+root@ds-stp-prod-app09:~# graylog-collector-sidecar -service install
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# systemctl start collector-sidecar
+
+#		Wrong start.
+#
+#		root@ds-stp-prod-app09:~# systemctl status collector-sidecar
+#		● collector-sidecar.service - Wrapper service for Graylog controlled collector
+#		   Loaded: loaded (/etc/systemd/system/collector-sidecar.service; enabled; vendor preset: enabled)
+#		   Active: active (running) since Tue 2019-09-10 12:03:52 MSK; 7s ago
+#		 Main PID: 3757 (graylog-collect)
+#		    Tasks: 12
+#		   Memory: 1.4M
+#		      CPU: 47ms
+#		   CGroup: /system.slice/collector-sidecar.service
+#		           └─3757 /usr/bin/graylog-collector-sidecar
+#		
+#		Sep 10 12:03:52 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:52+03:00" level=info msg="Starting signal distributor"
+#		Sep 10 12:03:52 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:52+03:00" level=info msg="[filebeat] Starting (exec driver)"
+#		Sep 10 12:03:53 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:53+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 1/3."
+#		Sep 10 12:03:53 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:53+03:00" level=info msg="[filebeat] Stopping"
+#		Sep 10 12:03:55 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:55+03:00" level=info msg="[filebeat] Starting (exec driver)"
+#		Sep 10 12:03:56 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:56+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 2/3."
+#		Sep 10 12:03:56 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:56+03:00" level=info msg="[filebeat] Stopping"
+#		Sep 10 12:03:58 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:58+03:00" level=info msg="[filebeat] Starting (exec driver)"
+#		Sep 10 12:03:59 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:59+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 3/3."
+#		Sep 10 12:03:59 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[3757]: time="2019-09-10T12:03:59+03:00" level=info msg="[filebeat] Stopping"
+#		root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# systemctl start collector-sidecar
+
+#
+#	Unsuccessful attempt to start filebeat.
+#
+root@ds-stp-prod-app09:~# systemctl status collector-sidecar
+● collector-sidecar.service - Wrapper service for Graylog controlled collector
+   Loaded: loaded (/etc/systemd/system/collector-sidecar.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2019-09-10 12:08:59 MSK; 5s ago
+ Main PID: 4124 (graylog-collect)
+    Tasks: 11
+   Memory: 1.3M
+      CPU: 34ms
+   CGroup: /system.slice/collector-sidecar.service
+           └─4124 /usr/bin/graylog-collector-sidecar
+
+Sep 10 12:08:59 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:08:59+03:00" level=info msg="Using collector-id: aabe2cab-59a5-49e6-9d8b-02297b0dc953"
+Sep 10 12:08:59 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:08:59+03:00" level=info msg="No node-id was configured, falling back to hostname"
+Sep 10 12:08:59 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:08:59+03:00" level=info msg="Fetching configurations tagged by: [stp-cadb-api]"
+Sep 10 12:08:59 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:08:59+03:00" level=info msg="Starting signal distributor"
+Sep 10 12:08:59 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:08:59+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:09:00 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:00+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 1/3."
+Sep 10 12:09:00 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:00+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:09:02 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:02+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:09:03 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:03+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 2/3."
+Sep 10 12:09:03 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:03+03:00" level=info msg="[filebeat] Stopping"
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# systemctl status collector-sidecar
+● collector-sidecar.service - Wrapper service for Graylog controlled collector
+   Loaded: loaded (/etc/systemd/system/collector-sidecar.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2019-09-10 12:08:59 MSK; 44s ago
+ Main PID: 4124 (graylog-collect)
+    Tasks: 11
+   Memory: 2.8M
+      CPU: 72ms
+   CGroup: /system.slice/collector-sidecar.service
+           └─4124 /usr/bin/graylog-collector-sidecar
+
+Sep 10 12:09:03 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:03+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:09:05 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:05+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:09:06 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:06+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 3/3."
+Sep 10 12:09:06 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:06+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:09:08 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:08+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:09:09 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:09+03:00" level=error msg="[filebeat] Unable to start collector after 3 tries, giving up!"
+Sep 10 12:09:09 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:09+03:00" level=info msg="[RequestConfiguration] No configuration found for configured tags!"
+Sep 10 12:09:19 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:19+03:00" level=info msg="[RequestConfiguration] No configuration found for configured tags!"
+Sep 10 12:09:29 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:29+03:00" level=info msg="[RequestConfiguration] No configuration found for configured tags!"
+Sep 10 12:09:39 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[4124]: time="2019-09-10T12:09:39+03:00" level=info msg="[RequestConfiguration] No configuration found for configured tags!"
+root@ds-stp-prod-app09:~# 
+
+root@ds-stp-prod-app09:~# ls -Alh /etc/graylog/collector-sidecar/generated/
+total 0
+root@ds-stp-prod-app09:~#
+
+
+#
+#	I've changed https://graylog.tcsbank.ru/api/ to https://ha-graylog.tcsbank.ru/api/.
+#	And looks like now configuration for filebeat was taken.
+#
+root@ds-stp-prod-app09:~# diff -Nuar ~/work/20190910-1155/graylog/collector-sidecar/collector_sidecar.yml /etc/graylog/collector-sidecar/collector_sidecar.yml
+--- /root/work/20190910-1155/graylog/collector-sidecar/collector_sidecar.yml    2019-09-10 11:55:54.885681675 +0300
++++ /etc/graylog/collector-sidecar/collector_sidecar.yml        2019-09-10 12:22:20.185998245 +0300
+@@ -1,6 +1,6 @@
+-server_url: http://127.0.0.1:9000/api/
++server_url: https://ha-graylog.tcsbank.ru/api/
+ update_interval: 10
+-tls_skip_verify: false
++tls_skip_verify: true
+ send_status: true
+ list_log_files:
+ collector_id: file:/etc/graylog/collector-sidecar/collector-id
+@@ -9,8 +9,7 @@
+ log_rotation_time: 86400
+ log_max_age: 604800
+ tags:
+-    - linux
+-    - apache
++    - stp-cadb-api
+ backends:
+     - name: nxlog
+       enabled: false
+root@ds-stp-prod-app09:~#
+
+
+root@ds-stp-prod-app09:~# systemctl status collector-sidecar
+● collector-sidecar.service - Wrapper service for Graylog controlled collector
+   Loaded: loaded (/etc/systemd/system/collector-sidecar.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2019-09-10 12:22:25 MSK; 10s ago
+ Main PID: 5171 (graylog-collect)
+    Tasks: 11
+   Memory: 2.3M
+      CPU: 83ms
+   CGroup: /system.slice/collector-sidecar.service
+           └─5171 /usr/bin/graylog-collector-sidecar
+
+Sep 10 12:22:29 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:29+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:22:31 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:31+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:22:32 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:32+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 3/3."
+Sep 10 12:22:32 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:32+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:22:34 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:34+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:22:35 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:35+03:00" level=error msg="[filebeat] Unable to start collector after 3 tries, giving up!"
+Sep 10 12:22:35 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:35+03:00" level=error msg="stat /var/cache/graylog: no such file or directory"
+Sep 10 12:22:35 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:35+03:00" level=info msg="Trying to create directory for: /var/cache/graylog/collector-sidecar"
+Sep 10 12:22:35 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:35+03:00" level=info msg="[filebeat] Configuration change detected, rewriting configuration file."
+Sep 10 12:22:35 ds-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[5171]: time="2019-09-10T12:22:35+03:00" level=info msg="[filebeat] Stopping"
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# systemctl enable collector-sidecar
+root@ds-stp-prod-app09:~#
+
+root@ds-stp-prod-app09:~# ls -Alh /etc/graylog/collector-sidecar/generated/
+total 4.0K
+-rw-r--r-- 1 root root 531 Sep 10 12:22 filebeat.yml
+root@ds-stp-prod-app09:~#
+
+
+#
+#	Hoorahhh!
+#	I see path to file "/opt/logs/stp-cadb-api.log", what will be collected by filebeat.
+#
+
+root@ds-stp-prod-app09:~# cat /etc/graylog/collector-sidecar/generated/filebeat.yml
+filebeat:
+  prospectors:
+  - encoding: plain
+    exclude_files: []
+    fields:
+      collector_node_id: ds-stp-prod-app09.tcsbank.ru
+      gl2_source_collector: aabe2cab-59a5-49e6-9d8b-02297b0dc953
+      type: log
+    ignore_older: 0
+    paths:
+    - /opt/logs/stp-cadb-api.log
+    scan_frequency: 10s
+    tail_files: true
+    type: log
+output:
+  logstash:
+    hosts:
+    - ha-graylog.tcsbank.ru:12076
+path:
+  data: /var/cache/graylog/collector-sidecar/filebeat/data
+  logs: /var/log/graylog/collector-sidecar
+tags:
+- stp-cadb-api
+root@ds-stp-prod-app09:~#
+
+................................................................................
+................................................................................
+................................................................................
+
+#
+#	Doing the same for the second host.
+#
+
+[s.belogrud@TCS4357]# scp /drives/c/Users/s.belogrud/Downloads/collector-sidecar_0.1.8-1_amd64.deb bsv@m1-stp-prod-app09:/tmp/
+Warning: Permanently added 'm1-stp-prod-app09' (RSA) to the list of known hosts.
+collector-sidecar_0.1.8-1_amd64.deb                                                                                                                                           100%   13MB  13.7MB/s   00:00
+[s.belogrud@TCS4357]# ssh bsv@m1-stp-prod-app09
+Welcome to Ubuntu 16.04.6 LTS (GNU/Linux 4.4.0-151-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+63 packages can be updated.
+26 updates are security updates.
+
+
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+bsv@m1-stp-prod-app09:~$ sudo -i
+[sudo] password for bsv:
+root@m1-stp-prod-app09:~#
+
+root@m1-stp-prod-app09:~# dpkg -i /tmp/collector-sidecar_0.1.8-1_amd64.deb
+Selecting previously unselected package collector-sidecar.
+(Reading database ... 133274 files and directories currently installed.)
+Preparing to unpack .../collector-sidecar_0.1.8-1_amd64.deb ...
+Unpacking collector-sidecar (0.1.8-1) ...
+Setting up collector-sidecar (0.1.8-1) ...
+root@m1-stp-prod-app09:~# 
+
+root@m1-stp-prod-app09:~# graylog-collector-sidecar -service install
+
+root@m1-stp-prod-app09:~# systemctl enable collector-sidecar
+
+root@m1-stp-prod-app09:~# vim /etc/graylog/collector-sidecar/collector_sidecar.yml
+root@m1-stp-prod-app09:~# cat /etc/graylog/collector-sidecar/collector_sidecar.yml
+server_url: https://ha-graylog.tcsbank.ru/api/
+update_interval: 10
+tls_skip_verify: true
+send_status: true
+list_log_files:
+collector_id: file:/etc/graylog/collector-sidecar/collector-id
+cache_path: /var/cache/graylog/collector-sidecar
+log_path: /var/log/graylog/collector-sidecar
+log_rotation_time: 86400
+log_max_age: 604800
+tags:
+    - stp-cadb-api
+backends:
+    - name: nxlog
+      enabled: false
+      binary_path: /usr/bin/nxlog
+      configuration_path: /etc/graylog/collector-sidecar/generated/nxlog.conf
+    - name: filebeat
+      enabled: true
+      binary_path: /usr/bin/filebeat
+      configuration_path: /etc/graylog/collector-sidecar/generated/filebeat.yml
+root@m1-stp-prod-app09:~#
+
+root@m1-stp-prod-app09:~# systemctl start collector-sidecar
+
+root@m1-stp-prod-app09:~# systemctl status collector-sidecar
+● collector-sidecar.service - Wrapper service for Graylog controlled collector
+   Loaded: loaded (/etc/systemd/system/collector-sidecar.service; enabled; vendor preset: enabled)
+   Active: active (running) since Tue 2019-09-10 12:45:27 MSK; 29s ago
+ Main PID: 30847 (graylog-collect)
+    Tasks: 27
+   Memory: 14.7M
+      CPU: 202ms
+   CGroup: /system.slice/collector-sidecar.service
+           ├─30847 /usr/bin/graylog-collector-sidecar
+           └─30918 /usr/bin/filebeat -c /etc/graylog/collector-sidecar/generated/filebeat.yml
+
+Sep 10 12:45:33 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:33+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:45:34 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:34+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 3/3."
+Sep 10 12:45:34 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:34+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:45:36 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:36+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=error msg="[filebeat] Unable to start collector after 3 tries, giving up!"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=error msg="stat /var/cache/graylog: no such file or directory"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=info msg="Trying to create directory for: /var/cache/graylog/collector-sidecar"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=info msg="[filebeat] Configuration change detected, rewriting configuration file."
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:45:39 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:39+03:00" level=info msg="[filebeat] Starting (exec driver)"
+root@m1-stp-prod-app09:~#
+
+root@m1-stp-prod-app09:~# journalctl | grep -e "graylog-collector-sidecar"
+Sep 10 12:45:27 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:27+03:00" level=info msg="collector-id file doesn't exist, generating a new one"
+Sep 10 12:45:27 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:27+03:00" level=info msg="Using collector-id: 4f5931a4-5cfc-4e90-b608-89dbb7f633e3"
+Sep 10 12:45:27 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:27+03:00" level=info msg="No node-id was configured, falling back to hostname"
+Sep 10 12:45:27 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:27+03:00" level=info msg="Fetching configurations tagged by: [stp-cadb-api]"
+Sep 10 12:45:27 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:27+03:00" level=info msg="Starting signal distributor"
+Sep 10 12:45:27 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:27+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:45:28 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:28+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 1/3."
+Sep 10 12:45:28 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:28+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:45:30 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:30+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:45:31 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:31+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 2/3."
+Sep 10 12:45:31 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:31+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:45:33 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:33+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:45:34 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:34+03:00" level=error msg="[filebeat] Backend finished unexpectedly, trying to restart 3/3."
+Sep 10 12:45:34 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:34+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:45:36 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:36+03:00" level=info msg="[filebeat] Starting (exec driver)"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=error msg="[filebeat] Unable to start collector after 3 tries, giving up!"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=error msg="stat /var/cache/graylog: no such file or directory"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=info msg="Trying to create directory for: /var/cache/graylog/collector-sidecar"
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=info msg="[filebeat] Configuration change detected, rewriting configuration file."
+Sep 10 12:45:37 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:37+03:00" level=info msg="[filebeat] Stopping"
+Sep 10 12:45:39 m1-stp-prod-app09.tcsbank.ru graylog-collector-sidecar[30847]: time="2019-09-10T12:45:39+03:00" level=info msg="[filebeat] Starting (exec driver)"
+root@m1-stp-prod-app09:~#
+
+root@m1-stp-prod-app09:~# cat /etc/graylog/collector-sidecar/generated/filebeat.yml
+filebeat:
+  prospectors:
+  - encoding: plain
+    exclude_files: []
+    fields:
+      collector_node_id: m1-stp-prod-app09.tcsbank.ru
+      gl2_source_collector: 4f5931a4-5cfc-4e90-b608-89dbb7f633e3
+      type: log
+    ignore_older: 0
+    paths:
+    - /opt/logs/stp-cadb-api.log
+    scan_frequency: 10s
+    tail_files: true
+    type: log
+output:
+  logstash:
+    hosts:
+    - ha-graylog.tcsbank.ru:12076
+path:
+  data: /var/cache/graylog/collector-sidecar/filebeat/data
+  logs: /var/log/graylog/collector-sidecar
+tags:
+- stp-cadb-api
+root@m1-stp-prod-app09:~#
+
+................................................................................
+
+
+
+
+

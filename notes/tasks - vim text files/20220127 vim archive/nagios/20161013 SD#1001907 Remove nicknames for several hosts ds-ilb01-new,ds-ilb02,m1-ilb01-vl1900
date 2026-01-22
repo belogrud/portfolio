@@ -1,0 +1,259 @@
+
+
+................................................................................
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   1001907
+Название    №1001907
+Приоритет   Низкий
+Класс обслуживания  24x7
+Дата и время обращения  12.10.2016 23:07
+Дата регистрации    12.10.2016 23:07
+Тип запроса Nagios запрос
+Категория
+Критичность 2 - Средняя
+Срочность   Высокая
+Описание запроса
+** PROBLEM Service Alert: Network load balancer (Active)/PING is WARNING **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: PING
+Host: Network load balancer (Active)
+Address: 10.219.0.250
+State: WARNING
+
+Date/Time: Wed Oct 12 23:07:02 MSK 2016
+
+Additional Info:
+
+PING WARNING - Packet loss = 0%, RTA = 115.66 ms
+
+Instruction and description:
+https://wiki.tcsbank.ru/display/sd/@...
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Служебный Сотрудник
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Служебный Сотрудник
+Контактный e-mail   -
+Контактные телефоны 123456
+
+................................................................................
+
+Дата
+Комментарий Автор
+13.10.2016 11:54    ds-ilb01-new
+ds-ilb02
+m1-ilb01-vl1900
+Алерты для этих хостов приходят от имени Network load balancer, можно исправить?    Сакалкин Владислав
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list alias host_name filename where object_type=host and alias__contains="Network load balancer"
+alias                host_name            filename
+--------------------------------------------------------------------------------
+Network load balancer ds-ilb01-new         /usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
+Network load balancer ds-ilb02             /usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/ds-ilb02.cfg
+Network load balancer (Active) m1-ilb01-vl1900      /usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg
+----------3 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# grep -ire "EMAILINFO" .
+./commands.cfg: command_line    /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICEOUTPUT$\n\nInstruction and description:\n$SERVICENOTESURL$\n$_SERVICEEMAILINFO$\n" | /bin/mail -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$
+./switchs/cisco/nsk-r1.cfg:    # _EMAILINFO                  Instruction:\n\nhttps://wiki.tcsbank.ru/display/sd/nsk-r1@PING
+./templates/services-templates.cfg:        _EMAILINFO                      ""
+./templates/services-templates.cfg:        _EMAILINFO                      ""
+./templates/services-templates.cfg:        _EMAILINFO                      ""
+./templates/services-templates.cfg:        _EMAILINFO                      ""
+./services/asterisk-call-transfering-service.cfg:    #_EMAILINFO               Instruction:\n\nhttps://wiki.tcsbank.ru/display/SD/@Calls%20transferring
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# vim -o +view ./switchs/cisco/nsk-r1.cfg ./services/asterisk-call-transfering-service.cfg
+...
+define service{
+    use                           generic-service-ping
+    host_name                   nsk-r1
+    service_description         PING
+    check_command               check_ping!200.0,20%!600.0,60%
+    normal_check_interval       5
+    retry_check_interval        1
+    notes_url                   https://wiki.tcsbank.ru/display/sd/$HOSTNAME$@$SERVICEDESC$
+    # _EMAILINFO                  Instruction:\n\nhttps://wiki.tcsbank.ru/display/sd/nsk-r1@PING
+}
+/usr/local/nagios/etc/objects/switchs/cisco/nsk-r1.cfg[RO] [FORMAT=unix] [TYPE=CFG] [ASCII=110] [HEX=6E] [POS=0013,0005][76%] [LEN=17]
+define service{
+    use                      generic-service
+    host_name                m1-asterisk01,m1-asterisk02,m1-asterisk03,ds-asterisk01,ds-asterisk02,ds-asterisk04,vm-asterisk01t,vm-asterisk02t,vm-asterisk01d,vm-asterisk04t,ds-asterisk05
+    service_description      Calls transferring
+    check_command            check_nrpe!check_wmover
+    contacts                 a.y.ovchinnikov_email, a.y.ovchinnikov_sms
+    contact_groups           devops
+    check_interval           30
+    max_check_attempts       1
+    notes_url                       https://wiki.tcsbank.ru/display/sd/@$SERVICEDESC$
+    #_EMAILINFO               Instruction:\n\nhttps://wiki.tcsbank.ru/display/SD/@Calls%20transferring
+}
+~
+/usr/local/nagios/etc/objects/services/asterisk-call-transfering-service.cfg [FORMAT=unix] [TYPE=CFG] [ASCII=125] [HEX=7D] [POS=0012,0001][100%] [LEN=12]
+...
+
+................................................................................
+................................................................................
+
+#
+#   20161017
+#
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   servers/dc-ds/security/ds-fireeye-ex.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       servers/dc-vol/hq-msk-vol-drbd01.cfg
+#       servers/dc-vol/hq-msk-vol-drbd02.cfg
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-drbd01.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# pynag update unset alias where object_type=host and host_name="ds-ilb01-new"
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+host                 ds-ilb01-new         /usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg (ds-ilb01-new): changed alias to None
+Updated 1 objects
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager diff /usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
+diff --git a/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg b/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
+index 38983a9..a668379 100644
+--- a/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
++++ b/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
+@@ -1,7 +1,6 @@
+ define host{
+     use                     linux-server
+     host_name               ds-ilb01-new
+-    alias                   Network load balancer
+     address                 10.219.1.248
+     contact_groups          network-admins, network-admins-web-access
+ }
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag update unset alias where object_type=host and host_name="ds-ilb02"
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+host                 ds-ilb02             /usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/ds-ilb02.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/ds-ilb02.cfg (ds-ilb02): changed alias to None
+Updated 1 objects
+[root@vm-vol-nag4-tst objects]# pynag update unset alias where object_type=host and host_name="m1-ilb01-vl1900"
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+host                 m1-ilb01-vl1900      /usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/usr/local/nagios/etc/objects/servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg (m1-ilb01-vl1900): changed alias to None
+Updated 1 objects
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#1001907. Removed \"alias\" for three hosts." servers/dc-m1/networks/f5/ds-ilb01-new.cfg servers/dc-m1/networks/f5/ds-ilb02.cfg servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg
+Running configuration check...
+ OK.
+[master 5ad7259] SD#1001907. Removed "alias" for three hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 0 insertions(+), 3 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                  Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 19, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (10/10), done.
+Writing objects: 100% (10/10), 822 bytes, done.
+Total 10 (delta 7), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   59c6445..5ad7259  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p 5ad7259
+commit 5ad7259d2689cdae59853e369174091f6249f531
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Mon Oct 17 12:50:50 2016 +0300
+
+    SD#1001907. Removed "alias" for three hosts.
+
+diff --git a/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg b/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
+index 38983a9..a668379 100644
+--- a/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
++++ b/objects/servers/dc-m1/networks/f5/ds-ilb01-new.cfg
+@@ -1,7 +1,6 @@
+ define host{
+     use                     linux-server
+     host_name               ds-ilb01-new
+-    alias                   Network load balancer
+     address                 10.219.1.248
+     contact_groups          network-admins, network-admins-web-access
+ }
+diff --git a/objects/servers/dc-m1/networks/f5/ds-ilb02.cfg b/objects/servers/dc-m1/networks/f5/ds-ilb02.cfg
+index 8a78c86..b017e2c 100644
+--- a/objects/servers/dc-m1/networks/f5/ds-ilb02.cfg
++++ b/objects/servers/dc-m1/networks/f5/ds-ilb02.cfg
+@@ -1,7 +1,6 @@
+ define host{
+     use                     linux-server
+     host_name               ds-ilb02
+-    alias                   Network load balancer
+     address                 10.219.1.249
+     contact_groups          network-admins, network-admins-web-access
+ }
+diff --git a/objects/servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg b/objects/servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg
+index aa71894..826a3a1 100644
+--- a/objects/servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg
++++ b/objects/servers/dc-m1/networks/f5/m1-ilb01-vl1900.cfg
+@@ -1,7 +1,6 @@
+ define host{
+     use                     linux-server
+     host_name               m1-ilb01-vl1900
+-    alias                   Network load balancer (Active)
+     address                 10.219.0.250
+     contact_groups          network-admins, network-admins-web-access
+ }
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+
+
+
+

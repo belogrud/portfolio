@@ -1,0 +1,101 @@
+
+
+Завести в Nagios
+Номер
+
+503728
+Описание
+
+Просьба добавить следующие проверки:
+ 
+PING
+ht23-st1              - вендор Cisco
+ht23-sw1             - вендор Ubiquiti
+ht23-sw2             - вендор Ubiquiti
+ 
+Состояние интерфейса TenGigabitEthernet2/1 на хостах ht-c1 И ht-c2
+Название проверки:
+TenGigabitEthernet2/1 LINK TO ht23-st1
+ 
+
+Kind regards,
+
+Sergey Perepelkin
+
+
+...........................................................................
+
+[root@vm-vol-nag4-tst etc]# pynag list filename where object_type=host and host_name__contains=ht2 --quiet
+/usr/local/nagios/etc/objects/switchs/cisco/ht2-st1.cfg
+/usr/local/nagios/etc/objects/switchs/cisco/ht2-st2.cfg
+/usr/local/nagios/etc/objects/switchs/netgear/ht2-video1.cfg
+/usr/local/nagios/etc/objects/switchs/ubiquiti/ht23-sw1.cfg
+/usr/local/nagios/etc/objects/ups/HT25-1F-UPS1.cfg
+[root@vm-vol-nag4-tst etc]#
+
+
+[root@vm-vol-nag4-tst etc]# pynag list filename where object_type=host and host_name__contains=ht-c --quiet
+/usr/local/nagios/etc/objects/servers/dc-ht/networks/cisco/ht-c1.cfg
+/usr/local/nagios/etc/objects/servers/dc-ht/networks/cisco/ht-c2.cfg
+/usr/local/nagios/etc/objects/switchs/cisco/ht-con1.cfg
+[root@vm-vol-nag4-tst etc]#
+
+...........................................................................
+
+
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 172.20.16.203 1
+...
+iso.0.8802.1.1.2.1.3.7.1.4.129 = STRING: "TenGigabitEthernet2/1"
+...
+
+
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 172.20.16.203 iso.0.8802.1.1.2.1.3.7.1.4.129
+iso.0.8802.1.1.2.1.3.7.1.4.129 = STRING: "TenGigabitEthernet2/1"
+[root@vm-vol-nag4-tst etc]#
+
+#	It's not working...
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 172.20.16.203 IF-MIB::TenGigabitEthernet2/1
+No log handling enabled - turning on stderr logging
+IF-MIB::TenGigabitEthernet2/1: Unknown Object Identifier
+[root@vm-vol-nag4-tst etc]#
+
+#	Foloow command is give me nothing too...
+#
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 172.20.16.203 IF-MIB::ifOperStatus
+IF-MIB::ifOperStatus.1 = INTEGER: down(2)
+IF-MIB::ifOperStatus.2 = INTEGER: up(1)
+IF-MIB::ifOperStatus.3 = INTEGER: up(1)
+IF-MIB::ifOperStatus.4 = INTEGER: down(2)
+IF-MIB::ifOperStatus.5 = INTEGER: up(1)
+IF-MIB::ifOperStatus.6 = INTEGER: up(1)
+IF-MIB::ifOperStatus.7 = INTEGER: up(1)
+IF-MIB::ifOperStatus.8 = INTEGER: up(1)
+IF-MIB::ifOperStatus.9 = INTEGER: up(1)
+IF-MIB::ifOperStatus.10 = INTEGER: up(1)
+...
+
+...........................................................................
+
+Белогруд Сергей Владимирович
+Для настройки проверки "TenGigabitEthernet2/1" нужно знать OID этого порта.
+
+Перепелкин Сергей Олегович
+ht-c1 .1.3.6.1.2.1.2.2.1.8.122
+ht-c2 .1.3.6.1.2.1.2.2.1.8.99
+Сегодня в 17:26
+
+...........................................................................
+
+
+
+
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 172.20.16.203 .1.3.6.1.2.1.2.2.1.8.122
+IF-MIB::ifOperStatus.122 = INTEGER: up(1)
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub_123 172.20.16.204 .1.3.6.1.2.1.2.2.1.8.99
+IF-MIB::ifOperStatus.99 = INTEGER: up(1)
+[root@vm-vol-nag4-tst etc]#
+
+
+
+
+

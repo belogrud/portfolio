@@ -1,0 +1,434 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   615338
+Название    №615338
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  07.11.2015 17:42
+Дата регистрации    07.11.2015 17:42
+Тип запроса Инцидент
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день!
+Для тестового ONLINE 10.217.13.27, прошу увеличить раздел /dev/mapper/VolGroup00-LogVol00
+С увеличением объёмов эквайринговых тестов, текущего объёма не хватает для записи логов даже за один день, чистку приходится осуществлять 2-3 раза в день, а нам необходимо хранить хотя бы месяц. Прошу из 13GB сделать 500GB.
+
+Перезагружать сервак можно в будни до 10 или после 19 с предварительным согласованием у меня.
+
+С уважением,
+
+Дмитрий Макеев
+Руководитель отдела Поддержки Управления Процессинга и Технологий
+
+................................................................................
+
+
+Дата
+Комментарий Автор
+10.11.2015 11:58    Смонтируйте шару (с переносом данных)   Бегизардов Павел
+10.11.2015 11:56    Сделал (ниже)   Жук Дмитрий А
+10.11.2015 11:55    сделал на v6250-ds /vol/online4_logs, дал полный доступ для vm-pr-onlapp02t.tcsbank.ru  Жук Дмитрий А
+10.11.2015 11:42    Выдайте 500Гб под логи. По скорости - максимальная запись за 2 недели 3Мбайт/с (100 IOPS). Либо блочный, либо NFS (лучше NFS)   Бегизардов Павел
+09.11.2015 15:43    Каталог /opt/online. Прошу обойтись без NFS Макеев Дмитрий
+09.11.2015 14:14    В каком каталоге хранятся логи? Возможно ли складывать логи на NFS шару?    Бегизардов Павел
+07.11.2015 18:36    Коллеги, это к Вам? Иванов Павел
+
+................................................................................
+................................................................................
+
+
+[root@vm-pr-onlapp02t ~]# showmount -e v6250-ds | grep online4_logs
+
+[root@vm-pr-onlapp02t ~]# host v6250-ds
+v6250-ds.tcsbank.ru has address 10.217.67.9
+[root@vm-pr-onlapp02t ~]# ping !$
+ping v6250-ds
+PING v6250-ds.tcsbank.ru (10.217.67.9) 56(84) bytes of data.
+
+--- v6250-ds.tcsbank.ru ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3000ms
+
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+2    ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0           icmp type 255
+3    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED
+4    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:22 /* SSH service */
+5    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10304 /* linkdhi.system */
+6    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:867 /* rpc.statd */
+7    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:7753 /* linkdhi.system */
+8    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:7754 /* linkdhi.system */
+9    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10309 /* linkdhi.system */
+10   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10310 /* linkdhi.system */
+11   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10311 /* linkdhi.system */
+12   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10320 /* linkdhi.system */
+13   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10321 /* linkdhi.system */
+14   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10360 /* linkdhi.system */
+15   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10330 /* linkdhi.system */
+16   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10331 /* linkdhi.system */
+17   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:111 /* portmap */
+18   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:5533 /* HSMISERVER */
+19   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10302 /* linkdhi.system */
+20   ACCEPT     tcp  --  172.16.8.183         0.0.0.0/0           state NEW,RELATED tcp dpt:10350 /* linkdhi.system */
+21   ACCEPT     udp  --  10.217.50.167        0.0.0.0/0           udp dpt:161 /* SNMP access from vm-dbamon02.tcsbank.ru */
+22   REJECT     all  --  0.0.0.0/0            0.0.0.0/0           reject-with icmp-host-prohibited
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@vm-pr-onlapp02t ~]# service nfs status
+rpc.mountd is stopped
+nfsd is stopped
+rpc.rquotad is stopped
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# rpcinfo -p
+   program vers proto   port
+    100000    2   tcp    111  portmapper
+    100000    2   udp    111  portmapper
+    100024    1   udp    923  status
+    100024    1   tcp    926  status
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 5.5 (Tikanga)
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# yum install nfs-utils
+Loaded plugins: rhnplugin, security
+This system is not registered with RHN.
+RHN support will be disabled.
+Setting up Install Process
+Package 1:nfs-utils-1.0.9-44.el5.x86_64 already installed and latest version
+Nothing to do
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# vim /etc/sysconfig/nfs
+...
+# Optional arguments passed to rpc.mountd. See rpc.mountd(8)
+#RPCMOUNTDOPTS=""
+# Port rpc.mountd should listen on.
+#MOUNTD_PORT=892
+MOUNTD_PORT=4046
+#
+...
+
+
+[root@vm-pr-onlapp02t ~]# service nfs start
+Starting NFS services:                                     [  OK  ]
+Starting NFS quotas:                                       [  OK  ]
+Starting NFS daemon:                                       [  OK  ]
+Starting NFS mountd:                                       [  OK  ]
+[root@vm-pr-onlapp02t ~]# chkconfig --list nfs
+nfs             0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@vm-pr-onlapp02t ~]# chkconfig nfs on
+[root@vm-pr-onlapp02t ~]# chkconfig --list nfs
+nfs             0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# rpcinfo -p
+   program vers proto   port
+    100000    2   tcp    111  portmapper
+    100000    2   udp    111  portmapper
+    100024    1   udp    923  status
+    100024    1   tcp    926  status
+    100011    1   udp    926  rquotad
+    100011    2   udp    926  rquotad
+    100011    1   tcp    929  rquotad
+    100011    2   tcp    929  rquotad
+    100003    2   udp   2049  nfs
+    100003    3   udp   2049  nfs
+    100003    4   udp   2049  nfs
+    100021    1   udp  38443  nlockmgr
+    100021    3   udp  38443  nlockmgr
+    100021    4   udp  38443  nlockmgr
+    100003    2   tcp   2049  nfs
+    100003    3   tcp   2049  nfs
+    100003    4   tcp   2049  nfs
+    100021    1   tcp  35689  nlockmgr
+    100021    3   tcp  35689  nlockmgr
+    100021    4   tcp  35689  nlockmgr
+    100005    1   udp   4046  mountd
+    100005    1   tcp   4046  mountd
+    100005    2   udp   4046  mountd
+    100005    2   tcp   4046  mountd
+    100005    3   udp   4046  mountd
+    100005    3   tcp   4046  mountd
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# showmount -e v6250-ds
+
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# service iptables stop
+Flushing firewall rules:                                   [  OK  ]
+Setting chains to policy ACCEPT: filter                    [  OK  ]
+Unloading iptables modules:                                [  OK  ]
+[root@vm-pr-onlapp02t ~]# showmount -e v6250-ds
+
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# rpcinfo -p | grep -E 'mountd|nfs'
+    100003    2   udp   2049  nfs
+    100003    3   udp   2049  nfs
+    100003    4   udp   2049  nfs
+    100003    2   tcp   2049  nfs
+    100003    3   tcp   2049  nfs
+    100003    4   tcp   2049  nfs
+    100005    1   udp   4046  mountd
+    100005    1   tcp   4046  mountd
+    100005    2   udp   4046  mountd
+    100005    2   tcp   4046  mountd
+    100005    3   udp   4046  mountd
+    100005    3   tcp   4046  mountd
+[root@vm-pr-onlapp02t ~]#
+
+
+
+
+[root@vm-pr-onlapp02t ~]# tshark -i eth0 -R "ip.addr==10.217.67.9" -n
+Running as user "root" and group "root". This could be dangerous.
+Capturing on eth0
+ 12.424590 10.217.13.27 -> 10.217.67.9  TCP 52572 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577057341 TSER=0 WS=7
+ 15.424075 10.217.13.27 -> 10.217.67.9  TCP 52572 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577060341 TSER=0 WS=7
+ 21.424449 10.217.13.27 -> 10.217.67.9  TCP 52572 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577066341 TSER=0 WS=7
+ 33.424183 10.217.13.27 -> 10.217.67.9  TCP 52572 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577078341 TSER=0 WS=7
+ 57.423651 10.217.13.27 -> 10.217.67.9  TCP 52572 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577102341 TSER=0 WS=7
+105.424648 10.217.13.27 -> 10.217.67.9  TCP 52572 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577150341 TSER=0 WS=7
+110.473002 10.217.13.27 -> 10.217.67.9  TCP 46867 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577155389 TSER=0 WS=7
+113.472586 10.217.13.27 -> 10.217.67.9  TCP 46867 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577158389 TSER=0 WS=7
+119.472959 10.217.13.27 -> 10.217.67.9  TCP 46867 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577164389 TSER=0 WS=7
+131.472703 10.217.13.27 -> 10.217.67.9  TCP 46867 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577176389 TSER=0 WS=7
+155.473203 10.217.13.27 -> 10.217.67.9  TCP 46867 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577200389 TSER=0 WS=7
+203.473178 10.217.13.27 -> 10.217.67.9  TCP 46867 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577248389 TSER=0 WS=7
+288.784956 10.217.13.27 -> 10.217.67.9  TCP 17342 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577333700 TSER=0 WS=7
+    #   Here Sergey Bukovnya have fixed his mistake. And from now everything starts working!
+288.786920  10.217.67.9 -> 10.217.13.27 TCP 111 > 17342 [SYN, ACK] Seq=0 Ack=1 Win=32120 Len=0 MSS=1460
+288.786940 10.217.13.27 -> 10.217.67.9  TCP 17342 > 111 [ACK] Seq=1 Ack=1 Win=5840 Len=0
+288.786972 10.217.13.27 -> 10.217.67.9  Portmap V2 GETPORT Call MOUNT(100005) V:1 TCP
+288.787864  10.217.67.9 -> 10.217.13.27 TCP 111 > 17342 [ACK] Seq=1 Ack=61 Win=32060 Len=0
+288.788541  10.217.67.9 -> 10.217.13.27 Portmap V2 GETPORT Reply (Call In 924809) Port:4046
+288.788558 10.217.13.27 -> 10.217.67.9  TCP 17342 > 111 [ACK] Seq=61 Ack=33 Win=5840 Len=0
+288.788581 10.217.13.27 -> 10.217.67.9  TCP 17342 > 111 [FIN, ACK] Seq=61 Ack=33 Win=5840 Len=0
+288.788607 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577333704 TSER=0 WS=7
+288.789392  10.217.67.9 -> 10.217.13.27 TCP 111 > 17342 [ACK] Seq=33 Ack=62 Win=32120 Len=0
+288.790049  10.217.67.9 -> 10.217.13.27 TCP 111 > 17342 [FIN, ACK] Seq=33 Ack=62 Win=32120 Len=0
+288.790058 10.217.13.27 -> 10.217.67.9  TCP 17342 > 111 [ACK] Seq=62 Ack=34 Win=5840 Len=0
+288.790169  10.217.67.9 -> 10.217.13.27 TCP 4046 > 890 [SYN, ACK] Seq=0 Ack=1 Win=8760 Len=0 MSS=1460 WS=0 TSV=646419423 TSER=577333704
+288.790189 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=1 Ack=1 Win=5888 Len=0 TSV=577333705 TSER=646419423
+288.790223 10.217.13.27 -> 10.217.67.9  MOUNT V1 EXPORT Call
+288.791464  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.791476 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=1449 Win=8832 Len=0 TSV=577333707 TSER=646419424
+288.791500  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.791505 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=1533 Win=8832 Len=0 TSV=577333707 TSER=646419424
+288.791512  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.791515 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=2981 Win=11648 Len=0 TSV=577333707 TSER=646419424
+288.791520  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.791530 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=3065 Win=11648 Len=0 TSV=577333707 TSER=646419424
+288.792462  10.217.67.9 -> 10.217.13.27 TCP 4046 > 890 [ACK] Seq=3065 Ack=109 Win=8760 Len=1448 TSV=646419425 TSER=577333705
+288.792467 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=4513 Win=14592 Len=0 TSV=577333708 TSER=646419425
+288.792484  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.792486 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=5961 Win=17536 Len=0 TSV=577333708 TSER=646419425
+288.792491  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.792493 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=7278 Win=20352 Len=0 TSV=577333708 TSER=646419425
+288.792514  10.217.67.9 -> 10.217.13.27 TCP 4046 > 890 [ACK] Seq=7278 Ack=109 Win=8760 Len=1448 TSV=646419425 TSER=577333705
+288.792516 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=8726 Win=23296 Len=0 TSV=577333708 TSER=646419425
+288.792521  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.792525 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=10174 Win=26112 Len=0 TSV=577333708 TSER=646419425
+288.792532  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.792537 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=10342 Win=29056 Len=0 TSV=577333708 TSER=646419425
+288.793486  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.793491 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=11790 Win=32000 Len=0 TSV=577333709 TSER=646419426
+288.793501  10.217.67.9 -> 10.217.13.27 TCP 4046 > 890 [ACK] Seq=11790 Ack=109 Win=8760 Len=1448 TSV=646419426 TSER=577333705
+288.793505 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=13238 Win=34816 Len=0 TSV=577333709 TSER=646419426
+288.793507  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+288.793509 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=13406 Win=37760 Len=0 TSV=577333709 TSER=646419426
+288.794539  10.217.67.9 -> 10.217.13.27 MOUNT V1 EXPORT Reply (Call In 924820)
+288.794545 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=109 Ack=14805 Win=40704 Len=0 TSV=577333710 TSER=646419427
+288.795359 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [FIN, ACK] Seq=109 Ack=14805 Win=40704 Len=0 TSV=577333710 TSER=646419427
+288.796373  10.217.67.9 -> 10.217.13.27 TCP 4046 > 890 [ACK] Seq=14805 Ack=110 Win=8760 Len=0 TSV=646419429 TSER=577333710
+288.796390  10.217.67.9 -> 10.217.13.27 TCP 4046 > 890 [FIN, ACK] Seq=14805 Ack=110 Win=8760 Len=0 TSV=646419429 TSER=577333710
+288.796396 10.217.13.27 -> 10.217.67.9  TCP 890 > 4046 [ACK] Seq=110 Ack=14806 Win=40704 Len=0 TSV=577333712 TSER=646419429
+307.212921 10.217.13.27 -> 10.217.67.9  TCP 53961 > 111 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577352127 TSER=0 WS=7
+307.214766  10.217.67.9 -> 10.217.13.27 TCP 111 > 53961 [SYN, ACK] Seq=0 Ack=1 Win=32120 Len=0 MSS=1460
+307.214780 10.217.13.27 -> 10.217.67.9  TCP 53961 > 111 [ACK] Seq=1 Ack=1 Win=5840 Len=0
+307.214810 10.217.13.27 -> 10.217.67.9  Portmap V2 GETPORT Call MOUNT(100005) V:1 TCP
+307.215713  10.217.67.9 -> 10.217.13.27 TCP 111 > 53961 [ACK] Seq=1 Ack=61 Win=32060 Len=0
+307.216443  10.217.67.9 -> 10.217.13.27 Portmap V2 GETPORT Reply (Call In 960199) Port:4046
+307.216454 10.217.13.27 -> 10.217.67.9  TCP 53961 > 111 [ACK] Seq=61 Ack=33 Win=5840 Len=0
+307.216470 10.217.13.27 -> 10.217.67.9  TCP 53961 > 111 [FIN, ACK] Seq=61 Ack=33 Win=5840 Len=0
+307.216492 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [SYN] Seq=0 Win=5840 Len=0 MSS=1460 TSV=577352131 TSER=0 WS=7
+307.217275  10.217.67.9 -> 10.217.13.27 TCP 111 > 53961 [ACK] Seq=33 Ack=62 Win=32120 Len=0
+307.217953  10.217.67.9 -> 10.217.13.27 TCP 111 > 53961 [FIN, ACK] Seq=33 Ack=62 Win=32120 Len=0
+307.217960 10.217.13.27 -> 10.217.67.9  TCP 53961 > 111 [ACK] Seq=62 Ack=34 Win=5840 Len=0
+307.218211  10.217.67.9 -> 10.217.13.27 TCP 4046 > 880 [SYN, ACK] Seq=0 Ack=1 Win=8760 Len=0 MSS=1460 WS=0 TSV=646437850 TSER=577352131
+307.218219 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=1 Ack=1 Win=5888 Len=0 TSV=577352132 TSER=646437850
+307.218250 10.217.13.27 -> 10.217.67.9  MOUNT V1 EXPORT Call
+307.219523  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.219531 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=1449 Win=8832 Len=0 TSV=577352134 TSER=646437852
+307.219541  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.219543 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=1533 Win=8832 Len=0 TSV=577352134 TSER=646437852
+307.219545  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.219547 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=2981 Win=11648 Len=0 TSV=577352134 TSER=646437852
+307.219552  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.219562 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=3065 Win=11648 Len=0 TSV=577352134 TSER=646437852
+307.220517  10.217.67.9 -> 10.217.13.27 TCP 4046 > 880 [ACK] Seq=3065 Ack=109 Win=8760 Len=1448 TSV=646437853 TSER=577352132
+307.220522 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=4513 Win=14592 Len=0 TSV=577352135 TSER=646437853
+307.220533  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.220535 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=5961 Win=17536 Len=0 TSV=577352135 TSER=646437853
+307.220536  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.220538 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=7278 Win=20352 Len=0 TSV=577352135 TSER=646437853
+307.220629  10.217.67.9 -> 10.217.13.27 RPC Continuation
+307.220634 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=8726 Win=23296 Len=0 TSV=577352135 TSER=646437853
+307.220646  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.220648 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=9533 Win=26112 Len=0 TSV=577352135 TSER=646437853
+307.221503  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.221508 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=10981 Win=29056 Len=0 TSV=577352136 TSER=646437854
+307.221520  10.217.67.9 -> 10.217.13.27 RPC Continuation
+307.221522 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=12429 Win=32000 Len=0 TSV=577352136 TSER=646437854
+307.221524  10.217.67.9 -> 10.217.13.27 TCP [TCP segment of a reassembled PDU]
+307.221526 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=13406 Win=34816 Len=0 TSV=577352136 TSER=646437854
+307.222549  10.217.67.9 -> 10.217.13.27 RPC Continuation
+307.222554 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=109 Ack=14805 Win=37760 Len=0 TSV=577352137 TSER=646437855
+307.222853 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [FIN, ACK] Seq=109 Ack=14805 Win=37760 Len=0 TSV=577352137 TSER=646437855
+307.224224  10.217.67.9 -> 10.217.13.27 TCP 4046 > 880 [ACK] Seq=14805 Ack=110 Win=8760 Len=0 TSV=646437856 TSER=577352137
+307.224238  10.217.67.9 -> 10.217.13.27 TCP 4046 > 880 [FIN, ACK] Seq=14805 Ack=110 Win=8760 Len=0 TSV=646437856 TSER=577352137
+307.224242 10.217.13.27 -> 10.217.67.9  TCP 880 > 4046 [ACK] Seq=110 Ack=14806 Win=37760 Len=0 TSV=577352138 TSER=646437856
+104 packets captured
+[root@vm-pr-onlapp02t ~]#
+
+
+
+[root@vm-pr-onlapp02t ~]# showmount -e v6250-ds.tcsbank.ru | grep online4_logs
+/vol/online4_logs                               vm-pr-onlapp02t.tcsbank.ru
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# service iptables start
+Applying iptables firewall rules:                          [  OK  ]
+Loading additional iptables modules: ip_conntrack_netbios_n[  OK  ]
+[root@vm-pr-onlapp02t ~]# showmount -e v6250-ds | grep online4_logs
+/vol/online4_logs                               vm-pr-onlapp02t.tcsbank.ru
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# service nfs stop
+Shutting down NFS mountd:                                  [  OK  ]
+Shutting down NFS daemon:                                  [  OK  ]
+Shutting down NFS quotas:                                  [  OK  ]
+Shutting down NFS services:                                [FAILED]
+[root@vm-pr-onlapp02t ~]# showmount -e v6250-ds | grep online4_logs
+/vol/online4_logs                               vm-pr-onlapp02t.tcsbank.ru
+[root@vm-pr-onlapp02t ~]# chkconfig nfs off
+[root@vm-pr-onlapp02t ~]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-pr-onlapp02t ~]# mkdir /mnt/online4_logs
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# vim /etc/fstab
+...
+# SD#615338
+v6250-ds:/vol/online4_logs      /mnt/online4_logs       nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+[root@vm-pr-onlapp02t ~]# mount /mnt/online4_logs
+[root@vm-pr-onlapp02t ~]# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+                       13G  6.7G  5.2G  57% /
+/dev/sda2             2.0G  883M  999M  47% /var
+/dev/sda1              99M   13M   82M  14% /boot
+tmpfs                 7.9G     0  7.9G   0% /dev/shm
+v6250-ds:/vol/online4_logs
+                      475G  192K  475G   1% /mnt/online4_logs
+[root@vm-pr-onlapp02t ~]# df -h /mnt/online4_logs/
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/online4_logs
+                      475G  192K  475G   1% /mnt/online4_logs
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# su - online
+[online@vm-pr-onlapp02t ~]$ touch /mnt/online4_logs/test.tmp
+touch: cannot touch `/mnt/online4_logs/test.tmp': Permission denied
+[online@vm-pr-onlapp02t ~]$
+
+[root@vm-pr-onlapp02t ~]# ls -Alh /opt
+total 224K
+drwx------ 2 online online   216K Nov 10 15:01 online
+drwxr-xr-x 8 oracle oinstall 4.0K Nov 28  2012 oracle
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# mkdir /mnt/online4_logs/online
+[root@vm-pr-onlapp02t ~]# chown online:online !$
+chown online:online /mnt/online4_logs/online
+[root@vm-pr-onlapp02t ~]# ls -Alhd !$
+ls -Alhd /mnt/online4_logs/online
+drwx------ 2 online online 4.0K Nov 10 15:07 /mnt/online4_logs/online
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# su - online
+[online@vm-pr-onlapp02t ~]$ touch /mnt/online4_logs/online/test.tmp
+[online@vm-pr-onlapp02t ~]$ yes | rm !$
+yes | rm /mnt/online4_logs/online/test.tmp
+[online@vm-pr-onlapp02t ~]$
+
+[online@vm-pr-onlapp02t ~]$ rsync -a /opt/online/ /mnt/online4_logs/online/
+[online@vm-pr-onlapp02t ~]$
+
+[online@vm-pr-onlapp02t ~]$ du -sh /opt/online
+1012M   /opt/online
+[online@vm-pr-onlapp02t ~]$ du -sh /mnt/online4_logs/online
+1015M   /mnt/online4_logs/online
+[online@vm-pr-onlapp02t ~]$
+
+
+................................................................................
+................................................................................
+
+
+Дата
+Комментарий Автор
+10.11.2015 15:19    Службе Первичной Поддержки.
+
+Перевести на автора для проверки результатов.   Белогруд Сергей В
+10.11.2015 15:18    Смонтирован nfs-ресурс и создан каталог /mnt/online4_logs/online/ с правами на запись пользователю online.
+В новый каталог скопировано содержимое /opt/online.
+
+[root@vm-pr-onlapp02t ~]# du -sh /opt/online /mnt/online4_logs/online
+1012M /opt/online
+1015M /mnt/online4_logs/online
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# df -h /mnt/online4_logs/
+Filesystem Size Used Avail Use% Mounted on
+v6250-ds:/vol/online4_logs
+475G 971M 475G 1% /mnt/online4_logs
+[root@vm-pr-onlapp02t ~]#
+Белогруд Сергей В
+10.11.2015 13:09    сетевой доступ открыл   Буковня Сергей
+
+
+................................................................................
+................................................................................
+
+
+

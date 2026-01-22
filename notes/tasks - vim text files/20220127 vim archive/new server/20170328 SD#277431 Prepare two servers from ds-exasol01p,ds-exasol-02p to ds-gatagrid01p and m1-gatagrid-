@@ -1,0 +1,2531 @@
+
+
+................................................................................
+
+Заявка на unix-admins
+
+Коллеги, сервера ds-exasol0[1-2]p отдаются под новый проект. Сервер ds-exasol02p поедет в m1, пока прошу подготовить сервер ds-exasol01p (на самом деле, можно готовить оба, просто второй при переезде будет уже готовым).
+Параметры:
+- можно стирать ВСЮ информацию на нем
+- имя хоста: ds-gatagrid01p
+- память: остаются 3Тб
+- диски: на «маленьком диске» установить ОС, на «большом диске» (там сейчас RAID 10) – оставить без изменения. Разделы на «маленьком диске» (система) – на ваше усмотрение. Монтирование «большого диска» пока не нужно производить
+- ОС: полагаю, будет RHEL, но, если вы беретесь поддерживать в production CentOS, – я не против
+- пользователь: dwhsys с правами полного sudo. Пароль взять с сервера ds-sasetl01p
+- подсеть: боевая, там же, где сервер ds-sasetl01p
+- ПО: установим сами
+- ответственный за сервер и ПО на нем: Рябов
+- согласующие: Сотниченко (руководитель управления,  его отсутствие – Лабутин), Павлов Дмитрий (прежний ответственный за сервер).
+
+................................................................................
+
+cluster1 [root@n0011 ~]# cat /etc/system-release
+CentOS release 6.8 (Final)
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R930
+        Version: Not Specified
+        Serial Number: 1TXGSG2
+        UUID: 4C4C4544-0054-5810-8047-B1C04F534732
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R930
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# ifconfig
+eth0      Link encap:Ethernet  HWaddr 18:66:DA:7B:BD:EE
+          inet addr:27.10.1.11  Bcast:27.10.1.255  Mask:255.255.255.0
+          inet6 addr: fe80::1a66:daff:fe7b:bdee/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:26410947682 errors:10 dropped:0 overruns:0 frame:10
+          TX packets:25593684693 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:38615866817678 (35.1 TiB)  TX bytes:37270446785493 (33.8 TiB)
+          Interrupt:36 Memory:94000000-947fffff
+
+eth1      Link encap:Ethernet  HWaddr 18:66:DA:7B:BD:EC
+          inet addr:10.216.2.22  Bcast:10.216.2.255  Mask:255.255.255.0
+          inet6 addr: fe80::1a66:daff:fe7b:bdec/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:17054833704 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:732444793 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:25767905003856 (23.4 TiB)  TX bytes:52933576294 (49.2 GiB)
+          Interrupt:32 Memory:95000000-957fffff
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:196374829 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:196374829 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:232392773007 (216.4 GiB)  TX bytes:232392773007 (216.4 GiB)
+
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# find /etc/sysconfig/network-scripts/ifcfg-* -exec echo "{}" \; -exec cat {} \; -exec echo \;
+/etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE=eth0
+IPADDR=27.10.1.11
+NETMASK=255.255.255.0
+MACADDR=18:66:DA:7B:BD:EE
+USERCTL=no
+NM_CONTROLLED=no
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-eth1
+DEVICE=eth1
+MACADDR=18:66:DA:7B:BD:EC
+IPADDR=10.216.2.22
+NETMASK=255.255.255.0
+USERCTL=no
+NM_CONTROLLED=no
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# yum history
+Loaded plugins: etckeeper, fastestmirror, security
+ID     | Login user               | Date and time    | Action(s)      | Altered
+-------------------------------------------------------------------------------
+    21 | Belogrud ... <bsv>       | 2017-03-09 15:21 | Reinstall      |    1
+    20 | root <root>              | 2017-02-13 16:59 | Reinstall      |    1
+    19 | Belogrud ... <bsv>       | 2017-02-13 16:02 | Reinstall      |    1
+    18 | Belogrud ... <bsv>       | 2017-02-02 16:35 | Reinstall      |    1
+    17 | Belogrud ... <bsv>       | 2017-02-02 15:47 | Install        |   27
+    16 | Belogrud ... <bsv>       | 2017-02-02 15:42 | Install        |    6
+    15 | Belogrud ... <bsv>       | 2017-02-01 19:37 | Install        |   22
+    14 | Belogrud ... <bsv>       | 2017-02-01 19:35 | Install        |    7 EE
+    13 | Belogrud ... <bsv>       | 2017-02-01 19:31 | Update         |    3
+    12 | Belogrud ... <bsv>       | 2017-02-01 11:56 | Update         |    2
+    11 | Belogrud ... <bsv>       | 2017-01-31 18:35 | Install        |    1
+    10 | Belogrud ... <bsv>       | 2017-01-31 18:35 | Install        |    1
+     9 | Belogrud ... <bsv>       | 2017-01-31 18:35 | Install        |    1
+     8 | Belogrud ... <bsv>       | 2017-01-31 18:35 | Install        |    1
+     7 | Belogrud ... <bsv>       | 2017-01-31 18:35 | Install        |    1
+     6 | Belogrud ... <bsv>       | 2017-01-31 18:35 | Install        |    2
+     5 | Belogrud ... <bsv>       | 2017-01-31 18:33 | Install        |    2
+     4 | Belogrud ... <bsv>       | 2017-01-31 18:19 | Install        |    1
+     3 | Belogrud ... <bsv>       | 2017-01-31 18:14 | Install        |   13
+     2 | System <unset>           | 2016-10-27 15:28 | Install        |    3
+history list
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# yum history info 17
+Loaded plugins: etckeeper, fastestmirror, security
+Transaction ID : 17
+Begin time     : Thu Feb  2 15:47:45 2017
+Begin rpmdb    : 683:304516e8fdb8609e5211810b9e1104e2f276cd3f
+End time       :            15:48:01 2017 (16 seconds)
+End rpmdb      : 710:4d1ec9dbbd1a52b5c77b4b797bdb5953c7a929ef
+User           : Belogrud Sergey Vladimirovich,BC Diapazone,2173 <bsv>
+Return-Code    : Success
+Command Line   : install srvadmin-all
+Transaction performed with:
+    Installed     rpm-4.8.0-55.el6.x86_64                       @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-3.2.29-73.el6.centos.noarch               @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-plugin-fastestmirror-1.1.30-37.el6.noarch @anaconda-CentOS-201605220104.x86_64/6.8
+Packages Altered:
+    Dep-Install cim-schema-2.33.0-1.el6.noarch                          @base
+    Dep-Install libcmpiCppImpl0-2.0.1-5.el6.x86_64                      @base
+    Dep-Install libwsman1-2.2.3.9-2193.9883.el6.x86_64                  @tcs-dell-dsu-os_dependent
+    Dep-Install openwsman-client-2.2.3.9-2193.9883.el6.x86_64           @tcs-dell-dsu-os_dependent
+    Dep-Install openwsman-server-2.2.3.9-2193.9883.el6.x86_64           @tcs-dell-dsu-os_dependent
+    Dep-Install sblim-sfcb-1.3.11-4.el6.x86_64                          @base
+    Dep-Install sblim-sfcc-2.2.2-2.el6.x86_64                           @base
+    Install     srvadmin-all-8.4.0-2193.9883.el6.x86_64                 @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-itunnelprovider-8.4.0-2193.9883.el6.x86_64     @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-jre-8.4.0-2193.9883.el6.x86_64                 @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-omacore-8.4.0-2193.9883.el6.x86_64             @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-omaksmig-8.4.0-2193.9883.el6.x86_64            @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-omcommon-8.4.0-2193.9883.el6.x86_64            @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-oslog-8.4.0-2193.9883.el6.x86_64               @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-rac4-8.4.0-2193.9883.el6.x86_64                @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-rac4-populator-8.4.0-2193.9883.el6.x86_64      @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-rac5-8.4.0-2193.9883.el6.x86_64                @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-racadm5-8.4.0-2193.9883.el6.x86_64             @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-racsvc-8.4.0-2193.9883.el6.x86_64              @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-server-cli-8.4.0-2193.9883.el6.x86_64          @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-smweb-8.4.0-2193.9883.el6.x86_64               @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-standardAgent-8.4.0-2193.9883.el6.x86_64       @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-storage-cli-8.4.0-2193.9883.el6.x86_64         @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-storageservices-8.4.0-2193.9883.el6.x86_64     @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-storageservices-cli-8.4.0-2193.9883.el6.x86_64 @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-tomcat-8.4.0-2193.9883.el6.x86_64              @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-webserver-8.4.0-2193.9883.el6.x86_64           @tcs-dell-dsu-os_dependent
+history info
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# yum history info 16
+Loaded plugins: etckeeper, fastestmirror, security
+Transaction ID : 16
+Begin time     : Thu Feb  2 15:42:18 2017
+Begin rpmdb    : 677:f1088787a32ede0430a439b8ed9ee63377dac896
+End time       :            15:42:19 2017 (1 seconds)
+End rpmdb      : 683:304516e8fdb8609e5211810b9e1104e2f276cd3f
+User           : Belogrud Sergey Vladimirovich,BC Diapazone,2173 <bsv>
+Return-Code    : Success
+Command Line   : install srvadmin-idrac
+Transaction performed with:
+    Installed     rpm-4.8.0-55.el6.x86_64                       @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-3.2.29-73.el6.centos.noarch               @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-plugin-fastestmirror-1.1.30-37.el6.noarch @anaconda-CentOS-201605220104.x86_64/6.8
+Packages Altered:
+    Install     srvadmin-idrac-8.4.0-2193.9883.el6.x86_64        @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-idrac-ivmcli-8.4.0-2193.9883.el6.x86_64 @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-idrac-vmcli-8.4.0-2193.9883.el6.x86_64  @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-idrac7-8.4.0-2193.9883.el6.x86_64       @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-racadm4-8.4.0-2193.9883.el6.x86_64      @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-racdrsc-8.4.0-2193.9883.el6.x86_64      @tcs-dell-dsu-os_dependent
+history info
+cluster1 [root@n0011 ~]# yum history info 15
+Loaded plugins: etckeeper, fastestmirror, security
+Transaction ID : 15
+Begin time     : Wed Feb  1 19:37:23 2017
+Begin rpmdb    : 655:f4282b834cc27ff292496b7c5cfc5ff590d6b188
+End time       :            19:37:37 2017 (14 seconds)
+End rpmdb      : 677:f1088787a32ede0430a439b8ed9ee63377dac896
+User           : Belogrud Sergey Vladimirovich,BC Diapazone,2173 <bsv>
+Return-Code    : Success
+Command Line   : install srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+Transaction performed with:
+    Installed     rpm-4.8.0-55.el6.x86_64                       @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-3.2.29-73.el6.centos.noarch               @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-plugin-fastestmirror-1.1.30-37.el6.noarch @anaconda-CentOS-201605220104.x86_64/6.8
+Packages Altered:
+    Dep-Install libxslt-1.1.26-2.el6_3.1.x86_64                          @base
+    Dep-Install srvadmin-base-8.4.0-2193.9883.el6.x86_64                 @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-cm-8.4.0-2193.9883.el6.x86_64                   @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-deng-8.4.0-2193.9883.el6.x86_64                 @tcs-dell-dsu-os_dependent
+    Install     srvadmin-deng-snmp-8.4.0-2193.9883.el6.x86_64            @tcs-dell-dsu-os_dependent
+    Install     srvadmin-idrac-snmp-8.4.0-2193.9883.el6.x86_64           @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-isvc-8.4.0-2193.9883.el6.x86_64                 @tcs-dell-dsu-os_dependent
+    Install     srvadmin-isvc-snmp-8.4.0-2193.9883.el6.x86_64            @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-nvme-8.4.0-2193.9883.el6.x86_64                 @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-omacs-8.4.0-2193.9883.el6.x86_64                @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-ominst-8.4.0-2193.9883.el6.x86_64               @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-rac-components-8.4.0-2193.9883.el6.x86_64       @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-realssd-8.4.0-2193.9883.el6.x86_64              @tcs-dell-dsu-os_dependent
+    Install     srvadmin-server-snmp-8.4.0-2193.9883.el6.x86_64          @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-smcommon-8.4.0-2193.9883.el6.x86_64             @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-storage-8.4.0-2193.9883.el6.x86_64              @tcs-dell-dsu-os_dependent
+    Install     srvadmin-storage-snmp-8.4.0-2193.9883.el6.x86_64         @tcs-dell-dsu-os_dependent
+    Install     srvadmin-storageservices-snmp-8.4.0-2193.9883.el6.x86_64 @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-storelib-8.4.0-2193.9883.el6.x86_64             @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-storelib-sysfs-8.4.0-2193.9883.el6.x86_64       @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-sysfsutils-8.4.0-2193.9883.el6.x86_64           @tcs-dell-dsu-os_dependent
+    Dep-Install srvadmin-xmlsup-8.4.0-2193.9883.el6.x86_64               @tcs-dell-dsu-os_dependent
+history info
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# yum history info 13
+Loaded plugins: etckeeper, fastestmirror, security
+Transaction ID : 13
+Begin time     : Wed Feb  1 19:31:18 2017
+Begin rpmdb    : 648:9df23ca8d0cf3c7b8ad88f60d1b8ad8773c6828f
+End time       :            19:31:19 2017 (1 seconds)
+End rpmdb      : 648:7d158158ab796c9a30bab390e7f843e2112483ed
+User           : Belogrud Sergey Vladimirovich,BC Diapazone,2173 <bsv>
+Return-Code    : Success
+Command Line   : install net-snmp net-snmp-utils
+Transaction performed with:
+    Installed     rpm-4.8.0-55.el6.x86_64                       @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-3.2.29-73.el6.centos.noarch               @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-plugin-fastestmirror-1.1.30-37.el6.noarch @anaconda-CentOS-201605220104.x86_64/6.8
+Packages Altered:
+    Updated net-snmp-1:5.5-57.el6.x86_64           @anaconda-CentOS-201605220104.x86_64/6.8
+    Update           1:5.5-57.el6_8.1.x86_64       @updates
+    Updated net-snmp-libs-1:5.5-57.el6.x86_64      @anaconda-CentOS-201605220104.x86_64/6.8
+    Update                1:5.5-57.el6_8.1.x86_64  @updates
+    Updated net-snmp-utils-1:5.5-57.el6.x86_64     @anaconda-CentOS-201605220104.x86_64/6.8
+    Update                 1:5.5-57.el6_8.1.x86_64 @updates
+history info
+cluster1 [root@n0011 ~]#
+
+cluster1 [root@n0011 ~]# yum history info 3
+Loaded plugins: etckeeper, fastestmirror, security
+Transaction ID : 3
+Begin time     : Tue Jan 31 18:14:17 2017
+Begin rpmdb    : 625:e4de27a797ca4eed425b43583186bd9cba60de42
+End time       :            18:14:18 2017 (1 seconds)
+End rpmdb      : 638:69d97336dd535d28b724a59d2afb786bcc2aeca9
+User           : Belogrud Sergey Vladimirovich,BC Diapazone,2173 <bsv>
+Return-Code    : Success
+Command Line   : install puppet
+Transaction performed with:
+    Installed     rpm-4.8.0-55.el6.x86_64                       @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-3.2.29-73.el6.centos.noarch               @anaconda-CentOS-201605220104.x86_64/6.8
+    Installed     yum-plugin-fastestmirror-1.1.30-37.el6.noarch @anaconda-CentOS-201605220104.x86_64/6.8
+Packages Altered:
+    Dep-Install compat-readline5-5.2-17.1.el6.x86_64 @base
+    Dep-Install facter-1:2.4.6-1.el6.x86_64          @tcs-puppetlabs-el-6-products-x86_64
+    Dep-Install hiera-1.3.4-1.el6.noarch             @tcs-puppetlabs-el-6-products-x86_64
+    Dep-Install libselinux-ruby-2.0.94-7.el6.x86_64  @base
+    Install     puppet-3.8.7-1.el6.noarch            @tcs-puppetlabs-el-6-products-x86_64
+    Dep-Install ruby-1.8.7.374-4.el6_6.x86_64        @base
+    Dep-Install ruby-augeas-0.4.1-3.el6.x86_64       @tcs-puppetlabs-el-6-dependencies-x86_64
+    Dep-Install ruby-irb-1.8.7.374-4.el6_6.x86_64    @base
+    Dep-Install ruby-libs-1.8.7.374-4.el6_6.x86_64   @base
+    Dep-Install ruby-rdoc-1.8.7.374-4.el6_6.x86_64   @base
+    Dep-Install ruby-shadow-1:2.2.0-2.el6.x86_64     @tcs-puppetlabs-el-6-dependencies-x86_64
+    Dep-Install rubygem-json-1.5.5-3.el6.x86_64      @tcs-puppetlabs-el-6-dependencies-x86_64
+    Dep-Install rubygems-1.3.7-5.el6.noarch          @base
+history info
+cluster1 [root@n0011 ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where address="10.216.2.22"
+filename
+--------------------------------------------------------------------------------
+/usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-exasol01p.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# rm /usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-exasol01p.cfg /usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-exasol02p.cfg
+rm: remove regular file `/usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-exasol01p.cfg'? y
+rm: remove regular file `/usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-exasol02p.cfg'? y
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload                                                                                                                         Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#277431. Removed monitoring of two servers. They'll be used for other project." servers/dc-ds/linux/ds-exasol01p.cfg servers/dc-ds/linux/ds-exasol02p.cfg
+[master aee3fcb] SD#277431. Removed monitoring of two servers. They'll be used for other project.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 0 insertions(+), 149 deletions(-)
+ delete mode 100644 objects/servers/dc-ds/linux/ds-exasol01p.cfg
+ delete mode 100644 objects/servers/dc-ds/linux/ds-exasol02p.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 554 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   bb39acb..aee3fcb  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+#
+#   20170330
+#
+
+[root@m1-gatagrid01p ~]# echo "proxy=http://repo-linux.tcsbank.ru:80" >> /etc/yum.conf
+[root@m1-gatagrid01p ~]# yum localinstall reinstall http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+
+[root@m1-gatagrid01p ~]# curl repo-linux/rhel7.repo > /etc/yum.repos.d/rhel7.repo
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   198  100   198    0     0  20492      0 --:--:-- --:--:-- --:--:-- 22000
+[root@m1-gatagrid01p ~]#
+
+[root@m1-gatagrid01p ~]# yum install puppet facter
+
+[root@m1-gatagrid01p ~]# puppet agent -t
+Info: Creating a new SSL key for m1-gatagrid01p.tcsbank.ru
+Info: Caching certificate for ca
+Info: csr_attributes file loading from /etc/puppet/csr_attributes.yaml
+Info: Creating a new SSL certificate request for m1-gatagrid01p.tcsbank.ru
+Info: Certificate Request fingerprint (SHA256): 65:D3:AE:91:09:A1:69:9D:FF:05:7D:63:E3:27:A5:B5:A9:5F:7B:68:C8:E5:EE:2A:37:B0:36:CB:A7:CE:E0:33
+Info: Caching certificate for ca
+Exiting; no certificate found and waitforcert is disabled
+[root@m1-gatagrid01p ~]#
+
+[root@puppet ~]# puppet cert list --all | grep m1-gatagrid01p.tcsbank.ru
+  "m1-gatagrid01p.tcsbank.ru"              (SHA256) 65:D3:AE:91:09:A1:69:9D:FF:05:7D:63:E3:27:A5:B5:A9:5F:7B:68:C8:E5:EE:2A:37:B0:36:CB:A7:CE:E0:33
+[root@puppet ~]# puppet cert sign m1-gatagrid01p.tcsbank.ru
+Notice: Signed certificate request for m1-gatagrid01p.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest m1-gatagrid01p.tcsbank.ru at '/var/lib/puppet/ssl/ca/requests/m1-gatagrid01p.tcsbank.ru.pem'
+[root@puppet ~]#
+
+[root@m1-gatagrid01p ~]# yum install net-snmp net-snmp-utils
+
+#   Added snmpconfig in puppet.
+
+[root@m1-gatagrid01p ~]# curl repo-linux/tcs-dell-dsu-rhel7.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   342  100   342    0     0  14866      0 --:--:-- --:--:-- --:--:-- 15545
+[root@m1-gatagrid01p ~]#
+
+[root@m1-gatagrid01p ~]# yum -y install srvadmin-idracadm7 srvadmin-idracadm dcism
+
+[root@m1-gatagrid01p ~]# yum -y install srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+
+#   After relogin.
+
+[root@m1-gatagrid01p ~]# racadm getniccfg | head
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.107
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+[root@m1-gatagrid01p ~]#
+
+[root@m1-gatagrid01p ~]# cp /etc/snmp/snmpd.conf{,.orig}
+[root@m1-gatagrid01p ~]# systemctl stop snmpd
+[root@m1-gatagrid01p ~]# cat > /etc/snmp/snmpd.conf
+# com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser default tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+[root@m1-gatagrid01p ~]#
+
+systemctl start snmpd
+
+[root@m1-gatagrid01p ~]# systemctl enable snmpd
+Created symlink from /etc/systemd/system/multi-user.target.wants/snmpd.service to /usr/lib/systemd/system/snmpd.service.
+[root@m1-gatagrid01p ~]#
+
+
+[root@m1-gatagrid01p ~]# systemctl start dataeng
+
+[root@m1-gatagrid01p ~]# systemctl enable dataeng
+dataeng.service is not a native service, redirecting to /sbin/chkconfig.
+Executing /sbin/chkconfig dataeng on
+[root@m1-gatagrid01p ~]#
+
+[root@m1-gatagrid01p ~]# snmpwalk -v 2c -c tcspub localhost 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-gatagrid01p.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (20940) 0:03:29.40
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-gatagrid01p.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (2) 0:00:00.02
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@m1-gatagrid01p ~]# systemctl enable dataeng
+dataeng.service is not a native service, redirecting to /sbin/chkconfig.
+Executing /sbin/chkconfig dataeng on
+[root@m1-gatagrid01p ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-gatagrid01p ~]# echo "proxy=http://repo-linux.tcsbank.ru:80" >> /etc/yum.conf
+[root@ds-gatagrid01p ~]# yum -y localinstall reinstall http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+[root@ds-gatagrid01p ~]# curl repo-linux/rhel7.repo > /etc/yum.repos.d/rhel7.repo
+[root@ds-gatagrid01p ~]# yum -y install puppet facter
+[root@ds-gatagrid01p ~]# puppet agent -t
+
+[root@puppet ~]# puppet cert list --all | grep ds-gatagrid01p.tcsbank.ru
+[root@puppet ~]# puppet cert sign ds-gatagrid01p.tcsbank.ru
+
+[root@ds-gatagrid01p ~]# puppet agent -t
+#   all-servers, etckeeper.
+[root@ds-gatagrid01p ~]# puppet agent -t
+#   nrpe.
+[root@ds-gatagrid01p ~]# puppet agent -t
+
+[root@ds-gatagrid01p ~]# yum -y install net-snmp net-snmp-utils
+
+#   snmpconfig.
+[root@ds-gatagrid01p ~]# puppet agent -t
+
+[root@ds-gatagrid01p ~]# curl repo-linux/tcs-dell-dsu-rhel7.repo.sh | sh
+
+[root@ds-gatagrid01p ~]# yum -y install srvadmin-idracadm7 srvadmin-idracadm dcism
+
+[root@ds-gatagrid01p ~]# yum -y install srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+
+#   After relogin.
+
+[root@ds-gatagrid01p ~]# racadm getniccfg | head
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.106
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# cp /etc/snmp/snmpd.conf{,.orig}
+[root@ds-gatagrid01p ~]# systemctl stop snmpd
+[root@ds-gatagrid01p ~]# cat > /etc/snmp/snmpd.conf
+# com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser default tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# systemctl start snmpd
+
+[root@ds-gatagrid01p ~]# systemctl enable snmpd
+Created symlink from /etc/systemd/system/multi-user.target.wants/snmpd.service to /usr/lib/systemd/system/snmpd.service.
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# snmpwalk -v 2c -c tcspub localhost 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux ds-gatagrid01p.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (6448) 0:01:04.48
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: ds-gatagrid01p.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (2) 0:00:00.02
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# systemctl start dataeng
+[root@ds-gatagrid01p ~]# systemctl enable dataeng
+dataeng.service is not a native service, redirecting to /sbin/chkconfig.
+Executing /sbin/chkconfig dataeng on
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# systemctl stop firewalld
+[root@ds-gatagrid01p ~]# systemctl disable firewalld
+Removed symlink /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service.
+Removed symlink /etc/systemd/system/basic.target.wants/firewalld.service.
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# setenforce permissive
+
+[root@m1-gatagrid01p ~]# sed -i 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+[root@m1-gatagrid01p ~]# grep "^SELINUX" /etc/selinux/config
+SELINUX=disabled
+SELINUXTYPE=targeted
+[root@m1-gatagrid01p ~]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log --pretty=format:"%h - %an, %ad : %s" --graph --name-status --date=iso | less
+...
+* aee3fcb - Sergey Belogrud, 2017-03-28 19:18:05 +0300 : SD#277431. Removed monitoring of two servers. They'll be used for other project.
+D       objects/servers/dc-ds/linux/ds-exasol01p.cfg
+D       objects/servers/dc-ds/linux/ds-exasol02p.cfg
+
+* d52d455 - Sergey Belogrud, 2017-02-13 17:09:11 +0300 : On these servers were catched situation, when after changing time zone, removed user account nrpe. After this, nagios stop correct checking health
+of these servers.
+M       objects/servers/dc-ds/linux/ds-exasol01p.cfg
+M       objects/servers/dc-ds/linux/ds-exasol02p.cfg
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p aee3fcb
+commit aee3fcbdcb64c3373cd5733ef0905be15713081b
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Tue Mar 28 19:18:05 2017 +0300
+
+    SD#277431. Removed monitoring of two servers. They'll be used for other project.
+
+diff --git a/objects/servers/dc-ds/linux/ds-exasol01p.cfg b/objects/servers/dc-ds/linux/ds-exasol01p.cfg
+deleted file mode 100644
+index eab6e7f..0000000
+--- a/objects/servers/dc-ds/linux/ds-exasol01p.cfg
++++ /dev/null
+@@ -1,74 +0,0 @@
+-define host{
+-    use                             linux-server
+-    host_name                       ds-exasol01p
+-    address                         10.216.2.22
+-    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+-    contact_groups                  dwh-admins-email-2, linux-admins
+-}
+-define service{
+-    use                             generic-service-ping
+-    host_name                       ds-exasol01p
+-    service_description             PING
+-    check_command                   check_ping!100.0,20%!500.0,60%
+-    contacts                        d.nemchin_sms, d.s.pavlov_sms, d.ovchinnikov_sms, g.bezrukikh_sms,Naumen_nag_request_email
+-    contact_groups                  linux-admins
+-}
+-define service{
+-    use                             generic-service-partition-root
+-    host_name                       ds-exasol01p
+-    service_description             Partition ROOT
+-    check_command                   check_nrpe!check_root_fs
+-    contacts                        d.nemchin_sms, d.s.pavlov_sms, d.ovchinnikov_sms, g.bezrukikh_sms,Naumen_nag_request_email
+-    contact_groups                  linux-admins
+-}
+-define service{
+-    use                             generic-service-partition-opt
+-    host_name                       ds-exasol01p
+-    service_description             Partition D02_DATA
+-    check_command                   check_nrpe!check_d02_data_fs
+-}
+-define service{
+-    use                             generic-service-partition-opt
+-    host_name                       ds-exasol01p
+-    service_description             Partition SPOOL
+-    check_command                   check_nrpe!check_spool_fs
+-}
+-#define service{
+-#    use                             generic-service-partition-opt
+-#    host_name                       ds-exasol01p
+-#    service_description             Partition OPT
+-#    check_command                   check_nrpe!check_opt_fs
+-#}
+-#define service{
+-#    use                             generic-service-partition-var
+-#    host_name                       ds-exasol01p
+-#    service_description             Partition VAR
+-#    check_command                   check_nrpe!check_var_fs
+-#}
+-define service{
+-    use                             generic-service-current-load
+-    host_name                       ds-exasol01p
+-    service_description             Current Load
+-    check_command                   check_nrpe!check_load
+-}
+-define service{
+-    use                             generic-service-current-memory-load
+-    host_name                       ds-exasol01p
+-    service_description             Current Memory Load
+-    check_command                   check_nrpe!check_memory_load_linux
+-}
+-define service{
+-    use                             generic-service-check-zombie-procs
+-    host_name                       ds-exasol01p
+-    service_description             Check Zombie procs
+-    check_command                   check_nrpe!check_zombie_procs
+-}
+-define service{
+-    use                      generic-service-server-health
+-    host_name                ds-exasol01p
+-    service_description      Server Health
+-    check_command            check_nrpe!check_openmanage
+-    notification_options            w,u,c,r
+-    contacts                        d.nemchin_sms, d.s.pavlov_sms, d.ovchinnikov_sms, g.bezrukikh_sms,Naumen_nag_request_email
+-    contact_groups                  linux-admins
+-}
+diff --git a/objects/servers/dc-ds/linux/ds-exasol02p.cfg b/objects/servers/dc-ds/linux/ds-exasol02p.cfg
+deleted file mode 100644
+index 85461ac..0000000
+--- a/objects/servers/dc-ds/linux/ds-exasol02p.cfg
++++ /dev/null
+@@ -1,75 +0,0 @@
+-define host{
+-    use                             linux-server
+-    host_name                       ds-exasol02p
+-    address                         10.216.2.23
+-    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+-    contact_groups                  dwh-admins-email-2, linux-admins
+-}
+-define service{
+-    use                             generic-service-ping
+-    host_name                       ds-exasol02p
+-    service_description             PING
+-    check_command                   check_ping!100.0,20%!500.0,60%
+-    contacts                        d.nemchin_sms, d.s.pavlov_sms, d.ovchinnikov_sms, g.bezrukikh_sms,Naumen_nag_request_email
+-    contact_groups                  linux-admins
+-}
+-define service{
+-    use                             generic-service-partition-root
+-    host_name                       ds-exasol02p
+-    service_description             Partition ROOT
+-    check_command                   check_nrpe!check_root_fs
+-    contacts                        d.nemchin_sms, d.s.pavlov_sms, d.ovchinnikov_sms, g.bezrukikh_sms,Naumen_nag_request_email
+-    contact_groups                  linux-admins
+-}
+-define service{
+-    use                             generic-service-partition-opt
+-    host_name                       ds-exasol02p
+-    service_description             Partition D02_DATA
+-    check_command                   check_nrpe!check_d02_data_fs
+-}
+-define service{
+-    use                             generic-service-partition-opt
+-    host_name                       ds-exasol02p
+-    service_description             Partition SPOOL
+-    check_command                   check_nrpe!check_spool_fs
+-}
+-#define service{
+-#    use                             generic-service-partition-opt
+-#    host_name                       ds-exasol02p
+-#    service_description             Partition OPT
+-#    check_command                   check_nrpe!check_opt_fs
+-#}
+-#define service{
+-#    use                             generic-service-partition-var
+-#    host_name                       ds-exasol02p
+-#    service_description             Partition VAR
+-#    check_command                   check_nrpe!check_var_fs
+-#}
+-define service{
+-    use                             generic-service-current-load
+-    host_name                       ds-exasol02p
+-    service_description             Current Load
+-    check_command                   check_nrpe!check_load
+-}
+-define service{
+-    use                             generic-service-current-memory-load
+-    host_name                       ds-exasol02p
+-    service_description             Current Memory Load
+-    check_command                   check_nrpe!check_memory_load_linux
+-}
+-define service{
+-    use                             generic-service-check-zombie-procs
+-    host_name                       ds-exasol02p
+-    service_description             Check Zombie procs
+-    check_command                   check_nrpe!check_zombie_procs
+-}
+-define service{
+-    use                      generic-service-server-health
+-    host_name                ds-exasol02p
+-    service_description      Server Health
+-    check_command            check_nrpe!check_openmanage
+-    notification_options            w,u,c,r
+-    contacts                        d.nemchin_sms, d.s.pavlov_sms, d.ovchinnikov_sms, g.bezrukikh_sms,Naumen_nag_request_email
+-    contact_groups                  linux-admins
+-}
+-
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# mkdir ~/work/20170330-1654
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p aee3fcb > !$/git.log.exasol.txt
+git --no-pager log -n 1 -p aee3fcb > ~/work/20170330-1654/git.log.exasol.txt
+[root@vm-vol-nag4-tst objects]#
+
+
+define service{
+        use                           generic-service-server-health
+    host_name                ds-gp-prd-sdw3
+    service_description      Server Health
+    check_command            check_dell
+}
+
+................................................................................
+
+[root@vm-vol-nag4-tst 20170330-1654]# /usr/lib64/nagios/plugins/check_openmanage -H 10.216.2.22 -C tcspub -P 2c -p
+OK - System: 'PowerEdge R930', SN: '1TXGSG2', 1536 GB ram (48 dimms), 2 logical drives, 19 physical drives
+INTERNAL ERROR: Use of uninitialized value $reading in numeric eq (==) at /usr/lib64/nagios/plugins/check_openmanage line 4302.
+INTERNAL ERROR: Use of uninitialized value $reading in numeric eq (==) at /usr/lib64/nagios/plugins/check_openmanage line 4302.|T0_System_Board_Inlet=23C;42;47 T1_System_Board_Exhaust=32C;70;75 T2_CPU1=54C;92;97 T3_CPU2=44C;92;97 W3_System_Board_Pwr_Consumption=500W;0;0 A0_PS1_Current_1=1.2A;0;0 A1_PS2_Current_2=0.2A;0;0 A2_PS3_Current_3=1A;0;0 V18_PS1_Voltage_1=228V;0;0 V19_PS2_Voltage_2=228V;0;0 V20_PS3_Voltage_3=232V;0;0 F0_System_Board_Fan1=3480rpm;0;0 F1_System_Board_Fan2=3360rpm;0;0 F2_System_Board_Fan3=3360rpm;0;0 F3_System_Board_Fan4=3360rpm;0;0 F4_System_Board_Fan5=3240rpm;0;0 F5_System_Board_Fan6=3360rpm;0;0
+[root@vm-vol-nag4-tst 20170330-1654]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst 20170330-1654]# scp /usr/lib64/nagios/plugins/check_openmanage bsv@10.216.2.22:/tmp
+[root@vm-vol-nag4-tst 20170330-1654]# scp /usr/lib64/nagios/plugins/check_openmanage bsv@10.216.2.23:/tmp
+
+[root@ds-gatagrid01p ~]# cp /tmp/check_openmanage /usr/lib64/nagios/plugins/
+[root@ds-gatagrid01p ~]# yum -y install srvadmin-all
+
+[root@ds-gatagrid01p ~]# /usr/lib64/nagios/plugins/check_openmanage -p
+OK - System: 'PowerEdge R930', SN: '1TXGSG2', 3072 GB ram (48 dimms), 2 logical drives, 19 physical drives|T0_System_Board_Inlet=23C;42;47 T1_System_Board_Exhaust=31C;70;75 T2_CPU1=54C;92;97 T3_CPU2=44C;92;97 W3_System_Board_Pwr_Consumption=500W;2500;2750 A0_PS1_Current_1=1.2A;0;0 A1_PS2_Current_2=0.2A;0;0 A2_PS3_Current_3=1.0A;0;0 V18_PS1_Voltage_1=228V;0;0 V19_PS2_Voltage_2=228V;0;0 V20_PS3_Voltage_3=232V;0;0 F0_System_Board_Fan1=3360rpm;0;0 F1_System_Board_Fan2=3360rpm;0;0 F2_System_Board_Fan3=3240rpm;0;0 F3_System_Board_Fan4=3360rpm;0;0 F4_System_Board_Fan5=3120rpm;0;0 F5_System_Board_Fan6=3360rpm;0;0
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# cat > /etc/nrpe.d/check_openmanage.cfg
+command[check_openmanage]=/usr/lib64/nagios/plugins/check_openmanage -p
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# systemctl restart nrpe
+
+
+[root@vm-vol-nag4-tst objects]# cp /root/work/20170330-1654/ds-gatagrid01p.cfg servers/dc-ds/linux/
+[root@vm-vol-nag4-tst objects]# cp /root/work/20170330-1654/m1-gatagrid01p.cfg servers/dc-m1/linux/
+
+................................................................................
+
+[root@ds-gatagrid01p ~]# yum -y install lsscsi
+
+[root@ds-gatagrid01p ~]# lsscsi -g
+[0:2:0:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sda   /dev/sg0
+[0:2:1:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sdb   /dev/sg1
+[1:0:0:0]    disk    iDRAC    OEMDRV           0329  /dev/sdc   /dev/sg2
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# lsscsi -l
+[0:2:0:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sda
+  state=running queue_depth=256 scsi_level=6 type=0 device_blocked=0 timeout=90
+[0:2:1:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sdb
+  state=running queue_depth=256 scsi_level=6 type=0 device_blocked=0 timeout=90
+[1:0:0:0]    disk    iDRAC    OEMDRV           0329  /dev/sdc
+  state=running queue_depth=1 scsi_level=0 type=0 device_blocked=0 timeout=30
+[root@ds-gatagrid01p ~]# lsscsi -v
+[0:2:0:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sda
+  dir: /sys/bus/scsi/devices/0:2:0:0  [/sys/devices/pci0000:00/0000:00:03.2/0000:03:00.0/host0/target0:2:0/0:2:0:0]
+[0:2:1:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sdb
+  dir: /sys/bus/scsi/devices/0:2:1:0  [/sys/devices/pci0000:00/0000:00:03.2/0000:03:00.0/host0/target0:2:1/0:2:1:0]
+[1:0:0:0]    disk    iDRAC    OEMDRV           0329  /dev/sdc
+  dir: /sys/bus/scsi/devices/1:0:0:0  [/sys/devices/pci0000:00/0000:00:1a.0/usb1/1-1/1-1.6/1-1.6.2/1-1.6.2:1.0/host1/target1:0:0/1:0:0:0]
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# lspci -v -s 0000:00:1a.0
+00:1a.0 USB controller: Intel Corporation C600/X79 series chipset USB2 Enhanced Host Controller #2 (rev 06) (prog-if 20 [EHCI])
+        Subsystem: Dell Device 05e8
+        Flags: bus master, medium devsel, latency 0, IRQ 23
+        Memory at 96302000 (32-bit, non-prefetchable) [size=1K]
+        Capabilities: [50] Power Management version 2
+        Capabilities: [58] Debug port: BAR=1 offset=00a0
+        Capabilities: [98] PCI Advanced Features
+        Kernel driver in use: ehci-pci
+
+[root@ds-gatagrid01p ~]# lspci -v -s 0000:00:03.2
+00:03.2 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 3 (rev 01) (prog-if 00 [Normal decode])
+        Flags: bus master, fast devsel, latency 0
+        Bus: primary=00, secondary=03, subordinate=03, sec-latency=0
+        I/O behind bridge: 00002000-00002fff
+        Memory behind bridge: 96100000-962fffff
+        Capabilities: [40] Subsystem: Dell Device 05e8
+        Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+        Capabilities: [90] Express Root Port (Slot-), MSI 00
+        Capabilities: [e0] Power Management version 3
+        Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+        Capabilities: [110] Access Control Services
+        Capabilities: [148] Advanced Error Reporting
+        Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+        Capabilities: [250] #19
+        Capabilities: [280] Vendor Specific Information: ID=0005 Rev=3 Len=018 <?>
+        Capabilities: [298] Vendor Specific Information: ID=0007 Rev=0 Len=024 <?>
+        Capabilities: [300] Vendor Specific Information: ID=0008 Rev=0 Len=038 <?>
+        Kernel driver in use: pcieport
+
+[root@ds-gatagrid01p ~]#
+
+
+[root@ds-gatagrid01p ~]# lsscsi -l
+[0:2:0:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sda
+  state=running queue_depth=256 scsi_level=6 type=0 device_blocked=0 timeout=90
+[0:2:1:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sdb
+  state=running queue_depth=256 scsi_level=6 type=0 device_blocked=0 timeout=90
+[1:0:0:0]    disk    iDRAC    OEMDRV           0329  /dev/sdc
+  state=running queue_depth=1 scsi_level=0 type=0 device_blocked=0 timeout=30
+[root@ds-gatagrid01p ~]# lsscsi -v
+[0:2:0:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sda
+  dir: /sys/bus/scsi/devices/0:2:0:0  [/sys/devices/pci0000:00/0000:00:03.2/0000:03:00.0/host0/target0:2:0/0:2:0:0]
+[0:2:1:0]    disk    DELL     PERC H730P Adp   4.27  /dev/sdb
+  dir: /sys/bus/scsi/devices/0:2:1:0  [/sys/devices/pci0000:00/0000:00:03.2/0000:03:00.0/host0/target0:2:1/0:2:1:0]
+[1:0:0:0]    disk    iDRAC    OEMDRV           0329  /dev/sdc
+  dir: /sys/bus/scsi/devices/1:0:0:0  [/sys/devices/pci0000:00/0000:00:1a.0/usb1/1-1/1-1.6/1-1.6.2/1-1.6.2:1.0/host1/target1:0:0/1:0:0:0]
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# lspci -v -s 0000:00:1a.0
+00:1a.0 USB controller: Intel Corporation C600/X79 series chipset USB2 Enhanced Host Controller #2 (rev 06) (prog-if 20 [EHCI])
+        Subsystem: Dell Device 05e8
+        Flags: bus master, medium devsel, latency 0, IRQ 23
+        Memory at 96302000 (32-bit, non-prefetchable) [size=1K]
+        Capabilities: [50] Power Management version 2
+        Capabilities: [58] Debug port: BAR=1 offset=00a0
+        Capabilities: [98] PCI Advanced Features
+        Kernel driver in use: ehci-pci
+
+[root@ds-gatagrid01p ~]# lspci -v -s 0000:00:03.2
+00:03.2 PCI bridge: Intel Corporation Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D PCI Express Root Port 3 (rev 01) (prog-if 00 [Normal decode])
+        Flags: bus master, fast devsel, latency 0
+        Bus: primary=00, secondary=03, subordinate=03, sec-latency=0
+        I/O behind bridge: 00002000-00002fff
+        Memory behind bridge: 96100000-962fffff
+        Capabilities: [40] Subsystem: Dell Device 05e8
+        Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+        Capabilities: [90] Express Root Port (Slot-), MSI 00
+        Capabilities: [e0] Power Management version 3
+        Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+        Capabilities: [110] Access Control Services
+        Capabilities: [148] Advanced Error Reporting
+        Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+        Capabilities: [250] #19
+        Capabilities: [280] Vendor Specific Information: ID=0005 Rev=3 Len=018 <?>
+        Capabilities: [298] Vendor Specific Information: ID=0007 Rev=0 Len=024 <?>
+        Capabilities: [300] Vendor Specific Information: ID=0008 Rev=0 Len=038 <?>
+        Kernel driver in use: pcieport
+
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME          TYPE MOUNTPOINT FSTYPE        SIZE
+sda           disk                        278.9G
+├─sda1        part /boot      xfs           500M
+└─sda2        part            LVM2_member 278.3G
+  ├─rhel-root lvm  /          xfs            50G
+  ├─rhel-swap lvm  [SWAP]     swap            4G
+  └─rhel-opt  lvm  /opt       xfs         224.3G
+sdb           disk                          4.4T
+├─sdb1        part                         63.8M
+└─sdb2        part                          4.4T
+sdc           disk                          308M
+└─sdc1        part            vfat          308M
+[root@ds-gatagrid01p ~]#
+
+[root@m1-gatagrid01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME          TYPE MOUNTPOINT FSTYPE        SIZE
+sda           disk                        278.9G
+├─sda1        part /boot      xfs           500M
+└─sda2        part            LVM2_member 278.3G
+  ├─rhel-root lvm  /          xfs            50G
+  ├─rhel-swap lvm  [SWAP]     swap            4G
+  └─rhel-opt  lvm  /opt       xfs         224.3G
+sdb           disk                          4.4T
+├─sdb1        part                         63.8M
+└─sdb2        part                          4.4T
+sdd           disk                          308M
+└─sdd1        part            vfat          308M
+[root@m1-gatagrid01p ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-sasetl01p ~]# awk '/dwhsys/{print}' /etc/{passwd,shadow}
+dwhsys:x:1063:1002:dwhsys:/home/dwhsys/:/bin/bash
+dwhsys:$6$okV2upZm$iAPLb4DpvL9TD8VXA0IJj1TxZiB4.u5Z.B3MSSl7a8WJgISw5/xBwvRA4yNeT/rKXDkF5IlINWybaOhvErP5V1:15946:0:99999:7:::
+[root@ds-sasetl01p ~]#
+
+[root@ds-sasetl01p ~]# id dwhsys
+uid=1063(dwhsys) gid=1002(sas) groups=1002(sas),1015(maodd),1016(duks)
+[root@ds-sasetl01p ~]#
+................................................................................
+[root@ds-gatagrid01p ~]# groupadd -g 1063 dwhsys && useradd -u 1063 -g dwhsys -c "SD#277431" -m -G wheel -s /bin/bash -p '$6$okV2upZm$iAPLb4DpvL9TD8VXA0IJj1TxZiB4.u5Z.B3MSSl7a8WJgISw5/xBwvRA4yNeT/rKXDkF5IlINWybaOhvErP5V1' dwhsys
+[root@ds-gatagrid01p ~]#
+[root@ds-gatagrid01p ~]# sudo -l -U dwhsys
+Matching Defaults entries for dwhsys on this host:
+    requiretty, !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE",
+    env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE", env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET
+    XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User dwhsys may run the following commands on this host:
+    (ALL) ALL
+[root@ds-gatagrid01p ~]#
+
+[root@ds-gatagrid01p ~]# id !$
+id dwhsys
+uid=1063(dwhsys) gid=1063(dwhsys) groups=1063(dwhsys),10(wheel)
+[root@ds-gatagrid01p ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-sasetl01p ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+2: eth8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.2.11/24 brd 10.216.2.255 scope global eth8
+3: eth9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.3.11/24 brd 10.216.3.255 scope global eth9
+12: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.28.5/24 brd 10.216.28.255 scope global bond0
+15: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP
+    inet 10.217.65.53/24 brd 10.217.65.255 scope global bond1
+[root@ds-sasetl01p ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#277431. Create monitoring for new server." servers/dc-ds/linux/ds-datagrid01p.cfg
+[master dad67ca] SD#277431. Create monitoring for new server.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 74 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-ds/linux/ds-datagrid01p.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 12, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 1.11 KiB, done.
+Total 7 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   a2cc63e..dad67ca  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+#
+#   20170403 Creating teaming.
+#
+
+[root@ds-datagrid01p ~]# cat /etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em1
+UUID=cc719eb9-a91e-4042-a5e5-7638c6dad116
+DEVICE=em1
+ONBOOT=yes
+IPADDR=10.216.2.22
+PREFIX=24
+GATEWAY=10.216.2.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+[root@ds-datagrid01p ~]#
+
+................................................................................
+
+[root@ds-datagrid01p ~]# systemctl restart network
+
+
+[root@ds-datagrid01p ~]# ls -Alh /etc/sysconfig/network-scripts/ifcfg-*
+-rw-r--r--. 1 root root 281 Apr  3 11:27 /etc/sysconfig/network-scripts/ifcfg-em1
+-rw-r--r--. 1 root root 256 Apr  3 11:27 /etc/sysconfig/network-scripts/ifcfg-em2
+-rw-r--r--. 1 root root 142 Apr  3 11:29 /etc/sysconfig/network-scripts/ifcfg-em2-1
+-rw-r--r--. 1 root root 255 Mar 30 17:26 /etc/sysconfig/network-scripts/ifcfg-em3
+-rw-r--r--. 1 root root 255 Mar 30 17:26 /etc/sysconfig/network-scripts/ifcfg-em4
+-rw-r--r--. 1 root root 142 Apr  3 11:29 /etc/sysconfig/network-scripts/ifcfg-Ethernet_connection_1
+-rw-r--r--. 1 root root 254 Sep 16  2015 /etc/sysconfig/network-scripts/ifcfg-lo
+-rw-r--r--. 1 root root 257 Apr  3 11:34 /etc/sysconfig/network-scripts/ifcfg-team0
+[root@ds-datagrid01p
+
+
+#
+#   Teaming didn't start work properly...
+#   I used bonding instead.
+#
+
+[root@ds-datagrid01p ~]# find /etc/sysconfig/network-scripts/ -name ifcfg-* -exec echo "{}" \; -exec cat {} \; -exec echo \;
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em4
+UUID=7e129536-388c-4663-8ab2-c7b50972ac59
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em3
+UUID=7edf460c-5a50-4dd9-9e73-3d972ba6013f
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em1
+UUID=35c81dfc-a7fc-42e2-b235-4099db978b41
+DEVICE=em1
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond0
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2
+UUID=f5ee5c27-f437-4ea9-b55a-30a2f59bf112
+DEVICE=em2
+ONBOOT=no
+SLAVE=yes
+MASTER=bond0
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+BOOTPROTO=none
+IPADDR=10.216.2.22
+PREFIX=24
+GATEWAY=10.216.2.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+BONDING_OPTS="mode=1 miimon=100"
+
+[root@ds-datagrid01p ~]#
+
+................................................................................
+................................................................................
+
+
+#
+#   20170414
+#
+
+[support@centos00 ~]$ host 1TWLSG2.mgmt.tcsbank.ru
+1TWLSG2.mgmt.tcsbank.ru has address 10.219.9.207
+[support@centos00 ~]$
+
+
+
+[bsv@m1-datagrid01p ~]$ ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.4.39/24 brd 10.216.4.255 scope global em1
+       valid_lft forever preferred_lft forever
+3: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.26.23/24 brd 10.216.26.255 scope global em2
+       valid_lft forever preferred_lft forever
+[bsv@m1-datagrid01p ~]$
+
+................................................................................
+................................................................................
+................................................................................
+
+#
+#   20170417
+#
+
+[root@ds-datagrid01p ~]# ifconfig -a
+bond0: flags=5187<UP,BROADCAST,RUNNING,MASTER,MULTICAST>  mtu 1500
+        inet 10.216.2.22  netmask 255.255.255.0  broadcast 10.216.2.255
+        inet6 fe80::1a66:daff:fe7b:bdec  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:bd:ec  txqueuelen 0  (Ethernet)
+        RX packets 105802  bytes 22595524 (21.5 MiB)
+        RX errors 0  dropped 4619  overruns 0  frame 0
+        TX packets 65567  bytes 14482682 (13.8 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+em1: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 1500
+        inet6 fe80::1a66:daff:fe7b:bdec  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:bd:ec  txqueuelen 1000  (Ethernet)
+        RX packets 101183  bytes 22197919 (21.1 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 65559  bytes 14482002 (13.8 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 134  memory 0x95000000-957fffff
+
+em2: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 1500
+        inet6 fe80::1a66:daff:fe7b:bdec  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:bd:ec  txqueuelen 1000  (Ethernet)
+        RX packets 4619  bytes 397605 (388.2 KiB)
+        RX errors 0  dropped 4619  overruns 0  frame 0
+        TX packets 8  bytes 680 (680.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 147  memory 0x94000000-947fffff
+
+em3: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 18:66:da:7b:bd:f0  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 147  memory 0x93000000-937fffff
+
+em4: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 18:66:da:7b:bd:f2  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 168  memory 0x92000000-927fffff
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 0  (Local Loopback)
+        RX packets 450  bytes 61068 (59.6 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 450  bytes 61068 (59.6 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+p4p1: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 2c:27:d7:53:ba:78  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 179
+
+p4p2: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 2c:27:d7:53:ba:7c  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 187
+
+[root@ds-datagrid01p ~]#
+
+
+[root@ds-datagrid01p ~]# ethtool p4p1
+Settings for p4p1:
+        Supported ports: [ TP FIBRE ]
+        Supported link modes:   10000baseT/Full
+        Supported pause frame use: No
+        Supports auto-negotiation: No
+        Advertised link modes:  10000baseT/Full
+        Advertised pause frame use: No
+        Advertised auto-negotiation: No
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: FIBRE
+        PHYAD: 0
+        Transceiver: external
+        Auto-negotiation: off
+        Supports Wake-on: g
+        Wake-on: g
+        Current message level: 0x00000000 (0)
+
+        Link detected: no
+[root@ds-datagrid01p ~]# ethtool p4p2
+Settings for p4p2:
+        Supported ports: [ TP FIBRE ]
+        Supported link modes:   10000baseT/Full
+        Supported pause frame use: No
+        Supports auto-negotiation: No
+        Advertised link modes:  10000baseT/Full
+        Advertised pause frame use: No
+        Advertised auto-negotiation: No
+        Speed: Unknown!
+        Duplex: Unknown! (255)
+        Port: FIBRE
+        PHYAD: 1
+        Transceiver: external
+        Auto-negotiation: off
+        Supports Wake-on: g
+        Wake-on: g
+        Current message level: 0x00000000 (0)
+
+        Link detected: no
+[root@ds-datagrid01p ~]#
+
+................................................................................
+
+From: Bukovnya Sergey Nikolaevich
+Sent: Friday, April 14, 2017 6:16 PM
+To: Belogrud Sergey Vladimirovich
+Subject: FW: Неделя 17-21 .
+
+Подсеть DS SAS - 10.216.28.0/24
+
+
+Сергей Буковня
+Сетевой инженер
+
+................................................................................
+................................................................................
+
+#
+#   20170419
+#
+
+[root@ds-datagrid01p network-scripts]# ifconfig -a
+bond0: flags=5187<UP,BROADCAST,RUNNING,MASTER,MULTICAST>  mtu 1500
+        inet 10.216.2.22  netmask 255.255.255.0  broadcast 10.216.2.255
+        inet6 fe80::1a66:daff:fe7b:bdec  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:bd:ec  txqueuelen 0  (Ethernet)
+        RX packets 279039  bytes 51216025 (48.8 MiB)
+        RX errors 0  dropped 10243  overruns 0  frame 0
+        TX packets 163131  bytes 31752526 (30.2 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+em1: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 1500
+        inet6 fe80::1a66:daff:fe7b:bdec  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:bd:ec  txqueuelen 1000  (Ethernet)
+        RX packets 268796  bytes 50363957 (48.0 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 163123  bytes 31751846 (30.2 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 134  memory 0x95000000-957fffff
+
+em2: flags=6211<UP,BROADCAST,RUNNING,SLAVE,MULTICAST>  mtu 1500
+        inet6 fe80::1a66:daff:fe7b:bdec  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:bd:ec  txqueuelen 1000  (Ethernet)
+        RX packets 10243  bytes 852068 (832.0 KiB)
+        RX errors 0  dropped 10243  overruns 0  frame 0
+        TX packets 8  bytes 680 (680.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 147  memory 0x94000000-947fffff
+
+em3: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 18:66:da:7b:bd:f0  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 147  memory 0x93000000-937fffff
+
+em4: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 18:66:da:7b:bd:f2  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 168  memory 0x92000000-927fffff
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 0  (Local Loopback)
+        RX packets 498  bytes 63564 (62.0 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 498  bytes 63564 (62.0 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+p4p1: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 2c:27:d7:53:ba:78  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 179
+
+p4p2: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 2c:27:d7:53:ba:7c  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 187
+
+[root@ds-datagrid01p network-scripts]#
+
+
+[root@ds-datagrid01p network-scripts]# cp ifcfg-{em2,p4p1}
+[root@ds-datagrid01p network-scripts]# cp ifcfg-{em2,p4p2}
+
+................................................................................
+................................................................................
+
+[root@ds-datagrid01p network-scripts]# ifup p4p1
+[root@ds-datagrid01p network-scripts]# ethtool p4p1
+Settings for p4p1:
+        Supported ports: [ TP FIBRE ]
+        Supported link modes:   10000baseT/Full
+        Supported pause frame use: No
+        Supports auto-negotiation: No
+        Advertised link modes:  10000baseT/Full
+        Advertised pause frame use: No
+        Advertised auto-negotiation: No
+        Speed: 10000Mb/s
+        Duplex: Full
+        Port: Twisted Pair
+        PHYAD: 0
+        Transceiver: external
+        Auto-negotiation: off
+        MDI-X: Unknown
+        Supports Wake-on: g
+        Wake-on: g
+        Current message level: 0x00000000 (0)
+
+        Link detected: yes
+[root@ds-datagrid01p network-scripts]# ifconfig p4p1
+p4p1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.216.28.21  netmask 255.255.255.0  broadcast 10.216.28.255
+        inet6 fe80::2e27:d7ff:fe53:ba78  prefixlen 64  scopeid 0x20<link>
+        ether 2c:27:d7:53:ba:78  txqueuelen 1000  (Ethernet)
+        RX packets 4  bytes 240 (240.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 10  bytes 774 (774.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 179
+
+[root@ds-datagrid01p network-scripts]# arping -c 3 -I p4p1 10.216.28.254
+ARPING 10.216.28.254 from 10.216.28.21 p4p1
+Sent 3 probes (3 broadcast(s))
+Received 0 response(s)
+[root@ds-datagrid01p network-scripts]# ping -c 3 -I 10.216.28.21 10.216.28.254
+PING 10.216.28.254 (10.216.28.254) from 10.216.28.21 : 56(84) bytes of data.
+From 10.216.28.21 icmp_seq=1 Destination Host Unreachable
+From 10.216.28.21 icmp_seq=2 Destination Host Unreachable
+From 10.216.28.21 icmp_seq=3 Destination Host Unreachable
+
+--- 10.216.28.254 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 1999ms
+pipe 3
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+6: p4p1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.28.21/24 brd 10.216.28.255 scope global p4p1
+       valid_lft forever preferred_lft forever
+8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.2.22/24 brd 10.216.2.255 scope global bond0
+       valid_lft forever preferred_lft forever
+[root@ds-datagrid01p network-scripts]# ip route
+default via 10.216.2.254 dev bond0
+10.216.2.0/24 dev bond0  proto kernel  scope link  src 10.216.2.22
+10.216.28.0/24 dev p4p1  proto kernel  scope link  src 10.216.28.21
+169.254.0.0/16 dev p4p1  scope link  metric 1006
+169.254.0.0/16 dev bond0  scope link  metric 1008
+[root@ds-datagrid01p network-scripts]#
+
+................................................................................
+
+#
+#   20170420
+#
+[root@ds-datagrid01p network-scripts]# ifdown p4p1.1628
+[root@ds-datagrid01p network-scripts]# ifdown p4p1
+
+[root@ds-datagrid01p network-scripts]# ifup p4p2
+[root@ds-datagrid01p network-scripts]# ifup p4p2.1628
+
+[root@ds-datagrid01p network-scripts]# arping -c 3 -I p4p2.1628 10.216.28.254
+ARPING 10.216.28.254 from 10.216.28.21 p4p2.1628
+Unicast reply from 10.216.28.254 [00:00:5E:00:01:1C]  0.973ms
+Unicast reply from 10.216.28.254 [00:00:5E:00:01:1C]  0.914ms
+Unicast reply from 10.216.28.254 [00:00:5E:00:01:1C]  0.936ms
+Sent 3 probes (1 broadcast(s))
+Received 3 response(s)
+[root@ds-datagrid01p network-scripts]# ping -c 3 -I 10.216.28.21 10.216.28.254
+PING 10.216.28.254 (10.216.28.254) from 10.216.28.21 : 56(84) bytes of data.
+64 bytes from 10.216.28.254: icmp_seq=1 ttl=64 time=0.819 ms
+64 bytes from 10.216.28.254: icmp_seq=2 ttl=64 time=0.409 ms
+64 bytes from 10.216.28.254: icmp_seq=3 ttl=64 time=1.57 ms
+
+--- 10.216.28.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.409/0.935/1.579/0.486 ms
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# cat ifcfg-p4p2
+...
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2
+DEVICE=p4p2
+ONBOOT=yes
+
+[root@ds-datagrid01p network-scripts]# cat ifcfg-p4p2.1628
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2.1628
+DEVICE=p4p2.1628
+ONBOOT=yes
+IPADDR=10.216.28.21
+PREFIX=24
+
+[root@ds-datagrid01p network-scripts]#
+
+................................................................................
+
+[root@ds-datagrid01p network-scripts]# cat /proc/net/bonding/bond0
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: em1
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+Slave Interface: em1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 18:66:da:7b:bd:ec
+Slave queue ID: 0
+
+Slave Interface: em2
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 18:66:da:7b:bd:ee
+Slave queue ID: 0
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# ifdown em2
+
+
+[root@ds-datagrid01p network-scripts]# ifdown p4p2.1628
+[root@ds-datagrid01p network-scripts]# ifdown p4p2
+
+................................................................................
+
+[root@ds-datagrid01p network-scripts]# ifup em2
+[root@ds-datagrid01p network-scripts]# ifup em2.1628
+
+[root@ds-datagrid01p network-scripts]# ping -c 3 -I 10.216.28.21 10.216.28.254
+PING 10.216.28.254 (10.216.28.254) from 10.216.28.21 : 56(84) bytes of data.
+64 bytes from 10.216.28.254: icmp_seq=1 ttl=64 time=0.716 ms
+64 bytes from 10.216.28.254: icmp_seq=2 ttl=64 time=0.379 ms
+64 bytes from 10.216.28.254: icmp_seq=3 ttl=64 time=0.383 ms
+
+--- 10.216.28.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.379/0.492/0.716/0.159 ms
+[root@ds-datagrid01p network-scripts]# arping -c 3 -I em2.1628 10.216.28.254
+ARPING 10.216.28.254 from 10.216.28.21 em2.1628
+Unicast reply from 10.216.28.254 [00:00:5E:00:01:1C]  0.881ms
+Unicast reply from 10.216.28.254 [00:00:5E:00:01:1C]  1.278ms
+Unicast reply from 10.216.28.254 [00:00:5E:00:01:1C]  0.857ms
+Sent 3 probes (1 broadcast(s))
+Received 3 response(s)
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# cat ifcfg-em2
+...
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+
+[root@ds-datagrid01p network-scripts]# cat ifcfg-em2.1628
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2.1628
+DEVICE=em2.1628
+ONBOOT=yes
+IPADDR=10.216.28.21
+PREFIX=24
+[root@ds-datagrid01p network-scripts]#
+
+................................................................................
+
+[root@ds-datagrid01p network-scripts]# ifup em2 ; ifup p4p2
+[root@ds-datagrid01p network-scripts]# ifup em2.1628 ; ifup p4p2.1628
+[root@ds-datagrid01p network-scripts]# ifup bond1
+
+[root@ds-datagrid01p network-scripts]# ip -s link show bond1
+13: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    26936      611      0       308     0       3
+    TX: bytes  packets  errors  dropped carrier collsns
+    2112       28       0       0       0       0
+[root@ds-datagrid01p network-scripts]# ip -f inet addr show bond1
+13: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.28.21/24 brd 10.216.28.255 scope global bond1
+       valid_lft forever preferred_lft forever
+[root@ds-datagrid01p network-scripts]#
+[root@ds-datagrid01p network-scripts]# ip route
+default via 10.216.2.254 dev bond0
+10.216.2.0/24 dev bond0  proto kernel  scope link  src 10.216.2.22
+10.216.28.0/24 dev bond1  proto kernel  scope link  src 10.216.28.21
+169.254.0.0/16 dev em2  scope link  metric 1003
+169.254.0.0/16 dev p4p2  scope link  metric 1007
+169.254.0.0/16 dev bond0  scope link  metric 1008
+169.254.0.0/16 dev bond1  scope link  metric 1013
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# cat /proc/net/bonding/bond1
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: em2.1628
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+Slave Interface: em2.1628
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 18:66:da:7b:bd:ee
+Slave queue ID: 0
+
+Slave Interface: p4p2.1628
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 2c:27:d7:53:ba:7c
+Slave queue ID: 0
+[root@ds-datagrid01p network-scripts]#
+
+
+................................................................................
+
+[root@ds-datagrid01p network-scripts]# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state UP qlen 1000
+    link/ether 18:66:da:7b:bd:ec brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdec/64 scope link
+       valid_lft forever preferred_lft forever
+3: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+4: em3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 18:66:da:7b:bd:f0 brd ff:ff:ff:ff:ff:ff
+5: em4: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 18:66:da:7b:bd:f2 brd ff:ff:ff:ff:ff:ff
+6: p4p1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state UP qlen 1000
+    link/ether 18:66:da:7b:bd:ec brd ff:ff:ff:ff:ff:ff
+7: p4p2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    link/ether 2c:27:d7:53:ba:7c brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::2e27:d7ff:fe53:ba7c/64 scope link
+       valid_lft forever preferred_lft forever
+8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 18:66:da:7b:bd:ec brd ff:ff:ff:ff:ff:ff
+    inet 10.216.2.22/24 brd 10.216.2.255 scope global bond0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1a66:daff:fe7b:bdec/64 scope link
+       valid_lft forever preferred_lft forever
+12: em2.1628@em2: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc noqueue master bond1 state UP
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+13: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet 10.216.28.21/24 brd 10.216.28.255 scope global bond1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+14: p4p2.1628@p4p2: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc noqueue master bond1 state UP
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# cat /proc/net/bonding/bond0
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: em1
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+Slave Interface: em1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 18:66:da:7b:bd:ec
+Slave queue ID: 0
+
+Slave Interface: p4p1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 2c:27:d7:53:ba:78
+Slave queue ID: 0
+[root@ds-datagrid01p network-scripts]#
+
+................................................................................
+................................................................................
+
+#
+#   What we have at the end.
+
+#   Primary ip place on bond0 interface. Default gateway is used from here.
+#   Just an added interface is on bond1.
+
+#   Two physical ports is used for bond0 ip and two for bond1 ip.
+
+#   The first ports from integrated network card and from added network card are used for bond0.
+#   Next two second ports are used for bond1.
+
+#   On second ports was given trank - it means that I use vlan to use it.
+
+[root@ds-datagrid01p network-scripts]# ip -f inet addr show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.2.22/24 brd 10.216.2.255 scope global bond0
+       valid_lft forever preferred_lft forever
+13: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.28.21/24 brd 10.216.28.255 scope global bond1
+       valid_lft forever preferred_lft forever
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state UP qlen 1000
+    link/ether 18:66:da:7b:bd:ec brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdec/64 scope link
+       valid_lft forever preferred_lft forever
+3: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+4: em3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 18:66:da:7b:bd:f0 brd ff:ff:ff:ff:ff:ff
+5: em4: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 18:66:da:7b:bd:f2 brd ff:ff:ff:ff:ff:ff
+6: p4p1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc mq master bond0 state UP qlen 1000
+    link/ether 18:66:da:7b:bd:ec brd ff:ff:ff:ff:ff:ff
+7: p4p2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    link/ether 2c:27:d7:53:ba:7c brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::2e27:d7ff:fe53:ba7c/64 scope link
+       valid_lft forever preferred_lft forever
+8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 18:66:da:7b:bd:ec brd ff:ff:ff:ff:ff:ff
+    inet 10.216.2.22/24 brd 10.216.2.255 scope global bond0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1a66:daff:fe7b:bdec/64 scope link
+       valid_lft forever preferred_lft forever
+12: em2.1628@em2: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc noqueue master bond1 state UP
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+13: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet 10.216.28.21/24 brd 10.216.28.255 scope global bond1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+14: p4p2.1628@p4p2: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 1500 qdisc noqueue master bond1 state UP
+    link/ether 18:66:da:7b:bd:ee brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::1a66:daff:fe7b:bdee/64 scope link
+       valid_lft forever preferred_lft forever
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# ip route
+default via 10.216.2.254 dev bond0
+10.216.2.0/24 dev bond0  proto kernel  scope link  src 10.216.2.22
+10.216.28.0/24 dev bond1  proto kernel  scope link  src 10.216.28.21
+169.254.0.0/16 dev em2  scope link  metric 1003
+169.254.0.0/16 dev p4p2  scope link  metric 1007
+169.254.0.0/16 dev bond0  scope link  metric 1008
+169.254.0.0/16 dev bond1  scope link  metric 1013
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# ls -A1 ifcfg-*
+ifcfg-bond0
+ifcfg-bond1
+ifcfg-em1
+ifcfg-em2
+ifcfg-em2.1628
+ifcfg-em3
+ifcfg-em4
+ifcfg-lo
+ifcfg-p4p1
+ifcfg-p4p2
+ifcfg-p4p2.1628
+[root@ds-datagrid01p network-scripts]#
+
+[root@ds-datagrid01p network-scripts]# cat ifcfg-em1
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em1
+UUID=35c81dfc-a7fc-42e2-b235-4099db978b41
+DEVICE=em1
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond0
+[root@ds-datagrid01p network-scripts]# cat ifcfg-p4p1
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p1
+DEVICE=p4p1
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond0
+[root@ds-datagrid01p network-scripts]# cat ifcfg-bond0
+DEVICE=bond0
+BOOTPROTO=none
+IPADDR=10.216.2.22
+PREFIX=24
+GATEWAY=10.216.2.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+BONDING_OPTS="mode=1 miimon=100"
+[root@ds-datagrid01p network-scripts]#
+
+
+
+[root@ds-datagrid01p network-scripts]# cat ifcfg-em2
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+[root@ds-datagrid01p network-scripts]# cat ifcfg-p4p2
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2
+DEVICE=p4p2
+ONBOOT=yes
+[root@ds-datagrid01p network-scripts]# cat ifcfg-em2.1628
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2.1628
+DEVICE=em2.1628
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond1
+[root@ds-datagrid01p network-scripts]# cat ifcfg-p4p2.1628
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2.1628
+DEVICE=p4p2.1628
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond1
+[root@ds-datagrid01p network-scripts]# cat ifcfg-bond1
+DEVICE=bond1
+BOOTPROTO=none
+IPADDR=10.216.28.21
+PREFIX=24
+#GATEWAY=10.216.2.254
+#DNS1=10.216.40.4
+#DNS2=10.216.42.5
+#DOMAIN=tcsbank.ru
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+BONDING_OPTS="mode=1 miimon=100"
+[root@ds-datagrid01p network-scripts]#
+
+................................................................................
+................................................................................
+
+#
+#   20170425
+#
+#   Here is attempt to configure sas interface on m1- server.
+#   I need to make it with vlan used.
+#
+#   I've reconfigured em2 interface to use vlan.
+#
+[root@m1-datagrid01p ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.4.39/24 brd 10.216.4.255 scope global em1
+       valid_lft forever preferred_lft forever
+3: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.26.23/24 brd 10.216.26.255 scope global em2
+       valid_lft forever preferred_lft forever
+[root@m1-datagrid01p ~]# ping -c 3 -I em2 10.216.26.254
+PING 10.216.26.254 (10.216.26.254) from 10.216.26.23 em2: 56(84) bytes of data.
+From 10.216.26.23 icmp_seq=1 Destination Host Unreachable
+From 10.216.26.23 icmp_seq=2 Destination Host Unreachable
+From 10.216.26.23 icmp_seq=3 Destination Host Unreachable
+
+--- 10.216.26.254 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 1999ms
+pipe 3
+[root@m1-datagrid01p ~]# ping -c 3 -I em1 10.216.4.254
+PING 10.216.4.254 (10.216.4.254) from 10.216.4.39 em1: 56(84) bytes of data.
+64 bytes from 10.216.4.254: icmp_seq=1 ttl=255 time=0.534 ms
+64 bytes from 10.216.4.254: icmp_seq=2 ttl=255 time=0.542 ms
+64 bytes from 10.216.4.254: icmp_seq=3 ttl=255 time=0.507 ms
+
+--- 10.216.4.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.507/0.527/0.542/0.030 ms
+[root@m1-datagrid01p ~]#
+
+
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em1
+TYPE=Ethernet
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em1
+UUID=965e9caf-d19d-4933-83cc-7504cd6b4c34
+DEVICE=em1
+ONBOOT=yes
+BOOTPROTO=none
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+IPADDR=10.216.4.39
+PREFIX=24
+GATEWAY=10.216.4.254
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em2
+TYPE=Ethernet
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2
+UUID=4453f10c-3367-47d6-9e68-60cb20114196
+DEVICE=em2
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=10.216.26.23
+PREFIX=24
+GATEWAY=10.216.26.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em3
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em3
+UUID=4398a00c-a8d6-4940-be1f-6fcbd04e6d3e
+DEVICE=em3
+ONBOOT=no
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em4
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em4
+UUID=9be3741c-042e-4752-b090-1c37d143ec5d
+DEVICE=em4
+ONBOOT=no
+[root@m1-datagrid01p network-scripts]# systemctl stop NetworkManager
+[root@m1-datagrid01p network-scripts]# systemctl disable NetworkManager
+Removed symlink /etc/systemd/system/multi-user.target.wants/NetworkManager.service.
+Removed symlink /etc/systemd/system/dbus-org.freedesktop.NetworkManager.service.
+Removed symlink /etc/systemd/system/dbus-org.freedesktop.nm-dispatcher.service.
+[root@m1-datagrid01p network-scripts]#
+
+[root@m1-datagrid01p network-scripts]# ls -A1 ifcfg-*
+ifcfg-em1
+ifcfg-em2
+ifcfg-em2.1626
+ifcfg-em3
+ifcfg-em4
+ifcfg-lo
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em2
+TYPE=Ethernet
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+BOOTPROTO=none
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em2.1626
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2.1626
+DEVICE=em2.1626
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=10.216.26.23
+PREFIX=24
+[root@m1-datagrid01p network-scripts]#
+
+[root@m1-datagrid01p network-scripts]# ifup em2
+[root@m1-datagrid01p network-scripts]# ifup em2.1626
+
+em1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.216.4.39  netmask 255.255.255.0  broadcast 10.216.4.255
+        inet6 fe80::1a66:daff:fe7b:f866  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:f8:66  txqueuelen 1000  (Ethernet)
+        RX packets 388017  bytes 68549334 (65.3 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 100936  bytes 15327788 (14.6 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 135  memory 0x95000000-957fffff
+
+em2: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet6 fe80::1a66:daff:fe7b:f868  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:f8:68  txqueuelen 1000  (Ethernet)
+        RX packets 44  bytes 4156 (4.0 KiB)
+        RX errors 0  dropped 218  overruns 0  frame 0
+        TX packets 24  bytes 1876 (1.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 146  memory 0x94000000-947fffff
+
+em2.1626: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.216.26.23  netmask 255.255.255.0  broadcast 10.216.26.255
+        inet6 fe80::1a66:daff:fe7b:f868  prefixlen 64  scopeid 0x20<link>
+        ether 18:66:da:7b:f8:68  txqueuelen 0  (Ethernet)
+        RX packets 26  bytes 1310 (1.2 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 16  bytes 1152 (1.1 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 0  (Local Loopback)
+        RX packets 760434  bytes 39188948 (37.3 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 760434  bytes 39188948 (37.3 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+[root@m1-datagrid01p network-scripts]#
+
+[root@m1-datagrid01p network-scripts]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.4.39/24 brd 10.216.4.255 scope global em1
+       valid_lft forever preferred_lft forever
+6: em2.1626@em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.26.23/24 brd 10.216.26.255 scope global em2.1626
+       valid_lft forever preferred_lft forever
+[root@m1-datagrid01p network-scripts]#
+
+[root@m1-datagrid01p network-scripts]# ip route
+default via 10.216.4.254 dev em1  proto static  metric 100
+10.216.4.0/24 dev em1  proto kernel  scope link  src 10.216.4.39  metric 100
+10.216.26.0/24 dev em2.1626  proto kernel  scope link  src 10.216.26.23
+169.254.0.0/16 dev em2  scope link  metric 1003
+169.254.0.0/16 dev em2.1626  scope link  metric 1006
+[root@m1-datagrid01p network-scripts]#
+
+[root@m1-datagrid01p network-scripts]# ping -c 3 -I 10.216.26.23 10.216.26.254
+PING 10.216.26.254 (10.216.26.254) from 10.216.26.23 : 56(84) bytes of data.
+64 bytes from 10.216.26.254: icmp_seq=1 ttl=64 time=0.644 ms
+64 bytes from 10.216.26.254: icmp_seq=2 ttl=64 time=0.368 ms
+64 bytes from 10.216.26.254: icmp_seq=3 ttl=64 time=0.370 ms
+
+--- 10.216.26.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+rtt min/avg/max/mdev = 0.368/0.460/0.644/0.131 ms
+[root@m1-datagrid01p network-scripts]#
+
+................................................................................
+................................................................................
+
+#
+#   Configure nagios for m1-datagrid01p.
+#
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="ds-datagrid01p" --quiet
+/usr/local/nagios/etc/objects/servers/dc-ds/linux/ds-datagrid01p.cfg
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="m1-datagrid01p" --quiet
+/usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-datagrid01p.cfg
+[root@vm-vol-nag4-tst objects]#
+
+#   I've only changed ip-address. That's it.
+
+[root@vm-vol-nag4-tst objects]# git add servers/dc-m1/linux/m1-datagrid01p.cfg
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#277431. Was made monitoring for one host." servers/dc-m1/linux/m1-datagrid01p.cfg
+[master 47a5ec2] SD#277431. Was made monitoring for one host.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 75 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-m1/linux/m1-datagrid01p.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 12, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 1.10 KiB, done.
+Total 7 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   c2c4661..47a5ec2  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+#
+#   20170428
+#
+
+#   Additional network card was installed into server.
+#   Now I can configure bonding on interfaces.
+#
+
+[root@m1-datagrid01p network-scripts]# ifconfig p4p1
+p4p1: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 2c:27:d7:54:42:b8  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 169
+
+[root@m1-datagrid01p network-scripts]# ifconfig p4p2
+p4p2: flags=4098<BROADCAST,MULTICAST>  mtu 1500
+        ether 2c:27:d7:54:42:bc  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 187
+
+[root@m1-datagrid01p network-scripts]#
+
+................................................................................
+
+[root@m1-datagrid01p network-scripts]# ifup em2
+[root@m1-datagrid01p network-scripts]# ifup p4p2
+[root@m1-datagrid01p network-scripts]# ifup em2.1626
+[root@m1-datagrid01p network-scripts]# ifup p4p2.1626
+[root@m1-datagrid01p network-scripts]# ifup bond1
+
+[root@m1-datagrid01p network-scripts]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.4.39/24 brd 10.216.4.255 scope global em1
+       valid_lft forever preferred_lft forever
+11: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.26.23/24 brd 10.216.26.255 scope global bond1
+       valid_lft forever preferred_lft forever
+[root@m1-datagrid01p network-scripts]#
+
+[root@m1-datagrid01p network-scripts]# arping -c 3 -I bond1 10.216.26.254
+ARPING 10.216.26.254 from 10.216.26.23 bond1
+Unicast reply from 10.216.26.254 [00:00:5E:00:01:1A]  0.828ms
+Unicast reply from 10.216.26.254 [00:00:5E:00:01:1A]  0.881ms
+Unicast reply from 10.216.26.254 [00:00:5E:00:01:1A]  2.164ms
+Sent 3 probes (1 broadcast(s))
+Received 3 response(s)
+[root@m1-datagrid01p network-scripts]# ping -c 3 -I 10.216.26.23 10.216.26.254
+PING 10.216.26.254 (10.216.26.254) from 10.216.26.23 : 56(84) bytes of data.
+64 bytes from 10.216.26.254: icmp_seq=1 ttl=64 time=0.709 ms
+64 bytes from 10.216.26.254: icmp_seq=2 ttl=64 time=0.364 ms
+64 bytes from 10.216.26.254: icmp_seq=3 ttl=64 time=0.381 ms
+
+--- 10.216.26.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+rtt min/avg/max/mdev = 0.364/0.484/0.709/0.160 ms
+[root@m1-datagrid01p network-scripts]#
+
+
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em2
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+BOOTPROTO=none
+[root@m1-datagrid01p network-scripts]#
+[root@m1-datagrid01p network-scripts]# cat ifcfg-p4p2
+TYPE=Ethernet
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2
+DEVICE=p4p2
+ONBOOT=yes
+BOOTPROTO=none
+[root@m1-datagrid01p network-scripts]#
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em2.1626
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em2.1626
+DEVICE=em2.1626
+BOOTPROTO=none
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond1
+[root@m1-datagrid01p network-scripts]# cat ifcfg-p4p2.1626
+TYPE=vlan
+VLAN=yes
+DEFROUTE=no
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p2.1626
+DEVICE=p2p2.1626
+BOOTPROTO=none
+ONBOOT=yes
+SLAVE=yes
+MASTER=bond1
+[root@m1-datagrid01p network-scripts]# cat ifcfg-bond1
+DEVICE=bond1
+BOOTPROTO=none
+IPADDR=10.216.26.23
+PREFIX=24
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+BONDING_OPTS="mode=1 miimon=100"
+[root@m1-datagrid01p network-scripts]#
+
+................................................................................
+
+[root@m1-datagrid01p network-scripts]# ls -A1 ifcfg-*
+ifcfg-bond0
+ifcfg-bond1
+ifcfg-em1
+ifcfg-em2
+ifcfg-em2.1626
+ifcfg-em3
+ifcfg-em4
+ifcfg-lo
+ifcfg-p4p1
+ifcfg-p4p2
+ifcfg-p4p2.1626
+[root@m1-datagrid01p network-scripts]# cat ifcfg-em1
+TYPE=Ethernet
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em1
+#UUID=965e9caf-d19d-4933-83cc-7504cd6b4c34
+DEVICE=em1
+ONBOOT=yes
+BOOTPROTO=none
+#DNS1=10.216.40.4
+#DNS2=10.216.42.5
+#DOMAIN=tcsbank.ru
+#IPADDR=10.216.4.39
+#PREFIX=24
+#GATEWAY=10.216.4.254
+SLAVE=yes
+MASTER=bond0
+[root@m1-datagrid01p network-scripts]# cat ifcfg-p4p1
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=p4p1
+DEVICE=p4p1
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond0
+[root@m1-datagrid01p network-scripts]# cat ifcfg-bond0
+DEVICE=bond0
+BOOTPROTO=none
+IPADDR=10.216.4.39
+PREFIX=24
+GATEWAY=10.216.4.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+BONDING_OPTS="mode=1 miimon=100"
+[root@m1-datagrid01p network-scripts]#
+
+................................................................................
+
+[root@m1-datagrid01p network-scripts]# cat /proc/net/bonding/bond0
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: em1
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+Slave Interface: em1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 18:66:da:7b:f8:66
+Slave queue ID: 0
+
+Slave Interface: p4p1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 2c:27:d7:54:42:b8
+Slave queue ID: 0
+[root@m1-datagrid01p network-scripts]#
+
+................................................................................
+
+
+
+
+

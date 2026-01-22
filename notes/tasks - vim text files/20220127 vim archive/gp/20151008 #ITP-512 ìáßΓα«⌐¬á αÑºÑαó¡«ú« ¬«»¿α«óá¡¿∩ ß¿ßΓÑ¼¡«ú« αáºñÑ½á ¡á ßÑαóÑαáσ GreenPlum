@@ -1,0 +1,403 @@
+
+
+................................................................................
+#   For memories to use in next tasks for backup current GreenPlum contours.
+................................................................................
+https://jira.tcsbank.ru/browse/ITP-512
+
+Настройка резервного копирования системного раздела на серверах GreenPlum
+
+Description
+Необходимо настроить резервное копирование системных разделов всех серверов GreenPlum.
+From: Pavlov Dmitriy Stanislavovich
+Sent: Tuesday, February 03, 2015 3:28 PM
+To: Belogrud Sergey Vladimirovich
+Cc: greenplum_admins; Leonov Aleksey Vladimirovich; Ovchinnikov Dmitriy Sergeevich; Gus Konstantin Mikhaylovich; Makashov Dmitriy Aleksandrovich
+Subject: RE: Обновление всех серверов контуров GreenPlum
+Обсудили с Сергеем по телефонцу.
+1.  Тестировать надо на деве;
+2.  С 22 до 23:30 часов лучше всего, бекапить лучше всего один раз в две недели
+3.  Есть неиспользующийся раздел в 370 Гб (на продах), можно использовать его.
+From: Belogrud Sergey Vladimirovich
+Sent: Tuesday, February 03, 2015 3:14 PM
+To: Pavlov Dmitriy Stanislavovich
+Cc: greenplum_admins; Leonov Aleksey Vladimirovich; Ovchinnikov Dmitriy Sergeevich; Gus Konstantin Mikhaylovich; Makashov Dmitriy Aleksandrovich
+Subject: RE: Обновление всех серверов контуров GreenPlum
+Добрый день коллеги.
+Ещё один животрепещущий этап в решении поставленной задачи (и не только) - это создание резервных копий системных разделов серверов GreenPlum.
+>   From: Gus Konstantin Mikhaylovich
+>   Sent: Wednesday, January 28, 2015 2:44 PM
+>   To: Belogrud Sergey Vladimirovich
+>   Cc: Pavlov Dmitriy Stanislavovich; Leonov Aleksey Vladimirovich; Ovchinnikov Dmitriy Sergeevich
+>   Subject: RE: Обновление всех серверов контуров GreenPlum
+>   А можно будет откатиться , ?
+>   ...
+При поверхностном обсуждении вопроса с администратором СХД и резервного копирования Димитрием Макашовым, обрисовался возможный вариант решения задачи создания системы резервного копирования серверов GreenPlum.
+На сервере резервном-мастере устанавливается специальное ПО - агент резервного копирования. Основной функционал этого агента будет нацелен на осуществление посредничества в создании резервных копий с серверов-сегментов, находящихся в изолированной сети, и передача этих резервных копий непосредственно на основной сервер резервного копирования, доступный из общей локальной сети.
+Из текущих вопросов это.
+1. На каком из контуров можно попробовать начать реализовывать описанную схему.
+2. На какое время лучше всего настроить создание и передачу резервных копий, чтобы это по минимуму влияло на производительность прикладного ПО GreenPlum (и сопутствующего) на серверах контура.
+3. Вероятно на сервере резервном-мастере потребуется некоторое дисковое пространство под работу ПО резервного копирования. На какой объём можно расчитывать?
+В копии этого письма стоит Дмитрий Макашов, поэтому уточнить или ответить на адресованные ему вопросы он сможет сам непосредственно.
+Add LinkIssue Links
+is Child of
+Improvement - An improvement or enhancement to an existing feature or task. ITP-478 обновить сервера в контурах greenplum    Major - Major loss of function. DONE
+Activity
+All
+Comments
+Work Log
+History
+Activity
+Links Hierarchy
+Transitions
+Ascending order - Click to sort in descending order
+Hide Permalink
+d.myalin Myalin Dmitriy added a comment - 11/Feb/15 1:11 PM
+1. Просьба предоставить координаты сервера-прокси, который смотрит в нашу сеть и в сеть GP.
+2. На данном сервере нужен пользователь, либо мой персональный с !require_tty в sudo, либо любой другой с подобными правами для установки софта на него.
+3. При помощи этого пользователя, я должен зайти на все ноды GP через мастер-ноду, дабы поставить софт там. Соответственно пользователь на всех нодах с возможностью sudo + список всех нод.
+3.1 Альтернативный вариант раскатывания по нодам - ставите софт сами, дистрибутив я дам.
+4. Необходим список папок под ИСКЛЮЧЕНИЕ из бэкапа, т.к. данные самого GP бэкапить чрезмерно глупо.
+Hide Permalink Edit Delete
+s.belogrud Belogrud Sergey Vladimirovich added a comment - 11/Feb/15 4:37 PM
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 11, 2015 4:37 PM
+To: Myalin Dmitriy
+Subject: RE: [JIRA] (ITP-512) Настройка резервного копирования системного раздела на серверах GreenPlum
+Как уже было отмечено в письмах и тексте задачи в jira, наиболее благоприятное время для резервного копирования с 22.00 до 23.30 один раз в две недели. Предполагаю, что по дням недели лучшими будут выходные дни.
+>   …
+>   2. С 22 до 23:30 часов лучше всего, бекапить лучше всего один раз в две недели
+>   …
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 11, 2015 4:06 PM
+To: Myalin Dmitriy
+Subject: RE: [JIRA] (ITP-512) Настройка резервного копирования системного раздела на серверах GreenPlum
+Резервное копирование нужно только локальных разделов / и /boot.
+[root@sdw1 ~]# lsblk
+NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+sda 8:0 0 3.8T 0 disk
+├─sda1 8:1 0 1008M 0 part /boot
+├─sda2 8:2 0 46.3G 0 part /
+├─sda3 8:3 0 3.4T 0 part /data1
+└─sda4 8:4 0 304.6G 0 part /work1
+sdb 8:16 0 3.8T 0 disk
+├─sdb1 8:17 0 3.4T 0 part /data2
+├─sdb2 8:18 0 304.6G 0 part /work2
+└─sdb3 8:19 0 132.8G 0 part [SWAP]
+[root@sdw1 ~]#
+То есть без каталогов написанных параметрами следующей команды grep.
+Вот типичный список каталогов для резервного копирования.
+[root@sdw1 ~]# ls -1 / | grep -v -e "tmp" -e "proc" -e "lost+found" -e "mnt" -e "data*" -e "work*"
+app
+bin
+boot
+cgroup
+core.1187
+dev
+etc
+home
+lib
+lib64
+media
+misc
+net
+opt
+root
+sbin
+selinux
+srv
+sys
+usr
+var
+[root@sdw1 ~]#
+И примерные размеры разделов / и /boot.
+[root@sdw1 ~]# df -h / /boot
+Filesystem Size Used Avail Use% Mounted on
+/dev/sda2 46G 9.7G 34G 23% /
+/dev/sda1 993M 45M 898M 5% /boot
+[root@sdw1 ~]#
+Если есть возможность создать резервные копии каталогов /mnt и /tmp, содержащие только их подкаталоги (без вложенной структуры каталогов), то это было бы идеальным вариантом.
+То есть, например, только вот такую структуру каталогов.
+[root@sdw1 ~]# find /tmp/ -maxdepth 1 -type d
+/tmp/
+/tmp/backup_ds_rw
+/tmp/.ICE-unix
+/tmp/backup_m1ds_rw
+/tmp/coll
+/tmp/backup
+[root@sdw1 ~]# find /mnt/ -maxdepth 1 -type d
+/mnt/
+/mnt/backup_m1ds_ufs
+/mnt/backup_dsds
+/mnt/sshfs
+/mnt/backup_ds_ufs
+/mnt/backup_ds
+/mnt/backup
+/mnt/backup_local
+/mnt/backup_m1ds
+[root@sdw1 ~]#
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 11, 2015 3:25 PM
+To: Myalin Dmitriy
+Subject: RE: [JIRA] (ITP-512) Настройка резервного копирования системного раздела на серверах GreenPlum
+Добрый день.
+Создана учётная запись mdu на сервере GreenPlum имеющем соединение и с внешней и с внутренней сетями.
+В треминологии GreenPlum это сервер резервный мастер в контуре ds-gp-tst (тестовый контур GreenPlum в дата-центре Data Space).
+Из общей сети сервер доступен по имени ds-gp-tst-sm и ip-адресу 10.216.29.19.
+Login: mdu
+Password: *******
+[root@smdw etc]# groupadd -g 510 mdu && useradd -g mdu -u 510 -c 'Myalin Dmitry, ITP-512' -m -G wheel -s /bin/bash -p '$6$xHfUUDhh694iipTX$8gF69qhlkBL6VmqieFA..lbTpP0q86WkbrN2cPcOg9LyVJhn1KEyZfq2FU5HvnLgchr0WoeApjMFrDm6CZYHA1' mdu
+[root@smdw etc]# sudo -l -U mdu
+Matching Defaults entries for mdu on this host:
+!visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE
+LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE", env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY",
+secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+User mdu may run the following commands on this host:
+(ALL) ALL
+[root@smdw etc]# id mdu
+uid=510(mdu) gid=510(mdu) groups=510(mdu),10(wheel)
+[root@smdw etc]#
+[root@smdw etc]# grep require /etc/sudoers
+#Defaults requiretty
+changed in order to be able to use sudo without a tty. See requiretty above.
+[root@smdw etc]#
+Внутреннее имя сервера smdw (не dns-имя).
+Имена и ip-адреса всех серверов в сегменте ds-gp-tst доступны в файле /etc/hosts.
+[root@smdw etc]# egrep "mdw$|smdw$|sdw.$" /etc/hosts
+10.216.6.6 mdw
+10.216.6.5 smdw
+10.216.6.1 sdw1
+10.216.6.2 sdw2
+10.216.6.3 sdw3
+10.216.6.4 sdw4
+10.216.6.7 sdw5
+10.216.6.8 sdw6
+10.216.6.9 sdw7
+10.216.6.10 sdw8
+[root@smdw etc]#
+Для авторизации на серверах следует выполнить команду
+sudo -i
+для повышения уровня привилегий до root.
+И после этого можно подключаться по ssh на все сервера сегмента без необходимости ввода пароля (авторизация по ключу).
+При настройке резервного копирования для удобства идентификации каждого сервера желательно где-то помечать их по общеупотребительные в переписке и общении имена вида ds-gp-tst-smdw, или ds-gp-tst-mdw, или ds-gp-tst-sdw1. Иначе придётся их идентифицировать только по ip-адресу.
+В связи с особенностью GreenPlum на всех четырёх контурах используются однотипные имена вида mdw, smdw, sdwX и в этом смысле эти имена будут повторяться от контура к контуру.
+Hide Permalink
+d.myalin Myalin Dmitriy added a comment - 12/Feb/15 2:11 PM
+бэкап настроен, по субботам, в 22 старт
+хранение 15 дней
+Hide Permalink Edit Delete
+s.belogrud Belogrud Sergey Vladimirovich a - 19/Feb/15 4:05 PM
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 18, 2015 3:29 PM
+To: Myalin Dmitriy
+Cc: Makashov Dmitriy Aleksandrovich; Leonov Aleksey Vladimirovich; Pavlov Dmitriy Stanislavovich; Ovchinnikov Dmitriy Sergeevich; Gus Konstantin Mikhaylovich
+Subject: RE: Обновление всех серверов контуров GreenPlum
+Добрый день.
+Можно продолжить настройку резервного копирования серверов GreenPlum.
+Следующий по порядку контур GreenPlum hq-msk-gp-tst (в М1 тестовый).
+Имена и ip-адреса всех серверов в сегменте hq-msk-gp-tst доступны в файле /etc/hosts.
+Для удобства идентификации в ПО резервного копирования, серверы можно именовать как hq-msk-gp-tst-mdw, hq-mks-gp-tst-smdw, hq-msk-gp-tst-sdwX и т.п.
+Прочие условия те же, что и для уже созданного резервного копирования серверов контура ds-gp-tst.
+[root@smdw_test ~]# egrep "mdw$|smdw$|sdw.$" /etc/hosts
+192.168.253.6 mdw
+192.168.253.5 smdw
+192.168.253.1 sdw1
+192.168.253.2 sdw2
+192.168.253.3 sdw3
+192.168.253.4 sdw4
+192.168.253.15 sdw5
+192.168.253.16 sdw6
+192.168.253.17 sdw7
+192.168.253.18 sdw8
+[root@smdw_test ~]#
+Следующий по порядку контур GreenPlum hq-msk-gp-prd (в М1 промышленный). Этот контур сейчас в пассивном резервном состоянии.
+[root@smdw_prod ~]# egrep "mdw$|smdw$|sdw[0-9]*$" /etc/hosts
+192.168.251.10 mdw
+192.168.251.9 smdw
+192.168.251.1 sdw1
+192.168.251.2 sdw2
+192.168.251.3 sdw3
+192.168.251.4 sdw4
+192.168.251.5 sdw5
+192.168.251.6 sdw6
+192.168.251.7 sdw7
+192.168.251.8 sdw8
+192.168.251.21 sdw9
+192.168.251.22 sdw10
+192.168.251.23 sdw11
+192.168.251.24 sdw12
+192.168.251.25 sdw13
+192.168.251.26 sdw14
+192.168.251.27 sdw15
+192.168.251.28 sdw16
+[root@smdw_prod ~]#
+Следующий по порядку контур GreenPlum ds-gp-prd (в DS промышленный). Контур под нагрузкой и в активном использовании.
+[root@smdw ~]# egrep "mdw$|smdw$|sdw[0-9]*$" /etc/hosts
+10.216.2.10 mdw
+10.216.2.9 smdw
+10.216.2.1 sdw1
+10.216.2.2 sdw2
+10.216.2.3 sdw3
+10.216.2.4 sdw4
+10.216.2.5 sdw5
+10.216.2.6 sdw6
+10.216.2.7 sdw7
+10.216.2.8 sdw8
+10.216.2.13 sdw9
+10.216.2.14 sdw10
+10.216.2.15 sdw11
+10.216.2.16 sdw12
+10.216.2.17 sdw13
+10.216.2.18 sdw14
+10.216.2.19 sdw15
+10.216.2.20 sdw16
+[root@smdw ~]#
+Думаю, что, если есть возможность, то можно выполнить настройки резервного копирования для оставшихся трёх контуров до конца недели, чтобы резервное копирование выполнилось в будущие выходные.
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 11, 2015 4:37 PM
+To: Myalin Dmitriy
+Subject: RE: [JIRA] (ITP-512) Настройка резервного копирования системного раздела на серверах GreenPlum
+Как уже было отмечено в письмах и тексте задачи в jira, наиболее благоприятное время для резервного копирования с 22.00 до 23.30 один раз в две недели. Предполагаю, что по дням недели лучшими будут выходные дни.
+>   …
+>   2. С 22 до 23:30 часов лучше всего, бекапить лучше всего один раз в две недели
+>   …
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 11, 2015 4:06 PM
+To: Myalin Dmitriy
+Subject: RE: [JIRA] (ITP-512) Настройка резервного копирования системного раздела на серверах GreenPlum
+Резервное копирование нужно только локальных разделов / и /boot.
+[root@sdw1 ~]# lsblk
+NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+sda 8:0 0 3.8T 0 disk
+├─sda1 8:1 0 1008M 0 part /boot
+├─sda2 8:2 0 46.3G 0 part /
+├─sda3 8:3 0 3.4T 0 part /data1
+└─sda4 8:4 0 304.6G 0 part /work1
+sdb 8:16 0 3.8T 0 disk
+├─sdb1 8:17 0 3.4T 0 part /data2
+├─sdb2 8:18 0 304.6G 0 part /work2
+└─sdb3 8:19 0 132.8G 0 part [SWAP]
+[root@sdw1 ~]#
+То есть без каталогов написанных параметрами следующей команды grep.
+Вот типичный список каталогов для резервного копирования.
+[root@sdw1 ~]# ls -1 / | grep -v -e "tmp" -e "proc" -e "lost+found" -e "mnt" -e "data*" -e "work*"
+app
+bin
+boot
+cgroup
+core.1187
+dev
+etc
+home
+lib
+lib64
+media
+misc
+net
+opt
+root
+sbin
+selinux
+srv
+sys
+usr
+var
+[root@sdw1 ~]#
+И примерные размеры разделов / и /boot.
+[root@sdw1 ~]# df -h / /boot
+Filesystem Size Used Avail Use% Mounted on
+/dev/sda2 46G 9.7G 34G 23% /
+/dev/sda1 993M 45M 898M 5% /boot
+[root@sdw1 ~]#
+Если есть возможность создать резервные копии каталогов /mnt и /tmp, содержащие только их подкаталоги (без вложенной структуры каталогов), то это было бы идеальным вариантом.
+То есть, например, только вот такую структуру каталогов.
+[root@sdw1 ~]# find /tmp/ -maxdepth 1 -type d
+/tmp/
+/tmp/backup_ds_rw
+/tmp/.ICE-unix
+/tmp/backup_m1ds_rw
+/tmp/coll
+/tmp/backup
+[root@sdw1 ~]# find /mnt/ -maxdepth 1 -type d
+/mnt/
+/mnt/backup_m1ds_ufs
+/mnt/backup_dsds
+/mnt/sshfs
+/mnt/backup_ds_ufs
+/mnt/backup_ds
+/mnt/backup
+/mnt/backup_local
+/mnt/backup_m1ds
+[root@sdw1 ~]#
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 11, 2015 3:25 PM
+To: Myalin Dmitriy
+Subject: RE: [JIRA] (ITP-512) Настройка резервного копирования системного раздела на серверах GreenPlum
+Добрый день.
+Создана учётная запись mdu на сервере GreenPlum имеющем соединение и с внешней и с внутренней сетями.
+В треминологии GreenPlum это сервер резервный мастер в контуре ds-gp-tst (тестовый контур GreenPlum в дата-центре Data Space).
+Из общей сети сервер доступен по имени ds-gp-tst-sm и ip-адресу 10.216.29.19.
+Login: mdu
+Password: *****
+[root@smdw etc]# groupadd -g 510 mdu && useradd -g mdu -u 510 -c 'Myalin Dmitry, ITP-512' -m -G wheel -s /bin/bash -p '$6$xHfUUDhh694iipTX$8gF69qhlkBL6VmqieFA..lbTpP0q86WkbrN2cPcOg9LyVJhn1KEyZfq2FU5HvnLgchr0WoeApjMFrDm6CZYHA1' mdu
+[root@smdw etc]# sudo -l -U mdu
+Matching Defaults entries for mdu on this host:
+!visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE
+LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE", env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY",
+secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+User mdu may run the following commands on this host:
+(ALL) ALL
+[root@smdw etc]# id mdu
+uid=510(mdu) gid=510(mdu) groups=510(mdu),10(wheel)
+[root@smdw etc]#
+[root@smdw etc]# grep require /etc/sudoers
+#Defaults requiretty
+changed in order to be able to use sudo without a tty. See requiretty above.
+[root@smdw etc]#
+Внутреннее имя сервера smdw (не dns-имя).
+Имена и ip-адреса всех серверов в сегменте ds-gp-tst доступны в файле /etc/hosts.
+[root@smdw etc]# egrep "mdw$|smdw$|sdw.$" /etc/hosts
+10.216.6.6 mdw
+10.216.6.5 smdw
+10.216.6.1 sdw1
+10.216.6.2 sdw2
+10.216.6.3 sdw3
+10.216.6.4 sdw4
+10.216.6.7 sdw5
+10.216.6.8 sdw6
+10.216.6.9 sdw7
+10.216.6.10 sdw8
+[root@smdw etc]
+
+
+Для авторизации на серверах следует выполнить команду
+sudo -i
+для повышения уровня привилегий до root.
+И после этого можно подключаться по ssh на все сервера сегмента без необходимости ввода пароля (авторизация по ключу).
+При настройке резервного копирования для удобства идентификации каждого сервера желательно где-то помечать их по общеупотребительные в переписке и общении имена вида ds-gp-tst-smdw, или ds-gp-tst-mdw, или ds-gp-tst-sdw1. Иначе придётся их идентифицировать только по ip-адресу.
+В связи с особенностью GreenPlum на всех четырёх контурах используются однотипные имена вида mdw, smdw, sdwX и в этом смысле эти имена будут повторяться от контура к контуру.
+Hide Permalink Edit Delete
+s.belogrud Belogrud Sergey Vladimirovich added a comment - 14/Apr/15 6:20 PM
+Коллеги,
+в ближайшую среду 15.04.2015 запланированы работы по обновлению ОС на серверах GreenPlum контура hq-msk-gp-tst (тестовый контур в M1).
+Желательно было бы иметь работающее резервное копирование для серверов этого контура.
+Hide Permalink
+d.myalin Myalin Dmitriy added a comment - 26 minutes ago
+Просьба уточнить актуальность этой задачи.
+Если в данный момент необходимости в этом нет - закрываем.
+По новой инфраструктуре будем делать отдельно по окончании инсталяций.
+Hide Permalink
+d.s.pavlov Pavlov Dmitriy Stanislavovich added a comment - 18 minutes ago
+давайте действительно вернёмся к этому вопросу после окончательной сборки всех контуров.
+Hide Permalink Edit Delete
+s.belogrud Belogrud Sergey Vladimirovich added a comment - 14 minutes ago
+После 6-месячного отстоя в решении задачи, дожили до полной ликвидации всех прежних контуров GreenPlum.
+Инфраструктура контуров GreenPlum полностью изменилась.
+Полагаю, что задача ныне не актуальна.
+По контурам GreenPlum, которые уже находятся в эксплуатации (ds-gp-prd, ds-gp-dev, например, и в ближайшее время m1-gp-tst) пожалуйста сделайте себе новые задачи. Особенности резервного копирования уточняйте у Немчина Дмитрия, Павлова Дмитрия, Овчинникова Дмитрия.
+P.S.
+Резервные копии, созданные ранее желательно пока не удалять. На случай необходимости получить какие-либо настройки или файлы.
+
+
+
+

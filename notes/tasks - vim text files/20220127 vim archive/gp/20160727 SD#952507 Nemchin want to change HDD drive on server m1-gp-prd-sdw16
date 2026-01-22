@@ -1,0 +1,503 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   952507
+Название    №952507
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  27.07.2016 11:07
+Дата регистрации    27.07.2016 11:07
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 2 - Средняя
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день!
+
+Очередная проблема производительности дисков в кластере Greenplum Prod M1.
+
+[cid:image001.png@01D1E7F6.F663C600]
+Из графика видно, что на сервере sdw16 % загрузки массива sda выше чем на остальных. IOPS при этом не отличаются.
+
+Просьба посмотреть в чем дело. Возможно и на этой машине надо что-то менять (диски, кэши и прочее).
+
+
+
+Дмитрий Немчин
+Старший системный администратор
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Немчин Дмитрий
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Немчин Дмитрий
+Контактный e-mail   d.nemchin@tinkoff.ru
+Контактные телефоны 79264249974, 2758
+
+................................................................................
+
+
+[root@m1-gp-prd-sdw16 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BNN
+        UUID: 32333536-3030-5A43-3233-323930424E4E
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-prd-sdw16 ~]#
+
+................................................................................
+
+
+[root@m1-gp-prd-sdw16 ~]# lsscsi
+[2:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sda
+[2:3:0:0]    storage HP       P420i            6.64  -
+[3:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sdb
+[3:3:0:0]    storage HP       P420             6.64  -
+[root@m1-gp-prd-sdw16 ~]#
+
+[root@m1-gp-prd-sdw16 20160727-1208]# lsscsi -g
+[2:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sda   /dev/sg1
+[2:3:0:0]    storage HP       P420i            6.64  -         /dev/sg0
+[3:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sdb   /dev/sg3
+[3:3:0:0]    storage HP       P420             6.64  -         /dev/sg2
+[root@m1-gp-prd-sdw16 20160727-1208]#
+
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller all show config
+
+Smart Array P420 in Slot 2                (sn: PDSXK0ARH4W2KV)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (2.2 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 50014380276306AF)
+
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 00143802641BB90)
+
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (2.2 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 500143802641BB9F)
+
+[root@m1-gp-prd-sdw16 ~]#
+
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller all show status
+
+Smart Array P420 in Slot 2
+   Controller Status: OK
+   Cache Status: OK
+   Battery/Capacitor Status: OK
+
+Smart Array P420i in Slot 0 (Embedded)
+   Controller Status: OK
+   Cache Status: OK
+   Battery/Capacitor Status: OK
+
+
+[root@m1-gp-prd-sdw16 ~]#
+
+
+[root@m1-gp-prd-sdw16 20160727-1208]# hpssacli controller slot=0 logicaldrive 1 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+   array A
+
+      Logical Drive: 1
+         Size: 2.2 TB
+         Fault Tolerance: 1+0
+         Heads: 255
+         Sectors Per Track: 32
+         Cylinders: 65535
+         Strip Size: 256 KB
+         Full Stripe Size: 1024 KB
+         Status: OK
+         Caching:  Enabled
+         Unique Identifier: 600508B1001C21B0150A3A42C4DADA17
+         Disk Name: /dev/sda
+         Mount Points: /boot 1024 MB Partition Number 2, / 193.0 GB Partition Number 3, /data1 2.0 TB Partition Number 5
+         OS Status: LOCKED
+         Logical Drive Label: 024EE7ED00143802641BB90EF15
+         Mirror Group 1:
+            physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+            physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+            physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+            physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+         Mirror Group 2:
+            physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+            physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+            physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+            physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+         Drive Type: Data
+         LD Acceleration Method: Controller Cache
+
+[root@m1-gp-prd-sdw16 20160727-1208]#
+
+
+[root@m1-gp-prd-sdw16 ~]# hpssacli controller slot=0 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+   Bus Interface: PCI
+   Slot: 0
+   Serial Number: 00143802641BB90
+   Cache Serial Number: PBKUC0BRH4V1LL
+   RAID 6 (ADG) Status: Enabled
+   Controller Status: OK
+   Hardware Revision: B
+   Firmware Version: 6.64
+   Rebuild Priority: High
+   Expand Priority: Medium
+   Surface Scan Delay: 3 secs
+   Surface Scan Mode: Idle
+   Parallel Surface Scan Supported: No
+   Queue Depth: Automatic
+   Monitor and Performance Delay: 60  min
+   Elevator Sort: Enabled
+   Degraded Performance Optimization: Disabled
+   Inconsistency Repair Policy: Disabled
+   Wait for Cache Room: Disabled
+   Surface Analysis Inconsistency Notification: Disabled
+   Post Prompt Timeout: 15 secs
+   Cache Board Present: True
+   Cache Status: OK
+   Cache Ratio: 10% Read / 90% Write
+   Drive Write Cache: Disabled
+   Total Cache Size: 1024 MB
+   Total Cache Memory Available: 816 MB
+   No-Battery Write Cache: Disabled
+   SSD Caching RAID5 WriteBack Enabled: False
+   SSD Caching Version: 1
+   Cache Backup Power Source: Capacitors
+   Battery/Capacitor Count: 1
+   Battery/Capacitor Status: OK
+   SATA NCQ Supported: True
+   Spare Activation Mode: Activate on physical drive failure (default)
+   Controller Temperature (C): 64
+   Cache Module Temperature (C): 32
+   Capacitor Temperature  (C): 25
+   Number of Ports: 2 Internal only
+   Driver Name: hpsa
+   Driver Version: 3.4.10
+   Driver Supports HP SSD Smart Path: True
+   PCI Address (Domain:Bus:Device.Function): 0000:02:00.0
+   Host Serial Number: CZ23290BNN
+   Sanitize Erase Supported: False
+   Primary Boot Volume: None
+   Secondary Boot Volume: None
+
+[root@m1-gp-prd-sdw16 ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw16 ~]# mkdir -p ~/work/20160727-1208
+[root@m1-gp-prd-sdw16 ~]# cd !$
+cd ~/work/20160727-1208
+[root@m1-gp-prd-sdw16 20160727-1208]# hpssacli controller all diag file=$(pwd)/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip
+
+   Generating diagnostic report...done
+
+[root@m1-gp-prd-sdw16 20160727-1208]# ll
+total 324
+-rw-r--r-- 1 root root 327697 Jul 27 12:08 20160727-1208.hpssacli.diag.m1-gp-prd-sdw16.zip
+[root@m1-gp-prd-sdw16 20160727-1208]#
+
+
+[root@m1-gp-prd-sdw16 20160727-1208]# lsblk /dev/sda
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda      8:0    0  2.2T  0 disk
+├─sda1   8:1    0    1G  0 part /boot
+├─sda2   8:2    0  193G  0 part /
+├─sda3   8:3    0    6G  0 part [SWAP]
+└─sda4   8:4    0    2T  0 part /data1
+[root@m1-gp-prd-sdw16 20160727-1208]#
+
+
+[root@m1-gp-prd-sdw16 20160727-1208]# hponcfg -i
+HP Lights-Out Online Configuration utility
+Version 4.5.0 Date 07/17/2015 (c) Hewlett-Packard Company, 2015
+Firmware Revision = 2.20 Device type = iLO 4 Driver name = hpilo
+<RIBCL VERSION="2.0">
+ <LOGIN USER_LOGIN="adminname" PASSWORD="password">
+ <SERVER_INFO MODE="read">
+ <GET_EMBEDDED_HEALTH>
+  <GET_ALL_HEALTH_STATUS/>
+ </GET_EMBEDDED_HEALTH>
+ </SERVER_INFO>
+ </LOGIN>
+</RIBCL>
+<GET_EMBEDDED_HEALTH_DATA>
+     <HEALTH_AT_A_GLANCE>
+          <BIOS_HARDWARE STATUS= "OK"/>
+          <FANS STATUS= "OK"/>
+          <FANS REDUNDANCY= "Redundant"/>
+          <TEMPERATURE STATUS= "OK"/>
+          <POWER_SUPPLIES STATUS= "OK"/>
+          <POWER_SUPPLIES REDUNDANCY= "Redundant"/>
+          <PROCESSOR STATUS= "OK"/>
+          <MEMORY STATUS= "OK"/>
+          <NETWORK STATUS= "OK"/>
+          <STORAGE STATUS= "OK"/>
+     </HEALTH_AT_A_GLANCE>
+</GET_EMBEDDED_HEALTH_DATA>
+Script succeeded
+[root@m1-gp-prd-sdw16 20160727-1208]#
+
+
+................................................................................
+
+[root@m1-gp-prd-sdw16 20160727-1208]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg0 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:        S0M1F8CF0000B4199REX
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1838869718
+  Number of read and write commands whose size > segment size = 17290441
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0    1091466.479           0
+write:         0        0         0         0          0    1007828.316           0
+Non-medium error count:       94
+
+Count: 1
+Serial number:        6XR1R1Q80000B226B5AS
+Elements in grown defect list: 171
+  Number of read and write commands whose size <= segment size = 2073203163
+  Number of read and write commands whose size > segment size = 17785925
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      131         0  1561106984          0    1638902.988          16
+write:         0        0         0         0          0     859828.790           0
+Non-medium error count:      964
+
+Count: 2
+Serial number:                KNH9DDRF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0   111369         0         5          0    1030339.096           0
+write:         0        0         0         0          0     970124.172           0
+Non-medium error count:      994
+
+Count: 3
+Serial number:                KNH9V6BF
+Elements in grown defect list: 61
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0   504748         0       839          0    1017899.874          55
+write:         0        0         0         0          0     976060.118           0
+Non-medium error count:     1842
+
+Count: 4
+Serial number:                KNH2743F
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     6229         0         0          0    1027104.198           0
+write:         0        0         0         0          0     980557.277           0
+Non-medium error count:      991
+
+Count: 5
+Serial number:                KNHBGPRF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       72         0         0          0    1033380.388           0
+write:         0        0         0         0          0     962548.744           0
+Non-medium error count:      992
+
+Count: 6
+Serial number:                KNH26SLF
+Elements in grown defect list: 6
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    10253         0         1          0    1055450.032           6
+write:         0        0         0         0          0     977708.768           0
+Non-medium error count:      992
+
+Count: 7
+Serial number:                KNGXHN5F
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    64709         0        47          0    1066993.738           0
+write:         0        0         0         0          0     973144.893           0
+Non-medium error count:     1038
+[root@m1-gp-prd-sdw16 20160727-1208]#
+
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw16 20160727-1208]# cp 20160727-1208.hpssacli.diag.m1-gp-prd-sdw16.zip /tmp/
+[root@m1-gp-prd-sdw16 20160727-1208]# chown bsv:bsv /tmp/20160727-1208.hpssacli.diag.m1-gp-prd-sdw16.zip
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-gp-prd-sdw16:/tmp/20160727-1208.hpssacli.diag.m1-gp-prd-sdw16.zip ~/mnt/share/greenplum/m1-gp-prd/20160727-1250.m1-gp-prd-sdw16
+Warning: Permanently added 'm1-gp-prd-sdw16,10.216.4.16' (RSA) to the list of known hosts.
+[support@centos00 ~]$
+
+................................................................................
+
+[root@m1-gp-prd-sdw16 20160727-1208]# sosreport
+
+sosreport (version 2.2)
+
+
+  This command will collect diagnostic and configuration
+information from this Red Hat Enterprise Linux system and
+installed applications.
+
+  An archive containing the collected information will be
+generated in /tmp and may be provided to a Red Hat support
+representative.
+
+  Any information provided to Red Hat will be treated in
+accordance with the published support policies at:
+
+
+  https://access.redhat.com/support/
+
+  The generated archive may contain data considered
+sensitive and its content should be reviewed by the
+originating organization before being passed to any third
+party.
+
+  No changes will be made to system configuration.
+
+Press ENTER to continue, or CTRL-C to quit.
+
+Please enter your first initial and last name [m1-gp-prd-sdw16]: Sergey Belogrud
+Please enter the case number that you are generating this report for [None]: 5310697016
+
+Error reading cpu information: <class 'up2date_client.up2dateErrors.CommunicationError'>
+  Running plugins. Please wait ...
+
+  Completed [66/66] ...
+Creating compressed archive...
+
+Your sosreport has been generated and saved in:
+  /tmp/sosreport-SergeyBelogrud.5310697016-20160727153823-1085.tar.xz
+
+The md5sum is: 0e49efada628608edb204fc1c4b21085
+
+Please send this file to your support representative.
+
+[root@m1-gp-prd-sdw16 20160727-1208]#
+
+[root@m1-gp-prd-sdw16 20160727-1208]# chown bsv:bsv /tmp/sosreport-SergeyBelogrud.5310697016-20160727153823-1085.tar.xz
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-gp-prd-sdw16:/tmp/sosreport-SergeyBelogrud.5310697016-20160727153823-1085.tar.xz ~/mnt/share/greenplum/m1-gp-prd/20160727-1250.m1-gp-prd-sdw16
+[support@centos00 ~]$
+
+................................................................................
+
+[root@m1-gp-prd-sdw16 ~]# yum info seeker
+Loaded plugins: product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Available Packages
+Name        : seeker
+Arch        : x86_64
+Version     : 3.0
+Release     : 2.el6
+Size        : 35 k
+Repo        : tcs-epel
+Summary     : Random access disk benchmark utility
+URL         : http://www.linuxinsight.com/how_fast_is_your_disk.html
+License     : GPLv2 and CC-BY-SA
+Description : Seeker is a simple utility that reads small pieces of data from a raw
+            : disk device in a random access pattern, and reports the average number
+            : of seeks per second, and calculated random access time of the disk.
+            : The seeker variant included in this package is the multithreaded one
+            : by Witold Baryluk.
+
+[root@m1-gp-prd-sdw16 ~]#
+
+
+[root@m1-gp-prd-sdw16 ~]# yum install seeker
+Loaded plugins: product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package seeker.x86_64 0:3.0-2.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=================================================================================================================================================================================================================================
+ Package                                              Arch                                                 Version                                                  Repository                                              Size
+=================================================================================================================================================================================================================================
+Installing:
+ seeker                                               x86_64                                               3.0-2.el6                                                tcs-epel                                                35 k
+
+Transaction Summary
+=================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 35 k
+Installed size: 47 k
+Is this ok [y/N]: y
+Downloading Packages:
+seeker-3.0-2.el6.x86_64.rpm                                                                                                                                                                               |  35 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : seeker-3.0-2.el6.x86_64                                                                                                                                                                                       1/1
+  Verifying  : seeker-3.0-2.el6.x86_64                                                                                                                                                                                       1/1
+
+Installed:
+  seeker.x86_64 0:3.0-2.el6
+
+Complete!
+[root@m1-gp-prd-sdw16 ~]#
+
+................................................................................
+................................................................................
+
+
+
+
+

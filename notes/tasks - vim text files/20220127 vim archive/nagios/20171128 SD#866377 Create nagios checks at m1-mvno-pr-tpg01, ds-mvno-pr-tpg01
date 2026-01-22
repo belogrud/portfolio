@@ -1,0 +1,119 @@
+
+
+
+................................................................................
+
+[root@ds-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck.sh status
+status is UP
+[root@ds-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck.sh application.status
+application.status is UP
+[root@ds-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck.sh rabbitmq.status
+rabbitmq.status is null
+[root@ds-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck.sh dataSource.status
+dataSource.status is UP
+[root@ds-mvno-pr-tpg01 ~]#
+
+
+................................................................................
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/common/request.sh
+#!/bin/bash
+
+if [ -z "$1" -o -z "$2" ]; then
+  echo "Usage: $(basename $0) server_ip request.xml"
+  exit 3
+fi
+
+SERVER=$1
+REQUETS=$2
+
+RESULT=$(curl -s -i -X POST -H 'Content-Type: text/xml;charset=UTF-8' -H 'SOAPAction: "http://www.mfms.ru/tcsbank/pg/pif/provider-service/getProviderGroupList"' \
+ --data-binary @$REQUETS http://$SERVER:3306/services/ProviderServiceService | head -n1 | cut -d' ' -f2)
+
+if [ "$RESULT" = '200' ]; then
+        echo "OK: Address $SERVER, HTTP response: $RESULT"
+        exit 0
+else
+        echo "ERROR: Address $SERVER, HTTP response: ${RESULT:-UNKNOWN}"
+        exit 2
+fi
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/acq/registry_send.sh
+
+................................................................................
+
+[root@vm-dbamon01 ~]# cat /opt/TCS/scripts/nagios/plugins/acq/registry_send.sh
+#!/bin/bash
+
+SQL_QUERY_HOST='db-acq-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='ACQ'
+SQL_QUERY_USER='TCS_MONITOR'
+SQL_QUERY_PASSWORD='tcs_monitor1'
+
+SQL_QUERY_DIR=/opt/TCS/scripts/nagios/plugins
+SQL_QUERY_FILE=$SQL_QUERY_DIR/acq/registry_send.sql
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+export ORACLE_HOME=/opt/oracle/products/11g/client
+export PATH=$PATH:/$ORACLE_HOME/bin
+
+RESULT=$(echo "exit" | sqlplus -s $SQL_QUERY_USER/$SQL_QUERY_PASSWORD@\"$SQL_QUERY_HOST:$SQL_QUERY_PORT/$SQL_QUERY_BASE\" @$SQL_QUERY_FILE)
+
+if [ "$RESULT" = OK ]; then
+  echo "OK"
+  exit $STATE_OK
+else
+  echo "ERROR. $RESULT"
+  exit $STATE_CRITICAL
+fi
+[root@vm-dbamon01 ~]#
+
+................................................................................
+
+#
+#	20171130
+#
+
+
+[root@m1-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck_test.sh status
+OK status
+[root@m1-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck_test.sh application.status
+OK application.status
+[root@m1-mvno-pr-tpg01 ~]# cat > /etc/nrpe.d/check_tapi.cfg
+command[check_apag_tapi_app_status]=/opt/apag-rest-party-tapi/bin/healthcheck.sh application.status
+command[check_apag_tapi_data_status]=/opt/apag-rest-party-tapi/bin/healthcheck.sh dataSource.status
+command[check_apag_tapi_status]=/opt/apag-rest-party-tapi/bin/healthcheck.sh status
+[root@m1-mvno-pr-tpg01 ~]# vim
+
+
+[root@m1-mvno-pr-tpg01 ~]# cat !$
+cat /etc/nrpe.d/check_tapi.cfg
+command[check_apag_tapi_app_status]=/opt/tpg/bin/healthcheck_test.sh application.status
+command[check_apag_tapi_data_status]=/opt/tpg/bin/healthcheck_test.sh dataSource.status
+command[check_apag_tapi_status]=/opt/tpg/bin/healthcheck_test.sh status
+[root@m1-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck_test.sh application.status
+OK application.status
+[root@m1-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck_test.sh dataSource.status
+OK dataSource.status
+[root@m1-mvno-pr-tpg01 ~]# /opt/tpg/bin/healthcheck_test.sh status
+OK status
+[root@m1-mvno-pr-tpg01 ~]#
+
+[root@m1-mvno-pr-tpg01 ~]# systemctl restart nrpe.service
+
+
+[root@m1-mvno-pr-tpg01 nrpe.d]# cat check_tpg.cfg
+command[check_tpg_status]=/opt/tpg/bin/healthcheck_test.sh status
+command[check_tpg_application_status]=/opt/tpg/bin/healthcheck_test.sh application.status
+command[check_tpg_rabbitmq_status]=/opt/tpg/bin/healthcheck_test.sh rabbitmq.status
+command[check_tpg_dataSource_status_status]=/opt/tpg/bin/healthcheck_test.sh dataSource.status
+[root@m1-mvno-pr-tpg01 nrpe.d]#
+
+
+
+
+

@@ -1,0 +1,75 @@
+#	I have used command line from different sources. I have no full logs of upgrade process for all servers in hq-msk-gp-tst GreenPlum contour. But I have used same commands to update all servers that were updated. It looks similar, only server's prompt differ.
+
+#	It was updated some of important packages that relates with all entire upgrade process.
+[root@ds-gp-tst-smdw ~]# for var1 in sdw{2..8} ; do ssh -t root@${var1} "( hostname ; yum update subscription-manager yum )" ; done
+[root@ds-gp-tst-smdw ~]# for var1 in sdw{2..8} ; do ssh -t root@${var1} "( hostname ; yum install yum-plugin-downloadonly )" ; done
+
+#	All servers were registered into RHN with follow parameters.
+[root@ds-gp-tst-smdw ~]# for var1 in sdw{3..8} ; do ssh -t root@${var1} "( hostname ; read -s -p \"Enter RHN Password: \" RHN_PASSWORD ; subscription-manager register --username=our_user_name --password=\$RHN_PASSWORD --name=ds-gp-tst-\$(hostname) --force --proxy=vm-vol-nag3.tcsbank.ru:3128 --auto-attach )" ; done
+
+#	All necessery packages were downloaded to local yum cache. It takes time at this moment, but in future when we will start OS upgrade process it save our time very much.
+[root@ds-gp-tst-smdw ~]# for var1 in sdw{2..8} ; do ssh -t root@${var1} "( hostname ; yum -y update --downloadonly --disablerepo="*" --enablerepo=rhel-6-server-rpms )" ; done
+
+#	Here I have prepared simulateous update process on all servers with the screen utility.
+#	I have created screen session on all servers.
+#	This command was used for update all servers on each of them. It was run it under all existed screen sessions.
+yum -y update --disablerepo="*" --enablerepo=rhel-6-server-rpms
+
+#	Next step I have checked results of upgrade inside all of screen sessions and reboot all successfuly upgraded servers.
+#	All servers were successfully upgraded. All process of upgrade completed successfully.
+#	After reboot I have checked results of upgrade.
+#	In assume it looks like follow (but it was other GreenPlum contour):
+[support@centos00 ~]$ sshpass -e ssh -t bsv@ds-gp-tst-sm
+Last login: Wed Apr  8 19:22:44 2015 from 172.16.28.74
+[bsv@smdw ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-gp-tst-smdw ~]# for var1 in smdw sdw{2..8} ; do ssh -t root@${var1} "( hostname ; date ; cat /etc/redhat-release ; uname -a )" ; done
+smdw
+Wed Apr  8 19:32:46 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux smdw 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to smdw closed.
+sdw2
+Wed Apr  8 19:32:46 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux sdw2 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to sdw2 closed.
+sdw3
+Wed Apr  8 19:32:47 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux sdw3 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to sdw3 closed.
+sdw4
+Wed Apr  8 19:32:47 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux sdw4 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to sdw4 closed.
+sdw5
+Wed Apr  8 19:32:47 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux sdw5 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to sdw5 closed.
+sdw6
+Wed Apr  8 19:32:47 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux sdw6 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to sdw6 closed.
+sdw7
+Wed Apr  8 19:32:47 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux sdw7 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to sdw7 closed.
+sdw8
+Wed Apr  8 19:32:47 MSK 2015
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Linux sdw8 2.6.32-504.12.2.el6.x86_64 #1 SMP Sun Feb 1 12:14:02 EST 2015 x86_64 x86_64 x86_64 GNU/Linux
+Connection to sdw8 closed.
+[root@ds-gp-tst-smdw ~]#
+
+#	Next step I have removed subscription for all servers. It's already not needed.
+[root@ds-gp-tst-smdw ~]# for var1 in smdw sdw{2..8} ; do ssh -t root@${var1} "( hostname ; subscription-manager remove --proxy=vm-vol-nag3.tcsbank.ru:3128 --all ; subscription-manager unregister --proxy=vm-vol-nag3.tcsbank.ru:3128 )" ; done
+
+#	That's it.
+
+
+

@@ -1,0 +1,135 @@
+
+................................................................................
+
+Коллеги, добрый день.
+
+Просьба создать два новых алерта Nagios.
+
+1)      Название: PRIME ACQ - Incoming Queue
+Вьюха: tctdbs.tcs_monitor_incoming_queue
+База и настройки: аналогично PRIME ACQ – Invalid objects за исключением Normal Check Interval. Надо поставить 5 минут.
+
+2)      Название: PRIME ACQ - Outgoing Queue
+Вьюха: tctdbs.tcs_monitor_outgoing_queue
+База и настройки: аналогично PRIME ACQ – Invalid objects за исключением Normal Check Interval. Надо поставить 5 минут.
+
+
+Задачу просьба назначить на unix_admins.
+
+С уважением,
+
+Виталий Лещук
+Ведущий специалист
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# vim ./servers/vmware/vm-dbamon01.cfg
+...
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PRIME ACQ - Invalid Objects
+        check_command                   check_nrpe!prime_acq-check_tcs_monitor_invalid
+        check_interval                  1
+        max_check_attempts              1
+        notification_interval           5
+        contacts                        s.morozkin_email, s.morozkin_sms, a.gladyshev_email, a.gladyshev_sms, d.a.makeev_email, d.a.makeev_sms, processing_duty_sms, cards_24x7_email, a.belokopytov_email, a.belokopytov_sms, a.boldyrev_email, a.boldyrev_sms
+        contact_groups                  servicedesk-duty-critical-group
+        flap_detection_enabled          0
+ }
+...
+
+
+[root@vm-dbamon01 ~]# grep -ire "prime_acq-check_tcs_monitor_invalid" /etc/nrpe.d/*
+/etc/nrpe.d/check_db_prime4.cfg:command[prime_acq-check_tcs_monitor_invalid]=/opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_invalid.sh
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# vim /etc/nrpe.d/check_db_prime4.cfg
+...
+command[prime_acq-check_tcs_monitor_incoming_queue]=/opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_incoming_queue.sh
+command[prime_acq-check_tcs_monitor_outgoing_queue]=/opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_outgoing_queue.sh
+
+[root@vm-dbamon01 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_{invalid,incoming_queue}.sh
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_{invalid,outgoing_queue}.sh
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_{invalid,incoming_queue}.sql
+[root@vm-dbamon01 ~]# cp /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_{invalid,outgoing_queue}.sql
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ~]# vim -o /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_{incoming,ougoing}_queue.sh
+...
+SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime_acq-check_tcs_monitor_incoming_queue.sql
+...
+SQL_QUERY_FILE=$SQL_QUERY_DIR/prime4/prime_acq-check_tcs_monitor_outgoing_queue.sql
+...
+
+
+[root@vm-dbamon01 ~]# vim -o /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_{incoming,outgoing}_queue.sql
+...
+select * from tctdbs.tcs_monitor_incoming_queue;
+...
+select * from tctdbs.tcs_monitor_outgoing_queue;
+...
+
+................................................................................
+
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_incoming_queue.sh
+OK. Result=0
+[root@vm-dbamon01 ~]# /opt/TCS/scripts/nagios/plugins/prime4/prime_acq-check_tcs_monitor_outgoing_queue.sh
+OK. Result=0
+[root@vm-dbamon01 ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#   modified:   servers/dc-m1/linux/sas/m1-sasfront02p.cfg
+#   modified:   servers/vmware/vm-dbamon01.cfg
+#   modified:   servers/vmware/vm-ds-repo01.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#   servers/vmware/vm-bicms01t.cfg
+#   servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDNew#20145. Created two new checks, working under vm-dbamon01." servers/vmware/vm-dbamon01.cfg    [master 57a415d] SDNew#20145. Created two new checks, working under vm-dbamon01.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 26 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 606 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   c94c238..57a415d  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+
+

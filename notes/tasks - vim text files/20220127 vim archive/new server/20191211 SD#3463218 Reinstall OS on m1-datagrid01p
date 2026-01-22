@@ -1,0 +1,1058 @@
+
+................................................................................
+
+[root@m1-datagrid01p ~]# dmidecode -t system
+# dmidecode 2.12-dmifs
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R930
+        Version: Not Specified
+        Serial Number: 1TWLSG2
+        UUID: 4C4C4544-0054-5710-804C-B1C04F534732
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R930
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 7.2 (Maipo)
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                                                                              TYPE MOUNTPOINT                                                                                        FSTYPE        SIZE
+sda                                                                               disk                                                                                                               278.9G
+├─sda1                                                                            part /boot                                                                                             xfs           500M
+└─sda2                                                                            part                                                                                                   LVM2_member 278.3G
+  ├─rhel-root                                                                     lvm  /                                                                                                 xfs            50G
+  ├─rhel-swap                                                                     lvm  [SWAP]                                                                                            swap            4G
+  └─rhel-opt                                                                      lvm  /opt                                                                                              xfs         224.3G
+sdb                                                                               disk                                                                                                                 4.4T
+└─sdb1                                                                            part /data                                                                                             ext4          4.4T
+loop0                                                                             loop                                                                                                   xfs           100G
+└─docker-253:0-134852954-pool                                                     dm                                                                                                                   100G
+  └─docker-253:0-134852954-f1fc27d093f24f324f1246a1bb116a3403f85fbcad06721144baf2864e88be8e
+                                                                                  dm   /var/lib/docker/devicemapper/mnt/f1fc27d093f24f324f1246a1bb116a3403f85fbcad06721144baf2864e88be8e xfs            10G
+loop1                                                                             loop                                                                                                                   2G
+└─docker-253:0-134852954-pool                                                     dm                                                                                                                   100G
+  └─docker-253:0-134852954-f1fc27d093f24f324f1246a1bb116a3403f85fbcad06721144baf2864e88be8e
+                                                                                  dm   /var/lib/docker/devicemapper/mnt/f1fc27d093f24f324f1246a1bb116a3403f85fbcad06721144baf2864e88be8e xfs            10G
+[root@m1-datagrid01p ~]#
+
+
+[root@m1-datagrid01p ~]# findmnt
+TARGET                                                                        SOURCE     FSTYPE     OPTIONS
+/                                                                             /dev/mapper/rhel-root
+                                                                                         xfs        rw,relatime,attr2,inode64,noquota
+├─/sys                                                                        sysfs      sysfs      rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/security                                                      securityfs securityfs rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/fs/cgroup                                                            tmpfs      tmpfs      ro,nosuid,nodev,noexec,mode=755
+│ │ ├─/sys/fs/cgroup/systemd                                                  cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd
+│ │ ├─/sys/fs/cgroup/hugetlb                                                  cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,hugetlb
+│ │ ├─/sys/fs/cgroup/memory                                                   cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,memory
+│ │ ├─/sys/fs/cgroup/net_cls                                                  cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,net_cls
+│ │ ├─/sys/fs/cgroup/perf_event                                               cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,perf_event
+│ │ ├─/sys/fs/cgroup/cpu,cpuacct                                              cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,cpuacct,cpu
+│ │ ├─/sys/fs/cgroup/blkio                                                    cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,blkio
+│ │ ├─/sys/fs/cgroup/devices                                                  cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,devices
+│ │ ├─/sys/fs/cgroup/freezer                                                  cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,freezer
+│ │ └─/sys/fs/cgroup/cpuset                                                   cgroup     cgroup     rw,nosuid,nodev,noexec,relatime,cpuset
+│ ├─/sys/fs/pstore                                                            pstore     pstore     rw,nosuid,nodev,noexec,relatime
+│ ├─/sys/kernel/debug                                                         debugfs    debugfs    rw,relatime
+│ └─/sys/kernel/config                                                        configfs   configfs   rw,relatime
+├─/proc                                                                       proc       proc       rw,nosuid,nodev,noexec,relatime
+│ ├─/proc/sys/fs/binfmt_misc                                                  systemd-1  autofs     rw,relatime,fd=33,pgrp=1,timeout=0,minproto=5,maxproto=5,direct
+│ └─/proc/fs/nfsd                                                             nfsd       nfsd       rw,relatime
+├─/dev                                                                        devtmpfs   devtmpfs   rw,nosuid,size=1585145964k,nr_inodes=396286491,mode=755
+│ ├─/dev/shm                                                                  tmpfs      tmpfs      rw,nosuid,nodev
+│ ├─/dev/pts                                                                  devpts     devpts     rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+│ ├─/dev/hugepages                                                            hugetlbfs  hugetlbfs  rw,relatime
+│ └─/dev/mqueue                                                               mqueue     mqueue     rw,relatime
+├─/run                                                                        tmpfs      tmpfs      rw,nosuid,nodev,mode=755
+│ ├─/run/user/525                                                             tmpfs      tmpfs      rw,nosuid,nodev,relatime,size=317032088k,mode=700,uid=525,gid=525
+│ └─/run/docker/netns/d9537cf912f9                                            proc       proc       rw,nosuid,nodev,noexec,relatime
+├─/var/lib/nfs/rpc_pipefs                                                     sunrpc     rpc_pipefs rw,relatime
+├─/boot                                                                       /dev/sda1  xfs        rw,relatime,attr2,inode64,noquota
+├─/data                                                                       /dev/sdb1  ext4       rw,relatime,data=ordered
+├─/opt                                                                        /dev/mapper/rhel-opt
+                                                                                         xfs        rw,relatime,attr2,inode64,noquota
+├─/tmp/SECUPD                                                                 /dev/sdc   vfat       rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,errors=remount-ro
+├─/var/lib/docker/devicemapper/mnt/f1fc27d093f24f324f1246a1bb116a3403f85fbcad06721144baf2864e88be8e
+                                                                              /dev/mapper/docker-253:0-134852954-f1fc27d093f24f324f1246a1bb116a3403f85fbcad06721144baf2864e88be8e
+                                                                                         xfs        rw,relatime,nouuid,attr2,inode64,logbsize=64k,sunit=128,swidth=128,noquota
+└─/var/lib/docker/containers/4e775619f1caadb295234c72f21ae94206233929f2590f56c84c2d5c5ea288cf/mounts/shm
+                                                                              shm        tmpfs      rw,nosuid,nodev,noexec,relatime,size=65536k
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: em1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 9000 qdisc mq master bond0 state UP qlen 1000
+    link/ether 18:66:da:7b:f8:66 brd ff:ff:ff:ff:ff:ff
+3: em2: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 9000 qdisc mq master bond1 state UP qlen 1000
+    link/ether 18:66:da:7b:f8:68 brd ff:ff:ff:ff:ff:ff
+4: em3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 18:66:da:7b:f8:6a brd ff:ff:ff:ff:ff:ff
+5: em4: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 18:66:da:7b:f8:6c brd ff:ff:ff:ff:ff:ff
+6: p4p1: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 9000 qdisc mq master bond0 state UP qlen 1000
+    link/ether 18:66:da:7b:f8:66 brd ff:ff:ff:ff:ff:ff
+7: p4p2: <BROADCAST,MULTICAST,SLAVE,UP,LOWER_UP> mtu 9000 qdisc mq master bond1 state UP qlen 1000
+    link/ether 18:66:da:7b:f8:68 brd ff:ff:ff:ff:ff:ff
+8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP
+    link/ether 18:66:da:7b:f8:66 brd ff:ff:ff:ff:ff:ff
+    inet 10.216.2.52/25 brd 10.216.2.127 scope global bond0
+       valid_lft forever preferred_lft forever
+9: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP
+    link/ether 18:66:da:7b:f8:68 brd ff:ff:ff:ff:ff:ff
+10: bond1.1626@bond1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 18:66:da:7b:f8:68 brd ff:ff:ff:ff:ff:ff
+    inet 10.216.26.23/24 brd 10.216.26.255 scope global bond1.1626
+       valid_lft forever preferred_lft forever
+11: bond1.1764@bond1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP
+    link/ether 18:66:da:7b:f8:68 brd ff:ff:ff:ff:ff:ff
+    inet 10.217.64.146/24 brd 10.217.64.255 scope global bond1.1764
+       valid_lft forever preferred_lft forever
+12: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 02:42:fe:07:0e:67 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+40: vetha1782a6@if39: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP
+    link/ether 86:a7:50:01:ce:9a brd ff:ff:ff:ff:ff:ff link-netnsid 0
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# ip route
+default via 10.216.26.254 dev bond1.1626
+10.216.0.0/21 via 10.216.2.126 dev bond0
+10.216.2.0/25 dev bond0  proto kernel  scope link  src 10.216.2.52
+10.216.26.0/24 dev bond1.1626  proto kernel  scope link  src 10.216.26.23
+10.217.64.0/24 dev bond1.1764  proto kernel  scope link  src 10.217.64.146
+10.217.100.0/23 via 10.216.2.126 dev bond0
+169.254.0.0/16 dev bond0  scope link  metric 1008
+169.254.0.0/16 dev bond1  scope link  metric 1009
+169.254.0.0/16 dev bond1.1626  scope link  metric 1010
+169.254.0.0/16 dev bond1.1764  scope link  metric 1011
+172.17.0.0/16 dev docker0  proto kernel  scope link  src 172.17.0.1
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Thu Mar 30 14:53:33 2017
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/rhel-root   /                       xfs     defaults        0 0
+UUID=0b20f7ca-13f0-49bd-997f-1d0240c2cb81 /boot                   xfs     defaults        0 0
+/dev/mapper/rhel-opt    /opt                    xfs     defaults        0 0
+/dev/mapper/rhel-swap   swap                    swap    defaults        0 0
+UUID=703d2836-1d7e-480b-b87d-fde091da6ced       /data   ext4    defaults        0       0
+
+#f6290-ds.tcsbank.ru:/vol/ODS_ora_to_csv_ds /mnt/ods2 nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+fs-unixfiles:/dwh_ods2_exports /mnt/ods2_exports  nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+fs-nfsdata:/dwh_ods2_unloads /mnt/ods2_unloads  nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+## mfsmount        /mnt/duet2 fuse big_writes,nosuid,nodev,noatime,mfschunkservertotalreadto=100000,mfschunkserverwriteto=250000,mfschunkserverwavereadto=100000,mfsdebug
+## mfsmount        /mnt/backup_ds fuse big_writes,nosuid,nodev,noatime,mfschunkservertotalreadto=100000,mfschunkserverwriteto=250000,mfschunkserverwavereadto=100000
+[root@m1-datagrid01p ~]#
+
+................................................................................
+
+#
+#	em1, em2
+#
+[root@m1-datagrid01p ~]# lspci -s 0000:01:00
+01:00.0 Ethernet controller: Broadcom Corporation NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+01:00.1 Ethernet controller: Broadcom Corporation NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+01:00.2 Ethernet controller: Broadcom Corporation NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+01:00.3 Ethernet controller: Broadcom Corporation NetXtreme II BCM57800 1/10 Gigabit Ethernet (rev 10)
+[root@m1-datagrid01p ~]#
+
+#
+#	p4p1, p4p2
+#
+[root@m1-datagrid01p ~]# lspci -s 0000:81:00
+81:00.0 Ethernet controller: QLogic Corp. cLOM8214 1/10GbE Controller (rev 54)
+81:00.1 Ethernet controller: QLogic Corp. cLOM8214 1/10GbE Controller (rev 54)
+[root@m1-datagrid01p ~]#
+
+#
+#	em1, p4p1 - bond0
+#	em2, p4p2 - bond1
+#
+
+[root@m1-datagrid01p ~]# cat /etc/sysconfig/network-scripts/route-bond0
+10.217.100.0/23 via 10.216.2.126
+10.216.0.0/21 via 10.216.2.126
+[root@m1-datagrid01p ~]#
+
+
+[root@m1-datagrid01p ~]# find /etc/sysconfig/network-scripts/ -name ifcfg-\* -exec echo \; -exec echo {} \; -exec cat {} \;
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em4
+UUID=9be3741c-042e-4752-b090-1c37d143ec5d
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em3
+UUID=4398a00c-a8d6-4940-be1f-6fcbd04e6d3e
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+DEVICE=em1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+IPADDR=10.216.2.52
+NETMASK=255.255.255.128
+DEFROUTE=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1626
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1626
+DEVICE=bond1.1626
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1626
+IPADDR=10.216.26.23
+PREFIX=24
+GATEWAY=10.216.26.254
+DNS1=10.219.50.4
+DNS2=10.219.50.5
+DEFROUTE=yes
+ZONE=external
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1764
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1764
+DEVICE=bond1.1764
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1764
+IPADDR=10.217.64.146
+PREFIX=24
+DEFROUTE=no
+ZONE=external
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-p4p2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p2
+DEVICE=p4p2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-p4p1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p1
+DEVICE=p4p1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+[root@m1-datagrid01p ~]#
+
+................................................................................
+
+[root@m1-datagrid01p ~]# cat /proc/net/bonding/bond0
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: IEEE 802.3ad Dynamic link aggregation
+Transmit Hash Policy: layer2+3 (2)
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+802.3ad info
+LACP rate: fast
+Min links: 0
+Aggregator selection policy (ad_select): stable
+Active Aggregator Info:
+        Aggregator ID: 1
+        Number of ports: 2
+        Actor Key: 13
+        Partner Key: 44
+        Partner Mac Address: 00:01:e8:d8:9d:49
+
+Slave Interface: em1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 1
+Permanent HW addr: 18:66:da:7b:f8:66
+Slave queue ID: 0
+Aggregator ID: 1
+Actor Churn State: none
+Partner Churn State: none
+Actor Churned Count: 0
+Partner Churned Count: 1
+details actor lacp pdu:
+    system priority: 65535
+    port key: 13
+    port priority: 255
+    port number: 1
+    port state: 63
+details partner lacp pdu:
+    system priority: 32768
+    oper key: 44
+    port priority: 32768
+    port number: 5508
+    port state: 63
+
+Slave Interface: p4p1
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 1
+Permanent HW addr: 2c:27:d7:54:42:b8
+Slave queue ID: 0
+Aggregator ID: 1
+Actor Churn State: none
+Partner Churn State: none
+Actor Churned Count: 1
+Partner Churned Count: 1
+details actor lacp pdu:
+    system priority: 65535
+    port key: 13
+    port priority: 255
+    port number: 2
+    port state: 63
+details partner lacp pdu:
+    system priority: 32768
+    oper key: 44
+    port priority: 32768
+    port number: 173
+    port state: 63
+[root@m1-datagrid01p ~]#
+
+
+[root@m1-datagrid01p ~]# cat /proc/net/bonding/bond1
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: IEEE 802.3ad Dynamic link aggregation
+Transmit Hash Policy: layer2+3 (2)
+MII Status: up
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+
+802.3ad info
+LACP rate: fast
+Min links: 0
+Aggregator selection policy (ad_select): stable
+Active Aggregator Info:
+        Aggregator ID: 1
+        Number of ports: 1
+        Actor Key: 13
+        Partner Key: 1
+        Partner Mac Address: 00:00:00:00:00:00
+
+Slave Interface: em2
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 3
+Permanent HW addr: 18:66:da:7b:f8:68
+Slave queue ID: 0
+Aggregator ID: 2
+Actor Churn State: churned
+Partner Churn State: churned
+Actor Churned Count: 3
+Partner Churned Count: 4
+details actor lacp pdu:
+    system priority: 65535
+    port key: 13
+    port priority: 255
+    port number: 1
+    port state: 71
+details partner lacp pdu:
+    system priority: 65535
+    oper key: 1
+    port priority: 255
+    port number: 1
+    port state: 1
+
+Slave Interface: p4p2
+MII Status: up
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 4
+Permanent HW addr: 2c:27:d7:54:42:bc
+Slave queue ID: 0
+Aggregator ID: 1
+Actor Churn State: churned
+Partner Churn State: churned
+Actor Churned Count: 5
+Partner Churned Count: 5
+details actor lacp pdu:
+    system priority: 65535
+    port key: 13
+    port priority: 255
+    port number: 2
+    port state: 79
+details partner lacp pdu:
+    system priority: 65535
+    oper key: 1
+    port priority: 255
+    port number: 1
+    port state: 1
+[root@m1-datagrid01p ~]#
+
+
+................................................................................
+
+[root@m1-datagrid01p ~]# lslogins dwhsys
+Username:                           dwhsys
+UID:                                1063
+Gecos field:                        SD#277431
+Home directory:                     /home/dwhsys
+Shell:                              /bin/bash
+No login:                           no
+Password is locked:                 no
+Password not required:              no
+Login by password disabled:         no
+Primary group:                      dwhsys
+GID:                                1063
+Supplementary groups:               docker,wheel
+Supplementary group IDs:            504,10
+Last login:                         Nov29/21:38
+Last terminal:                      pts/0
+Last hostname:                      tcs14826.tcsbank.ru
+Hushed:                             no
+Password expiration warn interval:  7
+Password changed:                   2017-Mar30
+Maximum change time:                99999
+Running processes:                  0
+
+Last logs:
+Nov 29 10:32:22 sshd[147072]:Received disconnect from 172.27.78.18: 11: disconnected by user
+Nov 29 21:38:05 sudo[36938]:  dwhsys : TTY=pts/0 ; PWD=/home/dwhsys ; USER=root ; COMMAND=/bin/bash
+Dec 04 10:10:43 sshd[36869]:Received disconnect from 172.27.78.18: 11: disconnected by user
+
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# lslogins idrk
+Username:                           idrk
+UID:                                1067
+Gecos field:
+Home directory:                     /home/idrk
+Shell:                              /bin/bash
+No login:                           no
+Password is locked:                 no
+Password not required:              no
+Login by password disabled:         no
+Primary group:                      idrk
+GID:                                1067
+Last login:                         Oct23/17:45
+Last terminal:                      pts/1
+Last hostname:                      tcs2898.tcsbank.ru
+Hushed:                             no
+Password expiration warn interval:  7
+Password changed:                   2017-Jul14
+Maximum change time:                99999
+Running processes:                  3
+
+Last logs:
+Oct 30 16:05:38 udd.sh[186218]:SEVERE: LEAK: ByteBuf.release() was not called before it's garbage-collected. Enable advanced leak reporting to find out where the leak occurred. To enable advanced leak reporting, specify the JVM option '-Dio.netty.leakDetection.level=advanced' or call ResourceLeakDetector.setLevel() See http://netty.io/wiki/reference-counted-objects.html for more information.
+Nov 04 10:27:33 bash[85676]:Nov 04, 2019 10:27:32 AM io.netty.util.ResourceLeakDetector reportUntracedLeak
+Nov 04 10:27:33 bash[85676]:SEVERE: LEAK: ByteBuf.release() was not called before it's garbage-collected. Enable advanced leak reporting to find out where the leak occurred. To enable advanced leak reporting, specify the JVM option '-Dio.netty.leakDetection.level=advanced' or call ResourceLeakDetector.setLevel() See http://netty.io/wiki/reference-counted-objects.html for more information.
+
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# lslogins ods2
+Username:                           ods2
+UID:                                1068
+Gecos field:
+Home directory:                     /home/ods2
+Shell:                              /bin/bash
+No login:                           no
+Password is locked:                 no
+Password not required:              no
+Login by password disabled:         no
+Primary group:                      ods2
+GID:                                1068
+Supplementary groups:               wheel
+Supplementary group IDs:            10
+Last login:                         May24/14:31
+Last terminal:                      pts/0
+Last hostname:                      172.30.5.70
+Hushed:                             no
+Password expiration warn interval:  7
+Password changed:                   2017-Oct02
+Maximum change time:                99999
+Running processes:                  0
+
+Last logs:
+
+[root@m1-datagrid01p ~]#
+
+[root@m1-datagrid01p ~]# lslogins dwh-ansible
+Username:                           dwh-ansible
+UID:                                8888
+Gecos field:
+Home directory:                     /home/dwh-ansible
+Shell:                              /bin/bash
+No login:                           no
+Password is locked:                 no
+Password not required:              no
+Login by password disabled:         yes
+Primary group:                      dwh-ansible
+GID:                                8888
+Supplementary groups:               docker
+Supplementary group IDs:            504
+Last login:                         Nov21/17:46
+Last terminal:                      pts/0
+Last hostname:                      172.27.78.107
+Hushed:                             no
+Password expiration warn interval:  7
+Password changed:                   Nov18/03:00
+Maximum change time:                99999
+Running processes:                  0
+
+Last logs:
+Nov 21 17:06:03 sshd[124827]:Received disconnect from 10.218.12.55: 11: disconnected by user
+Nov 21 17:46:14 sudo[128463]:dwh-ansible : TTY=pts/0 ; PWD=/home/dwh-ansible ; USER=root ; COMMAND=/sbin/visudo
+Nov 21 17:49:38 sshd[128417]:Received disconnect from 172.27.78.107: 11: disconnected by user
+
+[root@m1-datagrid01p ~]#
+
+................................................................................
+................................................................................
+
+#
+#	20191216
+#
+#	After server's OS was installed.
+#
+[root@m1-datagrid01p ~]# find /etc/sysconfig/network-scripts/ -name ifcfg-\* -exec echo \; -exec echo {} \; -exec cat {} \;
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=9ba41485-5dda-4509-9ce4-b11404962e10
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=803f9b4b-b13a-4c83-9677-8814c1fe9264
+DEVICE=em1
+ONBOOT=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+UUID=b251cab8-0d6f-44ed-9c3b-d7550655aed1
+DEVICE=em2
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=f311efbc-8179-4917-9288-aa4e2a2a1fb5
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-bond0_slave_1
+HWADDR=18:66:DA:7B:F8:66
+MTU=9000
+TYPE=Ethernet
+NAME="bond0 slave 1"
+UUID=4711d182-17da-40e0-9892-d74042828c83
+DEVICE=em1
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+
+/etc/sysconfig/network-scripts/ifcfg-p4p1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p1
+UUID=62a74347-11e8-4c3f-b325-bf45bafde7b3
+DEVICE=p4p1
+ONBOOT=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+BONDING_OPTS="downdelay=0 miimon=100 mode=802.3ad updelay=0"
+TYPE=Bond
+BONDING_MASTER=yes
+MTU=9000
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPADDR=10.216.2.52
+PREFIX=25
+GATEWAY=10.216.2.126
+DNS1=10.219.50.4
+DNS2=10.219.50.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond0
+UUID=b5bb7de7-00bb-46ee-b2fc-f4b7d2212f9b
+DEVICE=bond0
+ONBOOT=yes
+
+/etc/sysconfig/network-scripts/ifcfg-p4p2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p2
+UUID=4142b05e-a015-41e0-83a1-51dfee3e2e4b
+DEVICE=p4p2
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-bond0_slave_2
+HWADDR=2C:27:D7:54:42:B8
+MTU=9000
+TYPE=Ethernet
+NAME="bond0 slave 2"
+UUID=824b63ac-1125-4aee-993e-7ca32e575cc3
+DEVICE=p4p1
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+[root@m1-datagrid01p ~]#
+
+................................................................................
+
+#
+#	After network interfaces were configured as it were befor reinstall.
+#
+
+[root@m1-datagrid01p ~]# find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route-\* \) -exec echo \; -exec echo {} \; -exec cat {} \;
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=9ba41485-5dda-4509-9ce4-b11404962e10
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=f311efbc-8179-4917-9288-aa4e2a2a1fb5
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/route-bond0
+10.217.100.0/23 via 10.216.2.126
+10.216.0.0/21 via 10.216.2.126
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=803f9b4b-b13a-4c83-9677-8814c1fe9264
+DEVICE=em1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-p4p1
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p1
+UUID=62a74347-11e8-4c3f-b325-bf45bafde7b3
+DEVICE=p4p1
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond0
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+#BONDING_OPTS="downdelay=0 miimon=100 mode=802.3ad updelay=0"
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+TYPE=Bond
+BONDING_MASTER=yes
+MTU=9000
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+IPADDR=10.216.2.52
+PREFIX=25
+#NETMASK=255.255.255.128
+#GATEWAY=10.216.2.126
+#DNS1=10.219.50.4
+#DNS2=10.219.50.5
+#DOMAIN=tcsbank.ru
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond0
+UUID=b5bb7de7-00bb-46ee-b2fc-f4b7d2212f9b
+DEVICE=bond0
+ONBOOT=yes
+
+/etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+ONBOOT=yes
+TYPE=Bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+BOOTPROTO=none
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1626
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1626
+DEVICE=bond1.1626
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1626
+IPADDR=10.216.26.23
+PREFIX=24
+GATEWAY=10.216.26.254
+DNS1=10.219.50.4
+DNS2=10.219.50.5
+DEFROUTE=yes
+ZONE=external
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1764
+TYPE=vlan
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=bond1.1764
+DEVICE=bond1.1764
+ONBOOT=yes
+VLAN=yes
+VLAN_ID=1764
+IPADDR=10.217.64.146
+PREFIX=24
+DEFROUTE=no
+ZONE=external
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+UUID=b251cab8-0d6f-44ed-9c3b-d7550655aed1
+DEVICE=em2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+
+/etc/sysconfig/network-scripts/ifcfg-p4p2
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=p4p2
+UUID=4142b05e-a015-41e0-83a1-51dfee3e2e4b
+DEVICE=p4p2
+ONBOOT=yes
+ZONE=public
+SLAVE=yes
+MASTER=bond1
+[root@m1-datagrid01p ~]#
+
+
+[root@m1-datagrid01p ~]# ip a | grep -w inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.2.52/25 brd 10.216.2.127 scope global bond0
+    inet 10.216.26.23/24 brd 10.216.26.255 scope global bond1.1626
+    inet 10.217.64.146/24 brd 10.217.64.255 scope global bond1.1764
+[root@m1-datagrid01p ~]# ping -c 3 10.216.26.254
+PING 10.216.26.254 (10.216.26.254) 56(84) bytes of data.
+64 bytes from 10.216.26.254: icmp_seq=1 ttl=64 time=1.07 ms
+64 bytes from 10.216.26.254: icmp_seq=2 ttl=64 time=1.36 ms
+64 bytes from 10.216.26.254: icmp_seq=3 ttl=64 time=1.13 ms
+
+--- 10.216.26.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+rtt min/avg/max/mdev = 1.071/1.192/1.366/0.126 ms
+[root@m1-datagrid01p ~]# ping -c 3 10.216.2.126
+PING 10.216.2.126 (10.216.2.126) 56(84) bytes of data.
+64 bytes from 10.216.2.126: icmp_seq=1 ttl=255 time=39.3 ms
+64 bytes from 10.216.2.126: icmp_seq=2 ttl=255 time=0.350 ms
+64 bytes from 10.216.2.126: icmp_seq=3 ttl=255 time=0.314 ms
+
+--- 10.216.2.126 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2001ms
+rtt min/avg/max/mdev = 0.314/13.341/39.360/18.398 ms
+[root@m1-datagrid01p ~]#
+
+................................................................................
+
+
+
+

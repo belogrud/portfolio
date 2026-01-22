@@ -1,0 +1,118 @@
+
+................................................................................
+
+[root@ds-oravmdb01 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Wed Aug 21 22:49:16 2019
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/vg0-lv0     /                       ext4    defaults        1 1
+UUID=6c19c59e-75b6-4127-9934-2b90d579dd37 /boot                   ext4    defaults        1 2
+tmpfs                   /dev/shm                tmpfs   defaults        0 0
+devpts                  /dev/pts                devpts  gid=5,mode=620  0 0
+sysfs                   /sys                    sysfs   defaults        0 0
+proc                    /proc                   proc    defaults        0 0
+
+# SD#3077861
+db-xltink-stb-nfs:/XLTINK_sngl_di       /oramnt/XLTINK                  nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+db-xltink-stb-nfs:/XLTINK_sngl_arch     /oramnt/XLTINK_prod_arch        nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+fas6280a-ds-nfs:/vol/XLTINK_old_all_ds  /oramnt/XLTINK_old_all          nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+[root@ds-oravmdb01 ~]#
+
+................................................................................
+
+[root@ds-oravmdb01 ~]# pvs
+  PV         VG   Fmt  Attr PSize  PFree
+  /dev/sda2  vg0  lvm2 a--u 99.75g    0
+[root@ds-oravmdb01 ~]# vgs
+  VG   #PV #LV #SN Attr   VSize  VFree
+  vg0    1   1   0 wz--n- 99.75g    0
+[root@ds-oravmdb01 ~]# lvs
+  LV   VG   Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv0  vg0  -wi-ao---- 99.75g
+[root@ds-oravmdb01 ~]#
+
+
+................................................................................
+
+#
+#	https://linuxconfig.org/how-to-resize-ext4-root-partition-live-without-umount
+#
+
+#
+#	One significant mistake was made. I forgotten to change new partition type to 8e!!!
+#	As a result - server was not boot from lvm partition.
+#	After my changes default partition type was 83 Linux, but I have to change it back to 8e Linux LVM.
+#
+
+
+[root@ds-oravmdb01 ~]# fdisk /dev/sda
+
+WARNING: DOS-compatible mode is deprecated. It's strongly recommended to
+         switch off the mode (command 'c') and change display units to
+         sectors (command 'u').
+
+Command (m for help): p
+
+Disk /dev/sda: 107.4 GB, 107374182400 bytes
+255 heads, 63 sectors/track, 13054 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x000f026c
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          33      262144   83  Linux
+Partition 1 does not end on cylinder boundary.
+/dev/sda2              33       13054   104593087   8e  Linux LVM
+
+Command (m for help): d
+Partition number (1-4): 2
+
+Command (m for help): n
+Command action
+   e   extended
+   p   primary partition (1-4)
+p
+Partition number (1-4): 2
+First cylinder (33-13054, default 33): 33
+Last cylinder, +cylinders or +size{K,M,G} (33-13054, default 13054): +50G
+
+Command (m for help): p
+
+Disk /dev/sda: 107.4 GB, 107374182400 bytes
+255 heads, 63 sectors/track, 13054 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x000f026c
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          33      262144   83  Linux
+Partition 1 does not end on cylinder boundary.
+/dev/sda2              33        6560    52430032   83  Linux
+
+Command (m for help): w
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+
+WARNING: Re-reading the partition table failed with error 16: Device or resource busy.
+The kernel still uses the old table. The new table will be used at
+the next reboot or after you run partprobe(8) or kpartx(8)
+Syncing disks.
+[root@ds-oravmdb01 ~]#
+
+[root@ds-oravmdb01 ~]# touch /forcefsck
+[root@ds-oravmdb01 ~]#
+
+................................................................................
+
+
+
+

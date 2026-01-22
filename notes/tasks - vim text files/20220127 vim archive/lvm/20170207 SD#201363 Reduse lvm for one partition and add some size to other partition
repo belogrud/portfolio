@@ -1,0 +1,1613 @@
+
+................................................................................
+
+
+Привет, коллеги.
+
+Нужно перераспределить место в lvm на железных серверах хадупа тинькофф страхования. Адреса серверов m1-hadoop0[1-4]p.
+Нужно отрезать от /opt (/dev/vg_m1hadoop01p/lv_opt) 100Гб в пользу /var (/dev/vg_m1hadoop01p/lv_var).
+В итоге должно быть так:
+/opt – 80Гб
+/var – 132Гб
+
+
+Начинать можно в любое время, но перед началом работ нужно оповестить dwh-adm.
+
+С уважением,
+
+Георгий Безруких
+Системный администратор
+
+................................................................................
+
+
+#   I've used follow description
+#   http://www.tecmint.com/extend-and-reduce-lvms-in-linux/
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-hadoop01p.ti.local
+Warning: Permanently added 'm1-hadoop01p.ti.local,10.218.67.1' (RSA) to the list of known hosts.
+[bsv@m1-hadoop01p ~]$ sudo -i
+[root@m1-hadoop01p ~]#
+
+................................................................................
+
+[root@m1-hadoop01p ~]# df -hT
+Filesystem           Type   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop01p-lv_root
+                     ext4    50G  2.3G   45G   5% /
+tmpfs                tmpfs   32G     0   32G   0% /dev/shm
+/dev/sdg2            ext4   477M   27M  425M   6% /boot
+/dev/sdg1            vfat   200M  276K  200M   1% /boot/efi
+/dev/mapper/vg_m1hadoop01p-lv_opt
+                     ext4   178G  4.5G  164G   3% /opt
+/dev/mapper/vg_m1hadoop01p-lv_var
+                     ext4    32G   10G   20G  34% /var
+/dev/sda1            ext4   3.6T  345M  3.4T   1% /disk1
+/dev/sdb1            ext4   3.6T  233M  3.4T   1% /disk2
+/dev/sdc1            ext4   3.6T  104M  3.4T   1% /disk3
+/dev/sdd1            ext4   3.6T  123M  3.4T   1% /disk4
+/dev/sde1            ext4   3.6T  124M  3.4T   1% /disk5
+/dev/sdf1            ext4   3.6T  228M  3.4T   1% /disk6
+cm_processes         tmpfs   32G   33M   32G   1% /var/run/cloudera-scm-agent/process
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                              TYPE MOUNTPOINT FSTYPE        SIZE
+sdg                               disk                        278.9G
+├─sdg1                            part /boot/efi  vfat          200M
+├─sdg2                            part /boot      ext4          500M
+└─sdg3                            part            LVM2_member 278.2G
+  ├─vg_m1hadoop01p-lv_root (dm-0) lvm  /          ext4           50G
+  ├─vg_m1hadoop01p-lv_swap (dm-1) lvm  [SWAP]     swap           16G
+  ├─vg_m1hadoop01p-lv_var (dm-2)  lvm  /var       ext4           32G
+  └─vg_m1hadoop01p-lv_opt (dm-3)  lvm  /opt       ext4        180.2G
+sdb                               disk                          3.7T
+└─sdb1                            part /disk2     ext4          3.7T
+sda                               disk                          3.7T
+└─sda1                            part /disk1     ext4          3.7T
+sdc                               disk                          3.7T
+└─sdc1                            part /disk3     ext4          3.7T
+sdd                               disk                          3.7T
+└─sdd1                            part /disk4     ext4          3.7T
+sde                               disk                          3.7T
+└─sde1                            part /disk5     ext4          3.7T
+sdf                               disk                          3.7T
+└─sdf1                            part /disk6     ext4          3.7T
+[root@m1-hadoop01p ~]#
+
+................................................................................
+
+[root@m1-hadoop01p ~]# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sdg3
+  VG Name               vg_m1hadoop01p
+  PV Size               278.19 GiB / not usable 2.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              71216
+  Free PE               0
+  Allocated PE          71216
+  PV UUID               vfYYkh-RSqH-8F7b-Qy0f-WNA3-XpzY-12aorc
+
+[root@m1-hadoop01p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop01p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  5
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               LQgqQn-bO4K-uude-LzMc-rWcv-SlnC-V3hNyk
+
+[root@m1-hadoop01p ~]# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop01p/lv_root
+  LV Name                lv_root
+  VG Name                vg_m1hadoop01p
+  LV UUID                xHBzef-sXdi-qUT0-ec5l-bH2c-gVfd-Spk1kP
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop01p.ti.local, 2016-08-23 18:06:02 +0300
+  LV Status              available
+  # open                 1
+  LV Size                50.00 GiB
+  Current LE             12800
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:0
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop01p/lv_swap
+  LV Name                lv_swap
+  VG Name                vg_m1hadoop01p
+  LV UUID                vdVPNT-icB4-POef-muP6-N7qK-M9v2-RXm549
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop01p.ti.local, 2016-08-23 18:06:06 +0300
+  LV Status              available
+  # open                 1
+  LV Size                16.00 GiB
+  Current LE             4096
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:1
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop01p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop01p
+  LV UUID                6xybiH-fi3i-8PFD-GY7B-X9W0-36eh-uz3AtZ
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop01p.ti.local, 2016-08-23 18:06:06 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop01p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop01p
+  LV UUID                26aj4G-njSm-fzrL-tCqV-wq5f-VF6N-AwWWei
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop01p.ti.local, 2016-08-23 18:06:10 +0300
+  LV Status              available
+  # open                 1
+  LV Size                180.19 GiB
+  Current LE             46128
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop01p ~]#
+
+................................................................................
+
+[root@m1-hadoop01p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop01p lvm2 a--u 278.19g    0
+[root@m1-hadoop01p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop01p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop01p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop01p -wi-ao---- 180.19g
+  lv_root vg_m1hadoop01p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop01p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop01p -wi-ao----  32.00g
+[root@m1-hadoop01p ~]#
+
+................................................................................
+
+#   All size in Megabytes = 4 MB (one PE) * amount of PE
+[root@m1-hadoop01p ~]# expr 4 \* 71216
+284864
+
+#   Size what will be stayed after we substitute 100 MB.
+[root@m1-hadoop01p ~]# expr 284864 - 102400
+182464
+
+#   How many stayed size have PEs.
+[root@m1-hadoop01p ~]# expr 182464 / 4
+45616
+[root@m1-hadoop01p ~]#
+
+................................................................................
+
+[root@m1-hadoop01p ~]# tar cvf /var/tmp/20170207.backup.opt.tar /opt
+
+[root@m1-hadoop01p ~]# ls -Alh /var/tmp/2017*
+-rw-r--r-- 1 root root 4.4G Feb  7 17:03 /var/tmp/20170207.backup.opt.tar
+[root@m1-hadoop01p ~]#
+
+................................................................................
+
+umount -v /opt
+
+[root@m1-hadoop01p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop01p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop01p-lv_opt: 43173/11812864 files (0.1% non-contiguous), 1950685/47235072 blocks
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# resize2fs /dev/mapper/vg_m1hadoop01p-lv_opt 78G
+resize2fs 1.41.12 (17-May-2010)
+Resizing the filesystem on /dev/mapper/vg_m1hadoop01p-lv_opt to 20447232 (4k) blocks.
+The filesystem on /dev/mapper/vg_m1hadoop01p-lv_opt is now 20447232 blocks long.
+
+[root@m1-hadoop01p ~]#
+
+#   Now we have partition size 78GB.
+#
+[root@m1-hadoop01p ~]# expr 20447232 \* 4
+81788928
+[root@m1-hadoop01p ~]# expr 81788928 / 1024 / 1024
+78
+[root@m1-hadoop01p ~]#
+
+
+[root@m1-hadoop01p ~]# parted /dev/mapper/vg_m1hadoop01p-lv_opt unit mb print
+Model: Linux device-mapper (linear) (dm)
+Disk /dev/mapper/vg_m1hadoop01p-lv_opt: 193475MB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+
+Number  Start   End       Size      File system  Flags
+ 1      0.00MB  193475MB  193475MB  ext4
+
+[root@m1-hadoop01p ~]#
+
+#
+#   Identical devices. I may choose each of it.
+#
+[root@m1-hadoop01p ~]# ls -Alh /dev/vg_m1hadoop01p/lv_opt
+lrwxrwxrwx 1 root root 7 Feb  7 17:07 /dev/vg_m1hadoop01p/lv_opt -> ../dm-3
+[root@m1-hadoop01p ~]# ls -Alh /dev/mapper/vg_m1hadoop01p-lv_opt
+lrwxrwxrwx 1 root root 7 Feb  7 17:07 /dev/mapper/vg_m1hadoop01p-lv_opt -> ../dm-3
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# lvreduce -L 78G /dev/mapper/vg_m1hadoop01p-lv_opt
+  WARNING: Reducing active logical volume to 78.00 GiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce vg_m1hadoop01p/lv_opt? [y/n]: y
+  Size of logical volume vg_m1hadoop01p/lv_opt changed from 180.19 GiB (46128 extents) to 78.00 GiB (19968 extents).
+  Logical volume lv_opt successfully resized.
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# lvdisplay /dev/mapper/vg_m1hadoop01p-lv_opt
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop01p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop01p
+  LV UUID                26aj4G-njSm-fzrL-tCqV-wq5f-VF6N-AwWWei
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop01p.ti.local, 2016-08-23 18:06:10 +0300
+  LV Status              available
+  # open                 0
+  LV Size                78.00 GiB
+  Current LE             19968
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# vgdisplay vg_m1hadoop01p
+  --- Volume group ---
+  VG Name               vg_m1hadoop01p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  6
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               3
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       45056 / 176.00 GiB
+  Free  PE / Size       26160 / 102.19 GiB
+  VG UUID               LQgqQn-bO4K-uude-LzMc-rWcv-SlnC-V3hNyk
+
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# resize2fs /dev/mapper/vg_m1hadoop01p-lv_opt
+resize2fs 1.41.12 (17-May-2010)
+The filesystem is already 20447232 blocks long.  Nothing to do!
+
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop01p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop01p-lv_opt: 43173/5111808 files (0.1% non-contiguous), 1528185/20447232 blocks
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# mount -v /opt
+/dev/mapper/vg_m1hadoop01p-lv_opt on /opt type ext4 (rw)
+[root@m1-hadoop01p ~]# df -hT /opt
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop01p-lv_opt
+                     ext4   77G  4.5G   69G   7% /opt
+[root@m1-hadoop01p ~]#
+
+................................................................................
+
+[root@m1-hadoop01p ~]# lvdisplay /dev/vg_m1hadoop01p/lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop01p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop01p
+  LV UUID                6xybiH-fi3i-8PFD-GY7B-X9W0-36eh-uz3AtZ
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop01p.ti.local, 2016-08-23 18:06:06 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# lvextend -l +100%FREE /dev/vg_m1hadoop01p/lv_var
+  Size of logical volume vg_m1hadoop01p/lv_var changed from 32.00 GiB (8192 extents) to 134.19 GiB (34352 extents).
+  Logical volume lv_var successfully resized.
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# resize2fs /dev/vg_m1hadoop01p/lv_var
+resize2fs 1.41.12 (17-May-2010)
+Filesystem at /dev/vg_m1hadoop01p/lv_var is mounted on /var; on-line resizing required
+old desc_blocks = 2, new_desc_blocks = 9
+Performing an on-line resize of /dev/vg_m1hadoop01p/lv_var to 35176448 (4k) blocks.
+The filesystem on /dev/vg_m1hadoop01p/lv_var is now 35176448 blocks long.
+
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# lvdisplay /dev/vg_m1hadoop01p/lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop01p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop01p
+  LV UUID                6xybiH-fi3i-8PFD-GY7B-X9W0-36eh-uz3AtZ
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop01p.ti.local, 2016-08-23 18:06:06 +0300
+  LV Status              available
+  # open                 1
+  LV Size                134.19 GiB
+  Current LE             34352
+  Segments               2
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop01p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  7
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               LQgqQn-bO4K-uude-LzMc-rWcv-SlnC-V3hNyk
+
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop01p lvm2 a--u 278.19g    0
+[root@m1-hadoop01p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop01p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop01p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop01p -wi-ao----  78.00g
+  lv_root vg_m1hadoop01p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop01p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop01p -wi-ao---- 134.19g
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# df -hT
+Filesystem           Type   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop01p-lv_root
+                     ext4    50G  2.2G   45G   5% /
+tmpfs                tmpfs   32G     0   32G   0% /dev/shm
+/dev/sdg2            ext4   477M   27M  425M   6% /boot
+/dev/sdg1            vfat   200M  276K  200M   1% /boot/efi
+/dev/sda1            ext4   3.6T  345M  3.4T   1% /disk1
+/dev/sdb1            ext4   3.6T  233M  3.4T   1% /disk2
+/dev/sdc1            ext4   3.6T  104M  3.4T   1% /disk3
+/dev/sdd1            ext4   3.6T  123M  3.4T   1% /disk4
+/dev/sde1            ext4   3.6T  124M  3.4T   1% /disk5
+/dev/sdf1            ext4   3.6T  228M  3.4T   1% /disk6
+cm_processes         tmpfs  132G   15G  111G  12% /var/run/cloudera-scm-agent/process
+/dev/mapper/vg_m1hadoop01p-lv_var
+                     ext4   132G   15G  111G  12% /var
+/dev/mapper/vg_m1hadoop01p-lv_opt
+                     ext4    77G  4.5G   69G   7% /opt
+[root@m1-hadoop01p ~]# df -hT /opt /var
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop01p-lv_opt
+                     ext4   77G  4.5G   69G   7% /opt
+/dev/mapper/vg_m1hadoop01p-lv_var
+                     ext4  132G   15G  111G  12% /var
+[root@m1-hadoop01p ~]#
+
+[root@m1-hadoop01p ~]# rm /var/tmp/20170207.backup.opt.tar
+rm: remove regular file `/var/tmp/20170207.backup.opt.tar'? y
+[root@m1-hadoop01p ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+
+[root@m1-hadoop02p ~]# df -hT
+Filesystem           Type   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop02p-lv_root
+                     ext4    50G  2.2G   45G   5% /
+tmpfs                tmpfs   32G     0   32G   0% /dev/shm
+/dev/sdg2            ext4   477M   27M  425M   6% /boot
+/dev/sdg1            vfat   200M  276K  200M   1% /boot/efi
+/dev/mapper/vg_m1hadoop02p-lv_var
+                     ext4    32G  813M   29G   3% /var
+/dev/sda1            ext4   3.6T  142M  3.4T   1% /disk1
+/dev/sdb1            ext4   3.6T  114M  3.4T   1% /disk2
+/dev/sdc1            ext4   3.6T   85M  3.4T   1% /disk3
+/dev/sdd1            ext4   3.6T   97M  3.4T   1% /disk4
+/dev/sde1            ext4   3.6T   85M  3.4T   1% /disk5
+/dev/sdf1            ext4   3.6T  212M  3.4T   1% /disk6
+cm_processes         tmpfs   32G   23M   32G   1% /var/run/cloudera-scm-agent/process
+/dev/mapper/vg_m1hadoop02p-lv_opt
+                     ext4   178G  2.2G  167G   2% /opt
+
+[root@m1-hadoop02p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                              TYPE MOUNTPOINT FSTYPE        SIZE
+sdg                               disk                        278.9G
+├─sdg1                            part /boot/efi  vfat          200M
+├─sdg2                            part /boot      ext4          500M
+└─sdg3                            part            LVM2_member 278.2G
+  ├─vg_m1hadoop02p-lv_root (dm-0) lvm  /          ext4           50G
+  ├─vg_m1hadoop02p-lv_swap (dm-1) lvm  [SWAP]     swap           16G
+  ├─vg_m1hadoop02p-lv_var (dm-2)  lvm  /var       ext4           32G
+  └─vg_m1hadoop02p-lv_opt (dm-3)  lvm  /opt       ext4        180.2G
+sda                               disk                          3.7T
+└─sda1                            part /disk1     ext4          3.7T
+sdb                               disk                          3.7T
+└─sdb1                            part /disk2     ext4          3.7T
+sdc                               disk                          3.7T
+└─sdc1                            part /disk3     ext4          3.7T
+sdd                               disk                          3.7T
+└─sdd1                            part /disk4     ext4          3.7T
+sde                               disk                          3.7T
+└─sde1                            part /disk5     ext4          3.7T
+sdf                               disk                          3.7T
+└─sdf1                            part /disk6     ext4          3.7T
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop02p lvm2 a--u 278.19g    0
+[root@m1-hadoop02p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop02p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop02p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop02p -wi-ao---- 180.19g
+  lv_root vg_m1hadoop02p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop02p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop02p -wi-ao----  32.00g
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sdg3
+  VG Name               vg_m1hadoop02p
+  PV Size               278.19 GiB / not usable 2.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              71216
+  Free PE               0
+  Allocated PE          71216
+  PV UUID               EiOIIv-Ngfy-Q6Bz-dJ4s-05m0-0tLd-9Z985O
+
+[root@m1-hadoop02p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop02p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  5
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               hGoAKE-hDFp-HzqU-bqNo-69Md-tNsH-PhnDer
+
+[root@m1-hadoop02p ~]# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop02p/lv_root
+  LV Name                lv_root
+  VG Name                vg_m1hadoop02p
+  LV UUID                GetMtM-3kxF-fJR6-8Xwj-G9H9-3Byv-iV1Acb
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop02p.ti.local, 2016-08-24 12:24:39 +0300
+  LV Status              available
+  # open                 1
+  LV Size                50.00 GiB
+  Current LE             12800
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:0
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop02p/lv_swap
+  LV Name                lv_swap
+  VG Name                vg_m1hadoop02p
+  LV UUID                veWIdz-XbGr-e2TI-4KmQ-3MRS-5VXv-sQKPSk
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop02p.ti.local, 2016-08-24 12:24:42 +0300
+  LV Status              available
+  # open                 1
+  LV Size                16.00 GiB
+  Current LE             4096
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:1
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop02p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop02p
+  LV UUID                vUAWNB-olYp-3itY-ABSp-LAPp-9r01-RZSkHM
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop02p.ti.local, 2016-08-24 12:24:42 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop02p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop02p
+  LV UUID                0lfJQo-6eGb-WsgK-eBot-Jwam-8yai-9UJPoE
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop02p.ti.local, 2016-08-24 12:24:47 +0300
+  LV Status              available
+  # open                 1
+  LV Size                180.19 GiB
+  Current LE             46128
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# tar cf /var/tmp/20170207.backup.opt.tar /opt
+tar: Removing leading `/' from member names
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/omintfefa: socket ignored
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/dsm_om_shrsvc: socket ignored
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/omintf177a: socket ignored
+
+[root@m1-hadoop02p ~]# umount -v /opt
+/dev/mapper/vg_m1hadoop02p-lv_opt umounted
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop02p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop02p-lv_opt: 43161/11812864 files (0.1% non-contiguous), 1334708/47235072 blocks
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# resize2fs /dev/mapper/vg_m1hadoop02p-lv_opt 78G
+resize2fs 1.41.12 (17-May-2010)
+Resizing the filesystem on /dev/mapper/vg_m1hadoop02p-lv_opt to 20447232 (4k) blocks.
+The filesystem on /dev/mapper/vg_m1hadoop02p-lv_opt is now 20447232 blocks long.
+
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# lvreduce -L 78G /dev/mapper/vg_m1hadoop02p-lv_opt
+  WARNING: Reducing active logical volume to 78.00 GiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce vg_m1hadoop02p/lv_opt? [y/n]: y
+  Size of logical volume vg_m1hadoop02p/lv_opt changed from 180.19 GiB (46128 extents) to 78.00 GiB (19968 extents).
+  Logical volume lv_opt successfully resized.
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# lvdisplay /dev/mapper/vg_m1hadoop02p-lv_opt
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop02p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop02p
+  LV UUID                0lfJQo-6eGb-WsgK-eBot-Jwam-8yai-9UJPoE
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop02p.ti.local, 2016-08-24 12:24:47 +0300
+  LV Status              available
+  # open                 0
+  LV Size                78.00 GiB
+  Current LE             19968
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop02p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop02p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  6
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               3
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       45056 / 176.00 GiB
+  Free  PE / Size       26160 / 102.19 GiB
+  VG UUID               hGoAKE-hDFp-HzqU-bqNo-69Md-tNsH-PhnDer
+
+[root@m1-hadoop02p ~]#
+
+
+[root@m1-hadoop02p ~]# resize2fs /dev/mapper/vg_m1hadoop02p-lv_opt
+resize2fs 1.41.12 (17-May-2010)
+The filesystem is already 20447232 blocks long.  Nothing to do!
+
+[root@m1-hadoop02p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop02p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop02p-lv_opt: 43161/5111808 files (0.1% non-contiguous), 912208/20447232 blocks
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# mount -v /opt
+/dev/mapper/vg_m1hadoop02p-lv_opt on /opt type ext4 (rw)
+[root@m1-hadoop02p ~]# df -hT /opt
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop02p-lv_opt
+                     ext4   77G  2.2G   71G   3% /opt
+[root@m1-hadoop02p ~]#
+
+................................................................................
+
+[root@m1-hadoop02p ~]# lvdisplay /dev/vg_m1hadoop02p/lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop02p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop02p
+  LV UUID                vUAWNB-olYp-3itY-ABSp-LAPp-9r01-RZSkHM
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop02p.ti.local, 2016-08-24 12:24:42 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+[root@m1-hadoop02p ~]#
+
+
+[root@m1-hadoop02p ~]# lvextend -l +100%FREE /dev/vg_m1hadoop02p/lv_var
+  Size of logical volume vg_m1hadoop02p/lv_var changed from 32.00 GiB (8192 extents) to 134.19 GiB (34352 extents).
+  Logical volume lv_var successfully resized.
+[root@m1-hadoop02p ~]# resize2fs /dev/vg_m1hadoop02p/lv_var
+resize2fs 1.41.12 (17-May-2010)
+Filesystem at /dev/vg_m1hadoop02p/lv_var is mounted on /var; on-line resizing required
+old desc_blocks = 2, new_desc_blocks = 9
+Performing an on-line resize of /dev/vg_m1hadoop02p/lv_var to 35176448 (4k) blocks.
+The filesystem on /dev/vg_m1hadoop02p/lv_var is now 35176448 blocks long.
+
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# lvdisplay /dev/vg_m1hadoop02p/lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop02p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop02p
+  LV UUID                vUAWNB-olYp-3itY-ABSp-LAPp-9r01-RZSkHM
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop02p.ti.local, 2016-08-24 12:24:42 +0300
+  LV Status              available
+  # open                 1
+  LV Size                134.19 GiB
+  Current LE             34352
+  Segments               2
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop02p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  7
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               hGoAKE-hDFp-HzqU-bqNo-69Md-tNsH-PhnDer
+
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop02p lvm2 a--u 278.19g    0
+[root@m1-hadoop02p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop02p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop02p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop02p -wi-ao----  78.00g
+  lv_root vg_m1hadoop02p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop02p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop02p -wi-ao---- 134.19g
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# df -hT /opt /var
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop02p-lv_opt
+                     ext4   77G  2.2G   71G   3% /opt
+/dev/mapper/vg_m1hadoop02p-lv_var
+                     ext4  132G  2.9G  123G   3% /var
+[root@m1-hadoop02p ~]#
+
+
+[root@m1-hadoop02p ~]# ls /opt
+cloudera  dell  impala  lost+found  lsi  yarn
+[root@m1-hadoop02p ~]#
+
+[root@m1-hadoop02p ~]# rm /var/tmp/20170207.backup.opt.tar
+rm: remove regular file `/var/tmp/20170207.backup.opt.tar'? y
+[root@m1-hadoop02p ~]#
+
+................................................................................
+................................................................................
+................................................................................
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-hadoop03p.ti.local
+Warning: Permanently added 'm1-hadoop03p.ti.local,10.218.67.3' (RSA) to the list of known hosts.
+[bsv@m1-hadoop03p ~]$ sudo -i
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# df -hT
+Filesystem           Type   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop03p-lv_root
+                     ext4    50G  2.2G   45G   5% /
+tmpfs                tmpfs   32G     0   32G   0% /dev/shm
+/dev/sdg2            ext4   477M   27M  425M   6% /boot
+/dev/sdg1            vfat   200M  276K  200M   1% /boot/efi
+/dev/mapper/vg_m1hadoop03p-lv_var
+                     ext4    32G   15G   15G  51% /var
+/dev/sda1            ext4   3.6T  209M  3.4T   1% /disk1
+/dev/sdb1            ext4   3.6T   92M  3.4T   1% /disk2
+/dev/sdc1            ext4   3.6T   94M  3.4T   1% /disk3
+/dev/sdd1            ext4   3.6T  113M  3.4T   1% /disk4
+/dev/sde1            ext4   3.6T   96M  3.4T   1% /disk5
+/dev/sdf1            ext4   3.6T  109M  3.4T   1% /disk6
+cm_processes         tmpfs   32G   22M   32G   1% /var/run/cloudera-scm-agent/process
+/dev/mapper/vg_m1hadoop03p-lv_opt
+                     ext4   178G  2.2G  167G   2% /opt
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                              TYPE MOUNTPOINT FSTYPE        SIZE
+sdg                               disk                        278.9G
+├─sdg1                            part /boot/efi  vfat          200M
+├─sdg2                            part /boot      ext4          500M
+└─sdg3                            part            LVM2_member 278.2G
+  ├─vg_m1hadoop03p-lv_root (dm-0) lvm  /          ext4           50G
+  ├─vg_m1hadoop03p-lv_swap (dm-1) lvm  [SWAP]     swap           16G
+  ├─vg_m1hadoop03p-lv_var (dm-2)  lvm  /var       ext4           32G
+  └─vg_m1hadoop03p-lv_opt (dm-3)  lvm  /opt       ext4        180.2G
+sda                               disk                          3.7T
+└─sda1                            part /disk1     ext4          3.7T
+sdb                               disk                          3.7T
+└─sdb1                            part /disk2     ext4          3.7T
+sdc                               disk                          3.7T
+└─sdc1                            part /disk3     ext4          3.7T
+sdd                               disk                          3.7T
+└─sdd1                            part /disk4     ext4          3.7T
+sde                               disk                          3.7T
+└─sde1                            part /disk5     ext4          3.7T
+sdf                               disk                          3.7T
+└─sdf1                            part /disk6     ext4          3.7T
+[root@m1-hadoop03p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop03p lvm2 a--u 278.19g    0
+[root@m1-hadoop03p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop03p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop03p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop03p -wi-ao---- 180.19g
+  lv_root vg_m1hadoop03p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop03p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop03p -wi-ao----  32.00g
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sdg3
+  VG Name               vg_m1hadoop03p
+  PV Size               278.19 GiB / not usable 2.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              71216
+  Free PE               0
+  Allocated PE          71216
+  PV UUID               1BSEfM-2TBL-5CiH-G1VS-YSq1-5rQh-fTwsAg
+
+[root@m1-hadoop03p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop03p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  5
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               rYFYDn-1v9T-F1tx-ZEp2-xoBS-MAYf-QjLS8E
+
+[root@m1-hadoop03p ~]# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop03p/lv_root
+  LV Name                lv_root
+  VG Name                vg_m1hadoop03p
+  LV UUID                6Ou1do-ZkFe-TOHr-PWUk-JW0Q-YJqD-hkYm9u
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop03p.ti.local, 2016-08-24 12:27:00 +0300
+  LV Status              available
+  # open                 1
+  LV Size                50.00 GiB
+  Current LE             12800
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:0
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop03p/lv_swap
+  LV Name                lv_swap
+  VG Name                vg_m1hadoop03p
+  LV UUID                quSx7T-PGPg-IO8K-uW1P-ZXJp-n6en-P5xj6J
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop03p.ti.local, 2016-08-24 12:27:03 +0300
+  LV Status              available
+  # open                 1
+  LV Size                16.00 GiB
+  Current LE             4096
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:1
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop03p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop03p
+  LV UUID                AmUOdX-ocvG-wuG4-pQd3-T5CS-RwhZ-maebEp
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop03p.ti.local, 2016-08-24 12:27:04 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop03p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop03p
+  LV UUID                c3Q5kJ-7EeG-FePg-ze9v-grzE-thuA-lr0oit
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop03p.ti.local, 2016-08-24 12:27:08 +0300
+  LV Status              available
+  # open                 1
+  LV Size                180.19 GiB
+  Current LE             46128
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# tar cf /var/tmp/20170207.backup.opt.tar /opt
+tar: Removing leading `/' from member names
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/omintf1645: socket ignored
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/omintffc2: socket ignored
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/dsm_om_shrsvc: socket ignored
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# umount -v /opt
+/dev/mapper/vg_m1hadoop03p-lv_opt umounted
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop03p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop03p-lv_opt: 43161/11812864 files (0.1% non-contiguous), 1334707/47235072 blocks
+[root@m1-hadoop03p ~]# resize2fs /dev/mapper/vg_m1hadoop03p-lv_opt 78G
+resize2fs 1.41.12 (17-May-2010)
+Resizing the filesystem on /dev/mapper/vg_m1hadoop03p-lv_opt to 20447232 (4k) blocks.
+The filesystem on /dev/mapper/vg_m1hadoop03p-lv_opt is now 20447232 blocks long.
+
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# lvreduce -L 78G /dev/mapper/vg_m1hadoop03p-lv_opt
+  WARNING: Reducing active logical volume to 78.00 GiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce vg_m1hadoop03p/lv_opt? [y/n]: y
+  Size of logical volume vg_m1hadoop03p/lv_opt changed from 180.19 GiB (46128 extents) to 78.00 GiB (19968 extents).
+  Logical volume lv_opt successfully resized.
+[root@m1-hadoop03p ~]# lvdisplay !$
+lvdisplay /dev/mapper/vg_m1hadoop03p-lv_opt
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop03p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop03p
+  LV UUID                c3Q5kJ-7EeG-FePg-ze9v-grzE-thuA-lr0oit
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop03p.ti.local, 2016-08-24 12:27:08 +0300
+  LV Status              available
+  # open                 0
+  LV Size                78.00 GiB
+  Current LE             19968
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop03p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop03p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  6
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               3
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       45056 / 176.00 GiB
+  Free  PE / Size       26160 / 102.19 GiB
+  VG UUID               rYFYDn-1v9T-F1tx-ZEp2-xoBS-MAYf-QjLS8E
+
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# resize2fs /dev/mapper/vg_m1hadoop03p-lv_opt
+resize2fs 1.41.12 (17-May-2010)
+The filesystem is already 20447232 blocks long.  Nothing to do!
+
+[root@m1-hadoop03p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop03p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop03p-lv_opt: 43161/5111808 files (0.1% non-contiguous), 912207/20447232 blocks
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# mount -v /opt
+/dev/mapper/vg_m1hadoop03p-lv_opt on /opt type ext4 (rw)
+[root@m1-hadoop03p ~]# df -hT /opt
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop03p-lv_opt
+                     ext4   77G  2.2G   71G   3% /opt
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# lvdisplay /dev/vg_m1hadoop03p/lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop03p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop03p
+  LV UUID                AmUOdX-ocvG-wuG4-pQd3-T5CS-RwhZ-maebEp
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop03p.ti.local, 2016-08-24 12:27:04 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# lvextend -l +100%FREE /dev/vg_m1hadoop03p/lv_var
+  Size of logical volume vg_m1hadoop03p/lv_var changed from 32.00 GiB (8192 extents) to 134.19 GiB (34352 extents).
+  Logical volume lv_var successfully resized.
+
+[root@m1-hadoop03p ~]# resize2fs /dev/vg_m1hadoop03p/lv_var
+resize2fs 1.41.12 (17-May-2010)
+Filesystem at /dev/vg_m1hadoop03p/lv_var is mounted on /var; on-line resizing required
+old desc_blocks = 2, new_desc_blocks = 9
+Performing an on-line resize of /dev/vg_m1hadoop03p/lv_var to 35176448 (4k) blocks.
+The filesystem on /dev/vg_m1hadoop03p/lv_var is now 35176448 blocks long.
+
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# lvdisplay /dev/vg_m1hadoop03p/lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop03p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop03p
+  LV UUID                AmUOdX-ocvG-wuG4-pQd3-T5CS-RwhZ-maebEp
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop03p.ti.local, 2016-08-24 12:27:04 +0300
+  LV Status              available
+  # open                 1
+  LV Size                134.19 GiB
+  Current LE             34352
+  Segments               2
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop03p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  7
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               rYFYDn-1v9T-F1tx-ZEp2-xoBS-MAYf-QjLS8E
+
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop03p lvm2 a--u 278.19g    0
+[root@m1-hadoop03p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop03p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop03p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop03p -wi-ao----  78.00g
+  lv_root vg_m1hadoop03p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop03p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop03p -wi-ao---- 134.19g
+[root@m1-hadoop03p ~]#
+
+[root@m1-hadoop03p ~]# df -hT /opt /var
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop03p-lv_opt
+                     ext4   77G  2.2G   71G   3% /opt
+/dev/mapper/vg_m1hadoop03p-lv_var
+                     ext4  132G   18G  109G  14% /var
+[root@m1-hadoop03p ~]#
+[root@m1-hadoop03p ~]# ls /opt
+cloudera  dell  impala  lost+found  lsi  yarn
+[root@m1-hadoop03p ~]# rm /var/tmp/20170207.backup.opt.tar
+rm: remove regular file `/var/tmp/20170207.backup.opt.tar'? y
+[root@m1-hadoop03p ~]#
+
+
+................................................................................
+................................................................................
+................................................................................
+................................................................................
+................................................................................
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-hadoop04p.ti.local
+Warning: Permanently added 'm1-hadoop04p.ti.local,10.218.67.4' (RSA) to the list of known hosts.
+[bsv@m1-hadoop04p ~]$ sudo -i
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# df -hT
+Filesystem           Type   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop04p-lv_root
+                     ext4    50G  2.2G   45G   5% /
+tmpfs                tmpfs   32G     0   32G   0% /dev/shm
+/dev/sdg2            ext4   477M   27M  425M   6% /boot
+/dev/sdg1            vfat   200M  276K  200M   1% /boot/efi
+/dev/mapper/vg_m1hadoop04p-lv_var
+                     ext4    32G  601M   30G   2% /var
+/dev/sda1            ext4   3.6T   78M  3.4T   1% /disk1
+/dev/sdb1            ext4   3.6T   87M  3.4T   1% /disk2
+/dev/sdc1            ext4   3.6T   98M  3.4T   1% /disk3
+/dev/sdd1            ext4   3.6T   88M  3.4T   1% /disk4
+/dev/sde1            ext4   3.6T  123M  3.4T   1% /disk5
+/dev/sdf1            ext4   3.6T  103M  3.4T   1% /disk6
+cm_processes         tmpfs   32G   22M   32G   1% /var/run/cloudera-scm-agent/process
+/dev/mapper/vg_m1hadoop04p-lv_opt
+                     ext4   178G  2.2G  167G   2% /opt
+[root@m1-hadoop04p ~]#
+[root@m1-hadoop04p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                              TYPE MOUNTPOINT FSTYPE        SIZE
+sdg                               disk                        278.9G
+├─sdg1                            part /boot/efi  vfat          200M
+├─sdg2                            part /boot      ext4          500M
+└─sdg3                            part            LVM2_member 278.2G
+  ├─vg_m1hadoop04p-lv_root (dm-0) lvm  /          ext4           50G
+  ├─vg_m1hadoop04p-lv_swap (dm-1) lvm  [SWAP]     swap           16G
+  ├─vg_m1hadoop04p-lv_opt (dm-2)  lvm  /opt       ext4        180.2G
+  └─vg_m1hadoop04p-lv_var (dm-3)  lvm  /var       ext4           32G
+sda                               disk                          3.7T
+└─sda1                            part /disk1     ext4          3.7T
+sdb                               disk                          3.7T
+└─sdb1                            part /disk2     ext4          3.7T
+sdc                               disk                          3.7T
+└─sdc1                            part /disk3     ext4          3.7T
+sdd                               disk                          3.7T
+└─sdd1                            part /disk4     ext4          3.7T
+sde                               disk                          3.7T
+└─sde1                            part /disk5     ext4          3.7T
+sdf                               disk                          3.7T
+└─sdf1                            part /disk6     ext4          3.7T
+[root@m1-hadoop04p ~]#
+[root@m1-hadoop04p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop04p lvm2 a--u 278.19g    0
+[root@m1-hadoop04p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop04p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop04p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop04p -wi-ao---- 180.19g
+  lv_root vg_m1hadoop04p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop04p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop04p -wi-ao----  32.00g
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sdg3
+  VG Name               vg_m1hadoop04p
+  PV Size               278.19 GiB / not usable 2.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              71216
+  Free PE               0
+  Allocated PE          71216
+  PV UUID               E64cDt-oJxD-rTjn-bOhg-DetD-ksf1-9mexF3
+
+[root@m1-hadoop04p ~]#
+[root@m1-hadoop04p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop04p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  5
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               2SU0ak-Cv9s-Rqdd-FDCb-7KV6-htz3-9D07Pg
+
+[root@m1-hadoop04p ~]#
+[root@m1-hadoop04p ~]# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop04p/lv_root
+  LV Name                lv_root
+  VG Name                vg_m1hadoop04p
+  LV UUID                ezuUbl-hHEh-c22b-Oxm8-fXRa-ULo1-Y2OuuQ
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop04p.ti.local, 2016-08-23 16:03:19 +0300
+  LV Status              available
+  # open                 1
+  LV Size                50.00 GiB
+  Current LE             12800
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:0
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop04p/lv_swap
+  LV Name                lv_swap
+  VG Name                vg_m1hadoop04p
+  LV UUID                caaA0e-5mB4-BXLk-Id0V-L4pJ-NTgg-vJ2R6f
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop04p.ti.local, 2016-08-23 16:03:22 +0300
+  LV Status              available
+  # open                 1
+  LV Size                16.00 GiB
+  Current LE             4096
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:1
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop04p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop04p
+  LV UUID                O3SZVg-bq6z-MgS2-pqN9-JsgQ-QDHT-reax5R
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop04p.ti.local, 2016-08-23 16:03:23 +0300
+  LV Status              available
+  # open                 1
+  LV Size                180.19 GiB
+  Current LE             46128
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop04p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop04p
+  LV UUID                fMZVyz-N2bo-t6v0-vjbk-EOij-t8Ee-lx9IF6
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop04p.ti.local, 2016-08-23 16:03:42 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# tar cf /var/tmp/20170207.backup.opt.tar /opt
+tar: Removing leading `/' from member names
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/dsm_om_shrsvc: socket ignored
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/omintf16b3: socket ignored
+tar: /opt/dell/srvadmin/var/lib/openmanage/shrsvc/omintff50: socket ignored
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# umount -v /opt
+/dev/mapper/vg_m1hadoop04p-lv_opt umounted
+[root@m1-hadoop04p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop04p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop04p-lv_opt: 43160/11812864 files (0.1% non-contiguous), 1334692/47235072 blocks
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# resize2fs /dev/mapper/vg_m1hadoop04p-lv_opt 78G
+resize2fs 1.41.12 (17-May-2010)
+Resizing the filesystem on /dev/mapper/vg_m1hadoop04p-lv_opt to 20447232 (4k) blocks.
+The filesystem on /dev/mapper/vg_m1hadoop04p-lv_opt is now 20447232 blocks long.
+
+[root@m1-hadoop04p ~]#
+[root@m1-hadoop04p ~]# lvreduce -L 78G /dev/mapper/vg_m1hadoop04p-lv_opt
+  WARNING: Reducing active logical volume to 78.00 GiB.
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce vg_m1hadoop04p/lv_opt? [y/n]: y
+  Size of logical volume vg_m1hadoop04p/lv_opt changed from 180.19 GiB (46128 extents) to 78.00 GiB (19968 extents).
+  Logical volume lv_opt successfully resized.
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# lvdisplay /dev/mapper/vg_m1hadoop04p-lv_opt
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop04p/lv_opt
+  LV Name                lv_opt
+  VG Name                vg_m1hadoop04p
+  LV UUID                O3SZVg-bq6z-MgS2-pqN9-JsgQ-QDHT-reax5R
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop04p.ti.local, 2016-08-23 16:03:23 +0300
+  LV Status              available
+  # open                 0
+  LV Size                78.00 GiB
+  Current LE             19968
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
+
+[root@m1-hadoop04p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop04p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  6
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               3
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       45056 / 176.00 GiB
+  Free  PE / Size       26160 / 102.19 GiB
+  VG UUID               2SU0ak-Cv9s-Rqdd-FDCb-7KV6-htz3-9D07Pg
+
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# resize2fs /dev/mapper/vg_m1hadoop04p-lv_opt
+resize2fs 1.41.12 (17-May-2010)
+The filesystem is already 20447232 blocks long.  Nothing to do!
+
+[root@m1-hadoop04p ~]# e2fsck -ff /dev/mapper/vg_m1hadoop04p-lv_opt
+e2fsck 1.41.12 (17-May-2010)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/mapper/vg_m1hadoop04p-lv_opt: 43160/5111808 files (0.1% non-contiguous), 912192/20447232 blocks
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# mount -v /opt
+/dev/mapper/vg_m1hadoop04p-lv_opt on /opt type ext4 (rw)
+[root@m1-hadoop04p ~]# df -hT /opt
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop04p-lv_opt
+                     ext4   77G  2.2G   71G   3% /opt
+[root@m1-hadoop04p ~]# ls /opt
+cloudera  dell  impala  lost+found  lsi  yarn
+[root@m1-hadoop04p ~]#
+
+................................................................................
+
+
+[root@m1-hadoop04p ~]# lvdisplay /dev/mapper/vg_m1hadoop04p-lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop04p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop04p
+  LV UUID                fMZVyz-N2bo-t6v0-vjbk-EOij-t8Ee-lx9IF6
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop04p.ti.local, 2016-08-23 16:03:42 +0300
+  LV Status              available
+  # open                 1
+  LV Size                32.00 GiB
+  Current LE             8192
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop04p ~]# lvextend -l +100%FREE /dev/mapper/vg_m1hadoop04p-lv_var
+  Size of logical volume vg_m1hadoop04p/lv_var changed from 32.00 GiB (8192 extents) to 134.19 GiB (34352 extents).
+  Logical volume lv_var successfully resized.
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# resize2fs /dev/mapper/vg_m1hadoop04p-lv_var
+resize2fs 1.41.12 (17-May-2010)
+Filesystem at /dev/mapper/vg_m1hadoop04p-lv_var is mounted on /var; on-line resizing required
+old desc_blocks = 2, new_desc_blocks = 9
+Performing an on-line resize of /dev/mapper/vg_m1hadoop04p-lv_var to 35176448 (4k) blocks.
+The filesystem on /dev/mapper/vg_m1hadoop04p-lv_var is now 35176448 blocks long.
+
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# lvdisplay /dev/mapper/vg_m1hadoop04p-lv_var
+  --- Logical volume ---
+  LV Path                /dev/vg_m1hadoop04p/lv_var
+  LV Name                lv_var
+  VG Name                vg_m1hadoop04p
+  LV UUID                fMZVyz-N2bo-t6v0-vjbk-EOij-t8Ee-lx9IF6
+  LV Write Access        read/write
+  LV Creation host, time m1-hadoop04p.ti.local, 2016-08-23 16:03:42 +0300
+  LV Status              available
+  # open                 1
+  LV Size                134.19 GiB
+  Current LE             34352
+  Segments               2
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:3
+
+[root@m1-hadoop04p ~]#
+[root@m1-hadoop04p ~]# vgdisplay
+  --- Volume group ---
+  VG Name               vg_m1hadoop04p
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  7
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                4
+  Open LV               4
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               278.19 GiB
+  PE Size               4.00 MiB
+  Total PE              71216
+  Alloc PE / Size       71216 / 278.19 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               2SU0ak-Cv9s-Rqdd-FDCb-7KV6-htz3-9D07Pg
+
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# pvs
+  PV         VG             Fmt  Attr PSize   PFree
+  /dev/sdg3  vg_m1hadoop04p lvm2 a--u 278.19g    0
+[root@m1-hadoop04p ~]# vgs
+  VG             #PV #LV #SN Attr   VSize   VFree
+  vg_m1hadoop04p   1   4   0 wz--n- 278.19g    0
+[root@m1-hadoop04p ~]# lvs
+  LV      VG             Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_opt  vg_m1hadoop04p -wi-ao----  78.00g
+  lv_root vg_m1hadoop04p -wi-ao----  50.00g
+  lv_swap vg_m1hadoop04p -wi-ao----  16.00g
+  lv_var  vg_m1hadoop04p -wi-ao---- 134.19g
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# df -hT /opt /var
+Filesystem           Type  Size  Used Avail Use% Mounted on
+/dev/mapper/vg_m1hadoop04p-lv_opt
+                     ext4   77G  2.2G   71G   3% /opt
+/dev/mapper/vg_m1hadoop04p-lv_var
+                     ext4  132G  2.7G  123G   3% /var
+[root@m1-hadoop04p ~]#
+
+[root@m1-hadoop04p ~]# rm /var/tmp/20170207.backup.opt.tar
+rm: remove regular file `/var/tmp/20170207.backup.opt.tar'? y
+[root@m1-hadoop04p ~]#
+
+................................................................................
+
+
+
+
+
+
+
+

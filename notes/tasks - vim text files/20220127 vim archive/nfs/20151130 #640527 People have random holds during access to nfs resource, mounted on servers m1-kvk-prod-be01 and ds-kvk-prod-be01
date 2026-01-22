@@ -1,0 +1,663 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   640527
+Название    №640527
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  27.11.2015 18:37
+Дата регистрации    27.11.2015 18:37
+Тип запроса Инцидент
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+На серверах m1-kvk-prod-be01 и ds-kvk-prod-be01 испытываем проблемы при работе с шарой
+v6250-ds:/vol/kupi_v_kredit/kvk_cache
+
+Рандомные задержки по 30-50 секунд при обращении на запись.
+Записываем мелкие файлы до 1кб. (250-500 байт).
+
+
+С уважением,
+
+Калинин Алексей
+Ведущий Разработчик
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Калинин Алексей
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Калинин Алексей
+Контактный e-mail   a.a.kalinin@tinkoff.ru
+Контактные телефоны 79067064365, 2778
+
+................................................................................
+
+Дата
+Комментарий Автор
+30.11.2015 10:21    у нас проблем не наблюдаем, выясните подробности, помогите людям    Мялин Дмитрий
+
+................................................................................
+................................................................................
+
+[root@m1-kvk-prod-be01 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.7 (Santiago)
+[root@m1-kvk-prod-be01 ~]#
+
+
+[root@m1-kvk-prod-be01 ~]# findmnt
+TARGET                        SOURCE                                                                FSTYPE      OPTIONS
+/                             /dev/mapper/vg_rhel6264-LogVol00                                      ext4        rw,relatime,barrier=1,data=ordered
+├─/proc                       proc                                                                  proc        rw,relatime
+│ ├─/proc/bus/usb             /proc/bus/usb                                                         usbfs       rw,relatime
+│ └─/proc/sys/fs/binfmt_misc                                                                        binfmt_misc rw,relatime
+├─/sys                        sysfs                                                                 sysfs       rw,relatime
+├─/dev                        devtmpfs                                                              devtmpfs    rw,relatime,size=951304k,nr_inodes=237826,mode=755
+│ ├─/dev/pts                  devpts                                                                devpts      rw,relatime,gid=5,mode=620,ptmxmode=000
+│ └─/dev/shm                  tmpfs                                                                 tmpfs       rw,relatime
+├─/boot                       /dev/sda1                                                             ext4        rw,relatime,barrier=1,data=ordered
+├─/var                        /dev/sda2                                                             ext4        rw,relatime,barrier=1,data=ordered
+│ └─/var/lib/nfs/rpc_pipefs   sunrpc                                                                rpc_pipefs  rw,relatime
+├─/mnt/kvk_cache              v6250-ds:/vol/kupi_v_kredit/kvk_cache                                 nfs         rw,relatime,vers=3,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mountaddr=10.217.67.9,mountvers
+├─/mnt/kvk_share              v6250-m1:/vol/cards_images/kvk_share[/kvk_share]                      nfs4        rw,relatime,vers=4,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,port=0,timeo=14,retrans=2,sec=sys,clientaddr=10.218.2.70,m
+├─/mnt/kvk_reports            v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk nfs         rw,relatime,vers=3,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mountaddr=10.217.67.8,mountvers
+└─/mnt/scan_agents_mobile_nfs v6250-ds:/vol/scan_agents/scan_agents_mobile                          nfs         rw,relatime,vers=3,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mountaddr=10.217.67.9,mountvers
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# mount -t nfs | grep -e "/mnt/kvk_cache" -e "/mnt/scan_agents_mobile_nfs"
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/scan_agents/scan_agents_mobile on /mnt/scan_agents_mobile_nfs type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# vmstat -a -S M 2 10
+procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu-----
+ r  b   swpd   free  inact active   si   so    bi    bo   in   cs us sy id wa st
+ 0  0     92    129    556    760    0    0     1    14    0    0 10  2 88  0  0
+ 2  0     92    130    556    759    0    0     0    32 1857  429 20  2 78  0  0
+ 2  0     92    130    556    761    0    0     0    10 2276  975 17  2 81  0  0
+ 2  0     92    128    556    762    0    0     0    28 2817 1373 19  3 78  0  0
+ 2  0     92    128    556    762    0    0     0   696 1722  363 19  2 79  0  0
+ 0  0     92    128    556    761    0    0     0     8 1385  273 15  1 83  0  0
+ 0  0     92    128    556    761    0    0     0    30 1367  269 15  1 83  0  0
+ 2  0     92    127    556    763    0    0     0    68 1854  490 19  2 79  0  0
+ 1  0     92    127    556    763    0    0     0     0 1573  336 17  2 81  0  0
+ 1  0     92    126    556    764    0    0     0    22 1611  421 16  2 82  0  0
+[root@m1-kvk-prod-be01
+
+
+[root@m1-kvk-prod-be01 ~]# yum install sysstat
+Loaded plugins: product-id, replace, rhnplugin, subscription-manager
+There was an error communicating with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+rhn-plugin: Error communicating with server. The message was:
+Connection refused
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package sysstat.x86_64 0:9.0.4-27.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=============================================================================================================================================================================================================================================
+ Package                                             Arch                                               Version                                                   Repository                                                            Size
+=============================================================================================================================================================================================================================================
+Installing:
+ sysstat                                             x86_64                                             9.0.4-27.el6                                              tcs-rhel-x86_64-server-6                                             233 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 233 k
+Installed size: 825 k
+Is this ok [y/N]: y
+Downloading Packages:
+sysstat-9.0.4-27.el6.x86_64.rpm                                                                                                                                                                                       | 233 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : sysstat-9.0.4-27.el6.x86_64                                                                                                                                                                                               1/1
+  Verifying  : sysstat-9.0.4-27.el6.x86_64                                                                                                                                                                                               1/1
+
+Installed:
+  sysstat.x86_64 0:9.0.4-27.el6
+
+Complete!
+[root@m1-kvk-prod-be01
+
+
+[root@m1-kvk-prod-be01 ~]# iostat
+Linux 2.6.32-431.23.3.el6.x86_64 (m1-kvk-prod-be01)     11/30/2015      _x86_64_        (4 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           9.87    0.27    1.77    0.20    0.00   87.89
+
+Device:            tps   Blk_read/s   Blk_wrtn/s   Blk_read   Blk_wrtn
+sdb               0.15         0.60        15.55   10164472  264943512
+sda               2.25         6.73        65.56  114640214 1117225234
+sdc               0.29         1.37        31.07   23404152  529494008
+dm-0              9.88         6.77        75.74  115450154 1290720352
+
+[root@m1-kvk-prod-be01 ~]# nfsiostat
+
+v6250-ds:/vol/kupi_v_kredit/kvk_cache mounted on /mnt/kvk_cache:
+
+   op/s         rpc bklog
+ 134.74            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  3.126           8.263           2.644        0 (0.0%)           1.288           1.340
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  2.276           7.864           3.455        0 (0.0%)           1.110           1.167
+
+v6250-m1:/vol/cards_images/kvk_share mounted on /mnt/kvk_share:
+
+   op/s         rpc bklog
+   0.07            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           8.010        0 (0.0%)           8.128           8.305
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.020           0.115           5.677        0 (0.0%)           2.043           2.149
+
+v6250-ds:/vol/scan_agents/scan_agents_mobile mounted on /mnt/scan_agents_mobile_nfs:
+
+   op/s         rpc bklog
+ 262.11            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.002           8.092        0 (0.0%)           4.765           4.965
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.013           0.107           8.117        0 (0.0%)           3.116           3.744
+
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk mounted on /mnt/kvk_reports:
+
+   op/s         rpc bklog
+   0.00            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           2.374        0 (0.0%)           4.467           4.533
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           0.389        0 (0.0%)           1.562           1.672
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# nfsiostat /mnt/kvk_cache /mnt/scan_agents_mobile_nfs
+
+v6250-ds:/vol/kupi_v_kredit/kvk_cache mounted on /mnt/kvk_cache:
+
+   op/s         rpc bklog
+ 134.75            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  3.126           8.263           2.644        0 (0.0%)           1.288           1.340
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  2.276           7.864           3.455        0 (0.0%)           1.110           1.167
+
+v6250-ds:/vol/scan_agents/scan_agents_mobile mounted on /mnt/scan_agents_mobile_nfs:
+
+   op/s         rpc bklog
+ 262.11            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.002           8.092        0 (0.0%)           4.765           4.965
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.013           0.107           8.117        0 (0.0%)           3.116           3.744
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:50:56:93:3A:5E
+          inet addr:10.218.2.70  Bcast:10.218.2.255  Mask:255.255.255.0
+          inet6 addr: fe80::250:56ff:fe93:3a5e/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:5092794921 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:5225113050 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:2155063078117 (1.9 TiB)  TX bytes:1670079424423 (1.5 TiB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:170546415 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:170546415 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:33387943723 (31.0 GiB)  TX bytes:33387943723 (31.0 GiB)
+
+[root@m1-kvk-prod-be01 ~]#
+
+# These nfs resources were remounted with recommended options. Full dialogue can be read in SD#640527 ticket.
+#v6250-ds:/vol/kupi_v_kredit/kvk_cache        /mnt/kvk_cache nfs        rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+
+#v6250-m1:/vol/cards_images/kvk_share   /mnt/kvk_share  nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+#v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk /mnt/kvk_reports nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+#v6250-ds:/vol/scan_agents/scan_agents_mobile /mnt/scan_agents_mobile_nfs nfs   rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+
+
+#   Tue Dec  1 15:17:08 MSK 2015
+
+[root@m1-kvk-prod-be01 ~]# umount /mnt/kvk_cache
+[root@m1-kvk-prod-be01 ~]# vim /etc/fstab
+...
+# unrecommended mount options-># v6250-ds:/vol/kupi_v_kredit/kvk_cache        /mnt/kvk_cache nfs     rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3
+
+[root@m1-kvk-prod-be01 ~]# mount /mnt/kvk_cache
+[root@m1-kvk-prod-be01 ~]# df -h !$
+df -h /mnt/kvk_cache
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/kupi_v_kredit/kvk_cache
+                       16G  163M   16G   1% /mnt/kvk_cache
+[root@m1-kvk-prod-be01 ~]#
+
+
+#   Wed Dec  2 16:26:30 MSK 2015
+
+[root@m1-kvk-prod-be01 ~]# nfsiostat 1 100 /mnt/kvk_cache
+
+[root@m1-kvk-prod-be01 ~]# watch -n 1 nfsiostat -a -d -p /mnt/kvk_cache
+
+[root@m1-kvk-prod-be01 ~]# mountstats nfsstat /mnt/kvk_cache
+Client rpc stats:
+calls      retrans    authrefrsh
+3903178    3903179    3903178
+
+Client nfs v3
+null         getattr      setattr      lookup       access       readlink
+0         0% 1644002  42% 111996    2% 1434011  36% 434028   11% 0         0%
+read         write        create       mkdir        symlink      mknod
+80845     2% 56002     1% 54382     1% 0         0% 0         0% 0         0%
+remove       rmdir        rename       link         readdir      readdirplus
+55092     1% 0         0% 269       0% 0         0% 25        0% 32522     0%
+fsstat       fsinfo       pathconf     commit
+1         0% 2         0% 1         0% 0         0%
+[root@m1-kvk-prod-be01 ~]# mountstats iostat /mnt/kvk_cache
+
+v6250-ds:/vol/kupi_v_kredit/kvk_cache mounted on /mnt/kvk_cache:
+
+           ops/s       rpc bklog
+       11987.730           0.000
+
+read:              ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)
+                   0.865           2.240           2.590        0 (0.0%)           1.575           1.642
+write:             ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)
+                   0.599           2.105           3.515        0 (0.0%)           1.202           1.269
+[root@m1-kvk-prod-be01
+
+
+................................................................................
+................................................................................
+
+[root@ds-kvk-prod-be01 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+[root@ds-kvk-prod-be01 ~]# findmnt
+TARGET                        SOURCE                                                                FSTYPE      OPTIONS
+/                             /dev/mapper/vg_rhel6264-LogVol00                                      ext4        rw,relatime,barrier=1,data=ordered
+├─/proc                       proc                                                                  proc        rw,relatime
+│ ├─/proc/bus/usb             /proc/bus/usb                                                         usbfs       rw,relatime
+│ └─/proc/sys/fs/binfmt_misc                                                                        binfmt_misc rw,relatime
+├─/sys                        sysfs                                                                 sysfs       rw,relatime
+├─/dev                        devtmpfs                                                              devtmpfs    rw,relatime,size=951308k,nr_inodes=237827,mode=755
+│ ├─/dev/pts                  devpts                                                                devpts      rw,relatime,gid=5,mode=620,ptmxmode=000
+│ └─/dev/shm                  tmpfs                                                                 tmpfs       rw,relatime
+├─/boot                       /dev/sda1                                                             ext4        rw,relatime,barrier=1,data=ordered
+├─/var                        /dev/sda2                                                             ext4        rw,relatime,barrier=1,data=ordered
+│ └─/var/lib/nfs/rpc_pipefs   sunrpc                                                                rpc_pipefs  rw,relatime
+├─/mnt/kvk_cache              v6250-ds:/vol/kupi_v_kredit/kvk_cache                                 nfs         rw,relatime,vers=3,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mountaddr=10.217.67.9,mountvers
+├─/mnt/kvk_share              v6250-m1:/vol/cards_images/kvk_share[/kvk_share]                      nfs4        rw,relatime,vers=4,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,port=0,timeo=14,retrans=2,sec=sys,clientaddr=10.218.7.70,m
+├─/mnt/kvk_reports            v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk nfs         rw,relatime,vers=3,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mountaddr=10.217.67.8,mountvers
+└─/mnt/scan_agents_mobile_nfs v6250-ds:/vol/scan_agents/scan_agents_mobile                          nfs         rw,relatime,vers=3,rsize=8192,wsize=8192,namlen=255,hard,proto=tcp,timeo=14,retrans=2,sec=sys,mountaddr=10.217.67.9,mountvers
+[root@ds-kvk-prod-be01 ~]#
+
+[root@ds-kvk-prod-be01 ~]# mount -t nfs | grep -e "/mnt/kvk_cache" -e "/mnt/scan_agents_mobile_nfs"
+v6250-ds:/vol/kupi_v_kredit/kvk_cache on /mnt/kvk_cache type nfs (rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3,addr=10.217.67.9)
+v6250-ds:/vol/scan_agents/scan_agents_mobile on /mnt/scan_agents_mobile_nfs type nfs (rw,rsize=8192,wsize=8192,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+[root@ds-kvk-prod-be01 ~]#
+
+
+[root@ds-kvk-prod-be01 ~]# vmstat -a -S M 2 10
+procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu-----
+ r  b   swpd   free  inact active   si   so    bi    bo   in   cs us sy id wa st
+ 4  0     42    154    400    898    0    0     1    13    1    0  8  1 91  0  0
+ 0  0     42    142    401    910    0    0    50    14 5560 2890 33  9 58  0  0
+ 1  0     42    132    401    921    0    0     0   248 7059 4067 32 13 54  1  0
+ 0  0     42    202    401    851    0    0     0    68 4726 2094 34  7 59  0  0
+ 3  0     42    199    401    854    0    0     0    28 5234 2598 32  5 62  1  0
+ 2  0     42    199    401    855    0    0     0    78 4328 1771 31  5 64  0  0
+ 3  0     42    200    401    853    0    0     0     0 4068 2058 22  4 74  0  0
+ 4  0     42    202    401    852    0    0     0    24 4065 1440 34  4 61  0  0
+ 1  0     42    201    401    852    0    0     0     0 4302 1964 25  5 70  0  0
+ 2  0     42    198    401    856    0    0     0     0 4937 2585 25  5 70  0  0
+[root@ds-kvk-prod-be01 ~]#
+
+[root@ds-kvk-prod-be01 ~]# yum install sysstat
+Loaded plugins: product-id, rhnplugin, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+There was an error communicating with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+Error communicating with server. The message was:
+Connection refused
+tcs-epel-6-x86_64                                                                                                                                                                                                     | 3.0 kB     00:00
+tcs-epel-6-x86_64/primary_db                                                                                                                                                                                          | 9.8 MB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64                                                                                                                                                                               | 2.9 kB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64/primary_db                                                                                                                                                                    |  30 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64                                                                                                                                                                                   | 2.9 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64/primary_db                                                                                                                                                                        | 164 kB     00:00
+tcs-remi-enterprise-6-remi-x86_64                                                                                                                                                                                     | 2.9 kB     00:00
+tcs-remi-enterprise-6-remi-x86_64/primary_db                                                                                                                                                                          | 2.2 MB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                                                              | 3.4 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                                                                   |  36 MB     00:00
+tcs-rhel-x86_64-server-6-update                                                                                                                                                                                       | 2.9 kB     00:00
+tcs-rhel-x86_64-server-6-update/primary_db                                                                                                                                                                            | 815 kB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                                                                     | 3.0 kB     00:00
+tcs-rhel-x86_64-server-optional-6/primary_db                                                                                                                                                                          | 2.9 MB     00:00
+tcs-zabbix-2.2-rhel-6-x86_64                                                                                                                                                                                          | 2.9 kB     00:00
+tcs-zabbix-2.2-rhel-6-x86_64/primary_db                                                                                                                                                                               |  63 kB     00:00
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package sysstat.x86_64 0:9.0.4-27.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=============================================================================================================================================================================================================================================
+ Package                                             Arch                                               Version                                                   Repository                                                            Size
+=============================================================================================================================================================================================================================================
+Installing:
+ sysstat                                             x86_64                                             9.0.4-27.el6                                              tcs-rhel-x86_64-server-6                                             233 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 233 k
+Installed size: 825 k
+Is this ok [y/N]: y
+Downloading Packages:
+sysstat-9.0.4-27.el6.x86_64.rpm                                                                                                                                                                                       | 233 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : sysstat-9.0.4-27.el6.x86_64                                                                                                                                                                                               1/1
+  Verifying  : sysstat-9.0.4-27.el6.x86_64                                                                                                                                                                                               1/1
+
+Installed:
+  sysstat.x86_64 0:9.0.4-27.el6
+
+Complete!
+[root@ds-kvk-prod-be01 ~]#
+
+[root@ds-kvk-prod-be01 ~]# iostat
+Linux 2.6.32-431.23.3.el6.x86_64 (ds-kvk-prod-be01)     11/30/2015      _x86_64_        (4 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           7.58    0.29    1.31    0.18    0.00   90.64
+
+Device:            tps   Blk_read/s   Blk_wrtn/s   Blk_read   Blk_wrtn
+sda               1.91         4.61        63.41   70222938  965836876
+sdb               0.37         1.27        41.05   19384416  625281864
+dm-0              9.10         5.03        70.30   76569890 1070910424
+
+[root@ds-kvk-prod-be01 ~]# nfsiostat
+
+v6250-ds:/vol/kupi_v_kredit/kvk_cache mounted on /mnt/kvk_cache:
+
+   op/s         rpc bklog
+ 124.48            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  2.919           7.485           2.564        1 (0.0%)           1.571           1.625
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  2.054           7.069           3.442        0 (0.0%)           1.351           1.408
+
+v6250-m1:/vol/cards_images/kvk_share mounted on /mnt/kvk_share:
+
+   op/s         rpc bklog
+   0.01            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           0.000        0 (0.0%)           0.000           0.000
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           7.966        0 (0.0%)           6.034           9.745
+
+v6250-ds:/vol/scan_agents/scan_agents_mobile mounted on /mnt/scan_agents_mobile_nfs:
+
+   op/s         rpc bklog
+ 242.32            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           0.000        0 (0.0%)           0.000           0.000
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.013           0.103           8.116        0 (0.0%)           4.078           5.161
+
+v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk mounted on /mnt/kvk_reports:
+
+   op/s         rpc bklog
+   0.00            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           0.000        0 (0.0%)           0.000           0.000
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           0.000        0 (0.0%)           0.000           0.000
+[root@ds-kvk-prod-be01 ~]#
+
+[root@ds-kvk-prod-be01 ~]# nfsiostat /mnt/kvk_cache /mnt/scan_agents_mobile_nfs
+
+v6250-ds:/vol/kupi_v_kredit/kvk_cache mounted on /mnt/kvk_cache:
+
+   op/s         rpc bklog
+ 124.48            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  2.919           7.485           2.564        1 (0.0%)           1.571           1.625
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  2.054           7.069           3.442        0 (0.0%)           1.351           1.408
+
+v6250-ds:/vol/scan_agents/scan_agents_mobile mounted on /mnt/scan_agents_mobile_nfs:
+
+   op/s         rpc bklog
+ 242.31            0.00
+read:             ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.000           0.000           0.000        0 (0.0%)           0.000           0.000
+write:            ops/s            kB/s           kB/op         retrans         avg RTT (ms)    avg exe (ms)
+                  0.013           0.103           8.116        0 (0.0%)           4.078           5.161
+[root@ds-kvk-prod-be01 ~]#
+
+[root@ds-kvk-prod-be01 ~]# ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:50:56:93:4F:83
+          inet addr:10.218.7.70  Bcast:10.218.7.255  Mask:255.255.255.0
+          inet6 addr: fe80::250:56ff:fe93:4f83/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:3379565594 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:3449101312 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:1389774299695 (1.2 TiB)  TX bytes:1184506088063 (1.0 TiB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:125273849 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:125273849 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:25251469612 (23.5 GiB)  TX bytes:25251469612 (23.5 GiB)
+
+[root@ds-kvk-prod-be01 ~]#
+
+
+# These nfs resources were remounted with recommended options. Full dialogue can be read in SD#640527 ticket.
+#v6250-ds:/vol/kupi_v_kredit/kvk_cache        /mnt/kvk_cache nfs        rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+
+#v6250-m1:/vol/cards_images/kvk_share /mnt/kvk_share  nfs       rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+#v6250-m1:/vol/integration_fs/integration3/luxoft/TRANSPORT/yandex_kvk /mnt/kvk_reports nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+#v6250-ds:/vol/scan_agents/scan_agents_mobile /mnt/scan_agents_mobile_nfs nfs   rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard
+
+
+#   Tue Dec  1 15:20:51 MSK 2015
+
+[bsv@ds-kvk-prod-be01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-kvk-prod-be01 ~]# umount /mnt/kvk_cache
+[root@ds-kvk-prod-be01 ~]# vim /etc/fstab
+...
+# unrecommended mount options-># v6250-ds:/vol/kupi_v_kredit/kvk_cache        /mnt/kvk_cache nfs     rw,vers=3,rsize=8192,wsize=8192,timeo=14,intr,tcp,nfsvers=3
+
+[root@ds-kvk-prod-be01 ~]# mount /mnt/kvk_cache
+[root@ds-kvk-prod-be01 ~]# df -h !$
+df -h /mnt/kvk_cache
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/kupi_v_kredit/kvk_cache
+                       16G  163M   16G   1% /mnt/kvk_cache
+[root@ds-kvk-prod-be01 ~]#
+
+
+[root@m1-bsn-prod-app01 ~]# mount /mnt/jasper
+[root@m1-bsn-prod-app01 ~]# mount -t nfs | grep /mnt/jasper
+v6250-ds-nfs:/vol/common/all_docs/XML_JASPER_CONVERT_PROD on /mnt/jasper type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.64.9)
+[root@m1-bsn-prod-app01 ~]#
+
+
+................................................................................
+................................................................................
+
+
+http://man7.org/linux/man-pages/man8/nfsiostat.8.html
+
+nfsiostat(8)               System Manager's Manual              nfsiostat(8)
+NAME         top
+
+       nfsiostat   -   Emulate   iostat   for   NFS   mount   points   using
+       /proc/self/mountstats
+SYNOPSIS         top
+
+       nfsiostat [[<interval>] [<count>]] [<options>][<mount_point>]
+DESCRIPTION         top
+
+       The nfsiostat command displays NFS client per-mount statisitics.
+
+       <interval>
+              specifies the amount of time in seconds between each report.
+              The first report contains statistics for the time since each
+              file system was mounted.  Each subsequent report contains
+              statistics collected during the interval since the previous
+              report.
+
+       <count>
+              If the <count> parameter is specified, the value of <count>
+              determines the number of reports generated at <interval>
+              seconds apart. if the interval parameter is specified without
+              the <count> parameter, the command generates reports
+              continuously.
+
+       <options>
+              Define below
+
+       <mount_point>
+              If one or more <mount point> names are specified, statistics
+              for only these mount points will be displayed.  Otherwise, all
+              NFS mount points on the client are listed.
+
+       The meaning of each column of nfsiostat's output is the following:
+               - op/s
+                      This is the number of operations per second.
+               - rpc bklog
+                      This is the length of the backlog queue.
+               - kB/s
+                      This is the number of kB written/read per second.
+               - kB/op
+                      This is the number of kB written/read per each
+                      operation.
+               - retrans
+                      This is the number of retransmissions.
+               - avg RTT (ms)
+                      This is the duration from the time that client's
+                      kernel sends the RPC request until the time it
+                      receives the reply.
+               - avg exe (ms)
+                      This is the duration from the time that NFS client
+                      does the RPC request to its kernel until the RPC
+                      request is completed, this includes the RTT time
+                      above.
+
+       Note that if an interval is used as argument to nfsiostat, then the
+       diffrence from previous interval will be displayed, otherwise the
+       results will be from the time that the share was mounted.
+OPTIONS         top
+
+       -a  or  --attr
+              displays statistics related to the attribute cache
+
+       -d  or  --dir
+              displays statistics related to directory operations
+
+       -h  or  --help
+              shows help message and exit
+
+       -l LIST or  --list=LIST
+              only print stats for first LIST mount points
+
+       -p  or  --page
+              displays statistics related to the page cache
+
+       -s  or  --sort
+              Sort NFS mount points by ops/second
+
+       --version
+              show program's version number and exit
+FILES         top
+
+       /proc/self/mountstats
+SEE ALSO         top
+
+       iostat(8), mountstats(8), nfsstat(8)
+
+................................................................................
+................................................................................
+
+[root@m1-kvk-prod-be01 ~]# nfsstat --help
+Usage: nfsstat [OPTION]...
+
+  -m, --mounts          Show statistics on mounted NFS filesystems
+  -c, --client          Show NFS client statistics
+  -s, --server          Show NFS server statistics
+  -2                    Show NFS version 2 statistics
+  -3                    Show NFS version 3 statistics
+  -4                    Show NFS version 4 statistics
+  -o [facility]         Show statistics on particular facilities.
+     nfs                NFS protocol information
+     rpc                General RPC information
+     net                Network layer statistics
+     fh                 Usage information on the server's file handle cache
+     rc                 Usage information on the server's request reply cache
+     all                Select all of the above
+  -v, --verbose, --all  Same as '-o all'
+  -r, --rpc             Show RPC statistics
+  -n, --nfs             Show NFS statistics
+  -Z[#], --sleep[=#]    Collects stats until interrupted.
+                            Cumulative stats are then printed
+                            If # is provided, stats will be output every
+                            # seconds.
+  -S, --since file      Shows difference between current stats and those in 'file'
+  -l, --list            Prints stats in list format
+  --version             Show program version
+  --help                What you just did
+
+[root@m1-kvk-prod-be01 ~]#
+
+#
+#   Thu Dec  3 14:38:30 MSK 2015
+
+[root@m1-kvk-prod-be01 ~]# time timeout 1m tcpdump -i any host 10.217.67.8 -C 1024 -W 10 -w /var/tmp/$(date +%Y%m%d-%H%M).tcpdump.pcap.
+tcpdump: listening on any, link-type LINUX_SLL (Linux cooked), capture size 65535 bytes
+2 packets captured
+6 packets received by filter
+0 packets dropped by kernel
+
+real    1m0.019s
+user    0m0.009s
+sys     0m0.014s
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# ls -Alh /var/tmp/*tcpdump*
+-rw-r--r-- 1 tcpdump tcpdump 240 Dec  3 14:50 /var/tmp/20151203-1449.tcpdump.pcap.0
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# tshark -r /var/tmp/20151203-1449.tcpdump.pcap.0 | less

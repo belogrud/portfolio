@@ -1,0 +1,88 @@
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=m1-rta-dm02 --quiet
+/usr/local/nagios/etc/objects/servers/dc-m1/windows/m1-rta-dm02.cfg
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=rta-dm02-cls --quiet
+/usr/local/nagios/etc/objects/servers/vmware/rta-dm02-cls.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+define host{
+    use                             windows-server
+    host_name                       m1-rta-dm02
+    hostgroups                      windows-servers
+    address                         10.216.85.62
+    contact_groups                  servicedesk-duty-critical-group,windows-admins,avaya-admins,nice-admins,nice-rta-web-access
+}
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contactgroup_name__contains=avaya-admins
+contact_name         filename
+--------------------------------------------------------------------------------
+null                 /usr/local/nagios/etc/objects/groups/contact-group/avaya-admins.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contactgroup_name__contains=nice-admins
+contact_name         filename
+--------------------------------------------------------------------------------
+null                 /usr/local/nagios/etc/objects/groups/contact-group/nice-admins.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contactgroup_name__contains=nice-rta-web-access
+contact_name         filename
+--------------------------------------------------------------------------------
+null                 /usr/local/nagios/etc/objects/groups/contact-group/nice-rta-web-access.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename members where contactgroup_name__contains=avaya-admins
+contact_name         filename             members
+--------------------------------------------------------------------------------
+null                 /usr/local/nagios/etc/objects/groups/contact-group/avaya-admins.cfg k.kovrigin_email, k.kovrigin_sms, d.churikov_sms, d.churikov_email, a.terentyev_email, a.terentyev_sms, v.dergunov_email, v.dergunov_sms, d.v.sokolov_email, d.v.sokolov_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename members where contactgroup_name__contains=nice-admins
+contact_name         filename             members
+--------------------------------------------------------------------------------
+null                 /usr/local/nagios/etc/objects/groups/contact-group/nice-admins.cfg o.shcherbakov_sms, k.kovrigin_sms, Naumen_nag_request_email, v.dergunov_email, v.dergunov_sms, a.aronchikov_sms, d.v.sokolov_email, d.v.sokolov_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename members where contactgroup_name__contains=nice-rta-web-access
+contact_name         filename             members
+--------------------------------------------------------------------------------
+null                 /usr/local/nagios/etc/objects/groups/contact-group/nice-rta-web-access.cfg v.dergunov,a.aronchikov,k.kovrigin,d.v.sokolov
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]# vim -o /usr/local/nagios/etc/objects/servers/dc-m1/windows/m1-rta-dm02.cfg /usr/local/nagios/etc/objects/servers/vmware/rta-dm02-cls.cfg
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#191228. Removed Churikov from notification from two hosts." servers/dc-m1/windows/m1-rta-dm02.cfg servers/vmware/rta-dm02-cls.cfg
+[master b4a2bb2] SD#191228. Removed Churikov from notification from two hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 17, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (9/9), done.
+Writing objects: 100% (9/9), 1000 bytes, done.
+Total 9 (delta 8), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   f82929d..b4a2bb2  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+

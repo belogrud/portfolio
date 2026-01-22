@@ -1,0 +1,390 @@
+
+................................................................................
+
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, February 17, 2016 8:25 PM
+To: unix-admins
+Subject: Авто-заявки о переполнении раздела /var на m1-db05-prod
+
+Добрый день.
+
+Коллеги, зачем так сделано, чтобы каждую недею авто-генерировались заявки по переполнению раздела /var по причине того, что файл /var/log/messages-xxxxxx разрастается до более, чем 5 ГБ, а ротируется он раз в неделю (и вовсе не по размеру)?
+Переполнение видно на годовом графике-пиле заполнения раздела. И видно, что  с сентября мы имеем практически еженедельные авто-заявки об этом.
+
+
+
+
+
+
+
+С уважением,
+
+Сергей Белогруд
+Старший системный администратор
+
+
+
+1-й Волоколамский проезд, дом 10, стр. 1
+Москва, 123060, Россия
+Тел.: +7 (495) 648 1000 (вн. 2173)
+Моб.: +7 (915) 046 4278
+Факс: +7 (495) 645 5909
+E-mail: s.belogrud@tinkoff.ru
+www.tinkoff.ru
+
+Это электронное письмо строго конфиденциально (включая все вложения). Данная информация предназначена только для получателя(ей). Если Вы не являетесь получателем, Вы не вправе каким бы то ни было образом читать, копировать, использовать или хранить данное сообщение. Просьба немедленно его удалить. Если Вы получили его по ошибке, пожалуйста, свяжитесь с Тинькофф Банком по т. +7 495 648 1000.
+
+................................................................................
+
+#   The main idea is count how many times, since defined date, we have received alerts from nagios about overflowed partition on DB-servers.
+#
+
+#   Here is a base example of "statehist" option usage with "livestatus" nagios plugin.
+#
+[root@vm-vol-nag01t nagios]# vim +view /opt/TCS/scripts/nagios/nagios_find_services_with_critical_state_more_then_10_days.sh
+...
+ done < <( echo -e "GET statehist\nFilter: host_name = ${array_first_argument[${count}]}\nFilter: service_description = ${array_second_argument[${count}]}\nFilter: time >= $(expr $(date "+%s") - ${hours} \* 60 \* 60)\nColumns: duration_critical" | unixcat /var/spool/nagios/cmd/live )
+
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description where host_name=m1-db05-prod
+host_name            service_description
+--------------------------------------------------------------------------------
+m1-db05-prod         null
+m1-db05-prod         /Opt Partition
+m1-db05-prod         /Root Partition
+m1-db05-prod         /Tmp Partition
+m1-db05-prod         /Var Partition
+m1-db05-prod         AutoFailOver
+m1-db05-prod         AutoStart
+m1-db05-prod         Check Veritas Log - ToleranceLimit
+m1-db05-prod         Clock offset
+m1-db05-prod         Current Load
+m1-db05-prod         Current Memory Load
+m1-db05-prod         DSCP firewall rules
+m1-db05-prod         Expired passwords
+m1-db05-prod         HP System Health Application
+m1-db05-prod         PING
+m1-db05-prod         Process count for user Oracle
+m1-db05-prod         TRAP
+m1-db05-prod         vcs resource ip connectivity
+----------18 objects matches search condition-----------------------------------
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+#   Fri Mar 11 17:18:20 MSK 2016
+#
+#   At this moment I have time to continue this investigation.
+#   I unexpectedly thought, that on test nagios we have no alerts!!! It's disabled because it test.
+#   So I cannot find and events with filter that configured to find alert event.
+#
+#   I should try to find became service to critical state.
+#
+
+
+ 1269  2016-02-25 17:36:47 expr $(date "+%s") - 10 \* 24
+ 1270  2016-02-25 17:36:56 echo -e "GET statehist\nFilter: host_name = m1-db05-prod\nFilter: service_description = /Var Partition\nFilter: time >=$(expr $(date "+%s") - 10
+\* 24 \* 60 \* 60)\nColumns: duration_critical" | unixcat /var/spool/nagios/cmd/live
+ 1271  2016-02-25 17:37:41 pynag list host_name service_description where host_name = m1-db05-prod
+ 1272  2016-02-25 17:37:54 pynag list host_name service_description where host = m1-db05-prod
+ 1273  2016-02-25 17:38:29 pynag list host_name service_description where host_name=m1-db05-prod
+ 1274  2016-02-25 17:39:41 echo -e "GET statehist\nFilter: host_name = m1-db05-prod\nFilter: service_description = /Var Partition\nFilter: time >=$(expr $(date "+%s") - 20
+\* 24 \* 60 \* 60)\nColumns: duration_critical" | unixcat /var/spool/nagios/cmd/live
+ 1275  2016-02-25 17:41:21 echo -e "GET statehist\nFilter: host_name = AT2-PDU-OF3-L\nFilter: service_description = /Var Partition\nFilter: time >=$(expr $(date "+%s") - 20
+ \* 24 \* 60 \* 60)\nColumns: duration_critical" | unixcat /var/spool/nagios/cmd/live
+
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: host_name = vm-dmz-ftp02\nColumns: host_name service_description state\nColumnHeaders: on\nLimit: 10" | unixcat /var/spool/nagios/cmd/live
+host_name;description;state
+vm-dmz-ftp02;Check VSFTPd Status;2
+[root@vm-vol-nag01t nagios]#
+
+#   Get all states of service.
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = vm-dmz-ftp02\nFilter: service_description = Check VSFTPd Status\nFilter: time >= $(expr $(date "+%s") - 2 \* 24 \* 60 \* 60)\nColumns: host_name service_description state from until duration\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live
+200         245
+host_name;service_description;state;from;until;duration
+vm-dmz-ftp02;Check VSFTPd Status;-1;1457536765;1457597775;61010
+vm-dmz-ftp02;Check VSFTPd Status;0;1457597775;1457597923;148
+vm-dmz-ftp02;Check VSFTPd Status;2;1457597923;1457709565;111642
+[root@vm-vol-nag01t nagios]#
+
+
+#   Filter only CRITICAL state.
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = vm-dmz-ftp02\nFilter: service_description = Check VSFTPd Status\nFilter: state = 2\nFilter: time >= $(expr $(date "+%s") - 2 \* 24 \* 60 \* 60)\nColumns: host_name service_description state from until duration\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live
+200         120
+host_name;service_description;state;from;until;duration
+vm-dmz-ftp02;Check VSFTPd Status;2;1457597923;1457709858;111935
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+#
+#   When I wanted get history about service critical state 90 days late.
+#   I have received follow:
+#
+-----Original Message-----
+From: nagios@nagios.tinkoff.ru [mailto:nagios@nagios.tinkoff.ru]
+Sent: Friday, March 11, 2016 11:49 PM
+To: Belogrud Sergey Vladimirovich
+Subject: ** PROBLEM Service Alert: localhost/Nagios Latency is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: Nagios Latency
+Host: localhost
+Address: 127.0.0.1
+State: CRITICAL
+
+Date/Time: Fri Mar 11 23:49:28 MSK 2016
+
+Additional Info:
+
+CRITICAL: Latency at 581.844 seconds!
+................................................................................
+
+From: Service Desk
+Sent: Saturday, March 12, 2016 12:09 AM
+To: Terentev Aleksey; Chernyh Aleksandr Vladimirovich; Shinkarev Arkadiy Sergeevich; Aleksandrov Aleksey Valerievich; Belogrud Sergey Vladimirovich; Zbiranik Evgeniy Aleksandrovich; Leonov Aleksey Vladimirovich
+Subject: [SD] (№777059) В ответственность вашего отдела поступил запрос
+
+Изменения
+Назначил    Тимофеев Игорь
+Текущий отдел/группа    unix-admins
+Текущий ответственный   не назначен
+Информация по запросу
+Номер запроса   777059
+
+Дата регистрации    11.03.2016 23:50
+Тип запроса Nagios запрос
+Инициатор   Служебный Сотрудник
+Критичность Высокая
+Краткое описание    "** PROBLEM Service Alert: localhost/Nagios Latency is CRITICAL **"
+Описание запроса    ** PROBLEM Service Alert: localhost/Nagios Latency is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: Nagios Latency
+Host: localhost
+Address: 127.0.0.1
+State: CRITICAL
+
+Date/Time: Fri Mar 11 23:49:28 MSK 2016
+
+Additional Info:
+
+CRITICAL: Latency at 581.844 seconds!
+................................................................................
+................................................................................
+
+
+#   Here I found all db prod servers.
+[root@vm-vol-nag01t nagios]# pynag list host_name where object_type=host and host_name__contains="-db" --quiet | egrep -e "-db[0-9][0-9]-prod"
+ds-db01-prod
+ds-db02-prod
+ds-db05-prod
+ds-db06-prod
+ds-db07-prod
+ds-db08-prod
+m1-db01-prod
+m1-db02-prod
+m1-db05-prod
+m1-db06-prod
+m1-db07-prod
+m1-db08-prod
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+#
+[root@vm-vol-nag01t nagios]# ./nagios_print_date_when_service_has_critical_state.sh
+
+Host: m1-db01-prod
+Service: /Var Partition
+
+Host: m1-db02-prod
+Service: /Var Partition
+
+Host: m1-db05-prod
+Service: /Var Partition
+Critical state was detected at: 20160217-1934   and has duration        .02 days
+Critical state was detected at: 20160227-2221   and has duration        .69 days
+Critical state was detected at: 20160308-2201   and has duration        .01 days
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# ./nagios_print_date_when_service_has_critical_state.sh -o time_converter.sh
+
+Host: vm-dmz-ftp02
+Service: Check VSFTPd Status
+Critical state was detected at: 20160310-1118   and has duration        4 days 6 hours 9 minutes 6 seconds
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+
+#   Mon Mar 14 19:48:34 MSK 2016
+#   Here I test critical state for defined service for all dbXX-pord servers and 30 day old deep search.
+#
+[root@vm-vol-nag01t nagios]# ./nagios_print_date_when_service_has_critical_state.sh
+
+Host: m1-db01-prod
+Service: /Var Partition
+
+Host: m1-db02-prod
+Service: /Var Partition
+
+Host: m1-db05-prod
+Service: /Var Partition
+Critical state was detected at: 20160217-1934   and has duration        40 minutes
+Critical state was detected at: 20160227-2221   and has duration        16 hours 40 minutes 3 seconds
+Critical state was detected at: 20160308-2201   and has duration        20 minutes
+
+Host: m1-db06-prod
+Service: /Var Partition
+
+Host: m1-db07-prod
+Service: /Var Partition
+
+Host: m1-db08-prod
+Service: /Var Partition
+
+Host: ds-db01-prod
+Service: /Var Partition
+
+Host: ds-db02-prod
+Service: /Var Partition
+
+Host: ds-db05-prod
+Service: /Var Partition
+
+Host: ds-db06-prod
+Service: /Var Partition
+
+Host: ds-db07-prod
+Service: /Var Partition
+
+Host: ds-db08-prod
+Service: /Var Partition
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# for var1 in $(pynag list host_name where object_type=host and host_name__contains="-db" --quiet | egrep -e "-db[0-9][0-9]-") ; do echo "${var1}:" ; pynag list host_name service_description where host_name="${var1}" and service_description="/Var Partition" --quiet ; done
+ds-db01-prod:
+ds-db01-prod         /Var Partition
+ds-db01-stb:
+ds-db01-stb          /Var Partition
+ds-db02-prod:
+ds-db02-prod         /Var Partition
+ds-db02-stb:
+ds-db02-stb          /Var Partition
+ds-db05-prod:
+ds-db05-prod         /Var Partition
+ds-db06-prod:
+ds-db06-prod         /Var Partition
+ds-db07-prod:
+ds-db07-prod         /Var Partition
+ds-db07-stb:
+ds-db07-stb          /Var Partition
+ds-db08-prod:
+ds-db08-prod         /Var Partition
+m1-db01-prod:
+m1-db01-prod         /Var Partition
+m1-db02-prod:
+m1-db02-prod         /Var Partition
+m1-db05-prod:
+m1-db05-prod         /Var Partition
+m1-db05-stb:
+m1-db05-stb          /Var Partition
+m1-db06-prod:
+m1-db06-prod         /Var Partition
+m1-db06-stb:
+m1-db06-stb          /Var Partition
+m1-db07-prod:
+m1-db07-prod         /Var Partition
+m1-db08-prod:
+m1-db08-prod         /Var Partition
+m1-db08-stb:
+m1-db08-stb          /Var Partition
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# ./nagios_print_date_when_service_has_critical_state.sh
+
+Host: ds-db01-prod
+Service: /Var Partition
+
+Host: ds-db01-stb
+Service: /Var Partition
+
+Host: ds-db02-prod
+Service: /Var Partition
+
+Host: ds-db02-stb
+Service: /Var Partition
+
+Host: ds-db05-prod
+Service: /Var Partition
+
+Host: ds-db06-prod
+Service: /Var Partition
+
+Host: ds-db07-prod
+Service: /Var Partition
+
+Host: ds-db07-stb
+Service: /Var Partition
+
+Host: ds-db08-prod
+Service: /Var Partition
+
+Host: m1-db01-prod
+Service: /Var Partition
+
+Host: m1-db02-prod
+Service: /Var Partition
+
+Host: m1-db05-prod
+Service: /Var Partition
+Critical state was detected at: 20160121-0917   and has duration        50 minutes
+Critical state was detected at: 20160201-1146   and has duration        49 minutes 56 seconds
+Critical state was detected at: 20160210-2216   and has duration        59 minutes 59 seconds
+Critical state was detected at: 20160217-1934   and has duration        40 minutes
+Critical state was detected at: 20160227-2221   and has duration        16 hours 40 minutes 3 seconds
+Critical state was detected at: 20160308-2201   and has duration        20 minutes
+Critical state was detected at: 20160315-1611   and has duration        30 minutes 30 seconds
+
+Host: m1-db05-stb
+Service: /Var Partition
+
+Host: m1-db06-prod
+Service: /Var Partition
+
+Host: m1-db06-stb
+Service: /Var Partition
+No UNIX socket /var/spool/nagios/cmd/live existing
+
+Host: m1-db07-prod
+Service: /Var Partition
+No UNIX socket /var/spool/nagios/cmd/live existing
+
+Host: m1-db08-prod
+Service: /Var Partition
+No UNIX socket /var/spool/nagios/cmd/live existing
+
+Host: m1-db08-stb
+Service: /Var Partition
+No UNIX socket /var/spool/nagios/cmd/live existing
+[root@vm-vol-nag01t nagios]#
+
+
+

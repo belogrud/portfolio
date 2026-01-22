@@ -1,0 +1,367 @@
+
+
+[root@m1-ignite01t ~]# groupadd -g 511 sas-admin && useradd -u 511 -g sas-admin -c "SD#70211. SAS administrator" -m -G wheel -s /bin/bash -p '$6$YsTv6JPD$r2YuCwZCUTjsp6td6Kp147EgJ.A9Q.lk9pG4tZNwbmvB8hgXJtXz7L9hZ10LlScoOgnDUblSwMC.B0lqpRvLi1' sas-admin
+[root@m1-ignite01t ~]#
+
+## Same thing without a password
+%wheel  ALL=(ALL)       NOPASSWD: ALL
+
+
+
+rpm -ivh http://repo-linux/puppetlabs/yum/puppetlabs-release-el-6.noarch.rpm
+echo "proxy=http://repo-linux.tcsbank.ru:80" >> /etc/yum.conf
+curl repo-linux/tcs-common.repo.sh | sh
+yum -y install puppet
+puppet agent -t
+
+service puppet status ; service puppet start ; chkconfig --list puppet ; chkconfig puppet on ; chkconfig --list puppet
+
+
+
+[root@m1-ignite01t ~]# date
+Wed Nov 16 14:08:35 MSK 2016
+[root@m1-ignite01t ~]# date --set=1212
+Wed Nov 16 12:12:00 MSK 2016
+[root@m1-ignite01t ~]# hwclock --systohc
+[root@m1-ignite01t ~]# hwclock --show
+Wed 16 Nov 2016 12:12:19 PM MSK  -0.218934 seconds
+[root@m1-ignite01t ~]#
+
+
+[root@m1-ignite01t ~]# cat /etc/sysconfig/clock
+ZONE="Europe/Moscow"
+UTC=false
+[root@m1-ignite01t ~]#
+
+................................................................................
+................................................................................
+
+
+[root@m1-ignite01t ~]# curl http://repo-linux/tcs-dell-dsu.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+157   157  157   157    0     0  25334      0 --:--:-- --:--:-- --:--:-- 78500
+[root@m1-ignite01t ~]# curl http://repo-linux/tcs-dell.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+172   172  172   172    0     0  23306      0 --:--:-- --:--:-- --:--:--  167k
+[root@m1-ignite01t ~]#
+
+
+[root@m1-ignite01t ~]# yum install --disablerepo tcs-dell-dsu srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+
+     **********************************************************
+     After the install process completes, you may need
+     to log out and then log in again to reset the PATH
+     variable to access the Server Administrator CLI utilities
+
+     **********************************************************
+
+[root@m1-ignite01t ~]# yum install --disablerepo tcs-dell-dsu srvadmin-idracadm7 srvadmin-idracadm dcism
+
+#
+#   In puppet I've added class "nrpe" to server.
+[root@m1-ignite01t ~]# puppet agent -t
+
+#   As an example, but it's HP.
+[root@vm-vol-nag4-tst objects]# cat $(find . -iname m1-instana*)
+
+[root@vm-vol-nag4-tst objects]# su - bsv -c "cd ~/work/templates ; git status ; git pull "
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/hw-lin-template.cfg servers/dc-m1/linux/m1-ignite01t.cfg
+
+ service{
+    use                           generic-service-server-health
+    host_name                ds-gp-prd-sdw2
+    service_description      Server Health
+    check_command            check_dell
+}
+
+
+[root@m1-ignite01t ~]# yum install net-snmp net-snmp-utils
+
+#
+#   In puppet I've added class "snmpconfig" to server.
+[root@m1-ignite01t ~]# service snmpd status
+snmpd is stopped
+[root@m1-ignite01t ~]# service snmpd start
+Starting snmpd:                                            [  OK  ]
+[root@m1-ignite01t ~]#
+[root@m1-ignite01t ~]# chkconfig snmpd on
+
+[root@m1-ignite01t ~]# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+Timeout: No Response from 127.0.0.1
+[root@m1-ignite01t ~]#
+
+#
+#   For example was taken from on of GreenPlum servers.
+#
+[root@ds-gp-prd-sdw2 ~]# cat /etc/snmp/snmpd.conf
+# com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser default tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+[root@ds-gp-prd-sdw2 ~]#
+
+
+[root@m1-ignite01t ~]# awk '(!/^#/) && (!/^$/) {print}' /etc/snmp/snmpd.conf
+com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  systemview none none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+includeDir /etc/snmp/config.d
+[root@m1-ignite01t ~]#
+
+
+[root@m1-ignite01t ~]# cp /etc/snmp/snmpd.conf{,.backup}
+
+
+[root@m1-ignite01t ~]# cat > /etc/snmp/snmpd.conf
+# com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser default tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+[root@m1-ignite01t ~]#
+
+[root@m1-ignite01t ~]# service snmpd restart
+Stopping snmpd:                                            [  OK  ]
+Starting snmpd:                                            [  OK  ]
+[root@m1-ignite01t ~]# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-ignite01t.tcsbank.ru 2.6.32-504.el6.x86_64 #1 SMP Tue Sep 16 01:56:35 EDT 2014 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (916) 0:00:09.16
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-ignite01t.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (6) 0:00:00.06
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDMIBObjects.3.1.1
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@m1-ignite01t ~]#
+
+
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_openmanage -H $(host m1-ignite01t | awk '$0 ~ /has address/ {print $4}') -C tcspub -P 2c -p | head
+ERROR: (SNMP) OpenManage is not installed or is not working correctly
+[root@vm-vol-nag4-tst objects]#
+
+[root@m1-ignite01t ~]# service dataeng start
+Starting Systems Management Device Drivers:
+Starting dell_rbu:                                         [  OK  ]
+Starting ipmi driver:
+                                                           [  OK  ]
+Starting Systems Management Data Engine:
+Starting dsm_sa_datamgrd:                                  [  OK  ]
+Starting dsm_sa_eventmgrd:                                 [  OK  ]
+Starting dsm_sa_snmpd:                                     [  OK  ]
+[root@m1-ignite01t ~]#
+
+#
+#   And voila!
+#   It's start working!!!
+#   I'm happy!
+#
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_openmanage -H $(host m1-ignite01t | awk '$0 ~ /has address/ {print $4}') -C tcspub -P 2c -p | head
+OK - System: 'PowerEdge R630', SN: '55JP8D2', 128 GB ram (8 dimms), 1 logical drives, 2 physical drives|T0_System_Board_Inlet=27C;42;47 T1_System_Board_Exhaust=38C;70;75 T2_CPU1=58C;82;87 T3_CPU2=57C;82;87 W2_System_Board_Pwr_Consumption=154W;0;0 A0_PS1_Current_1=0.4A;0;0 A1_PS2_Current_2=0.4A;0;0 V30_PS1_Voltage_1=230V;0;0 V31_PS2_Voltage_2=230V;0;0 F0_System_Board_Fan1A=4680rpm;0;0 F1_System_Board_Fan2A=4680rpm;0;0 F2_System_Board_Fan3A=4680rpm;0;0 F3_System_Board_Fan4A=4680rpm;0;0 F4_System_Board_Fan5A=4680rpm;0;0 F5_System_Board_Fan6A=4680rpm;0;0 F6_System_Board_Fan7A=4680rpm;0;0 F7_System_Board_Fan1B=4440rpm;0;0 F8_System_Board_Fan2B=4440rpm;0;0 F9_System_Board_Fan3B=4440rpm;0;0 F10_System_Board_Fan4B=4320rpm;0;0 F11_System_Board_Fan5B=4440rpm;0;0 F12_System_Board_Fan6B=4440rpm;0;0 F13_System_Board_Fan7B=4440rpm;0;0[root@vm-vol-nag4-tst objects]#
+[root@vm-vol-nag4-tst objects]#
+
+[root@m1-ignite01t ~]# chkconfig --list dataeng
+dataeng         0:off   1:off   2:off   3:on    4:off   5:on    6:off
+[root@m1-ignite01t ~]# chkconfig dataeng on
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="pavlov"
+contact_name         filename
+--------------------------------------------------------------------------------
+d.s.pavlov_email     /usr/local/nagios/etc/objects/contacts/d.s.pavlov.cfg
+d.s.pavlov_sms       /usr/local/nagios/etc/objects/contacts/d.s.pavlov.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim -o servers/dc-m1/linux/m1-ignite01t.cfg $(find . -iname m1-instana*)
+define host{
+    use                             linux-server
+    host_name                       m1-ignite01t
+    address                         10.216.0.110
+    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+    contacts                        d.s.pavlov_email,d.s.pavlov_sms
+}
+...
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git add servers/dc-m1/linux/m1-ignite01t.cfg
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#70211. Created monitoring for server m1-ignite01t." servers/dc-m1/linux/m1-ignite01t.cfg
+Running configuration check...
+ OK.
+[master 813caba] SD#70211. Created monitoring for server m1-ignite01t.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 60 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-m1/linux/m1-ignite01t.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 12, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 1011 bytes, done.
+Total 7 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   263fdb4..813caba  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+
+[root@m1-ignite02t ~]# curl http://repo-linux/tcs-dell.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+172   172  172   172    0     0  31490      0 --:--:-- --:--:-- --:--:--  167k
+[root@m1-ignite02t ~]# yum install --disablerepo tcs-dell-dsu srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+Loaded plugins: etckeeper, product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+
+
+Error getting repository data for tcs-dell-dsu, repository not found
+[root@m1-ignite02t ~]# curl http://repo-linux/tcs-dell-dsu.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+157   157  157   157    0     0  32599      0 --:--:-- --:--:-- --:--:--  153k
+[root@m1-ignite02t ~]#
+
+
+[root@m1-ignite02t ~]# yum install --disablerepo tcs-dell-dsu srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+
+[root@m1-ignite02t ~]# yum install --disablerepo tcs-dell-dsu srvadmin-idracadm7 srvadmin-idracadm dcismsdf
+
+[root@vm-vol-nag4-tst objects]# cp servers/dc-m1/linux/m1-ignite0{1,2}t.cfg
+
+[root@m1-ignite02t ~]# yum install net-snmp net-snmp-utils
+
+#   In puppet I've added class "snmpconfig" to server.
+
+[root@m1-ignite02t ~]# service snmpd status ; service snmpd start
+snmpd is stopped
+Starting snmpd:                                            [  OK  ]
+[root@m1-ignite02t ~]#
+
+[root@m1-ignite02t ~]# chkconfig snmpd on
+
+#   I've copy it from ds-gp-prd-sdw2 as before.
+[root@m1-ignite02t ~]# cat > /etc/snmp/snmpd.conf
+...
+
+[root@m1-ignite02t ~]# service snmpd restart
+Stopping snmpd:                                            [  OK  ]
+Starting snmpd:                                            [  OK  ]
+[root@m1-ignite02t ~]#
+
+[root@m1-ignite02t ~]# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-ignite02t.tcsbank.ru 2.6.32-504.el6.x86_64 #1 SMP Tue Sep 16 01:56:35 EDT 2014 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (4570) 0:00:45.70
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-ignite02t.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (4) 0:00:00.04
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDMIBObjects.3.1.1
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@m1-ignite02t ~]#
+
+
+[root@m1-ignite02t ~]# service dataeng start
+Starting Systems Management Device Drivers:
+Starting dell_rbu:                                         [  OK  ]
+Starting ipmi driver:
+                                                           [  OK  ]
+Starting Systems Management Data Engine:
+Starting dsm_sa_datamgrd:                                  [  OK  ]
+Starting dsm_sa_eventmgrd:                                 [  OK  ]
+Starting dsm_sa_snmpd:                                     [  OK  ]
+[root@m1-ignite02t ~]#
+
+[root@m1-ignite02t ~]# chkconfig dataeng on
+
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_openmanage -H $(host m1-ignite02t | awk '$0 ~ /has address/ {print $4}') -C tcspub -P 2c -p | head
+OK - System: 'PowerEdge R630', SN: '55GL8D2', 128 GB ram (8 dimms), 1 logical drives, 2 physical drives|T0_System_Board_Inlet=19C;42;47 T1_System_Board_Exhaust=38C;70;75 T2_CPU1=58C;82;87 T3_CPU2=57C;82;87 W2_System_Board_Pwr_Consumption=154W;0;0 A0_PS1_Current_1=0.4A;0;0 A1_PS2_Current_2=0.4A;0;0 V30_PS1_Voltage_1=230V;0;0 V31_PS2_Voltage_2=230V;0;0 F0_System_Board_Fan1A=4320rpm;0;0 F1_System_Board_Fan2A=4320rpm;0;0 F2_System_Board_Fan3A=4320rpm;0;0 F3_System_Board_Fan4A=4200rpm;0;0 F4_System_Board_Fan5A=4320rpm;0;0 F5_System_Board_Fan6A=4320rpm;0;0 F6_System_Board_Fan7A=4320rpm;0;0 F7_System_Board_Fan1B=4080rpm;0;0 F8_System_Board_Fan2B=4080rpm;0;0 F9_System_Board_Fan3B=3960rpm;0;0 F10_System_Board_Fan4B=3960rpm;0;0 F11_System_Board_Fan5B=4080rpm;0;0 F12_System_Board_Fan6B=4080rpm;0;0 F13_System_Board_Fan7B=3960rpm;0;0[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git add !$
+git add servers/dc-m1/linux/m1-ignite02t.cfg
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#70211. Created monitoring for server m1-ignite02t." servers/dc-m1/linux/m1-ignite02t.cfg
+Running configuration check...
+ OK.
+[master d887867] SD#70211. Created monitoring for server m1-ignite02t.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 60 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-m1/linux/m1-ignite02t.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 12, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 1009 bytes, done.
+Total 7 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   813caba..d887867  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+

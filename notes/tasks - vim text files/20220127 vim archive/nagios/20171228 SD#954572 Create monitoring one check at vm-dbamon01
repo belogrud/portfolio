@@ -1,0 +1,61 @@
+
+
+[s.belogrud@TCS4357]# ssh bsv@vm-dbamon01
+Last login: Wed Dec 20 17:46:08 2017 from tcs4500.tcsbank.ru
+[bsv@vm-dbamon01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-dbamon01 ~]#
+[root@vm-dbamon01 ~]#
+[root@vm-dbamon01 ~]# awk '/check_tcs_sme_check_gis_notifications/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_pg2.cfg     command[check_tcs_sme_check_gis_notifications]=/opt/TCS/scripts/nagios/plugins/pg2/pg2-check_tcs_sme_check_gis_notifications.sh
+[root@vm-dbamon01 ~]# cd /opt/TCS/scripts/nagios/plugins/pg2/
+[root@vm-dbamon01 pg2]# cp pg2-check_tcs_sme_check_gis_notifications.s
+pg2-check_tcs_sme_check_gis_notifications.sh   pg2-check_tcs_sme_check_gis_notifications.sql
+[root@vm-dbamon01 pg2]# cp pg2-check_tcs_sme_check_gis_notifications.sh check_pg2_tcs_sme_chk_duplicate_cain_pmt.sh
+[root@vm-dbamon01 pg2]# cp pg2-check_tcs_sme_check_gis_notifications.sql check_pg2_tcs_sme_chk_duplicate_cain_pmt.sql
+[root@vm-dbamon01 pg2]# vim -o check_pg2_tcs_sme_chk_duplicate_cain_pmt.sh check_pg2_tcs_sme_chk_duplicate_cain_pmt.sql
+2 files to edit
+[root@vm-dbamon01 pg2]#
+
+
+[root@vm-dbamon01 pg2]# vim /etc/nrpe.d/check_db_pg2.cfg
+[root@vm-dbamon01 pg2]# tail -n 2 !$
+tail -n 2 /etc/nrpe.d/check_db_pg2.cfg
+[root@vm-dbamon01 pg2]# tail -n 3 /etc/nrpe.d/check_db_pg2.cfg
+# SD#954572
+command[check_pg2_tcs_sme_chk_duplicate_cain_pmt]=/opt/TCS/scripts/nagios/plugins/pg2/check_pg2_tcs_sme_chk_duplicate_cain_pmt.sh
+
+[root@vm-dbamon01 pg2]#
+
+................................................................................
+
+[root@vm-dbamon01 pg2]# /opt/TCS/scripts/nagios/plugins/pg2/check_pg2_tcs_sme_chk_duplicate_cain_pmt.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 pg2]#
+
+................................................................................
+
+[root@vm-dbamon01 pg2]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 pg2]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# tail -n 15 /usr/local/nagios/etc/objects/servers/vmware/vm-dbamon01.cfg
+# SD#954572
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Duplicates of CardIndex payments
+        check_command                   check_nrpe!check_pg2_tcs_sme_chk_duplicate_cain_pmt
+        check_interval                  20
+        first_notification_delay        0
+        contacts                        paym_sme_email
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+        check_period                    pg_170_171
+        notification_period             pg_170_171
+}
+[root@vm-vol-nag4-tst etc]#
+

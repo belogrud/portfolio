@@ -1,0 +1,176 @@
+
+
+................................................................................
+
+
+[root@vm-postfix01 ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+inet_protocols = ipv4
+mydomain = ti-test.local
+[root@vm-postfix01 ~]#
+
+
+[root@vm-postfix01 ~]# host smtp.tcsbank.ru
+smtp.tcsbank.ru is an alias for smtp.gtm.tcsbank.ru.
+smtp.gtm.tcsbank.ru has address 10.219.0.17
+smtp.gtm.tcsbank.ru is an alias for smtp.gtm.tinkoff.ru.
+smtp.gtm.tcsbank.ru is an alias for smtp.gtm.tinkoff.ru.
+[root@vm-postfix01 ~]#
+
+[root@vm-postfix01 ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.17...
+^C
+[root@vm-postfix01 ~]#
+
+................................................................................
+
+[root@vm-postfix01 ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.17...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 m1-msk-mail1302.tcsbank.ru Microsoft ESMTP MAIL Service ready at Wed, 11 Jan 2017 17:57:39 +0300
+ehlo
+250-m1-msk-mail1302.tcsbank.ru Hello [10.219.0.236]
+250-SIZE 52428800
+250-PIPELINING
+250-DSN
+250-ENHANCEDSTATUSCODES
+250-8BITMIME
+250-BINARYMIME
+250-CHUNKING
+250-XEXCH50
+250 XSHADOWREQUEST
+mail from:<root@vm-postfix01>
+250 2.1.0 Sender OK
+rcpt to:<s.belogrud@tinkoff.ru>
+250 2.1.5 Recipient OK
+data
+354 Start mail input; end with <CRLF>.<CRLF>
+subject: test1
+test1
+.
+250 2.6.0 <03d473fb83de4040a2ff8e577a64bcaa@m1-msk-mail1302.tcsbank.ru> [InternalId=3521873204599, Hostname=m1-msk-mail1302.tcsbank.ru] Queued mail for delivery
+quit
+221 2.0.0 Service closing transmission channel
+Connection closed by foreign host.
+[root@vm-postfix01 ~]#
+
+................................................................................
+
+[root@vm-postfix01 ~]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 6.4 (Santiago)
+[root@vm-postfix01 ~]#
+
+
+[root@vm-postfix01 ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@vm-postfix01 ~]#
+
+[root@vm-postfix01 ~]# tail -n 2 /etc/postfix/main.cf
+relayhost = [smtp.tcsbank.ru]
+
+[root@vm-postfix01 ~]#
+
+[root@vm-postfix01 ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+
+#
+#   I see, that smtp.tcsbank.ru still not using...
+#
+[root@vm-postfix01 postfix]# less /var/log/maillog
+...
+Jan 11 18:05:03 vm-postfix01 postfix/postfix-script[28404]: stopping the Postfix mail system
+Jan 11 18:05:03 vm-postfix01 postfix/master[1837]: terminating on signal 15
+Jan 11 18:05:04 vm-postfix01 postfix/postfix-script[28476]: starting the Postfix mail system
+Jan 11 18:05:04 vm-postfix01 postfix/master[28477]: daemon started -- version 2.6.6, configuration /etc/postfix
+Jan 11 18:06:41 vm-postfix01 postfix/pickup[28479]: 8DDD41C0055: uid=0 from=<root>
+Jan 11 18:06:41 vm-postfix01 postfix/cleanup[28499]: 8DDD41C0055: message-id=<20170111150641.8DDD41C0055@vm-postfix01.ti-test.local>
+Jan 11 18:06:41 vm-postfix01 opendkim[1708]: 8DDD41C0055: no signing table match for 'root@vm-postfix01.ti-test.local'
+Jan 11 18:06:41 vm-postfix01 postfix/qmgr[28480]: 8DDD41C0055: from=<root@vm-postfix01.ti-test.local>, size=588, nrcpt=1 (queue active)
+Jan 11 18:06:41 vm-postfix01 postfix/smtp[28502]: 8DDD41C0055: to=<s.belogrud@tinkoff.ru>, relay=f5-mail-lb.ti.local[10.218.50.100]:25, delay=0.24, delays=0.03/0.01/0.05/0.15, dsn=2.6.0, status=sent (250 2.6.0 <20170111150641.8DDD41C0055@vm-postfix01.ti-test.local> [InternalId=16681652977838, Hostname=m1-msk-mail01.ti.local] Queued mail for delivery)
+Jan 11 18:06:41 vm-postfix01 postfix/qmgr[28480]: 8DDD41C0055: removed
+
+
+Received: from m1-msk-mail1305.tcsbank.ru (10.216.58.135) by
+ ds-msk-mail1304.tcsbank.ru (10.216.60.134) with Microsoft SMTP Server (TLS)
+ id 15.0.1130.7 via Mailbox Transport; Wed, 11 Jan 2017 18:06:42 +0300
+Received: from m1-msk-mail1302.tcsbank.ru (10.216.58.132) by
+ m1-msk-mail1305.tcsbank.ru (10.216.58.135) with Microsoft SMTP Server (TLS)
+ id 15.0.1130.7; Wed, 11 Jan 2017 18:06:41 +0300
+Received: from m1-msk-mail01.ti.local (10.218.48.131) by
+ m1-msk-mail1302.tcsbank.ru (10.216.58.132) with Microsoft SMTP Server id
+ 15.0.1104.5; Wed, 11 Jan 2017 18:06:41 +0300
+Received: from ds-msk-mail01.ti.local (10.218.52.131) by
+ m1-msk-mail01.ti.local (10.218.48.131) with Microsoft SMTP Server (TLS) id
+ 15.0.1130.7; Wed, 11 Jan 2017 18:06:41 +0300
+Received: from vm-postfix01.ti-test.local (10.218.50.109) by
+ ds-msk-mail01.ti.local (10.218.52.131) with Microsoft SMTP Server id
+ 15.0.1130.7 via Frontend Transport; Wed, 11 Jan 2017 18:06:41 +0300
+Received: by vm-postfix01.ti-test.local (Postfix, from userid 0)
+    id 8DDD41C0055; Wed, 11 Jan 2017 18:06:41 +0300 (MSK)
+Date: Wed, 11 Jan 2017 18:06:41 +0300
+To: <s.belogrud@tinkoff.ru>
+Subject: 20170111-1806 Test mail
+User-Agent: Heirloom mailx 12.4 7/29/08
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Message-ID: <20170111150641.8DDD41C0055@vm-postfix01.ti-test.local>
+From: root <root@vm-postfix01.ti-test.local>
+Return-Path: root@vm-postfix01.ti-test.local
+X-MS-Exchange-Organization-Network-Message-Id: 1be98a5d-ebc6-4dd1-2dd7-08d43a337346
+X-MS-Exchange-Organization-AuthSource: m1-msk-mail1302.tcsbank.ru
+X-MS-Exchange-Organization-AuthAs: Anonymous
+
+................................................................................
+
+[root@vm-postfix01 postfix]# cat transport
+tinkoffinsurance.ru      smtp:f5-mail-lb.ti.local
+tcsbank.ru               smtp:f5-mail-lb.ti.local
+tinkoff.ru               smtp:f5-mail-lb.ti.local
+[root@vm-postfix01 postfix]#
+
+
+[root@vm-postfix01 postfix]# mkdir -p ~/work/20170111-1816
+[root@vm-postfix01 postfix]# cp /etc/postfix/transport !$/
+cp /etc/postfix/transport ~/work/20170111-1816/
+[root@vm-postfix01 postfix]#
+
+[root@vm-postfix01 postfix]# cat /etc/postfix/transport
+tinkoffinsurance.ru      smtp:smtp.tcsbank.ru
+tcsbank.ru               smtp:smtp.tcsbank.ru
+tinkoff.ru               smtp:smtp.tcsbank.ru
+[root@vm-postfix01 postfix]#
+
+[root@vm-postfix01 postfix]# postmap /etc/postfix/transport
+[root@vm-postfix01 postfix]# service postfix reload
+Reloading postfix:                                         [  OK  ]
+[root@vm-postfix01 postfix]#
+
+
+
+[root@vm-postfix01 postfix]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+
+
+Jan 11 18:25:57 vm-postfix01 postfix/pickup[28604]: DEEE21C0055: uid=0 from=<root>
+Jan 11 18:25:57 vm-postfix01 postfix/cleanup[28670]: DEEE21C0055: message-id=<20170111152557.DEEE21C0055@vm-postfix01.ti-test.local>
+Jan 11 18:25:57 vm-postfix01 opendkim[1708]: DEEE21C0055: no signing table match for 'root@vm-postfix01.ti-test.local'
+Jan 11 18:25:57 vm-postfix01 postfix/qmgr[28605]: DEEE21C0055: from=<root@vm-postfix01.ti-test.local>, size=588, nrcpt=1 (queue active)
+Jan 11 18:25:58 vm-postfix01 postfix/smtp[28673]: DEEE21C0055: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=0.2, delays=0.03/0/0.02/0.14, dsn=2.6.0, status=sent (250 2.6.0 <20170111152557.DEEE21C0055@vm-postfix01.ti-test.local> [InternalId=3526168159130, Hostname=ds-msk-mail1301.tcsbank.ru] Queued mail for delivery)
+Jan 11 18:25:58 vm-postfix01 postfix/qmgr[28605]: DEEE21C0055: removed
+You have mail in /var/spool/mail/root
+[root@vm-postfix01 postfix]#
+
+................................................................................
+#
+#   Follow paragraf was taken from one of my previously made configs.
+#
+[root@vm-o2g01p ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-o2g01p
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@vm-o2g01p ~]#
+................................................................................
+
+

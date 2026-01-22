@@ -1,0 +1,834 @@
+
+
+................................................................................
+
+
+
+From: Sumin Vladimir 
+Sent: Friday, October 20, 2017 1:51 PM
+To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>; Ovchinnikov Andrey Yurevich <a.y.ovchinnikov@tinkoff.ru>
+Cc: telephony-devops <telephony-devops@tinkoff.ru>
+Subject: RE: SD#759557
+
+Привет!
+
+1.	Имена серверов:
+a.	ds-asterisk21.tcsbank.ru
+b.	ds-asterisk22.tcsbank.ru
+c.	ds-asterisk23.tcsbank.ru
+2.	OC: 
+a.	Centos 7
+3.	По дискам: 
+a.	xfs, raid 10 , весь объем выделить под корень.
+4.	Подать vlan’ы:
+a.	1697
+b.	1765 (c jumbo frame для записи звонков на шару)
+5.	Выделить внешние ip адреса
+6.	Сетевые доступы:
+a.	По аналогии с ds-asterisk20
+7.	Сделать записи во внешнем dns (имя – hostname сервера)
+8.	Восстановление и мониторинг:
+a.	По аналогии с ds-asterisk20
+
+................................................................................
+
+
+ds-bc5-bl77	CZ3237W5VP	ds-asterisk21.tcsbank.ru	10.216.97.107
+ds-bc5-bl78	CZ3237W5VS	ds-asterisk22.tcsbank.ru	10.216.97.108
+ds-bc5-bl79	CZ3237W5W0	ds-asterisk23.tcsbank.ru	10.216.97.109
+
+................................................................................
+
+
+[root@ds-asterisk21 ~]# ls -A1 /etc/sysconfig/network-scripts/ifcfg-*
+/etc/sysconfig/network-scripts/ifcfg-eno1
+/etc/sysconfig/network-scripts/ifcfg-eno2
+/etc/sysconfig/network-scripts/ifcfg-ens2f0
+/etc/sysconfig/network-scripts/ifcfg-ens2f1
+/etc/sysconfig/network-scripts/ifcfg-lo
+/etc/sysconfig/network-scripts/ifcfg-team0_slave_1
+/etc/sysconfig/network-scripts/ifcfg-team0_slave_2
+/etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+/etc/sysconfig/network-scripts/ifcfg-VLAN_connection_1
+[root@ds-asterisk21 ~]#
+
+
+
+[root@ds-asterisk22 ~]# ip route
+default via 10.216.97.254 dev team0.1697  proto static  metric 400
+10.216.97.0/24 dev team0.1697  proto kernel  scope link  src 10.216.97.108  metric400
+[root@ds-asterisk22 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+7: team0.1697@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 10.216.97.108/24 brd 10.216.97.255 scope global team0.1697
+       valid_lft forever preferred_lft forever
+[root@ds-asterisk22 ~]#
+
+[root@ds-asterisk22 ~]# teamdctl team0 state view
+setup:
+  runner: roundrobin
+ports:
+  ens2f1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+  eno1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+[root@ds-asterisk22 ~]#
+
+................................................................................
+
+[root@ds-asterisk22 ~]# systemctl stop firewalld
+[root@ds-asterisk22 ~]# systemctl disable firewalld
+Removed symlink /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service.
+Removed symlink /etc/systemd/system/basic.target.wants/firewalld.service.
+[root@ds-asterisk22 ~]# vim /etc/selinux/config
+[root@ds-asterisk22 ~]#
+
+................................................................................
+
+[root@ds-asterisk21 ~]# vim /etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+[root@ds-asterisk21 ~]#
+
+[root@ds-asterisk21 ~]# cat !$
+cat /etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+DEVICE=team0
+IPV6INIT=no
+NAME="Team connection 1"
+UUID=ea3a57cd-052a-49c6-8c34-b20dc51712e4
+ONBOOT=yes
+DEVICETYPE=Team
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+[root@ds-asterisk21 ~]#
+
+
+[root@ds-asterisk22 ~]# cat /etc/sysconfig/network-scripts/ifcfg-team0_slave_1
+HWADDR=B4:B5:2F:58:E3:90
+NAME="team0 slave 1"
+UUID=dee77009-1df6-49e8-a93a-7e81aff11afc
+DEVICE=eno1
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=TeamPort
+TEAM_PORT_CONFIG='{"prio":100}'
+[root@ds-asterisk22 ~]#
+
+[root@ds-asterisk22 ~]# cat /etc/sysconfig/network-scripts/ifcfg-team0_slave_2
+HWADDR=10:60:4B:01:EB:74
+NAME="team0 slave 2"
+UUID=b7117938-5342-4f73-87bd-8bc9b7042501
+DEVICE=ens2f1
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=TeamPort
+TEAM_PORT_CONFIG='{"prio":200}'
+[root@ds-asterisk22 ~]#
+
+
+
+
+#
+#	Network doesn't work without follow file.
+#
+[root@ds-asterisk21 ~]# cat /etc/sysconfig/network-scripts/route-team0.1697
+ADDRESS=0.0.0.0
+NETMASK=0.0.0.0
+GATEWAY=10.216.97.254
+METRIC=0
+[root@ds-asterisk21 ~]#
+
+
+
+................................................................................
+
+[root@ds-asterisk21 ~]# teamdctl team0 state view
+setup:
+  runner: activebackup
+ports:
+  eno1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+  ens2f1
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 1
+runner:
+  active port: eno1
+[root@ds-asterisk21 ~]#
+
+................................................................................
+
+[root@ds-asterisk21 ~]# dd if=/dev/zero of=/swapfile bs=1M count=2048
+2048+0 records in
+2048+0 records out
+2147483648 bytes (2.1 GB) copied, 1.14405 s, 1.9 GB/s
+[root@ds-asterisk21 ~]# mkswap /swapfile
+Setting up swapspace version 1, size = 2097148 KiB
+no label, UUID=2625a10f-6de8-4f36-ae7a-c8cb8db27e78
+[root@ds-asterisk21 ~]# echo "/swapfile       swap   swap    defaults    0 0" >> /etc/fstab
+[root@ds-asterisk21 ~]# swapon -a -v
+swapon /swapfile
+swapon: /swapfile: insecure permissions 0644, 0600 suggested.
+swapon: /swapfile: found swap signature: version 1, page-size 4, same byte order
+swapon: /swapfile: pagesize=4096, swapsize=2147483648, devsize=2147483648
+[root@ds-asterisk21 ~]# swapon -s
+Filename                                Type            Size    Used   Priority
+/swapfile                               file    2097148 0       -1
+[root@ds-asterisk21 ~]# chmod 0600 /swapfile
+[root@ds-asterisk21 ~]#
+
+................................................................................
+
+[root@ds-asterisk21 yum.repos.d]# mkdir -p ~/work/20171020-1904
+[root@ds-asterisk21 yum.repos.d]# cp * !$/
+cp * ~/work/20171020-1904/
+[root@ds-asterisk21 yum.repos.d]# vim -o centos.repo CentOS-Base.repo
+2 files to edit
+[root@ds-asterisk21 yum.repos.d]# rm CentOS-*
+
+................................................................................
+
+#
+#	20171023
+#
+
+
+[root@ds-asterisk21 ~]# ls -Alh /etc/yum.repos.d/
+total 8.0K
+-rw-r--r-- 1 root root  248 Oct 20 19:08 centos.repo
+-rw-r--r-- 1 root root 1.7K Oct 20 18:40 puppetlabs.repo
+[root@ds-asterisk21 ~]# cat /etc/yum.repos.d/centos.repo
+[base]
+name=CentOS-$releasever - Base
+baseurl=http://repo-linux.tcsbank.ru/centos/$releasever/os/$basearch/
+gpgcheck=0
+
+[extras]
+name=CentOS-$releasever - Extras
+baseurl=http://repo-linux.tcsbank.ru/centos/$releasever/extras/$basearch/
+gpgcheck=0
+
+[root@ds-asterisk21 ~]#
+
+
+[root@ds-asterisk21 ~]# rpm -ivh http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+
+
+[root@ds-asterisk21 yum.repos.d]# yum install puppet
+
+................................................................................
+
+
+[root@puppet puppet]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addgroup name=${var1} group=all-servers  ; done
+
+#
+#	Too see what classes available, I have used follow command.
+#
+[root@puppet puppet]# rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production nodeclass:list | grep -ie "tcs_repos"
+
+
+[root@puppet puppet]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addclass name=${var1} class="tcs_repos::puppet" ; done
+
+#	And similar commands to add host into appropriate manifests.
+...
+
+
+[root@puppet puppet]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:listclasses name=${var1} ; done
+
+ds-asterisk21.tcsbank.ru
+etckeeper
+tcs_nrpe
+tcs_repos::centos
+tcs_repos::epel
+tcs_repos::hp
+tcs_repos::puppet
+
+ds-asterisk22.tcsbank.ru
+etckeeper
+tcs_nrpe
+tcs_repos::centos
+tcs_repos::epel
+tcs_repos::hp
+tcs_repos::puppet
+
+ds-asterisk23.tcsbank.ru
+etckeeper
+tcs_nrpe
+tcs_repos::centos
+tcs_repos::epel
+tcs_repos::hp
+tcs_repos::puppet
+[root@puppet puppet]#
+
+
+[root@ds-asterisk21 ~]# rm /etc/yum.repos.d/{puppetlabs.repo,centos.repo}
+rm: remove regular file ‘/etc/yum.repos.d/puppetlabs.repo’? y
+rm: remove regular file ‘/etc/yum.repos.d/centos.repo’? y
+[root@ds-asterisk21 ~]#
+
+
+#
+#	At this moment I need to remove "tcs_nrpe" manifest, to allow me not rewrite special tunes for these servers, if it will be.
+#
+
+[root@puppet puppet]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:classes name=${var1} classes="accounts::mus,etckeeper,tcs_repos::centos,tcs_repos::epel,tcs_repos::hp,tcs_repos::puppet" ; done
+
+
+................................................................................
+
+[root@puppet puppet]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addclass name=${var1} class="accounts::mus" ; done
+
+
+
+ot@puppet puppet]# cat modules/accounts/manifests/vov.pp
+class accounts::vov {
+
+        group { 'vov':
+        ensure => 'present',
+          gid    => '618',
+        }
+
+        user { 'vov':
+        ensure                  => 'present',
+        comment                 => 'Polikha Vladimir',
+        gid                     => '618',
+        groups                  => ['wheel'],
+        home                    => '/home/vov',
+        password                => '$6$$THSnVtZFqSaoJNsCH7OBTwRBea3dEfU9.XmvcyxxzFnKaf9VsJCUz7dUm9VD4/2ThC88MeQdjhPQhi5hmj6Rv.',
+        password_max_age        => '99999',
+        password_min_age        => '0',
+        shell                   => '/bin/bash',
+        uid                     => '618',
+        managehome              => true,
+        require                 => Group['vov'],
+        }
+
+
+}
+[root@puppet puppet]#
+
+
+................................................................................
+
+[root@ds-asterisk21 20171023-1628]# yum -y install hponcfg hp-health hp-scripting-tools.x86_64 hpssacli
+
+[root@ds-asterisk21 20171023-1628]# yum -y install hp-ams hp-fc-enablement hp-health hp-smh-templates hp-snmp-agents hpacucli hpdiags hponcfg hpsmh hpvca
+
+
+[root@puppet puppet]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addclass name=${var1} class="snmpconfig" ; done
+
+
+
+[root@puppet puppet]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:classes name=${var1} classes="accounts::mus,etckeeper,tcs_repos::centos,tcs_repos::epel,tcs_repos::hp,tcs_repos::puppet" ; done
+
+
+
+[root@ds-asterisk21 20171023-1628]# cat > /etc/snmp/snmpd.conf
+# Following entries were added by HP Insight Management Agents at
+dlmod cmaX /usr/lib64/libcmaX64.so
+rwcommunity tcspub 127.0.0.1
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+
+# ---------------------- END --------------------
+com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+pass .1.3.6.1.2.1.10.7.11.1 /usr/bin/nx_snmp.pl
+includeDir /etc/snmp/config.d
+[root@ds-asterisk21 20171023-1628]#
+
+................................................................................
+
+
+[root@ds-asterisk21 20171023-1628]# systemctl start snmpd.service
+[root@ds-asterisk21 20171023-1628]# systemctl status snmpd.service
+● snmpd.service - Simple Network Management Protocol (SNMP) Daemon.
+   Loaded: loaded (/usr/lib/systemd/system/snmpd.service; disabled; vendor preset: disabled)
+   Active: active (running) since Mon 2017-10-23 17:14:03 MSK; 10s ago
+ Main PID: 32402 (snmpd)
+   CGroup: /system.slice/snmpd.service
+           └─32402 /usr/sbin/snmpd -LS0-6d -f
+
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 10 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 11 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 14 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 15 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 16 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 21 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 22 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 23 wil...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 18 han...
+Oct 23 17:14:03 ds-asterisk21.tcsbank.ru snmpd[32402]: cmaX: subMIB 18 wil...
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@ds-asterisk21 20171023-1628]# systemctl enable snmpd.service
+Created symlink from /etc/systemd/system/multi-user.target.wants/snmpd.service to /usr/lib/systemd/system/snmpd.service.
+[root@ds-asterisk21 20171023-1628]#
+
+
+[root@ds-asterisk21 20171023-1628]# service hp-snmp-agents stop ; service hp-snmp-agents start ; service snmpd restart
+Redirecting to /bin/systemctl stop  hp-snmp-agents.service
+Redirecting to /bin/systemctl start  hp-snmp-agents.service
+Redirecting to /bin/systemctl restart  snmpd.service
+You have new mail in /var/spool/mail/root
+[root@ds-asterisk21 20171023-1628]#
+
+#
+#	To test snmp.
+#
+
+[root@ds-asterisk21 20171023-1628]# snmpwalk -v 2c -c tcspub 127.0.0.1 HOST-RESOURCES-MIB::hrProcessorLoad | head
+HOST-RESOURCES-MIB::hrProcessorLoad.196608 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196609 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196610 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196611 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196612 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196613 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196614 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196615 = INTEGER: 1
+HOST-RESOURCES-MIB::hrProcessorLoad.196616 = INTEGER: 0
+HOST-RESOURCES-MIB::hrProcessorLoad.196617 = INTEGER: 0
+[root@ds-asterisk21 20171023-1628]#
+
+................................................................................
+................................................................................
+
+#
+#	In new created vlan interface I've added "MTU=9000".
+#
+[root@ds-asterisk21 network-scripts]# cat ifcfg-VLAN_connection_2
+VLAN=yes
+TYPE=Vlan
+#       PHYSDEV=ea3a57cd-052a-49c6-8c34-b20dc51712e4
+VLAN_ID=1765
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+BOOTPROTO=none
+IPADDR=10.217.65.113
+PREFIX=24
+#       GATEWAY=10.216.97.254
+#       DNS1=10.216.40.4
+#       DNS2=10.216.42.5
+#       DOMAIN=tcsbank.ru
+#       DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="VLAN connection 2"
+#       UUID=0fe05a44-7766-44b0-9dcc-67a2535f85a9
+ONBOOT=yes
+MTU=9000
+[root@ds-asterisk21 network-scripts]#
+
+#
+#	In existed vlan interfaces I've added "MTU=1500".
+#
+[root@ds-asterisk21 network-scripts]# cat ifcfg-VLAN_connection_1
+VLAN=yes
+TYPE=Vlan
+PHYSDEV=ea3a57cd-052a-49c6-8c34-b20dc51712e4
+VLAN_ID=1697
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+BOOTPROTO=none
+IPADDR=10.216.97.107
+PREFIX=24
+GATEWAY=10.216.97.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="VLAN connection 1"
+UUID=0fe05a44-7766-44b0-9dcc-67a2535f85a9
+ONBOOT=yes
+MTU=1500
+[root@ds-asterisk21 network-scripts]#
+
+#
+#	In exised "parent" interface for both of them, I've added "MTU=9000".
+#
+[root@ds-asterisk21 network-scripts]# cat ifcfg-Team_connection_1
+DEVICE=team0
+IPV6INIT=no
+NAME="Team connection 1"
+UUID=ea3a57cd-052a-49c6-8c34-b20dc51712e4
+ONBOOT=yes
+DEVICETYPE=Team
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+MTU=9000
+[root@ds-asterisk21 network-scripts]#
+
+................................................................................
+
+
+[root@ds-asterisk21 network-scripts]# dmidecode -t system
+# dmidecode 3.0
+Scanning /dev/mem for entry point.
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant BL460c Gen8
+        Version: Not Specified
+        Serial Number: CZ3237W5VP
+        UUID: 30313436-3631-5A43-3332-333757355650
+        Wake-up Type: Power Switch
+        SKU Number: 641016-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-asterisk21 network-scripts]#
+
+[root@ds-asterisk21 network-scripts]# cat ifcfg-VLAN_connection_2
+VLAN=yes
+TYPE=Vlan
+#       PHYSDEV=team0
+VLAN_ID=1765
+DEVICE=team0.1765
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="VLAN connection 2"
+#       UUID=0be3b0cd-b385-4925-bfcb-d699b854c600
+ONBOOT=yes
+IPADDR=10.217.65.113
+PREFIX=24
+MTU=9000
+[root@ds-asterisk21 network-scripts]#
+
+
+[root@ds-asterisk21 network-scripts]# cat ifcfg-VLAN_connection_1
+VLAN=yes
+TYPE=Vlan
+#       PHYSDEV=ea3a57cd-052a-49c6-8c34-b20dc51712e4
+VLAN_ID=1697
+DEVICE=team0.1697
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+BOOTPROTO=none
+IPADDR=10.216.97.107
+PREFIX=24
+GATEWAY=10.216.97.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="VLAN connection 1"
+#       UUID=0fe05a44-7766-44b0-9dcc-67a2535f85a9
+ONBOOT=yes
+MTU=1500
+[root@ds-asterisk21 network-scripts]#
+
+
+[root@ds-asterisk21 network-scripts]# cat ifcfg-Team_connection_1
+DEVICE=team0
+IPV6INIT=no
+NAME="Team connection 1"
+UUID=ea3a57cd-052a-49c6-8c34-b20dc51712e4
+ONBOOT=yes
+DEVICETYPE=Team
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+MTU=9000
+[root@ds-asterisk21 network-scripts]#
+
+
+[root@ds-asterisk21 network-scripts]# systemctl status NetworkManager
+● NetworkManager.service - Network Manager
+   Loaded: loaded (/usr/lib/systemd/system/NetworkManager.service; disabled;vendor preset: enabled)
+   Active: inactive (dead) since Mon 2017-10-23 19:15:05 MSK; 15h ago
+     Docs: man:NetworkManager(8)
+ Main PID: 19192 (code=exited, status=0/SUCCESS)
+   CGroup: /system.slice/NetworkManager.service
+           └─1302 /usr/bin/teamd -o -n -U -D -N -t team0 -c {"runner":{"na...
+
+Oct 23 19:15:05 ds-asterisk21.tcsbank.ru systemd[1]: Stopped Network Manager.
+Oct 23 19:15:26 ds-asterisk21.tcsbank.ru NetworkManager[1222]: Changed act...
+Oct 23 19:15:26 ds-asterisk21.tcsbank.ru NetworkManager[1222]: ens2f1: eth...
+Oct 23 19:15:26 ds-asterisk21.tcsbank.ru NetworkManager[1222]: ens2f1: Can...
+Oct 23 19:19:28 ds-asterisk21.tcsbank.ru NetworkManager[1222]: eno1: ethto...
+Oct 23 19:19:28 ds-asterisk21.tcsbank.ru NetworkManager[1222]: eno1: Can't...
+Oct 23 19:19:28 ds-asterisk21.tcsbank.ru NetworkManager[1222]: Changed act...
+Oct 23 19:19:29 ds-asterisk21.tcsbank.ru NetworkManager[1222]: ens2f1: eth...
+Oct 23 19:19:29 ds-asterisk21.tcsbank.ru NetworkManager[1222]: ens2f1: Can...
+Oct 23 19:19:29 ds-asterisk21.tcsbank.ru NetworkManager[1222]: Changed act...
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@ds-asterisk21 network-scripts]#
+
+
+[root@ds-asterisk21 network-scripts]# systemctl status network
+● network.service - LSB: Bring up/down networking
+   Loaded: loaded (/etc/rc.d/init.d/network; bad; vendor preset: disabled)
+   Active: failed (Result: exit-code) since Mon 2017-10-23 19:19:31 MSK; 15hago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 20507 ExecStop=/etc/rc.d/init.d/network stop (code=exited, status=0/SUCCESS)
+  Process: 22060 ExecStart=/etc/rc.d/init.d/network start (code=exited, status=1/FAILURE)
+
+Oct 23 19:19:30 ds-asterisk21.tcsbank.ru network[22060]: Bringing up inter...
+Oct 23 19:19:30 ds-asterisk21.tcsbank.ru network[22060]: Error: inet prefi...
+Oct 23 19:19:30 ds-asterisk21.tcsbank.ru network[22060]: Error: inet prefi...
+Oct 23 19:19:30 ds-asterisk21.tcsbank.ru network[22060]: Error: inet prefi...
+Oct 23 19:19:30 ds-asterisk21.tcsbank.ru network[22060]: [  OK  ]
+Oct 23 19:19:31 ds-asterisk21.tcsbank.ru network[22060]: Bringing up inter...
+Oct 23 19:19:31 ds-asterisk21.tcsbank.ru systemd[1]: network.service: cont...
+Oct 23 19:19:31 ds-asterisk21.tcsbank.ru systemd[1]: Failed to start LSB: ...
+Oct 23 19:19:31 ds-asterisk21.tcsbank.ru systemd[1]: Unit network.service ...
+Oct 23 19:19:31 ds-asterisk21.tcsbank.ru systemd[1]: network.service failed.
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@ds-asterisk21 network-scripts]#
+
+#
+#	To apply changes of MTU very often server need to be rebooted.
+#
+
+
+[root@ds-asterisk21 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+7: team0.1697@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 10.216.97.107/24 brd 10.216.97.255 scope global team0.1697
+       valid_lft forever preferred_lft forever
+8: team0.1765@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP qlen 1000
+    inet 10.217.65.113/24 brd 10.217.65.255 scope global team0.1765
+       valid_lft forever preferred_lft forever
+[root@ds-asterisk21 ~]#
+
+
+................................................................................
+
+[root@ds-asterisk22 20171023-1628]# dmidecode -t system
+# dmidecode 3.0
+Scanning /dev/mem for entry point.
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant BL460c Gen8
+        Version: Not Specified
+        Serial Number: CZ3237W5VS
+        UUID: 30313436-3631-5A43-3332-333757355653
+        Wake-up Type: Power Switch
+        SKU Number: 641016-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-asterisk22 20171023-1628]#
+
+
+[root@ds-asterisk22 20171023-1628]# systemctl stop NetworkManager
+[root@ds-asterisk22 20171023-1628]# systemctl disable NetworkManager
+Removed symlink /etc/systemd/system/multi-user.target.wants/NetworkManager.service.
+Removed symlink /etc/systemd/system/dbus-org.freedesktop.NetworkManager.service.
+Removed symlink /etc/systemd/system/dbus-org.freedesktop.nm-dispatcher.service.
+[root@ds-asterisk22 20171023-1628]#
+
+...
+
+................................................................................
+
+
+[root@ds-asterisk23 network-scripts]# dmidecode -t system
+# dmidecode 3.0
+Scanning /dev/mem for entry point.
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant BL460c Gen8
+        Version: Not Specified
+        Serial Number: CZ3237W5W0
+        UUID: 30313436-3631-5A43-3332-333757355730
+        Wake-up Type: Power Switch
+        SKU Number: 641016-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+You have new mail in /var/spool/mail/root
+[root@ds-asterisk23 network-scripts]#
+
+
+................................................................................
+
+[root@puppet modules]# rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production nodeclass:list | grep -ie "simp"
+simpana::install
+simpana::uninstall
+[root@puppet modules]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:addclass name=${var1} class="simpana::install" ; done
+
+ds-asterisk21.tcsbank.ru
+Node classes successfully edited for ds-asterisk21.tcsbank.ru!
+
+ds-asterisk22.tcsbank.ru
+Node classes successfully edited for ds-asterisk22.tcsbank.ru!
+
+ds-asterisk23.tcsbank.ru
+Node classes successfully edited for ds-asterisk23.tcsbank.ru!
+[root@puppet modules]#
+
+
+[root@ds-asterisk21 network-scripts]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+/usr/sbin/zdump: warning: zone "Europe/Moscow" abbreviation "+05" lacks alphabetic at start
+Info: Caching catalog for ds-asterisk21.tcsbank.ru
+Info: Applying configuration version '1508834231'
+Notice: /Stage[main]/Simpana::Install/Exec[get_archive]/returns: executed successfully
+Notice: /Stage[main]/Simpana::Install/Exec[extract_archive]/returns: executed successfully
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns: cvZipFile = /tmp/pkg/linux-x8664/linux-glibc2.3-x86_64/BinaryPayLoad/cvzip
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns: /tmp/pkg/linux-x8664/LooseUpdates/Updates/linux-x8664_11.0.0B80-SP7_SP7-HotFix-1749/linux-glibc2.3-x86_64/installer/newinstall.gz
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns: Using installer from updates at /tmp/pkg/linux-x8664/LooseUpdates/Updates/linux-x8664_11.0.0B80-SP7_SP7-HotFix-1749/linux-glibc2.3-x86_64/installer/newinstall.gz
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns: Using package installer /tmp/.gxsetup/37422/newinstall:
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns:  - v1180534 11373KB gzipped at uslinux01 on 17-03-29 18:52:20 by pbuilder
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns: ..
+Error: bash silent_install -silent returned 255 instead of one of [0]
+Error: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns: change from notrun to 0 failed: bash silent_install -silent returned 255 instead of one of [0]
+Notice: Finished catalog run in 28.05 seconds
+[root@ds-asterisk21 network-scripts]#
+[root@ds-asterisk21 network-scripts]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+/usr/sbin/zdump: warning: zone "Europe/Moscow" abbreviation "+05" lacks alphabetic at start
+Info: Caching catalog for ds-asterisk21.tcsbank.ru
+Info: Applying configuration version '1508835666'
+Notice: Finished catalog run in 0.46 seconds
+[root@ds-asterisk21 network-scripts]#
+
+
+
+[root@ds-asterisk22 ~]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+/usr/sbin/zdump: warning: zone "Europe/Moscow" abbreviation "+05" lacks alphabetic at start
+Info: Caching catalog for ds-asterisk22.tcsbank.ru
+Info: Applying configuration version '1508834230'
+Notice: /Stage[main]/Simpana::Install/Exec[get_archive]/returns: executed successfully
+Notice: /Stage[main]/Simpana::Install/Exec[extract_archive]/returns: executed successfully
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns:executed successfully
+Notice: Finished catalog run in 30.13 seconds
+[root@ds-asterisk22 ~]#
+
+
+[root@ds-asterisk23 ~]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+/usr/sbin/zdump: warning: zone "Europe/Moscow" abbreviation "+05" lacks alphabetic at start
+Info: Caching catalog for ds-asterisk23.tcsbank.ru
+Info: Applying configuration version '1508834177'
+Notice: /Stage[main]/Simpana::Install/Exec[get_archive]/returns: executed successfully
+Notice: /Stage[main]/Simpana::Install/Exec[extract_archive]/returns: executed successfully
+Notice: /Stage[main]/Simpana::Install/Exec[install_simpana_agent]/returns: executed successfully
+Notice: Finished catalog run in 24.35 seconds
+[root@ds-asterisk23 ~]#
+
+
+................................................................................
+
+[root@puppet modules]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:listclasses name=${var1} ; done
+
+ds-asterisk21.tcsbank.ru
+accounts::mus
+etckeeper
+simpana::install
+tcs_repos::centos
+tcs_repos::epel
+tcs_repos::hp
+tcs_repos::puppet
+
+ds-asterisk22.tcsbank.ru
+accounts::mus
+etckeeper
+simpana::install
+tcs_repos::centos
+tcs_repos::epel
+tcs_repos::hp
+tcs_repos::puppet
+
+ds-asterisk23.tcsbank.ru
+accounts::mus
+etckeeper
+simpana::install
+tcs_repos::centos
+tcs_repos::epel
+tcs_repos::hp
+tcs_repos::puppet
+[root@puppet modules]#
+[root@puppet modules]# for var1 in ds-asterisk2{1..3}.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:classes name=${var1} classes="accounts::mus,etckeeper,tcs_repos::centos
+,tcs_repos::epel,tcs_repos::hp,tcs_repos::puppet" ; done
+
+ds-asterisk21.tcsbank.ru
+Node classes successfully edited for ds-asterisk21.tcsbank.ru!
+
+ds-asterisk22.tcsbank.ru
+Node classes successfully edited for ds-asterisk22.tcsbank.ru!
+
+ds-asterisk23.tcsbank.ru
+Node classes successfully edited for ds-asterisk23.tcsbank.ru!
+[root@puppet modules]#
+
+
+................................................................................
+
+
+
+
+

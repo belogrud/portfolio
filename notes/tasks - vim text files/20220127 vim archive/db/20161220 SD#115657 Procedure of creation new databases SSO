@@ -1,0 +1,903 @@
+
+................................................................................
+
+http://sd.tcsbank.ru/0/NUI/ViewModule.aspx#CardModuleV2/CasePage/edit/fa3bf763-6ca9-4fbc-9838-77f73d656940
+
+Варакута Сергей Леонидович
+
+Нужно создать новую базу SSO (prod и stb) на серверах *-db01-*
+
+1. Три раздела на m1-db01-prod
+/oramnt/SSO_prod_ru - 50 Gb
+/oramnt/SSO_prod_di - 100 Gb
+/oramnt/SSO_prod_arch - 100 Gb
+
+2. Три раздела на ds-db01-stb
+/oramnt/SSO_stb_ru - 50 Gb
+/oramnt/SSO_stb_di - 100 Gb
+/oramnt/SSO_stb_arch - 100 Gb
+
+3. Три IP адреса в 50 сети
+db-sso-prod - на m1-db01-prod
+db-sso-prod-dg - на m1-db01-prod
+db-sso-stb - на ds-db01-prod
+
+4. IP адрес в 53 сети
+db-sso-tst - на ds-db-tst
+
+5. IP адрес в 54 сети
+db-sso-dev - на ds-db-dev
+
+6. Прописать в ДНС выделенные IP
+db-sso-prod
+db-sso-prod-dg
+db-sso-stb
+
+7. Настроить кластерное ПО
+8. Настроить бэкапы
+
+................................................................................
+
+3. Три IP адреса в 50 сети
+db-sso-prod - на m1-db01-prod
+db-sso-prod-dg - на m1-db01-prod
+db-sso-stb - на ds-db01-prod
+
+4. IP адрес в 53 сети
+db-sso-tst - на ds-db-tst
+
+5. IP адрес в 54 сети
+db-sso-dev - на ds-db-dev
+
+6. Прописать в ДНС выделенные IP
+db-sso-prod
+db-sso-prod-dg
+db-sso-stb
+
+................................................................................
+
+#   3.
+#   10.217.50.196
+#   10.217.50.197
+#   10.217.50.198
+
+[support@centos00 python]$ ping -c 3 10.217.50.196 ; ping -c 3 10.217.50.197 ; ping -c 3 10.217.50.198
+PING 10.217.50.196 (10.217.50.196) 56(84) bytes of data.
+
+--- 10.217.50.196 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 12000ms
+
+PING 10.217.50.197 (10.217.50.197) 56(84) bytes of data.
+
+--- 10.217.50.197 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 11999ms
+
+PING 10.217.50.198 (10.217.50.198) 56(84) bytes of data.
+
+--- 10.217.50.198 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 12000ms
+
+[support@centos00 python]$
+
+[support@centos00 python]$ host 10.217.50.196 ; host 10.217.50.197 ; host 10.217.50.198
+Host 196.50.217.10.in-addr.arpa. not found: 3(NXDOMAIN)
+Host 197.50.217.10.in-addr.arpa. not found: 3(NXDOMAIN)
+Host 198.50.217.10.in-addr.arpa. not found: 3(NXDOMAIN)
+[support@centos00 python]$
+
+#   4.
+#   10.217.53.90
+
+[support@centos00 python]$ ping -c 3 10.217.53.90 ; host 10.217.53.90
+PING 10.217.53.90 (10.217.53.90) 56(84) bytes of data.
+
+--- 10.217.53.90 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 12000ms
+
+Host 90.53.217.10.in-addr.arpa. not found: 3(NXDOMAIN)
+[support@centos00 python]$
+
+#   5.
+#   10.217.54.80
+[support@centos00 python]$ ping -c 3 10.217.54.80 ; host 10.217.54.80
+PING 10.217.54.80 (10.217.54.80) 56(84) bytes of data.
+
+--- 10.217.54.80 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 12000ms
+
+Host 80.54.217.10.in-addr.arpa. not found: 3(NXDOMAIN)
+[support@centos00 python]$
+
+................................................................................
+................................................................................
+
+*. Insert two dell servers for dwh into OME, update firmware, apply iDRAC config, give DWH acces to their consoles.
+*. Test and config sending emails from nagios.
+*. Aleksandrov promised show how to make one service desk task.
+*. Rodriges asked to give info about servers to configure it.
+
+
+#   Route of works.
+#   1. Create jira change task: https://jira.tcsbank.ru/browse/ITP-1656
+#   As an example was taken https://jira.tcsbank.ru/browse/ITP-1479
+
+#   Plan of works.
+#   1. Freeze all existent claster group on cluser db01-prod.
+#   2. Add new group OraSSO. Doing with script.
+#   3. Unfreeze all existent freezed cluster group on cluster db01-prod.
+
+
+................................................................................
+
+#
+#   Below is a body of script, that will be used on one of db-servers (ds-db01-prod or m1-db01-prod).
+#
+
+hagrp -add OraSSO
+
+hagrp -modify OraSSO SystemList  ds-db01-prod 0 m1-db01-prod 1
+hagrp -modify OraSSO AutoStartList  ds-db01-prod m1-db01-prod
+hagrp -modify OraSSO TriggersEnabled  POSTONLINE -sys ds-db01-prod
+hagrp -modify OraSSO TriggersEnabled  POSTONLINE -sys m1-db01-prod
+
+hares -add ip-SSO-prod IP OraSSO
+hares -modify ip-SSO-prod Device bond0
+hares -modify ip-SSO-prod Address "10.217.50.196"
+hares -modify ip-SSO-prod NetMask "255.255.255.0"
+hares -modify ip-SSO-prod Enabled 1
+
+hares -add ip-SSO-prod-dg IP OraSSO
+hares -modify ip-SSO-prod-dg Device bond0
+hares -modify ip-SSO-prod-dg Address "10.217.50.197"
+hares -modify ip-SSO-prod-dg NetMask "255.255.255.0"
+hares -modify ip-SSO-prod-dg Enabled 1
+
+hares -add mnt-SSO-arch Mount OraSSO
+hares -modify mnt-SSO-arch MountPoint "/oramnt/SSO_prod_arch"
+hares -modify mnt-SSO-arch BlockDevice "db-SSO-prod-nfs:/SSO_prod_arch_ds"
+hares -modify mnt-SSO-arch FSType nfs
+hares -modify mnt-SSO-arch MountOpt "rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+hares -modify mnt-SSO-arch Enabled 1
+
+hares -add mnt-SSO-di Mount OraSSO
+hares -modify mnt-SSO-di MountPoint "/oramnt/SSO_prod_di"
+hares -modify mnt-SSO-di BlockDevice "db-SSO-prod-nfs:/SSO_prod_di_ds"
+hares -modify mnt-SSO-di FSType nfs
+hares -modify mnt-SSO-di MountOpt "rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+hares -modify mnt-SSO-di Enabled 1
+
+hares -add mnt-SSO-ru Mount OraSSO
+hares -modify mnt-SSO-ru MountPoint "/oramnt/SSO_prod_ru"
+hares -modify mnt-SSO-ru BlockDevice "db-SSO-prod-nfs:/SSO_prod_ru_ds"
+hares -modify mnt-SSO-ru FSType nfs
+hares -modify mnt-SSO-ru MountOpt "rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+hares -modify mnt-SSO-ru Enabled 1
+
+hares -add lsnr-SSO Netlsnr OraSSO
+hares -modify lsnr-SSO Owner oracle
+hares -modify lsnr-SSO Home "/opt/oracle/products/12.1.0.2.160119/"
+hares -modify lsnr-SSO TnsAdmin "/opt/oracle/products/12.1.0.2.160119/network/admin/"
+hares -modify lsnr-SSO Listener SSO_prod_1522
+hares -modify lsnr-SSO EnvFile "/opt/oracle/SSO_dbsetenv"
+hares -modify lsnr-SSO Enabled 1
+
+hares -add lsnr-SSO-dg Netlsnr OraSSO
+hares -modify lsnr-SSO-dg Owner oracle
+hares -modify lsnr-SSO-dg Home "/opt/oracle/products/12.1.0.2.160119/"
+hares -modify lsnr-SSO-dg TnsAdmin "/opt/oracle/products/12.1.0.2.160119/network/admin/"
+hares -modify lsnr-SSO-dg Listener SSO_prod_dg_1522
+hares -modify lsnr-SSO-dg EnvFile "/opt/oracle/SSO_dbsetenv"
+hares -modify lsnr-SSO-dg Enabled 1
+
+hares -add ora-SSO Oracle OraSSO
+hares -modify ora-SSO Sid SSO
+hares -modify ora-SSO Owner oracle
+hares -modify ora-SSO Home "/opt/oracle/products/12.1.0.2.160119/"
+hares -modify ora-SSO Pfile "/opt/oracle/products/12.1.0.2.160119/dbs/initSSO.ora"
+hares -modify ora-SSO EnvFile "/opt/oracle/SSO_dbsetenv"
+hares -modify ora-SSO Enabled 1
+
+hares -add nic-SSO Proxy OraSSO
+hares -modify nic-SSO TargetResName csgnic
+hares -modify nic-SSO Enabled 1
+
+hares -link ip-SSO-prod nic-SSO
+hares -link ip-SSO-prod-dg nic-SSO
+hares -link lsnr-SSO ip-SSO-prod
+hares -link lsnr-SSO ora-SSO
+hares -link lsnr-SSO-dg ip-SSO-prod-dg
+hares -link lsnr-SSO-dg ora-SSO
+hares -link mnt-SSO-arch nic-SSO
+hares -link mnt-SSO-di nic-SSO
+hares -link mnt-SSO-ru nic-SSO
+hares -link ora-SSO mnt-SSO-arch
+hares -link ora-SSO mnt-SSO-di
+hares -link ora-SSO mnt-SSO-ru
+
+................................................................................
+
+Варакута Сергей Леонидович
+
+Нужно поднять адреса на серверах
+3. Три IP адреса в 50 сети
+  10.217.50.196 - на m1-db01-prod
+  10.217.50.197 - на m1-db01-prod
+  10.217.50.198 - на ds-db01-prod
+4. IP адрес в 53 сети
+  10.217.53.90 - на ds-db-tst
+5. IP адрес в 54 сети
+  10.217.54.80 - на ds-db-dev
+Вчера в 14:50
+
+................................................................................
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@ds-db-tst                                                            Last login: Fri Oct 21 19:31:02 2016 from tcs4500.tcsbank.ru                                                                                                                                         [bsv@ds-db-tst ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-db-tst ~]#
+
+
+[root@ds-db-tst ~]# ls -A1 /etc/sysconfig/network-scripts/ifcfg-bond* | sort -h
+/etc/sysconfig/network-scripts/ifcfg-bond0
+/etc/sysconfig/network-scripts/ifcfg-bond1
+/etc/sysconfig/network-scripts/ifcfg-bond2
+/etc/sysconfig/network-scripts/ifcfg-bond3
+/etc/sysconfig/network-scripts/ifcfg-bond4
+/etc/sysconfig/network-scripts/ifcfg-bond5
+/etc/sysconfig/network-scripts/ifcfg-bond6
+/etc/sysconfig/network-scripts/ifcfg-bond6:1
+/etc/sysconfig/network-scripts/ifcfg-bond6:2
+/etc/sysconfig/network-scripts/ifcfg-bond6:5
+/etc/sysconfig/network-scripts/ifcfg-bond6:7
+/etc/sysconfig/network-scripts/ifcfg-bond7
+/etc/sysconfig/network-scripts/ifcfg-bond7:0
+/etc/sysconfig/network-scripts/ifcfg-bond7:1
+/etc/sysconfig/network-scripts/ifcfg-bond7:11
+/etc/sysconfig/network-scripts/ifcfg-bond7:14
+/etc/sysconfig/network-scripts/ifcfg-bond7:15
+/etc/sysconfig/network-scripts/ifcfg-bond7:16
+/etc/sysconfig/network-scripts/ifcfg-bond7:17
+/etc/sysconfig/network-scripts/ifcfg-bond7:18
+/etc/sysconfig/network-scripts/ifcfg-bond7:19
+/etc/sysconfig/network-scripts/ifcfg-bond7:20
+/etc/sysconfig/network-scripts/ifcfg-bond7:21
+/etc/sysconfig/network-scripts/ifcfg-bond7:22
+/etc/sysconfig/network-scripts/ifcfg-bond7:23
+/etc/sysconfig/network-scripts/ifcfg-bond7:24
+/etc/sysconfig/network-scripts/ifcfg-bond7:25
+/etc/sysconfig/network-scripts/ifcfg-bond7:27
+/etc/sysconfig/network-scripts/ifcfg-bond7:28
+/etc/sysconfig/network-scripts/ifcfg-bond7:29
+/etc/sysconfig/network-scripts/ifcfg-bond7:3
+/etc/sysconfig/network-scripts/ifcfg-bond7:30
+/etc/sysconfig/network-scripts/ifcfg-bond7:4
+/etc/sysconfig/network-scripts/ifcfg-bond7:5
+/etc/sysconfig/network-scripts/ifcfg-bond7:6
+/etc/sysconfig/network-scripts/ifcfg-bond7:7
+/etc/sysconfig/network-scripts/ifcfg-bond7:8
+/etc/sysconfig/network-scripts/ifcfg-bond7:9
+[root@ds-db-tst ~]#
+
+
+[root@ds-db-tst ~]# cat /etc/sysconfig/network-scripts/ifcfg-bond7:29
+DEVICE="bond7:29"
+BOOTPROTO=none
+ONBOOT="yes"
+IPADDR=10.217.53.85
+NETMASK=255.255.255.0
+NOZEROCONF=yes
+[root@ds-db-tst ~]#
+
+[root@ds-db-tst ~]# vim /etc/sysconfig/network-scripts/ifcfg-bond7:30 -o /etc/sysconfig/network-scripts/ifcfg-bond7:31
+
+[root@ds-db-tst ~]# cat !$
+cat /etc/sysconfig/network-scripts/ifcfg-bond7:31
+DEVICE="bond7:31"
+BOOTPROTO=none
+ONBOOT="yes"
+IPADDR=10.217.53.90
+NETMASK=255.255.255.0
+NOZEROCONF=yes
+[root@ds-db-tst ~]#
+
+[root@ds-db-tst ~]# ip -f inet addr | grep "10.217.53.90"
+
+[root@ds-db-tst ~]# ifup bond7:31
+[root@ds-db-tst ~]# ip -f inet addr | grep "10.217.53.90"
+    inet 10.217.53.90/24 brd 10.217.53.255 scope global secondary bond7:31
+[root@ds-db-tst ~]#
+
+[root@ds-db-tst ~]# vim /etc/rc.local
+...
+/sbin/ip rule add from 10.217.53.90 table 103
+
+#   Apply route for ip-addres.
+[root@ds-db-tst ~]# /sbin/ip rule add from 10.217.53.90 table 103
+
+[root@ds-db-tst ~]# ip route show table all | awk '/10.217.53.90/{print}'
+local 10.217.53.90 dev bond7  table local  proto kernel  scope host  src 10.217.53.110
+[root@ds-db-tst ~]#
+
+
+................................................................................
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@ds-db-dev
+Last login: Mon Oct 10 18:39:55 2016 from tcs4500.tcsbank.ru
+[bsv@ds-db-dev ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-db-dev ~]#
+
+[root@ds-db-dev ~]# ip -f inet addr | awk '/10.217.54.80/{print}'
+
+#   This way I've found what interfaces use network .54.
+[root@ds-db-dev ~]# ip -f inet addr | awk '/10.217.54./{print}'
+    inet 10.217.54.73/24 brd 10.217.54.255 scope global bond0:1
+    inet 10.217.54.12/24 brd 10.217.54.255 scope global bond3
+    inet 10.217.54.67/24 brd 10.217.54.255 scope global secondary bond3:1
+    inet 10.217.54.23/24 brd 10.217.54.255 scope global secondary bond3:2
+    inet 10.217.54.74/24 brd 10.217.54.255 scope global secondary bond3:3
+    inet 10.217.54.78/24 brd 10.217.54.255 scope global secondary bond3:5
+    inet 10.217.54.77/24 brd 10.217.54.255 scope global secondary bond3:6
+    inet 10.217.54.76/24 brd 10.217.54.255 scope global secondary bond3:7
+    inet 10.217.54.79/24 brd 10.217.54.255 scope global secondary bond3:8
+    inet 10.217.54.85/24 brd 10.217.54.255 scope global secondary bond3:11
+    inet 10.217.54.51/24 brd 10.217.54.255 scope global secondary bond3:10
+    inet 10.217.54.26/24 brd 10.217.54.255 scope global secondary bond3:12
+    inet 10.217.54.63/24 brd 10.217.54.255 scope global secondary bond3:13
+    inet 10.217.54.41/24 brd 10.217.54.255 scope global secondary bond3:15
+    inet 10.217.54.181/24 brd 10.217.54.255 scope global secondary bond3:16
+    inet 10.217.54.193/24 brd 10.217.54.255 scope global secondary bond3:17
+[root@ds-db-dev ~]#
+
+[root@ds-db-dev ~]# vim -o /etc/sysconfig/network-scripts/ifcfg-bond3:{17,18}
+
+[root@ds-db-dev ~]# cat /etc/sysconfig/network-scripts/ifcfg-bond3:18
+DEVICE=bond3:18
+IPADDR=10.217.54.80
+NETMASK=255.255.255.0
+USERCTL=no
+BOOTPROTO=none
+ONBOOT=yes
+MTU=1500
+NOZEROCONF=yes
+[root@ds-db-dev ~]#
+
+
+[root@ds-db-dev ~]# ifup bond3:18
+Determining if ip address 10.217.54.80 is already in use for device bond3...
+[root@ds-db-dev ~]#
+
+[root@ds-db-dev ~]# ip -f inet addr | awk '/10.217.54.80/{print}'
+    inet 10.217.54.80/24 brd 10.217.54.255 scope global secondary bond3:18
+[root@ds-db-dev ~]#
+
+#   Here we can see - for our fresh-added ip-addres alread exists rule and it apply for subnet.
+#   This mean there is no need to add something here and no need to run command.
+[root@ds-db-dev ~]# vim /etc/rc.local
+...
+/sbin/ip rule add from 10.217.54.0/24 table 104
+...
+
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-db01-prod
+Last login: Thu Dec 22 14:49:12 2016 from 172.16.28.74
+[bsv@m1-db01-prod ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# ip -f inet addr | awk '/10.217.50./{print}'
+    inet 10.217.50.22/24 brd 10.217.50.255 scope global bond0
+    inet 10.217.50.176/24 brd 10.217.50.255 scope global secondary bond0:0
+    inet 10.217.50.110/24 brd 10.217.50.255 scope global secondary bond0:1
+    inet 10.217.50.144/24 brd 10.217.50.255 scope global secondary bond0:2
+    inet 10.217.50.44/24 brd 10.217.50.255 scope global secondary bond0:3
+    inet 10.217.50.67/24 brd 10.217.50.255 scope global secondary bond0:4
+    inet 10.217.50.104/24 brd 10.217.50.255 scope global secondary bond0:7
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# cat /etc/sysconfig/network-scripts/ifcfg-bond0:{4,7}
+cat: /etc/sysconfig/network-scripts/ifcfg-bond0:4: No such file or directory
+cat: /etc/sysconfig/network-scripts/ifcfg-bond0:7: No such file or directory
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# cat /etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE="bond0"
+BOOTPROTO="none"
+ONBOOT="yes"
+NETWORK="10.217.50.0"
+IPADDR="10.217.50.22"
+NETMASK="255.255.255.0"
+GATEWAY="10.217.50.254"
+USERCTL="no"
+MTU=1500
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# history | less
+...
+   15  ifconfig bond0:2 10.217.50.110 netmask 255.255.255.0 up && arping -I bond0 -s 10.217.50.110 10.217.50.254
+...
+   85  ifconfig bond0:0 10.217.50.44 netmask 255.255.255.0 up
+...
+
+[root@m1-db01-prod ~]# ifconfig bond0:8 10.217.50.196 netmask 255.255.255.0 up && arping -I bond0 -s 10.217.50.196 10.217.50.254
+ARPING 10.217.50.254 from 10.217.50.196 bond0
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.439ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.077ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.341ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.097ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.366ms
+^CSent 5 probes (1 broadcast(s))
+Received 5 response(s)
+[root@m1-db01-prod ~]# ip -f inet addr | awk '/10.217.50.196/{print}'
+    inet 10.217.50.196/24 brd 10.217.50.255 scope global secondary bond0:8
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# ifconfig bond0:9 10.217.50.197 netmask 255.255.255.0 up && arping -c 3 -I bond0 -s 10.217.50.197 10.217.50.254 ; ip -f inet addr | awk '/10.217.50.197/{print}'
+ARPING 10.217.50.254 from 10.217.50.197 bond0
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.219ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.109ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.113ms
+Sent 3 probes (1 broadcast(s))
+Received 3 response(s)
+    inet 10.217.50.197/24 brd 10.217.50.255 scope global secondary bond0:9
+[root@m1-db01-prod ~]#
+
+
+[root@m1-db01-prod ~]# ifconfig bond0:10 10.217.50.198 netmask 255.255.255.0 up && arping -I bond0 -s 10.217.50.198 10.217.50.254 ; ip -f inet addr | awk '/10.217.50.198/{print}'
+ARPING 10.217.50.254 from 10.217.50.198 bond0
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.206ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.134ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.106ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  1.117ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  3.997ms
+^CSent 5 probes (1 broadcast(s))
+Received 5 response(s)
+    inet 10.217.50.198/24 brd 10.217.50.255 scope global secondary bond0:10
+[root@m1-db01-prod ~]#
+
+[root@m1-db01-prod ~]# ip -f inet addr | awk '/10.217.50./{print}'
+    inet 10.217.50.22/24 brd 10.217.50.255 scope global bond0
+    inet 10.217.50.176/24 brd 10.217.50.255 scope global secondary bond0:0
+    inet 10.217.50.110/24 brd 10.217.50.255 scope global secondary bond0:1
+    inet 10.217.50.144/24 brd 10.217.50.255 scope global secondary bond0:2
+    inet 10.217.50.44/24 brd 10.217.50.255 scope global secondary bond0:3
+    inet 10.217.50.67/24 brd 10.217.50.255 scope global secondary bond0:4
+    inet 10.217.50.104/24 brd 10.217.50.255 scope global secondary bond0:7
+    inet 10.217.50.196/24 brd 10.217.50.255 scope global secondary bond0:8
+    inet 10.217.50.197/24 brd 10.217.50.255 scope global secondary bond0:9
+    inet 10.217.50.198/24 brd 10.217.50.255 scope global secondary bond0:10
+[root@m1-db01-prod ~]#
+
+................................................................................
+................................................................................
+
+#   This command need to run on m1-db01-prod.
+ifconfig bond0:10 10.217.50.198 netmask 255.255.255.0 down
+
+[root@m1-db01-prod ~]# ifconfig bond0:10 10.217.50.198 netmask 255.255.255.0 down
+[root@m1-db01-prod ~]# ip -f inet addr | awk '/10.217.50.198/{print}'
+[root@m1-db01-prod ~]#
+
+
+[root@ds-db01-stb ~]# vim -o /etc/sysconfig/network-scripts/ifcfg-bond0:{0,1}
+
+[root@ds-db01-stb ~]# cat /etc/sysconfig/network-scripts/ifcfg-bond0:1
+DEVICE="bond0:1"
+BOOTPROTO="none"
+ONBOOT="yes"
+NETWORK="10.217.50.0"
+IPADDR="10.217.50.198"
+NETMASK="255.255.255.0"
+USERCTL="no"
+[root@ds-db01-stb ~]#
+
+[root@ds-db01-stb ~]# ip -f inet addr | grep "10.217.50.198"
+[root@ds-db01-stb ~]# ifup bond0:1
+[root@ds-db01-stb ~]# ip -f inet addr | grep "10.217.50.198"
+    inet 10.217.50.198/24 brd 10.217.50.255 scope global secondary bond0:1
+[root@ds-db01-stb ~]#
+
+#
+#   There is no need to add string into /etc/rc.local or run route command from command line.
+#   Here we can see - the main ip-address of bond0 interface belongs to 10.217.50.0 network, that
+#   network we use our ip-address.
+#
+[root@ds-db01-stb ~]# ip route list
+10.217.76.0/24 dev bond1  proto kernel  scope link  src 10.217.76.24
+10.217.50.0/24 dev bond0  proto kernel  scope link  src 10.217.50.23
+169.254.0.0/16 dev eth2  scope link  metric 1004
+169.254.0.0/16 dev eth3  scope link  metric 1005
+169.254.0.0/16 dev bond0  scope link  metric 1010
+169.254.0.0/16 dev bond1  scope link  metric 1013
+default via 10.217.50.254 dev bond0
+[root@ds-db01-stb ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+10: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.217.50.23/24 brd 10.217.50.255 scope global bond0
+    inet 10.217.50.154/24 brd 10.217.50.255 scope global secondary bond0:0
+    inet 10.217.50.198/24 brd 10.217.50.255 scope global secondary bond0:1
+13: bond1: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP
+    inet 10.217.76.24/24 brd 10.217.76.255 scope global bond1
+[root@ds-db01-stb ~]#
+
+[root@ds-db01-stb ~]# arping -c 3 -I bond0 -s 10.217.50.198 10.217.50.254
+ARPING 10.217.50.254 from 10.217.50.198 bond0
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  0.908ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  0.904ms
+Unicast reply from 10.217.50.254 [00:00:5E:00:01:32]  0.908ms
+Sent 3 probes (1 broadcast(s))
+Received 3 response(s)
+[root@ds-db01-stb ~]#
+
+................................................................................
+................................................................................
+
+#   Here is some useful link. Useful for common purposes.
+#   https://wiki.tcsbank.ru/pages/viewpage.action?pageId=5818476
+
+#   The first of all I've changed the first two lines of script.
+#   This lines defines who of two servers will be primary (where the base is).
+#   As Aleksandrov said.
+
+#   Check is this resourses are equal to same resources described in our script.
+#   In our case I've changed "_ds" suffix to "_m1" suffix, as Aleksandrov said me.
+[root@m1-db01-prod ~]# mount | egrep "SSO"
+db-sso-prod-nfs:/SSO_prod_arch_m1 on /oramnt/SSO_prod_arch type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp,addr=10.217.64.229)
+db-sso-prod-nfs:/SSO_prod_di_m1 on /oramnt/SSO_prod_di type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp,addr=10.217.64.229)
+db-sso-prod-nfs:/SSO_prod_ru_m1 on /oramnt/SSO_prod_ru type nfs (rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp,addr=10.217.64.229)
+[root@m1-db01-prod ~]#
+
+
+#   Then I asked Varakuta about path to Oracle Home directory.
+#   And Varacuta answer me right path.
+#   I've changed my script again.
+
+[root@m1-db01-prod ~]# mkdir -p ~/work/20161226-1759
+
+[root@m1-db01-prod 20161226-1759]# cat main.script.1.sh
+#!/bin/bash
+
+confirmation() {
+while read -p "Continue process script [y/N]: " var_confirm ; do if [ "${var_confirm}" = "y" -o "${var_confirm}" = "Y" ] ; then return ; else if [ "${var_confirm}" = "n" -o "${var_confirm}" = "N" ] ; then exit 1 ; fi ; fi ; done
+}
+
+hagrp -add OraSSO
+
+echo "Next block is #1"
+confirmation
+
+hagrp -modify OraSSO SystemList  m1-db01-prod 0 ds-db01-prod 1
+hagrp -modify OraSSO AutoStartList  m1-db01-prod ds-db01-prod
+hagrp -modify OraSSO TriggersEnabled  POSTONLINE -sys ds-db01-prod
+hagrp -modify OraSSO TriggersEnabled  POSTONLINE -sys m1-db01-prod
+
+echo "Next block is #2"
+confirmation
+
+hares -add ip-SSO-prod IP OraSSO
+hares -modify ip-SSO-prod Device bond0
+hares -modify ip-SSO-prod Address "10.217.50.196"
+hares -modify ip-SSO-prod NetMask "255.255.255.0"
+hares -modify ip-SSO-prod Critical 0
+hares -modify ip-SSO-prod Enabled 1
+
+echo "Next block is #3"
+confirmation
+
+hares -add ip-SSO-prod-dg IP OraSSO
+hares -modify ip-SSO-prod-dg Device bond0
+hares -modify ip-SSO-prod-dg Address "10.217.50.197"
+hares -modify ip-SSO-prod-dg NetMask "255.255.255.0"
+hares -modify ip-SSO-prod-dg Critical 0
+hares -modify ip-SSO-prod-dg Enabled 1
+
+echo "Next block is #4"
+confirmation
+
+hares -add mnt-SSO-arch Mount OraSSO
+hares -modify mnt-SSO-arch MountPoint "/oramnt/SSO_prod_arch"
+hares -modify mnt-SSO-arch BlockDevice "db-SSO-prod-nfs:/SSO_prod_arch_m1"
+hares -modify mnt-SSO-arch FSType nfs
+hares -modify mnt-SSO-arch MountOpt "rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+hares -modify mnt-SSO-arch Critical 0
+hares -modify mnt-SSO-arch Enabled 1
+
+echo "Next block is #5"
+confirmation
+
+hares -add mnt-SSO-di Mount OraSSO
+hares -modify mnt-SSO-di MountPoint "/oramnt/SSO_prod_di"
+hares -modify mnt-SSO-di BlockDevice "db-SSO-prod-nfs:/SSO_prod_di_m1"
+hares -modify mnt-SSO-di FSType nfs
+hares -modify mnt-SSO-di MountOpt "rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+hares -modify mnt-SSO-di Critical 0
+hares -modify mnt-SSO-di Enabled 1
+
+echo "Next block is #6"
+confirmation
+
+hares -add mnt-SSO-ru Mount OraSSO
+hares -modify mnt-SSO-ru MountPoint "/oramnt/SSO_prod_ru"
+hares -modify mnt-SSO-ru BlockDevice "db-SSO-prod-nfs:/SSO_prod_ru_m1"
+hares -modify mnt-SSO-ru FSType nfs
+hares -modify mnt-SSO-ru MountOpt "rw,bg,hard,vers=3,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+hares -modify mnt-SSO-ru Critical 0
+hares -modify mnt-SSO-ru Enabled 1
+
+echo "Next block is #7"
+confirmation
+
+hares -add lsnr-SSO Netlsnr OraSSO
+hares -modify lsnr-SSO Owner oracle
+hares -modify lsnr-SSO Home "/opt/oracle/products/12.1.0.2.160419/"
+hares -modify lsnr-SSO TnsAdmin "/opt/oracle/products/12.1.0.2.160419/network/admin/"
+hares -modify lsnr-SSO Listener SSO_prod_1522
+hares -modify lsnr-SSO EnvFile "/opt/oracle/SSO_dbsetenv"
+hares -modify lsnr-SSO Critical 0
+hares -modify lsnr-SSO Enabled 1
+
+echo "Next block is #8"
+confirmation
+
+hares -add lsnr-SSO-dg Netlsnr OraSSO
+hares -modify lsnr-SSO-dg Owner oracle
+hares -modify lsnr-SSO-dg Home "/opt/oracle/products/12.1.0.2.160419/"
+hares -modify lsnr-SSO-dg TnsAdmin "/opt/oracle/products/12.1.0.2.160419/network/admin/"
+hares -modify lsnr-SSO-dg Listener SSO_prod_dg_1522
+hares -modify lsnr-SSO-dg EnvFile "/opt/oracle/SSO_dbsetenv"
+hares -modify lsnr-SSO-dg Critical 0
+hares -modify lsnr-SSO-dg Enabled 1
+
+echo "Next block is #9"
+confirmation
+
+hares -add ora-SSO Oracle OraSSO
+hares -modify ora-SSO Sid SSO
+hares -modify ora-SSO Owner oracle
+hares -modify ora-SSO Home "/opt/oracle/products/12.1.0.2.160419/"
+hares -modify ora-SSO Pfile "/opt/oracle/products/12.1.0.2.160419/dbs/initSSO.ora"
+hares -modify ora-SSO EnvFile "/opt/oracle/SSO_dbsetenv"
+hares -modify ora-SSO Critical 0
+hares -modify ora-SSO Enabled 1
+
+echo "Next block is #10"
+confirmation
+
+hares -add nic-SSO Proxy OraSSO
+hares -modify nic-SSO TargetResName csgnic
+hares -modify nic-SSO Enabled 1
+[root@m1-db01-prod 20161226-1759]#
+
+
+[root@m1-db01-prod 20161226-1759]# cat main.script.2.sh
+hares -link ip-SSO-prod nic-SSO
+hares -link ip-SSO-prod-dg nic-SSO
+hares -link lsnr-SSO ip-SSO-prod
+hares -link lsnr-SSO ora-SSO
+hares -link lsnr-SSO-dg ip-SSO-prod-dg
+hares -link lsnr-SSO-dg ora-SSO
+hares -link mnt-SSO-arch nic-SSO
+hares -link mnt-SSO-di nic-SSO
+hares -link mnt-SSO-ru nic-SSO
+hares -link ora-SSO mnt-SSO-arch
+hares -link ora-SSO mnt-SSO-di
+hares -link ora-SSO mnt-SSO-ru
+
+[root@m1-db01-prod 20161226-1759]#
+
+[root@m1-db01-prod 20161226-1759]# cat main.script.3.sh
+hares -modify ip-SSO-prod Critical 1
+hares -modify ip-SSO-prod-dg Critical 1
+hares -modify mnt-SSO-arch Critical 1
+hares -modify mnt-SSO-di Critical 1
+hares -modify mnt-SSO-ru Critical 1
+hares -modify lsnr-SSO Critical 1
+hares -modify lsnr-SSO-dg Critical 1
+hares -modify ora-SSO Critical 1
+[root@m1-db01-prod 20161226-1759]#
+
+
+[root@m1-db01-prod 20161226-1759]# ll total 16
+drwxr-xr-x 2 root root 4096 Dec 26 19:08 archives
+-rw-r--r-- 1 root root 3880 Dec 26 19:08 main.script.1.sh
+-rw-r--r-- 1 root root  391 Dec 26 18:22 main.script.2.sh
+-rw-r--r-- 1 root root  291 Dec 26 18:26 main.script.3.sh
+[root@m1-db01-prod 20161226-1759]# chmod u+x main.script.*.sh
+[root@m1-db01-prod 20161226-1759]# ll
+total 16
+drwxr-xr-x 2 root root 4096 Dec 26 19:08 archives
+-rwxr--r-- 1 root root 3880 Dec 26 19:08 main.script.1.sh
+-rwxr--r-- 1 root root  391 Dec 26 18:22 main.script.2.sh
+-rwxr--r-- 1 root root  291 Dec 26 18:26 main.script.3.sh
+[root@m1-db01-prod 20161226-1759]#
+
+................................................................................
+
+#   Make "Freeze" for all four bases.
+
+haconf -makerw
+
+#   Run scripts.
+
+haconf -dump -makero
+
+................................................................................
+
+[root@m1-db01-prod 20161226-1759]# haconf -makerw
+VCS WARNING V-16-1-10364 Cluster already writable.
+[root@m1-db01-prod 20161226-1759]# ./main.script.1.sh
+VCS NOTICE V-16-1-10136 Group added; populating SystemList and setting the Parallel attribute recommended before adding resources
+Next block is #1
+Continue process script [y/N]: y
+VCS WARNING V-16-1-10573 Scope (global/local) is wrong
+VCS WARNING V-16-1-10573 Scope (global/local) is wrong
+Next block is #2
+Continue process script [y/N]:  y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #3
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #4
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #5
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #6
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #7
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #8
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #9
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+Next block is #10
+Continue process script [y/N]: y
+VCS NOTICE V-16-1-10242 Resource added. Enabled attribute must be set before agent monitors
+[root@m1-db01-prod 20161226-1759]#
+
+[root@m1-db01-prod 20161226-1759]# ./main.script.2.sh
+[root@m1-db01-prod 20161226-1759]# ./main.script.3.sh
+[root@m1-db01-prod 20161226-1759]#
+
+[root@m1-db01-prod 20161226-1759]# haconf -dump -makero
+
+................................................................................
+
+#   After all script was applied mount point still have red "ask" sign.
+#   During resolving this question were found several mistakes.
+
+#   1. On the second server ds-db01-prod was absent directories for mount nfs resources.
+#   I've created it.
+[root@ds-db01-prod ~]# mkdir -p /oramnt/SSO_prod_arch /oramnt/SSO_prod_di /oramnt/SSO_prod_ru
+[root@ds-db01-prod ~]# ls -Alhd /oramnt/*SSO*
+drwxr-xr-x 2 root root 4.0K Dec 26 23:30 /oramnt/SSO_prod_arch
+drwxr-xr-x 2 root root 4.0K Dec 26 23:30 /oramnt/SSO_prod_di
+drwxr-xr-x 2 root root 4.0K Dec 26 23:30 /oramnt/SSO_prod_ru
+[root@ds-db01-prod ~]# chown oracle:dba /oramnt/SSO_prod_arch /oramnt/SSO_prod_di /oramnt/SSO_prod_ru
+[root@ds-db01-prod ~]# ls -Alhd /oramnt/*SSO*
+drwxr-xr-x 2 oracle dba 4.0K Dec 26 23:30 /oramnt/SSO_prod_arch
+drwxr-xr-x 2 oracle dba 4.0K Dec 26 23:30 /oramnt/SSO_prod_di
+drwxr-xr-x 2 oracle dba 4.0K Dec 26 23:30 /oramnt/SSO_prod_ru
+[root@ds-db01-prod ~]#
+
+#   2. On server m1-db01-prod were exist three rows in /etc/fstab about mounting nfs-resources.
+#   These tree rows should be commented out or even removed.
+
+[root@m1-db01-prod 20161226-1759]# grep SSO /etc/fstab
+db-sso-prod-nfs:/SSO_prod_di_m1              /oramnt/SSO_prod_di              nfs     rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp     0       0
+db-sso-prod-nfs:/SSO_prod_ru_m1              /oramnt/SSO_prod_ru              nfs     rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp     0       0
+db-sso-prod-nfs:/SSO_prod_arch_m1            /oramnt/SSO_prod_arch            nfs     rw,bg,hard,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,nointr,timeo=600,tcp     0       0
+[root@m1-db01-prod 20161226-1759]#
+
+[root@m1-db01-prod 20161226-1759]# grep SSO /etc/fstab | awk '/sso/{print $1}'
+#db-sso-prod-nfs:/SSO_prod_di_m1
+#db-sso-prod-nfs:/SSO_prod_ru_m1
+#db-sso-prod-nfs:/SSO_prod_arch_m1
+[root@m1-db01-prod 20161226-1759]#
+
+
+#
+#   3. After issue was resolved. Varakuta was useful. He stoped the SSO base.
+#
+#   Then I was umount nfs-resources and veritas start working as it should.
+#   The difficult was appeared by follow reasons:
+#   Алексей Валерьевич Александров, [27.12.16 00:03]
+#   В кластере прописано так
+#   db-SSO-prod-nfs:/SSO_prod_arch_m1
+#
+#   Алексей Валерьевич Александров, [27.12.16 00:03]
+#   А смонтировано было так
+#   db-sso-prod-nfs:/SSO_prod_arch_m1
+
+
+................................................................................
+
+
+#
+#   Three notification from nagios were received when work started (when I freezed four bases, I think).
+#
+
+-----Original Message-----
+From: nagios@nagios.tinkoff.ru [mailto:nagios@nagios.tinkoff.ru]
+Sent: Monday, December 26, 2016 11:07 PM
+To: Belogrud Sergey Vladimirovich
+Subject: ** PROBLEM Service Alert: m1-db01-prod/TRAP is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: TRAP
+Host: m1-db01-prod
+Address: 10.217.50.22
+State: CRITICAL
+
+Date/Time: Mon Dec 26 23:06:41 MSK 2016
+
+Additional Info:
+
+The Resource state could not be determined 1 Mon 26 Dec 2016 11:06:41 PM MSK mnt-SSO-arch Resource Mount Resource state is unknown Veritas_Cluster_Server m1-db01-prod OraSSO Service Group
+
+Instruction and description:
+https://wiki.tcsbank.ru/display/sd/m1-db01-prod@TRAP
+
+
+
+-----Original Message-----
+From: nagios@nagios.tinkoff.ru [mailto:nagios@nagios.tinkoff.ru]
+Sent: Monday, December 26, 2016 11:07 PM
+To: Belogrud Sergey Vladimirovich
+Subject: ** PROBLEM Service Alert: m1-db01-prod/TRAP is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: TRAP
+Host: m1-db01-prod
+Address: 10.217.50.22
+State: CRITICAL
+
+Date/Time: Mon Dec 26 23:06:56 MSK 2016
+
+Additional Info:
+
+The Resource state could not be determined 1 Mon 26 Dec 2016 11:06:55 PM MSK mnt-SSO-di Resource Mount Resource state is unknown Veritas_Cluster_Server m1-db01-prod OraSSO Service Group
+
+Instruction and description:
+https://wiki.tcsbank.ru/display/sd/m1-db01-prod@TRAP
+
+
+................................................................................
+................................................................................
+
+#
+#   Here is examples of task in Jira, that relates with this theme.
+#   One was made by Aleksandrov. One was made by me.
+#
+https://jira.tcsbank.ru/browse/ITP-1656
+https://jira.tcsbank.ru/browse/ITP-1479
+
+................................................................................
+................................................................................
+
+#
+#   Here is some useful info about veritas cluster.
+#
+https://wiki.tcsbank.ru/pages/viewpage.action?pageId=5818476
+
+
+................................................................................
+................................................................................
+
+
+

@@ -1,0 +1,191 @@
+
+
+
+
+
+
+
+
+Параметры запроса
+[редактировать критичность]
+Номер	490441
+Название	№490441
+Приоритет	Низкий
+Класс обслуживания	9x5
+Дата и время обращения	08.06.2015 18:49
+Дата регистрации	08.06.2015 18:49
+Тип запроса	Nagios запрос
+Категория	
+Критичность	4 - 500-1000 клиентов
+Срочность	Высокая
+Описание запроса
+** PROBLEM Service Alert: localhost/ntp01-06 offset diff is CRITICAL ** 
+
+***** Nagios ***** 
+
+Notification Type: PROBLEM 
+
+Service: ntp01-06 offset diff 
+Host: localhost 
+Address: 127.0.0.1 
+State: CRITICAL 
+
+Date/Time: Mon Jun 8 18:49:02 MSK 2015 
+
+Additional Info: 
+
+ERROR. minimal offset = -0.077237, maximal offset = 0.024612, delta = .101849
+Текущее состояние	Принят на обработку
+Автор	system
+Ответственный за запрос	unix-admins
+Кем решен	
+Кем закрыт	
+Массовая проблема	нет
+Количество задач (активных/всего)	0 / 0
+Количество файлов	0
+Дополнительные атрибуты
+[редактировать атрибуты]
+Название	Значение
+Краткое описание	"** PROBLEM Service Alert: localhost/ntp01-06 offset diff is CRITICAL **"
+Категория инициатора	Мониторинг (алерт)
+Приоритет	Низкий
+Способ обращения	Nagios
+Основная задача в JIRA	 
+
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО	Служебный Сотрудник
+Соглашение	Базовое соглашение
+Сервис	Программное обеспечение
+Контактное лицо	Служебный Сотрудник
+Контактный e-mail	-
+Контактные телефоны	123456
+
+
+................................................................................
+................................................................................
+
+
+
+Это проверка в nagios, которая выполняется на хосте localhost (на самом сервере, где работает nagios).
+
+Проверка определяет разброс значений смещений времени (offset) на шести ntp-серверах ntp01 ... ntp06. Если эта дельта больше 0.1, то сигнализируется ERROR.
+Как я понимаю, в большинстве случаев ERROR означает, что время на каком-то ntp-сервере спешит или отстаёт по сравнению с остальными ntp-серверами, что может быть причиной неполадки на этом ntp-сервере.
+
+В выводе команды здесь видно, что минимальный offset равен -0.079844, а максимальный равен  0.029118. Разность (по модулю) этих значений равна  .108962, что превышает допустимую величину равную 0.1.
+[root@vm-vol-nag3 ~]# /usr/lib64/nagios/plugins/check_ntpdiff.sh
+ERROR. minimal offset = -0.079844, maximal offset = 0.029118, delta = .108962 | delta=.108962
+
+
+Детальная проверка показывает, что время на ntp-сервере ntp05 имеет заметное отличие по offset по сравнению с другими серверами.
+
+[root@vm-vol-nag3 ~]# ntp01off=`ntpdate -qs ntp01 |cut -d , -f 3 |awk '{print $2}'` ; ntp02off=`ntpdate -qs ntp02 |cut -d , -f 3 |awk '{print $2}'` ; ntp03off=`ntpdate -qs ntp03 |cut -d , -f 3 |awk '{print $2}'` ; ntp04off=`ntpdate -qs ntp04 |cut -d , -f 3 |awk '{print $2}'` ; ntp05off=`ntpdate -qs ntp05 |cut -d , -f 3 |awk '{print $2}'` ; ntp06off=`ntpdate -qs ntp06 |cut -d , -f 3 |awk '{print $2}'` ; echo -e "ntp01 offset = ${ntp01off}\nntpo2 offset = ${ntp02off}\nntp03 offset = ${ntp03off}\nntp04 offset = ${ntp04off}\nntp05 offset = ${ntp05off}\nntp06 offset = ${ntp06off}"
+ntp01 offset = -0.005250
+ntpo2 offset = -0.000404
+ntp03 offset = -0.079835
+ntp04 offset = -0.000026
+ntp05 offset = 0.028961
+ntp06 offset = -0.009912
+
+
+Поэтому предлагается проверить всё-ли в порядке с ntp-сервером ntp05.
+
+
+................................................................................
+................................................................................
+
+
+
+
+
+
+
+[root@vm-vol-nag3 ~]# ntp01off=`ntpdate -qs ntp01 |cut -d , -f 3 |awk '{print $2}'` ; ntp02off=`ntpdate -qs ntp02 |cut -d , -f 3 |awk '{print $2}'` ; ntp03off=`ntpdate -qs ntp03 |cut -d , -f 3 |awk '{print $2}'` ; ntp04off=`ntpdate -qs ntp04 |cut -d , -f 3 |awk '{print $2}'` ; ntp05off=`ntpdate -qs ntp05 |cut -d , -f 3 |awk '{print $2}'` ; ntp06off=`ntpdate -qs ntp06 |cut -d , -f 3 |awk '{print $2}'` ; echo -e "ntp01off=${ntp01off}\nntpo2off=${ntp02off}\nntp03off=${ntp03off}\nntp04off=${ntp04off}\nntp05off=${ntp05off}\nntp06off=${ntp06off}"
+ntp01off=-0.004360
+ntpo2off=-0.000795
+ntp03off=-0.080289
+ntp04off=0.000074
+ntp05off=0.028331
+ntp06off=-0.009901
+[root@vm-vol-nag3 ~]#
+
+
+
+[root@vm-vol-nag3 ~]# host ntp05
+ntp05.tcsbank.ru is an alias for ds-mx01.tcsbank.ru.
+ds-mx01.tcsbank.ru is an alias for ds-mx01-lo0-0.tcsbank.ru.
+ds-mx01-lo0-0.tcsbank.ru has address 10.219.12.8
+[root@vm-vol-nag3 ~]#
+
+
+
+[root@vm-vol-nag3 ~]# searchcfg localhost
+
+[root@vm-vol-nag3 ~]# less /etc/nagios/objects/commands.cfg
+
+[root@vm-vol-nag3 ~]# which check_ntpdiff.sh
+
+[root@vm-vol-nag3 ~]# vim /usr/lib64/nagios/plugins/check_ntpdiff.sh
+
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий	Автор
+08.06.2015 20:03	Это проверка в nagios, которая выполняется на хосте localhost (на самом сервере, где работает nagios). 
+
+Проверка определяет разброс значений смещений времени (offset) на шести ntp-серверах ntp01 ... ntp06. Если эта дельта больше 0.1, то сигнализируется ERROR. 
+Как я понимаю, в большинстве случаев ERROR означает, что время на каком-то ntp-сервере спешит или отстаёт по сравнению с остальными ntp-серверами, что может быть причиной неполадки на этом ntp-сервере. 
+
+В выводе команды здесь видно, что минимальный offset равен -0.079844, а максимальный равен 0.029118. Разность (по модулю) этих значений равна .108962, что превышает допустимую величину равную 0.1. 
+[root@vm-vol-nag3 ~]# /usr/lib64/nagios/plugins/check_ntpdiff.sh 
+ERROR. minimal offset = -0.079844, maximal offset = 0.029118, delta = .108962 | delta=.108962 
+
+
+Детальная проверка показывает, что время на ntp-сервере ntp05 имеет заметное отличие по offset по сравнению с другими серверами. 
+
+[root@vm-vol-nag3 ~]# ntp01off=`ntpdate -qs ntp01 |cut -d , -f 3 |awk '{print $2}'` ; ntp02off=`ntpdate -qs ntp02 |cut -d , -f 3 |awk '{print $2}'` ; ntp03off=`ntpdate -qs ntp03 |cut -d , -f 3 |awk '{print $2}'` ; ntp04off=`ntpdate -qs ntp04 |cut -d , -f 3 |awk '{print $2}'` ; ntp05off=`ntpdate -qs ntp05 |cut -d , -f 3 |awk '{print $2}'` ; ntp06off=`ntpdate -qs ntp06 |cut -d , -f 3 |awk '{print $2}'` ; echo -e "ntp01 offset = ${ntp01off}\nntpo2 offset = ${ntp02off}\nntp03 offset = ${ntp03off}\nntp04 offset = ${ntp04off}\nntp05 offset = ${ntp05off}\nntp06 offset = ${ntp06off}" 
+ntp01 offset = -0.005250 
+ntpo2 offset = -0.000404 
+ntp03 offset = -0.079835 
+ntp04 offset = -0.000026 
+ntp05 offset = 0.028961 
+ntp06 offset = -0.009912 
+
+
+Поэтому предлагается проверить всё-ли в порядке с ntp-сервером ntp05. 
+Белогруд Сергей В
+08.06.2015 19:17	Это означает, что дельта минимального и максимального offset между системным временем на сервере Nagios и временем, которое отдают NTP больше 0.1с.	Шинкарев Аркадий
+08.06.2015 19:02	коллеги, поясните, что это ?	Буковня Сергей
+
+................................................................................
+................................................................................
+
+
+Дата
+Комментарий	Автор
+08.06.2015 20:15	Блин, пока всё написал, все проверки в nagios позеленели... 
+
+Оставляю на Ваше усмотрение - смотреть или нет на корректность работы ntp-сервера ntp05. 
+
+[root@vm-vol-nag3 ~]# /usr/lib64/nagios/plugins/check_ntpdiff.sh 
+OK. minimal offset = -0.051799, maximal offset = 0.030625, delta = .082424 | delta=.082424 
+
+[root@vm-vol-nag3 ~]# ntp01off=`ntpdate -qs ntp01 |cut -d , -f 3 |awk '{print $2}'` ; ntp02off=`ntpdate -qs ntp02 |cut -d , -f 3 |awk '{print $2}'` ; ntp03off=`ntpdate -qs ntp03 |cut -d , -f 3 |awk '{print $2}'` ; ntp04off=`ntpdate -qs ntp04 |cut -d , -f 3 |awk '{print $2}'` ; ntp05off=`ntpdate -qs ntp05 |cut -d , -f 3 |awk '{print $2}'` ; ntp06off=`ntpdate -qs ntp06 |cut -d , -f 3 |awk '{print $2}'` ; echo -e "ntp01 offset = ${ntp01off}\nntpo2 offset = ${ntp02off}\nntp03 offset = ${ntp03off}\nntp04 offset = ${ntp04off}\nntp05 offset = ${ntp05off}\nntp06 offset = ${ntp06off}" 
+ntp01 offset = -0.012128 
+ntpo2 offset = 0.000832 
+ntp03 offset = -0.051484 
+ntp04 offset = -0.000129 
+ntp05 offset = 0.030620 
+ntp06 offset = -0.010793 
+[root@vm-vol-nag3 ~]#	Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+
+
+
+

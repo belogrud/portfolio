@@ -1,0 +1,58 @@
+
+................................................................................
+
+Изменения
+Назначил    Баландин Алексей Валерьевич
+Ответственный
+Группа  unix-admins
+Информация по запросу
+Номер запроса   349089
+
+Номер запроса в старом SD
+Дата регистрации    20.04.2017 15:27:48
+Инициатор   [Сотрудник не найден]
+Тип запроса Инцидент
+Критичность Средняя
+Краткое описание    ** PROBLEM Service Alert: vm-bpm-tst03/NTP is CRITICAL **
+Описание запроса    ***** Nagios ***** Notification Type: PROBLEM Service: NTP Host: vm-bpm-tst03 Address: 10.216.33.4 State: CRITICAL Date/Time: Thu Apr 20 15:26:23 MSK 2017 Additional Info: NTP CRITICAL: Offset 4.969042301 secs Instruction and description: https://wiki.tcsbank.ru/display/sd/@NTP
+
+................................................................................
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@vm-bpm-tst03
+Last login: Thu Feb 18 12:31:57 2016 from 172.16.28.74
+[bsv@vm-bpm-tst03 ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-bpm-tst03 ~]# ntpq -nc pe
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
+*172.20.16.192   91.194.227.33    3 u  786 1024  377    1.819  5116.95 104.219
+ 172.20.16.193   91.194.227.33    3 u 1023 1024  377    1.683  5094.74 1926.23
+ 172.20.16.194   91.194.227.33    3 u  223 1024  377    1.624  5139.74 107.316
+ 172.20.16.197   91.194.227.33    3 u  999 1024  377    1.796  5093.11 1926.20
+ 10.219.12.18    .STEP.          16 u    - 1024    0    0.000    0.000   0.000
+ 10.219.12.19    .STEP.          16 u    - 1024    0    0.000    0.000   0.000
+[root@vm-bpm-tst03 ~]# service ntpd status
+ntpd (pid  6224) is running...
+[root@vm-bpm-tst03 ~]# service stop status
+stop: unrecognized service
+[root@vm-bpm-tst03 ~]# service ntpd stop
+Shutting down ntpd:                                        [  OK  ]
+[root@vm-bpm-tst03 ~]# ntpdate 172.20.16.192
+20 Apr 17:35:18 ntpdate[6668]: step time server 172.20.16.192 offset 5.135023 sec
+[root@vm-bpm-tst03 ~]# ntpdate 172.20.16.192
+20 Apr 17:35:54 ntpdate[6713]: adjust time server 172.20.16.192 offset 0.000790 sec
+[root@vm-bpm-tst03 ~]# service ntpd start
+Starting ntpd:                                             [  OK  ]
+[root@vm-bpm-tst03 ~]# ntpq -nc pe
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
+-172.20.16.192   91.194.227.33    3 u    9   64    1    1.413   -0.162   0.000
++172.20.16.193   91.194.227.33    3 u    8   64    1    2.132    7.514   0.000
+*172.20.16.194   91.194.227.33    3 u    7   64    1    1.743   10.761   0.000
++172.20.16.197   91.194.227.33    3 u    6   64    1    1.765    6.164   0.000
+ 10.219.12.18    .INIT.          16 u    -   64    0    0.000    0.000   0.000
+ 10.219.12.19    .INIT.          16 u    -   64    0    0.000    0.000   0.000
+[root@vm-bpm-tst03 ~]#
+
+

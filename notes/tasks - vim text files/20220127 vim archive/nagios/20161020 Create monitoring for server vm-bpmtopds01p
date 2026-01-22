@@ -1,0 +1,181 @@
+
+
+................................................................................
+
+
+Тема
+
+Выделение ресурса на новую интеграцию BPM и PDS
+Номер
+
+53434
+Описан
+
+Бегизардов Павел Павлович
+ВМ создал:
+vm-bpmtopds01p / 10.216.32.15
+@unix-admins
+ - добавить в Nagios
+@net-admins
+ - открыть правила на МСЭ
+Вчера в 17:03
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# find . -name vm-bpm*
+./servers/bpm/vm-bpm-app05.cfg
+./servers/bpm/vm-bpm-app06.cfg
+./servers/bpm/vm-bpm-app07.cfg
+./servers/bpm/vm-bpm-app08.cfg
+./servers/vmware/vm-bpm-tst04.cfg
+./servers/vmware/bpm/vm-bpm-src01.cfg
+./servers/vmware/bpm/vm-bpm-src01t.cfg
+./servers/vmware/bpm/vm-bpm-dev02.cfg
+./servers/vmware/vm-bpm-la.cfg
+./servers/vmware/vm-bpm-mon01.cfg
+./servers/vmware/vm-bpm-tst11.cfg
+./servers/vmware/vm-bpm-tst10.cfg
+./servers/vmware/vm-bpm-tst03.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/vm-win-template.cfg ./servers/vmware/vm-bpmtopds01p.cfg
+
+[root@vm-vol-nag4-tst objects]# vim ./servers/vmware/vm-bpmtopds01p.cfg
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="maslennikov"
+contact_name         filename
+--------------------------------------------------------------------------------
+a.maslennikov_email  /usr/local/nagios/etc/objects/contacts/a.maslennikov.cfg
+a.maslennikov_sms    /usr/local/nagios/etc/objects/contacts/a.maslennikov.cfg
+v.maslennikov_email  /usr/local/nagios/etc/objects/contacts/v.maslennikov.cfg
+v.maslennikov_sms    /usr/local/nagios/etc/objects/contacts/v.maslennikov.cfg
+----------4 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# cat /usr/local/nagios/etc/objects/contacts/a.maslennikov.cfg
+define contact{
+        contact_name            a.maslennikov_email
+        use                     generic-contact
+        alias                   Aleksey Maslennikov
+        email                   a.maslennikov@tcsbank.ru
+}
+
+define contact{
+        contact_name            a.maslennikov_sms
+        use                     generic-contact-critical
+        alias                   Aleksey Maslennikov
+        email                   a.maslennikov@tcsbank.ru
+        address1                79096461391
+}
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# grep -irle "Collection-Processing@tinkoff.ru" ./
+[root@vm-vol-nag4-tst objects]# grep -irle "Collection-Processing@tinkoff.ru" ./*
+[root@vm-vol-nag4-tst objects]# pwd
+/usr/local/nagios/etc/objects
+[root@vm-vol-nag4-tst objects]# grep -irle "Collection-Processing@tcsbank.ru"
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# vim -o ./servers/vmware/vm-bpmtopds01p.cfg ./servers/vmware/vm-bpm-tst11.cfg
+
+
+[root@vm-vol-nag4-tst objects]# addcontact
+Adding new contact to Nagios
+Full name: сollection-processing
+Email: Collection-Processing@tinkoff.ru
+Mobile (10 numbers):
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# mv contacts/Collection-Processing.cfg contacts/collection-processing.cfg
+
+[root@vm-vol-nag4-tst objects]# cat contacts/collection-processing.cfg
+define contact{
+        contact_name            collection-processing_email
+        use                     generic-contact
+        alias                   сollection-processing
+        email                   Collection-Processing@tinkoff.ru
+}
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig
+Running configuration check...
+ OK.
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# su - bsv -c "cd ~bsv/work/templates ; vim -o hw-win-template.cfg vm-win-template.cfg"
+
+[root@vm-vol-nag4-tst objects]# su - bsv -c "cd ~bsv/work/templates ; git commit -m \"Changed template to generic-service-windows-time.\" hw-win-template.cfg vm-win-template.cfg "
+[master 375dded] Changed template to generic-service-windows-time.
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# su - bsv -c "cd ~bsv/work/templates ; git pull && git push "
+Already up-to-date.
+Counting objects: 6, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 381 bytes, done.
+Total 4 (delta 3), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:repositories/nagios-core/templates.git
+   bbba15f..375dded  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   servers/dc-ds/windows/sql/ds-sql05.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       contacts/collection-processing.cfg
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-bpmtopds01p.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# git add contacts/collection-processing.cfg servers/vmware/vm-bpmtopds01p.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#53434. Created monitoring for one new host. Created one contact especially for it." servers/vmware/vm-bpmtopds01p.cfg contacts/collection-processing.cfg
+[master 83fe3d1] SDN#53434. Created monitoring for one new host. Created one contact especially for it.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 58 insertions(+), 0 deletions(-)
+ create mode 100644 objects/contacts/collection-processing.cfg
+ create mode 100644 objects/servers/vmware/vm-bpmtopds01p.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 13, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 1.25 KiB, done.
+Total 8 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   fa9b9db..83fe3d1  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+
+

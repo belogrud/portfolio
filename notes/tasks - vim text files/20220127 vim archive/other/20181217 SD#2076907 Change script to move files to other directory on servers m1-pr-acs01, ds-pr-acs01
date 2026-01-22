@@ -1,0 +1,1450 @@
+
+#
+#	https://www.tecmint.com/rsync-local-remote-file-synchronization-commands/
+#
+
+...........................................................................
+
+[root@m1-pr-acs01 ~]# rsync -a /mnt/acs/log/acs_server/vm-var2-app102 /mnt/processinglogs_acs/
+[root@m1-pr-acs01 ~]# rsync -a /mnt/acs/log/acs_server/vm-var2-app101 /mnt/processinglogs_acs/
+
+[root@m1-pr-acs01 ~]# du -sh /mnt/processinglogs_acs/vm-var2-app101
+
+...........................................................................
+
+[root@m1-pr-acs01 ~]# cat /opt/TCS/scripts/acs_server_log.sh
+#!/bin/bash
+
+#LOGFILE="/opt/apache-tomcat-6.0.35/bin/acs_server.log.$(date +%d-%m-%Y)"
+LOGFILE="/opt/apache-tomcat-6.0.35/bin/acs_server.log.25-11-2012"
+
+if [[ -f $LOGFILE ]]; then
+        bzip2 -kv $LOGFILE
+else
+        echo "File $LOGFILE does not exists. $(ls -la /opt/apache-tomcat-6.0.35/bin/)" | mail -s "ACS server $(hostname -a)" a.v.aleksandrov@tcsbank.ru
+        exit 1
+fi
+
+mount -t nfs | grep /mnt/smog
+
+if [[ "$?" -ne 0 ]]; then
+        echo "/mnt/smog not mounted" | mail -s "ACS server $(hostname -a)" a.v.aleksandrov@tcsbank.ru
+        exit 1
+fi
+
+cp -v "$LOGFILE.bz2" /mnt/smog/log/acs_server/$(hostname -a)
+
+if [[ "$?" -ne 0 ]]; then
+        echo "Can not copy $LOGFILE to /mnt/smog" | mail -s "ACS server $(hostname -a)" a.v.aleksandrov@tcsbank.ru
+        exit 1
+fi
+
+#rm -v "$LOGFILE.bz2"
+[root@m1-pr-acs01 ~]#
+
+...........................................................................
+
+[root@ds-pr-acs01 ~]# ls -Alh /var/spool/cron/
+total 4.0K
+-rw------- 1 root root 194 Dec 12 15:30 root
+[root@ds-pr-acs01 ~]# cat /var/spool/cron/root
+1 1 * * * find /opt/apache-tomcat/logs/ -name '*log*' -mtime +10 -delete > /dev/null
+1 0 * * * /opt/TCS/scripts/acs_log_replacement.sh
+#Ansible: oscap
+20 1 * * * /root/oscap/run_scap-scanner.sh
+[root@ds-pr-acs01 ~]#
+
+
+...........................................................................
+
+[root@m1-pr-acs01 ~]# md5sum /opt/TCS/scripts/acs_server_log.sh
+a5e8ac897eb17d98e14e25c4614293dd  /opt/TCS/scripts/acs_server_log.sh
+[root@m1-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# md5sum /opt/TCS/scripts/acs_server_log.sh
+a5e8ac897eb17d98e14e25c4614293dd  /opt/TCS/scripts/acs_server_log.sh
+[root@ds-pr-acs01 ~]#
+
+...........................................................................
+
+Белогруд Сергей [3:04 PM]
+Добрый день.
+SD#2076907 ( https://sd.tcsbank.ru/0/NUI/ViewModule.aspx#CardModuleV2/CasePage/edit/8c80fb51-89c9-4461-9ffa-a817bb10f268 )
+Нужны уточнения по переносу логов.
+И текста задачи я понял, что под "настроить перенос логов" понимается создать регулярно по расписанию выполняющееся задание - это так.
+Какое расписание должно быть - когда запускать задачу переноса?
+По какому критерию переносить данные из /mnt/acs/log/acs_server? Например, всё, что есть в каталоге /mnt/acs/log/acs_server перенести на nfs-ресурс и соответственно из /mnt/acs/log/acs_server всё удалить. Так или как-то иначе?
+
+Инсапов Эльдар [10:01 AM]
+добрый день. как сейчас работает хранение логов на этих серверах: в папке  \opt\apache-tomcat-6.0.35\logs хранятся неделю, все что старше недели скидывается в /mnt/acs/log/acs_server. мы хотим чтобы в папке  \opt\apache-tomcat-6.0.35\logs логи были за неделю, все что старше переносилось на шару \\v6250-m1\processinglogs$ . Переносить лучше ночью, когда трафик операций ниже, например, с 02:00. критерий, думаю, описанный выше, подходит, т.е. все что есть /mnt/acs/log/acs_server перенести на nfs-ресурс и соответственно из /mnt/acs/log/acs_server всё удалить
+
+Белогруд Сергей [11:20 AM]
+Чем делается эта операция: "в папке  \opt\apache-tomcat-6.0.35\logs хранятся неделю, все что старше недели скидывается в /mnt/acs/log/acs_server"?
+Это вручную или где-то какой-то скрипт используется или настройка чего-то?
+
+Инсапов Эльдар [12:37 PM]
+по словам ответственного за систему это выполняется скриптом  opt/TCS/scripts/Acs_server_log.sh
+
+
+Белогруд Сергей [2:43 PM]
+А кто ответственный за систему?
+И мне нужно ещё понять, что запускает это скрипт?
+
+Инсапов Эльдар [2:43 PM]
+Копейкин Алексей
+по поводу что запускает этот скрипт, думаю Алексей сможет подсказать
+
+Белогруд Сергей [2:45 PM]
+Спасибо. Сейчас спрошу.
+
+Белогруд Сергей [2:58 PM]
+Копейкин нихрена не знает.
+Ладно. Поработаю с тем, что есть.
+
+...........................................................................
+
+[root@ds-pr-acs01 ~]# ls -Alhd /opt/apache-tomcat/logs/
+drwxrwxrwx 2 acs acs 4.0K Dec 16 01:01 /opt/apache-tomcat/logs/
+[root@ds-pr-acs01 ~]# ls -Alhd \opt\apache-tomcat-6.0.35\logs
+ls: cannot access optapache-tomcat-6.0.35logs: No such file or directory
+[root@ds-pr-acs01 ~]#
+
+[root@m1-pr-acs01 ~]# ls -Alhd /opt/apache-tomcat/logs/
+drwxrwxrwx 2 acs acs 4.0K Dec 17 03:28 /opt/apache-tomcat/logs/
+[root@m1-pr-acs01 ~]# ls -Alhd \opt\apache-tomcat-6.0.35\logs
+ls: cannot access optapache-tomcat-6.0.35logs: No such file or directory
+[root@m1-pr-acs01 ~]#
+
+[root@m1-pr-acs01 ~]# ls -Ahd /opt/apache-tomcat-6.0.35/logs/
+/opt/apache-tomcat-6.0.35/logs/
+[root@m1-pr-acs01 ~]# ls -Ah /opt/apache-tomcat-6.0.35/logs/
+catalina.2018-12-11.log  catalina.2018-12-14.log  catalina.2018-12-17.log  catalina.out-20180516     catalina.out-20181213.gz  catalina.out-20181216.gz  localhost.2018-12-12.log  localhost.2018-12-15.log
+catalina.2018-12-12.log  catalina.2018-12-15.log  catalina.out             catalina.out-20181211.gz  catalina.out-20181214.gz  catalina.out-20181217.gz  localhost.2018-12-13.log  localhost.2018-12-16.log
+catalina.2018-12-13.log  catalina.2018-12-16.log  catalina.out-20151120    catalina.out-20181212.gz  catalina.out-20181215.gz  localhost.2018-12-11.log  localhost.2018-12-14.log  localhost.2018-12-17.log
+[root@m1-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat-6.0.35/logs/
+total 168M
+-rw-r--r-- 1 acs  acs  2.3K Dec  7 02:02 catalina.2018-12-07.log
+-rw-r--r-- 1 acs  acs  2.3K Dec 11 02:01 catalina.2018-12-11.log
+-rw-r--r-- 1 acs  acs  2.3K Dec 14 02:02 catalina.2018-12-14.log
+-rw------- 1 acs  acs   14M Dec 17 16:01 catalina.out
+-rw------- 1 acs  acs   26M Aug  8 03:50 catalina.out-20180808.gz
+-rw------- 1 acs  acs   22M Aug  9 03:49 catalina.out-20180809.gz
+-rw------- 1 acs  acs  2.7M Aug 20 03:17 catalina.out-20180820.gz
+-rw------- 1 acs  acs  2.8M Sep  7 03:25 catalina.out-20180907.gz
+-rw------- 1 acs  acs  2.4M Oct  6 03:39 catalina.out-20181006.gz
+-rw------- 1 acs  acs  2.6M Oct 23 03:33 catalina.out-20181023.gz
+-rw------- 1 acs  acs   19M Nov 21 03:45 catalina.out-20181121.gz
+-rw-r--r-- 1 acs  acs   58K Dec 11 14:15 localhost.2018-12-11.log
+-rw-r--r-- 1 root root  15M Dec 13  2013 pareq
+-rw-r--r-- 1 root root  66M Dec 13  2013 pares
+[root@ds-pr-acs01 ~]#
+
+...........................................................................
+
+[root@m1-pr-acs01 ~]# md5sum /opt/TCS/scripts/acs_log_replacement.sh
+77191e348415f3b1fe261c36ebf096c6  /opt/TCS/scripts/acs_log_replacement.sh
+[root@m1-pr-acs01 ~]#
+
+[root@m1-pr-acs01 ~]# cat /opt/TCS/scripts/acs_log_replacement.sh
+#!/bin/bash
+
+echo "--------------------------------------" >> /tmp/acs_clean_logs
+echo "Date: $(date)"                          >> /tmp/acs_clean_logs
+echo "--------------------------------------" >> /tmp/acs_clean_logs
+
+gzip -v /opt/apache-tomcat/bin/jboss.server.log.dir_IS_UNDEFINED/acs-server.*.log                                               2>&1 >> /tmp/acs_clean_logs
+
+cp -v /opt/apache-tomcat/bin/jboss.server.log.dir_IS_UNDEFINED/acs-server.*.log.gz /mnt/smog/log/acs_server/vm-var2-app101      2>&1 >> /tmp/acs_clean_logs
+
+rm -fv /opt/apache-tomcat/bin/jboss.server.log.dir_IS_UNDEFINED/acs-server.*.log.gz                                             2>&1 >> /tmp/acs_clean_logs
+
+echo "--------------------------------------" >> /tmp/acs_clean_logs
+echo " "
+[root@m1-pr-acs01 ~]#
+
+
+
+[root@ds-pr-acs01 ~]# md5sum /opt/TCS/scripts/acs_log_replacement.sh
+d08f50b60b256303a88f1909f5ecacdd  /opt/TCS/scripts/acs_log_replacement.sh
+[root@ds-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# cat /opt/TCS/scripts/acs_log_replacement.sh
+#!/bin/bash
+
+echo "--------------------------------------" >> /tmp/acs_clean_logs
+echo "Date: $(date)"                          >> /tmp/acs_clean_logs
+echo "--------------------------------------" >> /tmp/acs_clean_logs
+
+gzip -v /opt/apache-tomcat/bin/acs_server.log.*                                                                                 2>&1 >> /tmp/acs_clean_logs
+gzip -v /opt/apache-tomcat/bin/jboss.server.log.dir_IS_UNDEFINED/acs-server.*.log                                               2>&1 >> /tmp/acs_clean_logs
+
+cp -v /opt/apache-tomcat/bin/acs_server.log.*.gz /mnt/smog/log/acs_server/vm-var2-app102                                        2>&1 >> /tmp/acs_clean_logs
+cp -v /opt/apache-tomcat/bin/jboss.server.log.dir_IS_UNDEFINED/acs-server.*.log.gz /mnt/smog/log/acs_server/vm-var2-app102      2>&1 >> /tmp/acs_clean_logs
+
+rm -fv /opt/apache-tomcat/bin/acs_server.log.*.gz                                                                               2>&1 >> /tmp/acs_clean_logs
+rm -fv /opt/apache-tomcat/bin/jboss.server.log.dir_IS_UNDEFINED/acs-server.*.log.gz                                             2>&1 >> /tmp/acs_clean_logs
+
+echo "--------------------------------------" >> /tmp/acs_clean_logs
+echo " "
+[root@ds-pr-acs01 ~]#
+
+...........................................................................
+
+[root@ds-pr-acs01 ~]# grep -irle "catalina" /etc/logrotate.*
+/etc/logrotate.d/tomcat
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    size 20M
+}
+
+[root@ds-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# ls -Alhd /opt/apache-tomcat
+lrwxrwxrwx 1 root root 20 May 22  2013 /opt/apache-tomcat -> apache-tomcat-6.0.35
+[root@ds-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.conf
+# see "man logrotate" for details
+# rotate log files weekly
+weekly
+
+# keep 4 weeks worth of backlogs
+rotate 4
+
+# create new (empty) log files after rotating old ones
+create
+
+# use date as a suffix of the rotated file
+dateext
+
+# uncomment this if you want your log files compressed
+#compress
+
+# RPM packages drop log rotation information into this directory
+include /etc/logrotate.d
+
+# no packages own wtmp and btmp -- we'll rotate them here
+/var/log/wtmp {
+    monthly
+    create 0664 root utmp
+        minsize 1M
+    rotate 1
+}
+
+/var/log/btmp {
+    missingok
+    monthly
+    create 0600 root utmp
+    rotate 1
+}
+
+# system-specific logs may be also be configured here.
+[root@ds-pr-acs01 ~]#
+
+
+
+
+...........................................................................
+
+
+[root@ds-pr-acs01 ~]# grep -irle "postrotate" /etc/logrotate.*
+/etc/logrotate.d/puppet
+/etc/logrotate.d/named
+/etc/logrotate.d/syslog
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/puppet
+/var/log/puppet/*log {
+  missingok
+  notifempty
+  create 0644 puppet puppet
+  sharedscripts
+  postrotate
+    pkill -USR2 -u puppet -f 'puppet master' || true
+    [ -e /etc/init.d/puppet ] && /etc/init.d/puppet reload > /dev/null 2>&1 || true
+  endscript
+}
+[root@ds-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/named
+/var/named/data/named.run {
+    missingok
+    create 0644 named named
+    postrotate
+        /sbin/service named reload  2> /dev/null > /dev/null || true
+    endscript
+}
+[root@ds-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/syslog
+/var/log/cron
+/var/log/maillog
+/var/log/messages
+/var/log/secure
+/var/log/spooler
+{
+    sharedscripts
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
+[root@ds-pr-acs01 ~]#
+
+...........................................................................
+
+
+[root@ds-pr-acs01 ~]# logrotate -v /etc/logrotate.conf
+reading config file /etc/logrotate.conf
+including /etc/logrotate.d
+reading config file atop
+reading config info for /var/log/atop/atop.log
+reading config file dracut
+reading config info for /var/log/dracut.log
+reading config file named
+reading config info for /var/named/data/named.run
+reading config file puppet
+reading config info for /var/log/puppet/*log
+reading config file subscription-manager
+reading config info for /var/log/rhsm/*.log
+reading config file syslog
+reading config info for /var/log/cron
+/var/log/maillog
+/var/log/messages
+/var/log/secure
+/var/log/spooler
+
+reading config file tomcat
+reading config info for /opt/apache-tomcat/logs/catalina.out
+reading config file up2date
+reading config info for /var/log/up2date
+reading config file yum
+reading config info for /var/log/yum.log
+reading config file zabbix-agent
+reading config info for /var/log/zabbix/zabbix_agentd.log
+reading config info for /var/log/wtmp
+reading config info for /var/log/btmp
+
+Handling 12 logs
+
+rotating pattern: /var/log/atop/atop.log  weekly (4 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/atop/atop.log
+  log /var/log/atop/atop.log does not exist -- skipping
+
+rotating pattern: /var/log/dracut.log  yearly (4 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/dracut.log
+  log does not need rotating
+
+rotating pattern: /var/named/data/named.run  weekly (4 rotations)
+empty log files are rotated, old logs are removed
+considering log /var/named/data/named.run
+  log does not need rotating
+not running postrotate script, since no logs were rotated
+
+rotating pattern: /var/log/puppet/*log  weekly (4 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/puppet/puppet.log
+  log does not need rotating
+not running postrotate script, since no logs were rotated
+
+rotating pattern: /var/log/rhsm/*.log  weekly (4 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/rhsm/rhsmcertd.log
+  log does not need rotating
+considering log /var/log/rhsm/rhsm.log
+  log does not need rotating
+
+rotating pattern: /var/log/cron
+/var/log/maillog
+/var/log/messages
+/var/log/secure
+/var/log/spooler
+ weekly (4 rotations)
+empty log files are rotated, old logs are removed
+considering log /var/log/cron
+  log does not need rotating
+considering log /var/log/maillog
+  log does not need rotating
+considering log /var/log/messages
+  log does not need rotating
+considering log /var/log/secure
+  log does not need rotating
+considering log /var/log/spooler
+  log does not need rotating
+not running postrotate script, since no logs were rotated
+
+rotating pattern: /opt/apache-tomcat/logs/catalina.out  20971520 bytes (7 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/apache-tomcat/logs/catalina.out
+  log does not need rotating
+not running postrotate script, since no logs were rotated
+
+rotating pattern: /var/log/up2date  weekly (4 rotations)
+empty log files are rotated, old logs are removed
+considering log /var/log/up2date
+  log does not need rotating
+
+rotating pattern: /var/log/yum.log  yearly (4 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/yum.log
+  log does not need rotating
+
+rotating pattern: /var/log/zabbix/zabbix_agentd.log  weekly (12 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/zabbix/zabbix_agentd.log
+  log does not need rotating
+
+rotating pattern: /var/log/wtmp  monthly (1 rotations)
+empty log files are rotated, only log files >= 1048576 bytes are rotated, old logs are removed
+considering log /var/log/wtmp
+  log does not need rotating
+
+rotating pattern: /var/log/btmp  monthly (1 rotations)
+empty log files are rotated, old logs are removed
+considering log /var/log/btmp
+  log does not need rotating
+[root@ds-pr-acs01 ~]#
+
+
+#
+#	Here is what we want.
+#
+#	rotating pattern: /opt/apache-tomcat/logs/catalina.out  20971520 bytes (7 rotations)
+#	empty log files are rotated, old logs are removed
+#	considering log /opt/apache-tomcat/logs/catalina.out
+#	  log does not need rotating
+#	not running postrotate script, since no logs were rotated
+#
+
+................................................................................
+
+
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --delete --force /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@ds-pr-acs01 ~]#
+
+
+#
+#	This is only a test. Nothin will be done.
+#	For example a file /opt/apache-tomcat/logs/catalina.out-20180808.gz still in place. It was not removed.
+#
+[root@ds-pr-acs01 ~]# logrotate -vdf /etc/logrotate.d/tomcat
+reading config file /etc/logrotate.d/tomcat
+reading config info for /opt/apache-tomcat/logs/catalina.out
+
+Handling 1 logs
+
+rotating pattern: /opt/apache-tomcat/logs/catalina.out  forced from command line (7 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/apache-tomcat/logs/catalina.out
+  log needs rotating
+rotating log /opt/apache-tomcat/logs/catalina.out, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+copying /opt/apache-tomcat/logs/catalina.out to /opt/apache-tomcat/logs/catalina.out-20181217
+truncating /opt/apache-tomcat/logs/catalina.out
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.out: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --delete --force /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+removing old log /opt/apache-tomcat/logs/catalina.out-20180808.gz
+[root@ds-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 336K
+drwxrwxrwx  2 root root 4.0K Dec 17 16:40 ds-pr-acs01.tcsbank.ru.backup
+drwxrwxrwx  2 root root 4.0K Dec 17 16:38 m1-pr-acs01.tcsbank.ru
+drwxrwxrwx 16 root root 4.0K Dec 17 14:01 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 168M
+-rw-r--r-- 1 acs  acs  2.3K Dec  7 02:02 catalina.2018-12-07.log
+-rw-r--r-- 1 acs  acs  2.3K Dec 11 02:01 catalina.2018-12-11.log
+-rw-r--r-- 1 acs  acs  2.3K Dec 14 02:02 catalina.2018-12-14.log
+-rw------- 1 acs  acs   14M Dec 17 16:55 catalina.out
+-rw------- 1 acs  acs   26M Aug  8 03:50 catalina.out-20180808.gz
+-rw------- 1 acs  acs   22M Aug  9 03:49 catalina.out-20180809.gz
+-rw------- 1 acs  acs  2.7M Aug 20 03:17 catalina.out-20180820.gz
+-rw------- 1 acs  acs  2.8M Sep  7 03:25 catalina.out-20180907.gz
+-rw------- 1 acs  acs  2.4M Oct  6 03:39 catalina.out-20181006.gz
+-rw------- 1 acs  acs  2.6M Oct 23 03:33 catalina.out-20181023.gz
+-rw------- 1 acs  acs   19M Nov 21 03:45 catalina.out-20181121.gz
+-rw-r--r-- 1 acs  acs   58K Dec 11 14:15 localhost.2018-12-11.log
+-rw-r--r-- 1 root root  15M Dec 13  2013 pareq
+-rw-r--r-- 1 root root  66M Dec 13  2013 pares
+[root@ds-pr-acs01 ~]#
+
+................................................................................
+
+#
+#	Here is a test again.
+#	Nothing was done.
+#
+[root@ds-pr-acs01 ~]# logrotate -df /etc/logrotate.d/tomcat
+reading config file /etc/logrotate.d/tomcat
+reading config info for /opt/apache-tomcat/logs/catalina.out
+
+Handling 1 logs
+
+rotating pattern: /opt/apache-tomcat/logs/catalina.out  forced from command line (7 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/apache-tomcat/logs/catalina.out
+  log needs rotating
+rotating log /opt/apache-tomcat/logs/catalina.out, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+copying /opt/apache-tomcat/logs/catalina.out to /opt/apache-tomcat/logs/catalina.out-20181217
+truncating /opt/apache-tomcat/logs/catalina.out
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.out: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --delete --force /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+removing old log /opt/apache-tomcat/logs/catalina.out-20180808.gz
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/catalina.out-20180808.gz
+-rw------- 1 acs acs 26M Aug  8 03:50 /opt/apache-tomcat/logs/catalina.out-20180808.gz
+[root@ds-pr-acs01 ~]#
+
+................................................................................
+
+#
+#	At this moment something was done.
+#
+
+[root@ds-pr-acs01 ~]# logrotate -f /etc/logrotate.d/tomcat
+[root@ds-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 131M
+-rw-r--r-- 1 acs  acs  2.3K Dec  7 02:02 catalina.2018-12-07.log
+-rw-r--r-- 1 acs  acs  2.3K Dec 11 02:01 catalina.2018-12-11.log
+-rw-r--r-- 1 acs  acs  2.3K Dec 14 02:02 catalina.2018-12-14.log
+-rw------- 1 acs  acs   145 Dec 17 17:03 catalina.out
+-rw------- 1 acs  acs   22M Aug  9 03:49 catalina.out-20180809.gz
+-rw------- 1 acs  acs  2.7M Aug 20 03:17 catalina.out-20180820.gz
+-rw------- 1 acs  acs  2.8M Sep  7 03:25 catalina.out-20180907.gz
+-rw------- 1 acs  acs  2.4M Oct  6 03:39 catalina.out-20181006.gz
+-rw------- 1 acs  acs  2.6M Oct 23 03:33 catalina.out-20181023.gz
+-rw------- 1 acs  acs   19M Nov 21 03:45 catalina.out-20181121.gz
+-rw------- 1 acs  acs  1.6M Dec 17 17:03 catalina.out-20181217.gz
+-rw-r--r-- 1 acs  acs   58K Dec 11 14:15 localhost.2018-12-11.log
+-rw-r--r-- 1 root root  15M Dec 13  2013 pareq
+-rw-r--r-- 1 root root  66M Dec 13  2013 pares
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 340K
+drwxrwxrwx  2 root root 4.0K Dec 17 17:03 ds-pr-acs01.tcsbank.ru
+drwxrwxrwx  2 root root 4.0K Dec 17 16:40 ds-pr-acs01.tcsbank.ru.backup
+drwxrwxrwx  2 root root 4.0K Dec 17 16:38 m1-pr-acs01.tcsbank.ru
+drwxrwxrwx 16 root root 4.0K Dec 17 14:01 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/ds-pr-acs01.tcsbank.ru/
+total 76M
+-rwxrwxrwx 1 root root  26M Aug  8 03:50 catalina.out-20180808.gz
+-rwxrwxrwx 1 root root  22M Aug  9 03:49 catalina.out-20180809.gz
+-rwxrwxrwx 1 root root 2.7M Aug 20 03:17 catalina.out-20180820.gz
+-rwxrwxrwx 1 root root 2.8M Sep  7 03:25 catalina.out-20180907.gz
+-rwxrwxrwx 1 root root 2.4M Oct  6 03:39 catalina.out-20181006.gz
+-rwxrwxrwx 1 root root 2.6M Oct 23 03:33 catalina.out-20181023.gz
+-rwxrwxrwx 1 root root  19M Nov 21 03:45 catalina.out-20181121.gz
+[root@ds-pr-acs01 ~]#
+
+................................................................................
+
+[root@ds-pr-acs01 ~]# [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --dry-run  /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+[root@ds-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 340K
+drwxrwxrwx  2 root root 4.0K Dec 17 16:40 ds-pr-acs01.tcsbank.ru.backup
+drwxrwxrwx  2 root root 4.0K Dec 17 17:03 ds-pr-acs01.tcsbank.ru.backup.2
+drwxrwxrwx  2 root root 4.0K Dec 17 16:38 m1-pr-acs01.tcsbank.ru
+drwxrwxrwx 16 root root 4.0K Dec 17 14:01 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@ds-pr-acs01 ~]#
+[root@ds-pr-acs01 ~]# logrotate -vdf /etc/logrotate.d/tomcat
+reading config file /etc/logrotate.d/tomcat
+reading config info for /opt/apache-tomcat/logs/catalina.out
+
+Handling 1 logs
+
+rotating pattern: /opt/apache-tomcat/logs/catalina.out  forced from command line (7 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/apache-tomcat/logs/catalina.out
+  log needs rotating
+rotating log /opt/apache-tomcat/logs/catalina.out, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+destination /opt/apache-tomcat/logs/catalina.out-20181217.gz already exists, skipping rotation
+[root@ds-pr-acs01 ~]#
+
+................................................................................
+
+
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    # size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@ds-pr-acs01 ~]#
+
+
+
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 340K
+drwxrwxrwx  2 root root 4.0K Dec 17 16:40 ds-pr-acs01.tcsbank.ru.backup
+drwxrwxrwx  2 root root 4.0K Dec 17 17:03 ds-pr-acs01.tcsbank.ru.backup.2
+drwxrwxrwx  2 root root 4.0K Dec 17 16:38 m1-pr-acs01.tcsbank.ru.backup.1
+drwxrwxrwx 16 root root 4.0K Dec 17 14:01 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@ds-pr-acs01 ~]# logrotate -vdf /etc/logrotate.d/tomcat
+reading config file /etc/logrotate.d/tomcat
+reading config info for /opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log
+
+Handling 1 logs
+
+rotating pattern: /opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log  forced from command line (7 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/apache-tomcat/logs/catalina.out
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-07.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-11.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-14.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-11.log
+  log needs rotating
+rotating log /opt/apache-tomcat/logs/catalina.out, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+destination /opt/apache-tomcat/logs/catalina.out-20181217.gz already exists, skipping rotation
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-07.log, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-07.log to /opt/apache-tomcat/logs/catalina.2018-12-07.log-20181217
+truncating /opt/apache-tomcat/logs/catalina.2018-12-07.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-07.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-11.log, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-11.log to /opt/apache-tomcat/logs/catalina.2018-12-11.log-20181217
+truncating /opt/apache-tomcat/logs/catalina.2018-12-11.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-11.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-14.log, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-14.log to /opt/apache-tomcat/logs/catalina.2018-12-14.log-20181217
+truncating /opt/apache-tomcat/logs/catalina.2018-12-14.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-14.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-11.log, log->rotateCount is 7
+dateext suffix '-20181217'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-11.log to /opt/apache-tomcat/logs/localhost.2018-12-11.log-20181217
+truncating /opt/apache-tomcat/logs/localhost.2018-12-11.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-11.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files /opt/apache-tomcat/logs/catalina.out*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+[root@ds-pr-acs01 ~]# logrotate -f /etc/logrotate.d/tomcat
+rsync: link_stat "/opt/apache-tomcat/logs/catalina.out*.gz" failed: No such file or directory (2)
+rsync error: some files/attrs were not transferred (see previous errors) (code 23) at main.c(1039) [sender=3.0.6]
+rsync: link_stat "/opt/apache-tomcat/logs/catalina.out*.gz" failed: No such file or directory (2)
+rsync error: some files/attrs were not transferred (see previous errors) (code 23) at main.c(1039) [sender=3.0.6]
+rsync: link_stat "/opt/apache-tomcat/logs/catalina.out*.gz" failed: No such file or directory (2)
+rsync error: some files/attrs were not transferred (see previous errors) (code 23) at main.c(1039) [sender=3.0.6]
+[root@ds-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/ds-pr-acs01.tcsbank.ru/
+total 52M
+-rwxrwxrwx 1 root root  22M Aug  9 03:49 catalina.out-20180809.gz
+-rwxrwxrwx 1 root root 2.7M Aug 20 03:17 catalina.out-20180820.gz
+-rwxrwxrwx 1 root root 2.8M Sep  7 03:25 catalina.out-20180907.gz
+-rwxrwxrwx 1 root root 2.4M Oct  6 03:39 catalina.out-20181006.gz
+-rwxrwxrwx 1 root root 2.6M Oct 23 03:33 catalina.out-20181023.gz
+-rwxrwxrwx 1 root root  19M Nov 21 03:45 catalina.out-20181121.gz
+-rwxrwxrwx 1 root root 1.6M Dec 17 17:03 catalina.out-20181217.gz
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 80M
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:32 catalina.2018-12-07.log
+-rw-r--r-- 1 acs  acs   358 Dec 17 17:33 catalina.2018-12-07.log-20181217.gz
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:33 catalina.2018-12-11.log
+-rw-r--r-- 1 acs  acs   356 Dec 17 17:33 catalina.2018-12-11.log-20181217.gz
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:33 catalina.2018-12-14.log
+-rw-r--r-- 1 acs  acs   356 Dec 17 17:33 catalina.2018-12-14.log-20181217.gz
+-rw------- 1 acs  acs  4.6K Dec 17 17:34 catalina.out
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:33 localhost.2018-12-11.log
+-rw-r--r-- 1 acs  acs  1.8K Dec 17 17:33 localhost.2018-12-11.log-20181217.gz
+-rw-r--r-- 1 root root  15M Dec 13  2013 pareq
+-rw-r--r-- 1 root root  66M Dec 13  2013 pares
+[root@ds-pr-acs01 ~]#
+
+
+
+................................................................................
+
+
+[root@ds-pr-acs01 ~]# vim /etc/logrotate.d/tomcat
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    # size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@ds-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 80M
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:32 catalina.2018-12-07.log
+-rw-r--r-- 1 acs  acs   358 Dec 17 17:33 catalina.2018-12-07.log-20181217.gz
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:33 catalina.2018-12-11.log
+-rw-r--r-- 1 acs  acs   356 Dec 17 17:33 catalina.2018-12-11.log-20181217.gz
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:33 catalina.2018-12-14.log
+-rw-r--r-- 1 acs  acs   356 Dec 17 17:33 catalina.2018-12-14.log-20181217.gz
+-rw------- 1 acs  acs  5.3K Dec 17 17:39 catalina.out
+-rw-r--r-- 1 acs  acs     0 Dec 17 17:33 localhost.2018-12-11.log
+-rw-r--r-- 1 acs  acs  1.8K Dec 17 17:33 localhost.2018-12-11.log-20181217.gz
+-rw-r--r-- 1 root root  15M Dec 13  2013 pareq
+-rw-r--r-- 1 root root  66M Dec 13  2013 pares
+[root@ds-pr-acs01 ~]#
+
+[root@ds-pr-acs01 ~]# mv /mnt/processinglogs_acs/ds-pr-acs01.tcsbank.ru{,.backup.3}
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 344K
+drwxrwxrwx  2 root root 4.0K Dec 17 16:40 ds-pr-acs01.tcsbank.ru.backup
+drwxrwxrwx  2 root root 4.0K Dec 17 17:03 ds-pr-acs01.tcsbank.ru.backup.2
+drwxrwxrwx  2 root root 4.0K Dec 17 17:33 ds-pr-acs01.tcsbank.ru.backup.3
+drwxrwxrwx  2 root root 4.0K Dec 17 16:38 m1-pr-acs01.tcsbank.ru.backup.1
+drwxrwxrwx 16 root root 4.0K Dec 17 14:01 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@ds-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 80M
+-rw-r--r-- 1 acs  acs    0 Dec 17 17:41 catalina.2018-12-07.log
+-rw-r--r-- 1 acs  acs    0 Dec 17 17:41 catalina.2018-12-11.log
+-rw-r--r-- 1 acs  acs    0 Dec 17 17:41 catalina.2018-12-14.log
+-rw------- 1 acs  acs  145 Dec 17 17:41 catalina.out
+-rw-r--r-- 1 acs  acs    0 Dec 17 17:41 localhost.2018-12-11.log
+-rw-r--r-- 1 acs  acs   20 Dec 17 17:41 localhost.2018-12-11.log-20181217.gz
+-rw-r--r-- 1 root root 15M Dec 13  2013 pareq
+-rw-r--r-- 1 root root 66M Dec 13  2013 pares
+[root@ds-pr-acs01 ~]#
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 348K
+drwxrwxrwx  2 root root 4.0K Dec 17 17:41 ds-pr-acs01.tcsbank.ru
+drwxrwxrwx  2 root root 4.0K Dec 17 16:40 ds-pr-acs01.tcsbank.ru.backup
+drwxrwxrwx  2 root root 4.0K Dec 17 17:03 ds-pr-acs01.tcsbank.ru.backup.2
+drwxrwxrwx  2 root root 4.0K Dec 17 17:33 ds-pr-acs01.tcsbank.ru.backup.3
+drwxrwxrwx  2 root root 4.0K Dec 17 16:38 m1-pr-acs01.tcsbank.ru.backup.1
+drwxrwxrwx 16 root root 4.0K Dec 17 14:01 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@ds-pr-acs01 ~]#
+[root@ds-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/ds-pr-acs01.tcsbank.ru/
+total 8.0K
+-rwxrwxrwx 1 root root   20 Dec 17 17:41 catalina.2018-12-07.log-20181217.gz
+-rwxrwxrwx 1 root root   20 Dec 17 17:41 catalina.2018-12-11.log-20181217.gz
+-rwxrwxrwx 1 root root   20 Dec 17 17:41 catalina.2018-12-14.log-20181217.gz
+-rwxrwxrwx 1 root root  365 Dec 17 17:41 catalina.out-20181217.gz
+-rwxrwxrwx 1 root root 1.8K Dec 17 17:33 localhost.2018-12-11.log-20181217.gz
+[root@ds-pr-acs01 ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+[root@m1-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    # size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@m1-pr-acs01 ~]#
+
+[root@m1-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 9.1G
+-rw-r--r-- 1 acs acs   27K Dec 11 23:51 catalina.2018-12-11.log
+-rw-r--r-- 1 acs acs   18K Dec 12 23:57 catalina.2018-12-12.log
+-rw-r--r-- 1 acs acs   17K Dec 13 23:59 catalina.2018-12-13.log
+-rw-r--r-- 1 acs acs   24K Dec 14 23:43 catalina.2018-12-14.log
+-rw-r--r-- 1 acs acs   17K Dec 15 23:58 catalina.2018-12-15.log
+-rw-r--r-- 1 acs acs   17K Dec 16 23:37 catalina.2018-12-16.log
+-rw-r--r-- 1 acs acs  9.5K Dec 17 17:50 catalina.2018-12-17.log
+-rw-r--r-- 1 acs root 2.1G Dec 17 17:52 catalina.out
+-rw-r--r-- 1 acs acs  506M Nov 20  2015 catalina.out-20151120
+-rw-r--r-- 1 acs acs  2.5G May 16  2018 catalina.out-20180516
+-rw-r--r-- 1 acs root 633M Dec 11 03:13 catalina.out-20181211.gz
+-rw-r--r-- 1 acs root 611M Dec 12 03:37 catalina.out-20181212.gz
+-rw-r--r-- 1 acs root 605M Dec 13 03:17 catalina.out-20181213.gz
+-rw-r--r-- 1 acs root 603M Dec 14 03:49 catalina.out-20181214.gz
+-rw-r--r-- 1 acs root 651M Dec 15 03:29 catalina.out-20181215.gz
+-rw-r--r-- 1 acs root 557M Dec 16 03:19 catalina.out-20181216.gz
+-rw-r--r-- 1 acs root 525M Dec 17 03:28 catalina.out-20181217.gz
+-rw-r--r-- 1 acs acs  976K Dec 11 23:59 localhost.2018-12-11.log
+-rw-r--r-- 1 acs acs  922K Dec 12 23:59 localhost.2018-12-12.log
+-rw-r--r-- 1 acs acs  935K Dec 13 23:59 localhost.2018-12-13.log
+-rw-r--r-- 1 acs acs  936K Dec 14 23:58 localhost.2018-12-14.log
+-rw-r--r-- 1 acs acs  779K Dec 15 23:59 localhost.2018-12-15.log
+-rw-r--r-- 1 acs acs  790K Dec 16 23:59 localhost.2018-12-16.log
+-rw-r--r-- 1 acs acs  643K Dec 17 17:51 localhost.2018-12-17.log
+[root@m1-pr-acs01 ~]#
+
+[root@m1-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 336K
+drwxrwxrwx  2 root root 4.0K Dec 17 17:47 ds-pr-acs01.tcsbank.ru
+drwxrwxrwx  2 root root 4.0K Dec 17 16:38 m1-pr-acs01.tcsbank.ru.backup.1
+drwxrwxrwx 16 root root 4.0K Dec 17 14:01 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@m1-pr-acs01 ~]#
+
+................................................................................
+
+#
+#	Daily cron jobs start after 3 AM.
+#	It fit for us.
+#
+Dec 17 03:27:01 m1-pr-acs01 run-parts(/etc/cron.daily)[16321]: starting etckeeper
+Dec 17 03:27:01 m1-pr-acs01 run-parts(/etc/cron.daily)[16335]: finished etckeeper
+Dec 17 03:27:01 m1-pr-acs01 run-parts(/etc/cron.daily)[16321]: starting logrotate
+Dec 17 03:28:11 m1-pr-acs01 run-parts(/etc/cron.daily)[16399]: finished logrotate
+Dec 17 03:28:11 m1-pr-acs01 run-parts(/etc/cron.daily)[16321]: starting mlocate.cron
+Dec 17 03:28:11 m1-pr-acs01 run-parts(/etc/cron.daily)[16410]: finished mlocate.cron
+Dec 17 03:28:11 m1-pr-acs01 run-parts(/etc/cron.daily)[16321]: starting rhsmd
+Dec 17 03:28:12 m1-pr-acs01 run-parts(/etc/cron.daily)[16417]: finished rhsmd
+Dec 17 03:28:12 m1-pr-acs01 anacron[14516]: Job `cron.daily' terminated (mailing output)
+Dec 17 03:28:12 m1-pr-acs01 anacron[14516]: Normal exit (1 job run)
+
+[root@m1-pr-acs01 ~]# cat /etc/anacrontab
+# /etc/anacrontab: configuration file for anacron
+
+# See anacron(8) and anacrontab(5) for details.
+
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+# the maximal random delay added to the base delay of the jobs
+RANDOM_DELAY=45
+# the jobs will be started during the following hours only
+START_HOURS_RANGE=3-22
+
+#period in days   delay in minutes   job-identifier   command
+1       5       cron.daily              nice run-parts /etc/cron.daily
+7       25      cron.weekly             nice run-parts /etc/cron.weekly
+@monthly 45     cron.monthly            nice run-parts /etc/cron.monthly
+[root@m1-pr-acs01 ~]#
+
+[root@m1-pr-acs01 ~]# cat /etc/cron.hourly/0anacron
+#!/bin/bash
+#in case file doesn't exist
+if test -r /var/spool/anacron/cron.daily; then
+    day=`cat /var/spool/anacron/cron.daily`
+fi
+if [ `date +%Y%m%d` = "$day" ]; then
+    exit 0;
+fi
+
+# in case anacron is already running,
+# there will be log (daemon won't be running twice).
+if test -x /usr/bin/on_ac_power; then
+    /usr/bin/on_ac_power &> /dev/null
+    if test $? -eq 1; then
+    exit 0
+    fi
+fi
+/usr/sbin/anacron -s
+[root@m1-pr-acs01 ~]#
+
+
+................................................................................
+................................................................................
+
+[root@m1-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/m1-pr-acs01.tcsbank.ru/
+total 4.8G
+-rwxrwxrwx 1 root root 633M Dec 11 03:13 catalina.out-20181211.gz
+-rwxrwxrwx 1 root root 611M Dec 12 03:37 catalina.out-20181212.gz
+-rwxrwxrwx 1 root root 605M Dec 13 03:17 catalina.out-20181213.gz
+-rwxrwxrwx 1 root root 603M Dec 14 03:49 catalina.out-20181214.gz
+-rwxrwxrwx 1 root root 651M Dec 15 03:29 catalina.out-20181215.gz
+-rwxrwxrwx 1 root root 557M Dec 16 03:19 catalina.out-20181216.gz
+-rwxrwxrwx 1 root root 525M Dec 17 03:28 catalina.out-20181217.gz
+-rwxrwxrwx 1 root root 629M Dec 18 03:10 catalina.out-20181218.gz
+[root@m1-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 3.7G
+-rw-r--r-- 1 acs acs   18K Dec 12 23:57 catalina.2018-12-12.log
+-rw-r--r-- 1 acs acs   17K Dec 13 23:59 catalina.2018-12-13.log
+-rw-r--r-- 1 acs acs   24K Dec 14 23:43 catalina.2018-12-14.log
+-rw-r--r-- 1 acs acs   17K Dec 15 23:58 catalina.2018-12-15.log
+-rw-r--r-- 1 acs acs   17K Dec 16 23:37 catalina.2018-12-16.log
+-rw-r--r-- 1 acs acs   14K Dec 17 23:26 catalina.2018-12-17.log
+-rw-r--r-- 1 acs acs   11K Dec 18 10:34 catalina.2018-12-18.log
+-rw-r--r-- 1 acs root 673M Dec 18 11:11 catalina.out
+-rw-r--r-- 1 acs acs  506M Nov 20  2015 catalina.out-20151120
+-rw-r--r-- 1 acs acs  2.5G May 16  2018 catalina.out-20180516
+-rw-r--r-- 1 acs acs  922K Dec 12 23:59 localhost.2018-12-12.log
+-rw-r--r-- 1 acs acs  935K Dec 13 23:59 localhost.2018-12-13.log
+-rw-r--r-- 1 acs acs  936K Dec 14 23:58 localhost.2018-12-14.log
+-rw-r--r-- 1 acs acs  779K Dec 15 23:59 localhost.2018-12-15.log
+-rw-r--r-- 1 acs acs  790K Dec 16 23:59 localhost.2018-12-16.log
+-rw-r--r-- 1 acs acs  992K Dec 17 23:59 localhost.2018-12-17.log
+-rw-r--r-- 1 acs acs  249K Dec 18 11:11 localhost.2018-12-18.log
+[root@m1-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    # size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@m1-pr-acs01 ~]# cat
+
+................................................................................
+................................................................................
+................................................................................
+
+
+[root@m1-pr-acs01 ~]# logrotate -vdf /etc/logrotate.d/tomcat
+reading config file /etc/logrotate.d/tomcat
+reading config info for /opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log
+
+Handling 1 logs
+
+rotating pattern: /opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log  forced from command line (7 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/apache-tomcat/logs/catalina.out
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-12.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-13.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-14.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-15.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-16.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-17.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-18.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-12.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-13.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-14.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-15.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-16.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-17.log
+  log needs rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-18.log
+  log needs rotating
+rotating log /opt/apache-tomcat/logs/catalina.out, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.out to /opt/apache-tomcat/logs/catalina.out-20181218
+truncating /opt/apache-tomcat/logs/catalina.out
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.out: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-12.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-12.log to /opt/apache-tomcat/logs/catalina.2018-12-12.log-20181218
+truncating /opt/apache-tomcat/logs/catalina.2018-12-12.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-12.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-13.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-13.log to /opt/apache-tomcat/logs/catalina.2018-12-13.log-20181218
+truncating /opt/apache-tomcat/logs/catalina.2018-12-13.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-13.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-14.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-14.log to /opt/apache-tomcat/logs/catalina.2018-12-14.log-20181218
+truncating /opt/apache-tomcat/logs/catalina.2018-12-14.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-14.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-15.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-15.log to /opt/apache-tomcat/logs/catalina.2018-12-15.log-20181218
+truncating /opt/apache-tomcat/logs/catalina.2018-12-15.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-15.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-16.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-16.log to /opt/apache-tomcat/logs/catalina.2018-12-16.log-20181218
+truncating /opt/apache-tomcat/logs/catalina.2018-12-16.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-16.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-17.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-17.log to /opt/apache-tomcat/logs/catalina.2018-12-17.log-20181218
+truncating /opt/apache-tomcat/logs/catalina.2018-12-17.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-17.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/catalina.2018-12-18.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/catalina.2018-12-18.log to /opt/apache-tomcat/logs/catalina.2018-12-18.log-20181218
+truncating /opt/apache-tomcat/logs/catalina.2018-12-18.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/catalina.2018-12-18.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-12.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-12.log to /opt/apache-tomcat/logs/localhost.2018-12-12.log-20181218
+truncating /opt/apache-tomcat/logs/localhost.2018-12-12.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-12.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-13.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-13.log to /opt/apache-tomcat/logs/localhost.2018-12-13.log-20181218
+truncating /opt/apache-tomcat/logs/localhost.2018-12-13.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-13.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-14.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-14.log to /opt/apache-tomcat/logs/localhost.2018-12-14.log-20181218
+truncating /opt/apache-tomcat/logs/localhost.2018-12-14.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-14.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-15.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-15.log to /opt/apache-tomcat/logs/localhost.2018-12-15.log-20181218
+truncating /opt/apache-tomcat/logs/localhost.2018-12-15.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-15.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-16.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-16.log to /opt/apache-tomcat/logs/localhost.2018-12-16.log-20181218
+truncating /opt/apache-tomcat/logs/localhost.2018-12-16.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-16.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-17.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-17.log to /opt/apache-tomcat/logs/localhost.2018-12-17.log-20181218
+truncating /opt/apache-tomcat/logs/localhost.2018-12-17.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-17.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+rotating log /opt/apache-tomcat/logs/localhost.2018-12-18.log, log->rotateCount is 7
+dateext suffix '-20181218'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+glob finding old rotated logs failed
+copying /opt/apache-tomcat/logs/localhost.2018-12-18.log to /opt/apache-tomcat/logs/localhost.2018-12-18.log-20181218
+truncating /opt/apache-tomcat/logs/localhost.2018-12-18.log
+running postrotate script
+running script with arg /opt/apache-tomcat/logs/localhost.2018-12-18.log: "
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+"
+compressing log with: /bin/gzip
+[root@m1-pr-acs01 ~]# logrotate -v /etc/logrotate.d/tomcat
+reading config file /etc/logrotate.d/tomcat
+reading config info for /opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log
+
+Handling 1 logs
+
+rotating pattern: /opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log  after 1 days (7 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/apache-tomcat/logs/catalina.out
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-12.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-13.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-14.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-15.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-16.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-17.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/catalina.2018-12-18.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-12.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-13.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-14.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-15.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-16.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-17.log
+  log does not need rotating
+considering log /opt/apache-tomcat/logs/localhost.2018-12-18.log
+  log does not need rotating
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+not running postrotate script, since no logs were rotated
+[root@m1-pr-acs01 ~]# logrotate -f /etc/logrotate.d/tomcat
+rsync: link_stat "/opt/apache-tomcat/logs/*.gz" failed: No such file or directory (2)
+rsync error: some files/attrs were not transferred (see previous errors) (code 23) at main.c(1039) [sender=3.0.6]
+[root@m1-pr-acs01 ~]#
+[root@m1-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/m1-pr-acs01.tcsbank.ru/
+total 4.3G
+-rwxrwxrwx 1 root root  728 Dec 18 12:26 catalina.2018-12-12.log-20181218.gz
+-rwxrwxrwx 1 root root  675 Dec 18 12:26 catalina.2018-12-13.log-20181218.gz
+-rwxrwxrwx 1 root root 1.2K Dec 18 12:26 catalina.2018-12-14.log-20181218.gz
+-rwxrwxrwx 1 root root  681 Dec 18 12:27 catalina.2018-12-15.log-20181218.gz
+-rwxrwxrwx 1 root root  712 Dec 18 12:27 catalina.2018-12-16.log-20181218.gz
+-rwxrwxrwx 1 root root  609 Dec 18 12:27 catalina.2018-12-17.log-20181218.gz
+-rwxrwxrwx 1 root root  927 Dec 18 12:27 catalina.2018-12-18.log-20181218.gz
+-rwxrwxrwx 1 root root 633M Dec 11 03:13 catalina.out-20181211.gz
+-rwxrwxrwx 1 root root 611M Dec 12 03:37 catalina.out-20181212.gz
+-rwxrwxrwx 1 root root 605M Dec 13 03:17 catalina.out-20181213.gz
+-rwxrwxrwx 1 root root 603M Dec 14 03:49 catalina.out-20181214.gz
+-rwxrwxrwx 1 root root 651M Dec 15 03:29 catalina.out-20181215.gz
+-rwxrwxrwx 1 root root 557M Dec 16 03:19 catalina.out-20181216.gz
+-rwxrwxrwx 1 root root 525M Dec 17 03:28 catalina.out-20181217.gz
+-rwxrwxrwx 1 root root 177M Dec 18 12:26 catalina.out-20181218.gz
+-rwxrwxrwx 1 root root  22K Dec 18 12:27 localhost.2018-12-12.log-20181218.gz
+-rwxrwxrwx 1 root root  24K Dec 18 12:27 localhost.2018-12-13.log-20181218.gz
+-rwxrwxrwx 1 root root  23K Dec 18 12:27 localhost.2018-12-14.log-20181218.gz
+-rwxrwxrwx 1 root root  19K Dec 18 12:27 localhost.2018-12-15.log-20181218.gz
+-rwxrwxrwx 1 root root  20K Dec 18 12:27 localhost.2018-12-16.log-20181218.gz
+-rwxrwxrwx 1 root root  25K Dec 18 12:27 localhost.2018-12-17.log-20181218.gz
+[root@m1-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 3.0G
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-12.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-13.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-14.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-15.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 catalina.2018-12-16.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 catalina.2018-12-17.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 catalina.2018-12-18.log
+-rw-r--r-- 1 acs root 7.5M Dec 18 12:28 catalina.out
+-rw-r--r-- 1 acs acs  506M Nov 20  2015 catalina.out-20151120
+-rw-r--r-- 1 acs acs  2.5G May 16  2018 catalina.out-20180516
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-12.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-13.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-14.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-15.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-16.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-17.log
+-rw-r--r-- 1 acs acs  1.4K Dec 18 12:28 localhost.2018-12-18.log
+-rw-r--r-- 1 acs acs  7.6K Dec 18 12:27 localhost.2018-12-18.log-20181218.gz
+[root@m1-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    # size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@m1-pr-acs01 ~]#
+
+#
+#	files in /opt/apache-tomcat/logs/
+#	catalina.2018-12-12.log and localhost.2018-12-12.log have 0 size, so it was not rsynced because it was not compressed because it were not rotated.
+#
+................................................................................
+
+#
+#	20181218
+#	At this moment we have follow files in rotated dirs:
+#
+
+[root@m1-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 2.5G
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-12.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-13.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-14.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:26 catalina.2018-12-15.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 catalina.2018-12-16.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 catalina.2018-12-17.log
+-rw-r--r-- 1 acs acs   177 Dec 18 12:28 catalina.2018-12-18.log
+-rw-r--r-- 1 acs root  30M Dec 18 12:34 catalina.out
+-rw-r--r-- 1 acs acs  2.5G May 16  2018 catalina.out-20180516
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-12.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-13.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-14.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-15.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-16.log
+-rw-r--r-- 1 acs acs     0 Dec 18 12:27 localhost.2018-12-17.log
+-rw-r--r-- 1 acs acs  8.7K Dec 18 12:34 localhost.2018-12-18.log
+-rw-r--r-- 1 acs acs  7.6K Dec 18 12:27 localhost.2018-12-18.log-20181218.gz
+[root@m1-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# ls -Alh /opt/apache-tomcat/logs/
+total 80M
+-rw-r--r-- 1 acs  acs     0 Dec 18 03:21 catalina.2018-12-07.log
+-rw-r--r-- 1 acs  acs     0 Dec 18 03:21 catalina.2018-12-11.log
+-rw-r--r-- 1 acs  acs     0 Dec 18 03:21 catalina.2018-12-14.log
+-rw-r--r-- 1 acs  acs  5.4K Dec 18 02:03 catalina.2018-12-18.log
+-rw------- 1 acs  acs   86K Dec 18 12:34 catalina.out
+-rw-r--r-- 1 acs  acs     0 Dec 18 03:21 localhost.2018-12-11.log
+-rw-r--r-- 1 acs  acs    20 Dec 18 03:21 localhost.2018-12-11.log-20181218.gz
+-rw-r--r-- 1 root root  15M Dec 13  2013 pareq
+-rw-r--r-- 1 root root  66M Dec 13  2013 pares
+[root@ds-pr-acs01 ~]#
+
+#
+#	On remote nfs-resource we have follow directories.
+#
+[root@m1-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/
+total 336K
+drwxrwxrwx  2 root root 4.0K Dec 18 03:21 ds-pr-acs01.tcsbank.ru
+drwxrwxrwx  2 root root 4.0K Dec 18 12:34 m1-pr-acs01.tcsbank.ru
+drwxrwxrwx 16 root root 4.0K Dec 18 06:00 .snapshot
+drwxrwxrwx  2 root root 160K Dec 17 00:02 vm-var2-app101
+drwxrwxrwx  2 root root 156K Dec 17 00:01 vm-var2-app102
+[root@m1-pr-acs01 ~]#
+
+
+#
+#	And we have follow archived files in remote nfs-resource.
+#
+[root@m1-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/m1-pr-acs01.tcsbank.ru/
+total 4.4G
+-rwxrwxrwx 1 root root  728 Dec 18 12:26 catalina.2018-12-12.log-20181218.gz
+-rwxrwxrwx 1 root root  675 Dec 18 12:26 catalina.2018-12-13.log-20181218.gz
+-rwxrwxrwx 1 root root 1.2K Dec 18 12:26 catalina.2018-12-14.log-20181218.gz
+-rwxrwxrwx 1 root root  681 Dec 18 12:27 catalina.2018-12-15.log-20181218.gz
+-rwxrwxrwx 1 root root  712 Dec 18 12:27 catalina.2018-12-16.log-20181218.gz
+-rwxrwxrwx 1 root root  609 Dec 18 12:27 catalina.2018-12-17.log-20181218.gz
+-rwxrwxrwx 1 root root  927 Dec 18 12:27 catalina.2018-12-18.log-20181218.gz
+-rwxrwxrwx 1 root root  89M Nov 20  2015 catalina.out-20151120.gz
+-rwxrwxrwx 1 root root 633M Dec 11 03:13 catalina.out-20181211.gz
+-rwxrwxrwx 1 root root 611M Dec 12 03:37 catalina.out-20181212.gz
+-rwxrwxrwx 1 root root 605M Dec 13 03:17 catalina.out-20181213.gz
+-rwxrwxrwx 1 root root 603M Dec 14 03:49 catalina.out-20181214.gz
+-rwxrwxrwx 1 root root 651M Dec 15 03:29 catalina.out-20181215.gz
+-rwxrwxrwx 1 root root 557M Dec 16 03:19 catalina.out-20181216.gz
+-rwxrwxrwx 1 root root 525M Dec 17 03:28 catalina.out-20181217.gz
+-rwxrwxrwx 1 root root 177M Dec 18 12:26 catalina.out-20181218.gz
+-rwxrwxrwx 1 root root  22K Dec 18 12:27 localhost.2018-12-12.log-20181218.gz
+-rwxrwxrwx 1 root root  24K Dec 18 12:27 localhost.2018-12-13.log-20181218.gz
+-rwxrwxrwx 1 root root  23K Dec 18 12:27 localhost.2018-12-14.log-20181218.gz
+-rwxrwxrwx 1 root root  19K Dec 18 12:27 localhost.2018-12-15.log-20181218.gz
+-rwxrwxrwx 1 root root  20K Dec 18 12:27 localhost.2018-12-16.log-20181218.gz
+-rwxrwxrwx 1 root root  25K Dec 18 12:27 localhost.2018-12-17.log-20181218.gz
+[root@m1-pr-acs01 ~]#
+
+[root@m1-pr-acs01 ~]# ls -Alh /mnt/processinglogs_acs/ds-pr-acs01.tcsbank.ru/
+total 76M
+-rwxrwxrwx 1 root root   20 Dec 17 17:41 catalina.2018-12-07.log-20181217.gz
+-rwxrwxrwx 1 root root   20 Dec 18 03:21 catalina.2018-12-07.log-20181218.gz
+-rwxrwxrwx 1 root root   20 Dec 17 17:41 catalina.2018-12-11.log-20181217.gz
+-rwxrwxrwx 1 root root   20 Dec 18 03:21 catalina.2018-12-11.log-20181218.gz
+-rwxrwxrwx 1 root root   20 Dec 17 17:41 catalina.2018-12-14.log-20181217.gz
+-rwxrwxrwx 1 root root   20 Dec 18 03:21 catalina.2018-12-14.log-20181218.gz
+-rwxrwxrwx 1 root root  26M Aug  8 03:50 catalina.out-20180808.gz
+-rwxrwxrwx 1 root root  22M Aug  9 03:49 catalina.out-20180809.gz
+-rwxrwxrwx 1 root root 2.7M Aug 20 03:17 catalina.out-20180820.gz
+-rwxrwxrwx 1 root root 2.8M Sep  7 03:25 catalina.out-20180907.gz
+-rwxrwxrwx 1 root root 2.4M Oct  6 03:39 catalina.out-20181006.gz
+-rwxrwxrwx 1 root root 2.6M Oct 23 03:33 catalina.out-20181023.gz
+-rwxrwxrwx 1 root root  19M Nov 21 03:45 catalina.out-20181121.gz
+-rwxrwxrwx 1 root root  365 Dec 17 17:41 catalina.out-20181217.gz
+-rwxrwxrwx 1 root root 4.4K Dec 18 03:21 catalina.out-20181218.gz
+-rwxrwxrwx 1 root root   20 Dec 17 17:41 localhost.2018-12-11.log-20181217.gz
+[root@m1-pr-acs01 ~]#
+
+#
+#	And it makes with follow rotating log configurations.
+#
+[root@m1-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    # size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@m1-pr-acs01 ~]# md5sum /etc/logrotate.d/tomcat
+019d99e68a7648d462731a187ae0e394  /etc/logrotate.d/tomcat
+[root@m1-pr-acs01 ~]#
+
+
+[root@ds-pr-acs01 ~]# cat /etc/logrotate.d/tomcat
+/opt/apache-tomcat/logs/catalina.out /opt/apache-tomcat/logs/*.log {
+    copytruncate
+    rotate 7
+    daily
+    compress
+    missingok
+    # size 20M
+    dateext
+    postrotate
+      [ -d /mnt/processinglogs_acs/ ] && /usr/bin/rsync -a --remove-source-files --quiet /opt/apache-tomcat/logs/*.gz /mnt/processinglogs_acs/$(hostname)/ || true
+    endscript
+}
+[root@ds-pr-acs01 ~]# md5sum /etc/logrotate.d/tomcat
+019d99e68a7648d462731a187ae0e394  /etc/logrotate.d/tomcat
+[root@ds-pr-acs01 ~]#
+
+
+................................................................................
+
+
+
+
+
+

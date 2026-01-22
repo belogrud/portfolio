@@ -1,0 +1,231 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   616661
+Название    №616661
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  09.11.2015 13:03
+Дата регистрации    09.11.2015 13:03
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Привет,
+Просьба переименовать машины:
+
+vm-wmq-dmz01t переименуй, плз, в vm-wmq-tst03
+vm-wmq-dmz01p в в vm-wmq-app03
+И перенести их из DMZ в сети где лежат vm-wmq-app01 (Prod)
+vm-wmq-tst03 (Test).
+
+С уважением,
+
+Алексей
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+09.11.2015 14:14    записи в DNS удалил Сотников Сергей А
+09.11.2015 14:11    @net-admins
+Коллеги, для интеграции с БКС создавался VPN канал. В рамках этого VPN необходимо дать доступ БКСу на наш тестовый сервер:
+IP: vm-wmq-tst03
+Port: 1424
+Protocol: TCP
+
+Спасибо.    Кирсанов Сергей
+09.11.2015 13:37    ВМ переименовал:
+vm-wmq-tst03 / 10.216.33.43
+vm-wmq-app03 / 10.216.32.31
+
+Записи в DNS создал.
+
+@unix-admins
+- удалить из мониторинга сервера vm-wmq-dmz01t и vm-wmq-dmz01p
+- добавить в мониторинг vm-wmq-tst03 и vm-wmq-app03
+@net-admins
+- удалить правила для машин 192.168.5.236 и 192.168.5.237
+@win-admins
+- удалить записи из DNS vm-wmq-dmz01t и vm-wmq-dmz01p   Бегизардов Павел
+
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ find . -name vm-wmq-dmz01t.cfg
+./objects/servers/vmware/esb/vm-wmq-dmz01t.cfg
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ find . -name vm-wmq-dmz01p.cfg
+./objects/servers/vmware/esb/vm-wmq-dmz01p.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ mv ./objects/servers/vmware/esb/{vm-wmq-dmz01t,vm-wmq-tst03}.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ mv ./objects/servers/vmware/esb/{vm-wmq-dmz01p,vm-wmq-app03}.cfg
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ cat ~/notes.txt
+
+1. git checkout belogrud.
+*. git pull -> this command pull all master branch into branch belogrud.
+2. create configuration file for host.
+3. git add file ; git commit file ; git push branch belogrud.
+        Here we can not commit this file. It will allow work with two
+different configuration file. One of them can be stashed if it needs.
+
+*. copy configurtion file to /etc/nagios folder and restart nagios.
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; cp
+~bsv/work/vm-vol-nag01t/objects/servers/vmware/vm-pwc01.cfg
+objects/servers/vmware/ ; ls objects/servers/vmware/vm-pwc01.cfg ; read -p
+"Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v
+/etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios
+reload'
+
+
+4. wait unitl all checks will work fine.
+5. remove configuration file from /etc/nagios folder and restart nagios.
+6. git commit good file ; git checkout master and merge master branch with branch belogrud.
+*. git push and sudo to root and git pull and restart nagios.
+
+
+[root@vm-vol-nag01t nagios]# pynag list where host_name=vm-pwc01
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+host                 vm-pwc01
+/etc/nagios/objects/servers/vmware/vm-pwc01.cfg
+service              vm-pwc01/CPU Load
+/etc/nagios/objects/servers/vmware/vm-pwc01.cfg
+service              vm-pwc01/Drive C:\ Space
+/etc/nagios/objects/servers/vmware/vm-pwc01.cfg
+service              vm-pwc01/Memory Usage
+/etc/nagios/objects/servers/vmware/vm-pwc01.cfg
+service              vm-pwc01/PING
+/etc/nagios/objects/servers/vmware/vm-pwc01.cfg
+service              vm-pwc01/Uptime
+/etc/nagios/objects/servers/vmware/vm-pwc01.cfg
+service              vm-pwc01/Windows Time
+/etc/nagios/objects/servers/vmware/vm-pwc01.cfg
+----------7 objects matches search
+condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+
+
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c ' diff -Nuar {/etc/nagios/,/home/bsv/work/vm-vol-nag01t/}objects/servers/vmware/vm-bicms01d.cfg'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c ' ls /etc/nagios/objects/servers/vmware/vm-bicms01d.cfg'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c ' rm /etc/nagios/objects/servers/vmware/vm-bicms01d.cfg'
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git push ; read -p "Press enter to continue"; sudo -u root -i sh -c 'cd /etc/nagios ; git status' ; read -p "Press enter to continue" ; sudo -u root -i sh -c 'cd /etc/nagios ; git pull' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; service nagios reload'
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; git status' ; read ; sudo -u root -i sh -c 'cd /etc/nagios ; cp ~bsv/work/vm-vol-nag01t/objects/servers/dc-ds/windows/ds-aic-voice{15,16}.cfg ./objects/servers/dc-ds/windows/ ; cp ~bsv/work/vm-vol-nag01t/objects/servers/dc-m1/windows/m1-aic-voice{13,14}.cfg ./objects/servers/dc-m1/windows/ ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; service nagios reload'
+
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git commit -m "ITP-1057. Monitoring database cluster ip for BPM was written into objects/servers/cluster-resources/db-on-db06.cfg file" objects/servers/cluster-resources/db-bpm-prod.cfg
+or
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #git commit -a -m "SD#556491. Add check amount of process."
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #git push
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #sudo -u root -i sh -c 'cd /etc/nagios ; git status'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #sudo -u root -i sh -c 'cd /etc/nagios ; git pull'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ #sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; service nagios reload'
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git commit -m "SD#616661. Host vm-wmq-dmz01p.cfg and host vm-wmq-dmz01t removed from monitoring" objects/servers/vmware/esb/vm-wmq-dmz01p.cfg objects/servers/vmware/esb/vm-wmq-dmz01t.cfg
+[belogrud f7b65a9] SD#616661. Host vm-wmq-dmz01p.cfg and host vm-wmq-dmz01t removed from monitoring
+ 2 files changed, 0 insertions(+), 144 deletions(-)
+ delete mode 100644 objects/servers/vmware/esb/vm-wmq-dmz01p.cfg
+ delete mode 100644 objects/servers/vmware/esb/vm-wmq-dmz01t.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git add objects/servers/vmware/esb/vm-wmq-app03.cfg objects/servers/vmware/esb/vm-wmq-tst03.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git commit -m "SD#616661. Hosts vm-wmq-app03 and vm-wmq-tst03 added to monitoring" objects/servers/vmware/esb/vm-wmq-app03.cfg objects/servers/vmware/esb/vm-wmq-tst03.cfg
+[belogrud 4e325b8] SD#616661. Hosts vm-wmq-app03 and vm-wmq-tst03 added to monitoring
+ 2 files changed, 144 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/vmware/esb/vm-wmq-app03.cfg
+ create mode 100644 objects/servers/vmware/esb/vm-wmq-tst03.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git push
+Counting objects: 19, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (14/14), done.
+Writing objects: 100% (14/14), 1.49 KiB, done.
+Total 14 (delta 11), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios/vm-vol-nag01t.git
+   fac0297..4e325b8  belogrud -> belogrud
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git status
+# On branch belogrud
+# Your branch is ahead of 'origin/master' by 2 commits.
+#
+nothing to commit (working directory clean)
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+
+bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; rm objects/servers/vmware/esb/vm-wmq-dmz01p.cfg objects/servers/vmware/esb/vm-wmq-dmz01t.cfg ; find . -name vm-wmq-dmz01p.cfg ; find . -name vm-wmq-dmz01t.cfg ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+./puppet_autoconf/vm-wmq-dmz01p.cfg
+./puppet_autoconf/vm-wmq-dmz01t.cfg
+Press enter to w
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; cp ~bsv/work/vm-vol-nag01t/objects/servers/vmware/esb/vm-wmq-app03.cfg objects/servers/vmware/esb/ ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; cp ~bsv/work/vm-vol-nag01t/objects/servers/vmware/esb/vm-wmq-tst03.cfg objects/servers/vmware/esb/ ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git checkout master                                                                                                                                                                                                                       Switched to branch 'master'
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git merge belogrud
+Updating fac0297..4e325b8
+Fast-forward
+ .../esb/{vm-wmq-dmz01p.cfg => vm-wmq-app03.cfg}    |   24 ++++++++++----------
+ .../esb/{vm-wmq-dmz01t.cfg => vm-wmq-tst03.cfg}    |   24 ++++++++++----------
+ 2 files changed, 24 insertions(+), 24 deletions(-)
+ rename objects/servers/vmware/esb/{vm-wmq-dmz01p.cfg => vm-wmq-app03.cfg} (78%)
+ rename objects/servers/vmware/esb/{vm-wmq-dmz01t.cfg => vm-wmq-tst03.cfg} (78%)
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git push
+Total 0 (delta 0), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios/vm-vol-nag01t.git
+   fac0297..4e325b8  master -> master
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+
+[root@vm-vol-nag01t nagios]# git pull
+remote: Counting objects: 19, done.
+remote: Compressing objects: 100% (14/14), done.
+remote: Total 14 (delta 11), reused 0 (delta 0)
+Unpacking objects: 100% (14/14), done.
+From gitlab.tcsbank.ru:~/repositories/nagios/vm-vol-nag01t
+   06d834f..4e325b8  belogrud   -> origin/belogrud
+   fac0297..4e325b8  master     -> origin/master
+Updating fac0297..4e325b8
+error: Untracked working tree file 'objects/servers/vmware/esb/vm-wmq-app03.cfg' would be overwritten by merge.  Aborting
+[root@vm-vol-nag01t nagios]# rm objects/servers/vmware/esb/vm-wmq-app03.cfg objects/servers/vmware/esb/vm-wmq-tst03.cfg
+rm: remove regular file `objects/servers/vmware/esb/vm-wmq-app03.cfg'? y
+rm: remove regular file `objects/servers/vmware/esb/vm-wmq-tst03.cfg'? y
+[root@vm-vol-nag01t nagios]# git pull
+Updating fac0297..4e325b8
+Fast-forward
+ .../esb/{vm-wmq-dmz01p.cfg => vm-wmq-app03.cfg}    |   24 ++++++++++----------
+ .../esb/{vm-wmq-dmz01t.cfg => vm-wmq-tst03.cfg}    |   24 ++++++++++----------
+ 2 files changed, 24 insertions(+), 24 deletions(-)
+ rename objects/servers/vmware/esb/{vm-wmq-dmz01p.cfg => vm-wmq-app03.cfg} (78%)
+ rename objects/servers/vmware/esb/{vm-wmq-dmz01t.cfg => vm-wmq-tst03.cfg} (78%)
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# /usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload
+
+
+
+

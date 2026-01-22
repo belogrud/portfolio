@@ -1,0 +1,1810 @@
+
+................................................................................
+
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, January 13, 2016 7:23 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: dwh-adm; Ryabov Aleksey; unix-admins
+Subject: RE: Лишний параметр ядра на 3 машинах GP DS PRod + M1 GP Test
+
+Вероятная причина присутствия модулей iptables в памяти сервера ds-gp-prd-sdw1 – это выполненная команда service iptables status, которая хоть и не запускает iptalbes, но подгружает его модули в память (об этой особенности была переписка в своё время).
+
+Такая команда была выполнена вчера:
+
+Jan 12 14:27:18 sdw1 user_cmd: 2016-01-12 14:27:18 service iptables status by root from [ash  pts/1  2016-01-12  14:27  (toi0013.ti.local)]
+Jan 13 18:22:23 sdw1 user_cmd: 2016-01-13 18:22:23 chkconfig --list | grep iptables by root from [root  pts/2  2016-01-13  18:17  (smdw)]
+Jan 13 18:23:33 sdw1 user_cmd: 2016-01-13 18:22:23 chkconfig --list | grep iptables by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+Jan 13 18:24:03 sdw1 user_cmd: 2016-01-13 18:24:03 ps axu |grep iptable[s] by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+Jan 13 18:24:13 sdw1 user_cmd: 2016-01-13 18:24:13 service iptables status by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+Jan 13 18:25:16 sdw1 user_cmd: 2016-01-13 18:25:16 service iptables stop by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+
+Под учётной записью ash.
+[root@ds-gp-prd-sdw1 ~]# grep ^ash /etc/passwd
+ash:x:544:544:Shinkarev Arkadiy Sergeevich:/home/ash:/bin/bash
+[root@ds-gp-prd-sdw1 ~]#
+
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, January 13, 2016 7:05 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: dwh-adm; Ryabov Aleksey; unix-admins
+Subject: RE: Лишний параметр ядра на 3 машинах GP DS PRod + M1 GP Test
+
+На серверах контура m1-gp-tst присутствовали модули ip6tables.
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; lsmod | grep nf_ )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  374 bonding,ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-smdw.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  100 bonding,ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw1.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  869 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+…
+
+Модули выгружены, служба остановлена, автозапуск службы ip6tables отлючен.
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; lsmod | grep nf_ )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+m1-gp-tst-smdw.tcsbank.ru
+m1-gp-tst-sdw1.tcsbank.ru
+m1-gp-tst-sdw2.tcsbank.ru
+m1-gp-tst-sdw3.tcsbank.ru
+m1-gp-tst-sdw4.tcsbank.ru
+m1-gp-tst-sdw5.tcsbank.ru
+m1-gp-tst-sdw6.tcsbank.ru
+m1-gp-tst-sdw7.tcsbank.ru
+m1-gp-tst-sdw8.tcsbank.ru
+m1-gp-tst-sdw9.tcsbank.ru
+m1-gp-tst-sdw10.tcsbank.ru
+m1-gp-tst-sdw11.tcsbank.ru
+m1-gp-tst-sdw12.tcsbank.ru
+m1-gp-tst-sdw13.tcsbank.ru
+m1-gp-tst-sdw14.tcsbank.ru
+m1-gp-tst-sdw15.tcsbank.ru
+m1-gp-tst-sdw16.tcsbank.ru
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; chkconfig --list | grep ip6tables  )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-smdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw1.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw2.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw3.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw4.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw5.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw6.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw7.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw8.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw9.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw10.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw11.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw12.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw13.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw14.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw15.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw16.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@m1-gp-tst-smdw ~]#
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, January 13, 2016 6:53 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: dwh-adm; Ryabov Aleksey; unix-admins
+Subject: RE: Лишний параметр ядра на 3 машинах GP DS PRod + M1 GP Test
+
+На серверах ds-gp-prd-mdw и ds-gp-prd-smdw модули iptables и ip6tables выгружены тоже (на прежних серверах-мастерах iptables использовался и не мешал работе).
+
+[root@ds-gp-prd-smdw ~]# lsmod | grep nf
+nfs                   429098  2
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  19 nfs,lockd,auth_rpcgss,nfs_acl
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  102 bonding,ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+[root@ds-gp-prd-smdw ~]# chkconfig --list | grep iptables
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@ds-gp-prd-smdw ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@ds-gp-prd-smdw ~]# service iptables stop
+iptables: Setting chains to policy ACCEPT: filter          [  OK  ]
+iptables: Flushing firewall rules:                         [  OK  ]
+iptables: Unloading modules:                               [  OK  ]
+[root@ds-gp-prd-smdw ~]# chkconfig --list | grep ip6
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@ds-gp-prd-smdw ~]# chkconfig ip6tables off
+[root@ds-gp-prd-smdw ~]# service ip6tables stop
+ip6tables: Setting chains to policy ACCEPT: filter         [  OK  ]
+ip6tables: Flushing firewall rules:                        [  OK  ]
+ip6tables: Unloading modules:                              [  OK  ]
+[root@ds-gp-prd-smdw ~]#
+[root@ds-gp-prd-smdw ~]# lsmod | grep nf
+nfs                   429098  2
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  19 nfs,lockd,auth_rpcgss,nfs_acl
+[root@ds-gp-prd-smdw ~]#
+
+[root@ds-gp-prd-smdw ~]# ssh mdw
+Last login: Wed Jan 13 18:07:49 2016 from mdw
+[root@ds-gp-prd-mdw ~]# chkconfig --list | grep iptables
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@ds-gp-prd-mdw ~]# lsmod | grep nf
+nfs                   429098  2
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  19 nfs,lockd,auth_rpcgss,nfs_acl
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  484 bonding,ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+[root@ds-gp-prd-mdw ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@ds-gp-prd-mdw ~]# service iptables stop
+iptables: Setting chains to policy ACCEPT: filter          [  OK  ]
+iptables: Flushing firewall rules:                         [  OK  ]
+iptables: Unloading modules:                               [  OK  ]
+[root@ds-gp-prd-mdw ~]# uptime
+18:37:08 up 135 days,  8:28,  4 users,  load average: 0.37, 1.23, 1.17
+[root@ds-gp-prd-mdw ~]#
+[root@ds-gp-prd-mdw ~]# chkconfig --list | grep ip6
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@ds-gp-prd-mdw ~]# chkconfig ip6tables off
+[root@ds-gp-prd-mdw ~]# service ip6tables stop
+ip6tables: Setting chains to policy ACCEPT: filter         [  OK  ]
+ip6tables: Flushing firewall rules:                        [  OK  ]
+ip6tables: Unloading modules:                              [  OK  ]
+[root@ds-gp-prd-mdw ~]# lsmod | grep nf
+nfs                   429098  2
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  19 nfs,lockd,auth_rpcgss,nfs_acl
+[root@ds-gp-prd-mdw ~]#
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Wednesday, January 13, 2016 6:31 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: dwh-adm; Ryabov Aleksey; unix-admins
+Subject: RE: Лишний параметр ядра на 3 машинах GP DS PRod + M1 GP Test
+
+Было:
+
+[root@ds-gp-prd-sdw1 ~]# lsmod | grep nf
+nf_nat                 23316  0
+nf_conntrack_ipv4       9506  2 nf_nat
+nf_conntrack           80390  2 nf_nat,nf_conntrack_ipv4
+nf_defrag_ipv4          1483  1 nf_conntrack_ipv4
+nfnetlink_queue         8111  0
+nfnetlink_log           8718  0
+nfnetlink               4200  2 nfnetlink_queue,nfnetlink_log
+nfs                   429098  1
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+[root@ds-gp-prd-sdw1 ~]#
+
+После:
+[root@ds-gp-prd-sdw1 ~]# rmmod nf_nat
+[root@ds-gp-prd-sdw1 ~]# rmmod nf_conntrack_ipv4
+[root@ds-gp-prd-sdw1 ~]# rmmod nf_conntrack
+[root@ds-gp-prd-sdw1 ~]# rmmod nf_defrag_ipv4
+[root@ds-gp-prd-sdw1 ~]# rmmod nfnetlink_queue
+[root@ds-gp-prd-sdw1 ~]# rmmod nfnetlink_log
+[root@ds-gp-prds                   429098  1
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+[root@ds-gp-prd-sdw2 ~]
+
+
+Для справки:
+[root@ds-gp-prd-sdw1 ~]# uptime
+18:20:50 up 141 days,  8:09,  3 users,  load average: 4.43, 3.71, 4.02
+[root@ds-gp-prd-sdw1 ~]#
+
+
+From: Nemchin Dmitriy Yuryevich
+Sent: Wednesday, January 13, 2016 6:12 PM
+To: unix-admins; helpdesk_in
+Cc: dwh-adm; Ryabov Aleksey
+Subject: Лишний параметр ядра на 3 машинах GP DS PRod + M1 GP Test
+
+Коллеги, добрый день!
+
+Какой-то не очень хороший человек установил на 3 из 24 машин (мастера + один сегмент) установил net.netfilter.nf_conntrack_max = 65536.
+
+Этот параметр убивает наш софт. Просьба его убрать…
+
+Та же проблема есть на всех серверах тестового контура ГП.
+
+[root@ds-gp-prd-mdw gpadmin]# run_allservers
+=> sysctl -a |grep net.netfilter.nf_conntrack_max
+[sdw23]
+[sdw22]
+[sdw20]
+[sdw24]
+[sdw16]
+[sdw13]
+[sdw17]
+[sdw18]
+[sdw21]
+[sdw19]
+[sdw15]
+[sdw12]
+[sdw14]
+[ sdw9]
+[ sdw5]
+[sdw11]
+[ sdw4]
+[ sdw1] net.netfilter.nf_conntrack_max = 65536
+[ sdw8]
+[ sdw3]
+[sdw10]
+[ sdw7]
+[ smdw] net.netfilter.nf_conntrack_max = 65536
+[ sdw2]
+[ sdw6]
+[  mdw] net.netfilter.nf_conntrack_max = 65536
+
+С уважением,
+
+Дмитрий Немчин
+Старший системный администратор
+
+................................................................................
+
+Вероятная причина присутствия модулей iptables в памяти сервера ds-gp-prd-sdw1 – это на заре запуска серверов контура в эксплуатацию, выполненная команда вида service iptables status, которая хоть и не запускает iptalbes, но подгружает его модули в память (об этой особенности была переписка в своё время). Возможно запустившим не предполагалось, что серверы проработают 141 день без перезагрузки, поэтому вручную модули iptables не были выгружены с сервера ds-gp-prd-sdw1, а потом об этом могли и просто забыть.
+Любопытно, что об
+
+
+
+rmmod nf_nat nf_conntrack_ipv4 nf_conntrack nf_defrag_ipv4 nfnetlink_queue nfnetlink_log nfnetlink
+
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; lsmod | grep nf_ )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  374 bonding,ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-smdw.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  100 bonding,ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw1.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  869 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw2.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  857 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw3.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  849 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw4.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  837 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw5.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  803 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw6.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  791 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw7.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  783 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw8.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  777 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw9.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  777 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw10.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  789 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw11.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  801 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw12.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  707 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw13.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  699 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw14.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  691 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw15.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  693 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+m1-gp-tst-sdw16.tcsbank.ru
+nf_conntrack_ipv6       8337  3
+nf_defrag_ipv6         27236  1 nf_conntrack_ipv6
+nf_conntrack           80390  2 nf_conntrack_ipv6,xt_state
+ipv6                  334932  633 ip6t_REJECT,nf_conntrack_ipv6,nf_defrag_ipv6
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; chkconfig --list | grep ip6tables ; chkconfig ip6tabes off ; service ip6tables stop ; lsmod | grep nf_ )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-smdw.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw1.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw2.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw3.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw4.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw5.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw6.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw7.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw8.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw9.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw15.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+m1-gp-tst-sdw16.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+error reading information on service ip6tabes: No such file or directory
+ip6tables: Setting chains to policy ACCEPT: filter [  OK  ]
+ip6tables: Flushing firewall rules: [  OK  ]
+ip6tables: Unloading modules: [  OK  ]
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; chkconfig --list | grep ip6tables ; chkconfig ip6tables off ; lsmod | grep nf )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off                                                                                          f   2:on    3:on    4:on    5:on    6:off
+nfs                   429098  1
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+m1-gp-tst-sdw5.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+nfs                   429098  1
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+m1-gp-tst-sdw6.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+nfs                   429098  1
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+m1-gp-tst-sdw7.tcsbank.ru
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+m1-gp-tst-sdw10.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+nfs                   429098  1
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+m1-gp-tst-sdw11.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+nfs                   429098  1
+lockd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+m1-gp-tst-sdw12.tcsbank.ru
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+nfs                   429098  1
+lockd                  73694  1 nfs                                                                             ckd                  73694  1 nfs
+fscache                55636  1 nfs
+auth_rpcgss            46084  1 nfs
+nfs_acl                 2647  1 nfs
+sunrpc                266363  9 nfs,lockd,auth_rpcgss,nfs_acl
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; chkconfig --list | grep ip6tables  )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-smdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw1.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw2.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw3.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw4.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw5.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw6.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw7.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw8.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw9.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw10.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw11.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw12.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw13.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw14.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw15.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-tst-sdw16.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@ds-gp-prd-sdw1 ~]# ls -Alh /var/log/command*
+-rw------- 1 root root    0 Jan 13 12:34 /var/log/commands
+-rw------- 1 root root 823M Jan 13 19:16 /var/log/commands.1
+[root@ds-gp-prd-sdw1 ~]# grep iptable /var/log/commands.1
+Jan 12 14:27:18 sdw1 user_cmd: 2016-01-12 14:27:18 service iptables status by root from [ash  pts/1  2016-01-12  14:27  (toi0013.ti.local)]
+Jan 13 18:22:23 sdw1 user_cmd: 2016-01-13 18:22:23 chkconfig --list | grep iptables by root from [root  pts/2  2016-01-13  18:17  (smdw)]
+Jan 13 18:23:33 sdw1 user_cmd: 2016-01-13 18:22:23 chkconfig --list | grep iptables by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+Jan 13 18:24:03 sdw1 user_cmd: 2016-01-13 18:24:03 ps axu |grep iptable[s] by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+Jan 13 18:24:13 sdw1 user_cmd: 2016-01-13 18:24:13 service iptables status by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+Jan 13 18:25:16 sdw1 user_cmd: 2016-01-13 18:25:16 service iptables stop by root from [root  pts/4  2016-01-13  18:23  (smdw)]
+[root@ds-gp-prd-sdw1 ~]# grep ^ash /etc/passwd
+ash:x:544:544:Shinkarev Arkadiy Sergeevich:/home/ash:/bin/bash
+[root@ds-gp-prd-sdw1 ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; lsmod | grep nf_ )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+m1-gp-tst-smdw.tcsbank.ru
+m1-gp-tst-sdw1.tcsbank.ru
+m1-gp-tst-sdw2.tcsbank.ru
+m1-gp-tst-sdw3.tcsbank.ru
+m1-gp-tst-sdw4.tcsbank.ru
+m1-gp-tst-sdw5.tcsbank.ru
+m1-gp-tst-sdw6.tcsbank.ru
+m1-gp-tst-sdw7.tcsbank.ru
+m1-gp-tst-sdw8.tcsbank.ru
+m1-gp-tst-sdw9.tcsbank.ru
+m1-gp-tst-sdw10.tcsbank.ru
+m1-gp-tst-sdw11.tcsbank.ru
+m1-gp-tst-sdw12.tcsbank.ru
+m1-gp-tst-sdw13.tcsbank.ru
+m1-gp-tst-sdw14.tcsbank.ru
+m1-gp-tst-sdw15.tcsbank.ru
+m1-gp-tst-sdw16.tcsbank.ru
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; lsmod | grep nf_ )" ; done
+m1-gp-prd-mdw
+m1-gp-prd-smdw
+m1-gp-prd-sdw1
+m1-gp-prd-sdw2
+m1-gp-prd-sdw3
+m1-gp-prd-sdw4
+m1-gp-prd-sdw5
+m1-gp-prd-sdw6
+m1-gp-prd-sdw7
+m1-gp-prd-sdw8
+m1-gp-prd-sdw9
+m1-gp-prd-sdw10
+m1-gp-prd-sdw11
+m1-gp-prd-sdw12
+m1-gp-prd-sdw13
+m1-gp-prd-sdw14
+m1-gp-prd-sdw15
+m1-gp-prd-sdw16
+m1-gp-prd-sdw17
+m1-gp-prd-sdw18
+m1-gp-prd-sdw19
+m1-gp-prd-sdw20
+m1-gp-prd-sdw21
+m1-gp-prd-sdw22
+m1-gp-prd-sdw23
+m1-gp-prd-sdw24
+[root@m1-gp-prd-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh ${var1} "( hostname ; lsmod | grep nf_ )" ; done
+ds-gp-dev-mdw
+ds-gp-dev-smdw
+ds-gp-dev-sdw1
+ds-gp-dev-sdw2
+ds-gp-dev-sdw3
+ds-gp-dev-sdw4
+ds-gp-dev-sdw5
+ds-gp-dev-sdw6
+ds-gp-dev-sdw7
+ds-gp-dev-sdw8
+[root@ds-gp-dev-smdw ~]#
+
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; lsmod | grep nf_ )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+ds-gp-prd-smdw.tcsbank.ru
+ds-gp-prd-sdw1
+ds-gp-prd-sdw2
+ds-gp-prd-sdw3
+ds-gp-prd-sdw4
+ds-gp-prd-sdw5
+ds-gp-prd-sdw6
+ds-gp-prd-sdw7
+ds-gp-prd-sdw8
+ds-gp-prd-sdw9
+ds-gp-prd-sdw10
+ds-gp-prd-sdw11
+ds-gp-prd-sdw12
+ds-gp-prd-sdw13
+ds-gp-prd-sdw14
+ds-gp-prd-sdw15
+ds-gp-prd-sdw16
+ds-gp-prd-sdw17
+ds-gp-prd-sdw18
+ds-gp-prd-sdw19
+ds-gp-prd-sdw20
+ds-gp-prd-sdw21
+ds-gp-prd-sdw22
+ds-gp-prd-sdw23
+ds-gp-prd-sdw24
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig --list | grep -e iptables -e ip6tables )" ; done
+m1-gp-prd-mdw
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-smdw
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw1
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw2
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw3
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw4
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw5
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw6
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw7
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw8
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw9
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw10
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw11
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw12
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw13
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw14
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw15
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw16
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw17
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw18
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw19
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw20
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw21
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw22
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw23
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw24
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig ip6tables off )" ; done
+m1-gp-prd-mdw
+m1-gp-prd-smdw
+m1-gp-prd-sdw1
+m1-gp-prd-sdw2
+m1-gp-prd-sdw3
+m1-gp-prd-sdw4
+m1-gp-prd-sdw5
+m1-gp-prd-sdw6
+m1-gp-prd-sdw7
+m1-gp-prd-sdw8
+m1-gp-prd-sdw9
+m1-gp-prd-sdw10
+m1-gp-prd-sdw11
+m1-gp-prd-sdw12
+m1-gp-prd-sdw13
+m1-gp-prd-sdw14
+m1-gp-prd-sdw15
+m1-gp-prd-sdw16
+m1-gp-prd-sdw17
+m1-gp-prd-sdw18
+m1-gp-prd-sdw19
+m1-gp-prd-sdw20
+m1-gp-prd-sdw21
+m1-gp-prd-sdw22
+m1-gp-prd-sdw23
+m1-gp-prd-sdw24
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig --list | grep -e iptables -e ip6tables )" ; done
+m1-gp-prd-mdw
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-smdw
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw1
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw2
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw3
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw4
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw5
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw6
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw7
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw8
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw9
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw10
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw11
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw12
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw13
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw14
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw15
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw16
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw17
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw18
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw19
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw20
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw21
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw22
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw23
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+m1-gp-prd-sdw24
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@m1-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh ${var1} "( hostname ; chkconfig --list | grep -e iptables -e ip6tables )" ; done
+ds-gp-dev-mdw
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-smdw
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw1
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw2
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw3
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw4
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw5
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw6
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw7
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw8
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh ${var1} "( hostname ; chkconfig ip6tables off )" ; done
+ds-gp-dev-mdw
+ds-gp-dev-smdw
+ds-gp-dev-sdw1
+ds-gp-dev-sdw2
+ds-gp-dev-sdw3
+ds-gp-dev-sdw4
+ds-gp-dev-sdw5
+ds-gp-dev-sdw6
+ds-gp-dev-sdw7
+ds-gp-dev-sdw8
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh ${var1} "( hostname ; chkconfig --list | grep -e iptables -e ip6tables )" ; done
+ds-gp-dev-mdw
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-smdw
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw1
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw2
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw3
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw4
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw5
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw6
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw7
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-dev-sdw8
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@ds-gp-dev-smdw ~]#
+
+................................................................................
+
+
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig --list | grep -e iptables -e ip6tables )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-smdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw1
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw2
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw3
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw4
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw5
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw6
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw7
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw8
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw9
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw10
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw11
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw12
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw13
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw14
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw15
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw16
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw17
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw18
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw19
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw20
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw21
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw22
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw23
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw24
+ip6tables       0:off   1:off   2:on    3:on    4:on    5:on    6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig ip6tables off )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+ds-gp-prd-smdw.tcsbank.ru
+ds-gp-prd-sdw1
+ds-gp-prd-sdw2
+ds-gp-prd-sdw3
+ds-gp-prd-sdw4
+ds-gp-prd-sdw5
+ds-gp-prd-sdw6
+ds-gp-prd-sdw7
+ds-gp-prd-sdw8
+ds-gp-prd-sdw9
+ds-gp-prd-sdw10
+ds-gp-prd-sdw11
+ds-gp-prd-sdw12
+ds-gp-prd-sdw13
+ds-gp-prd-sdw14
+ds-gp-prd-sdw15
+ds-gp-prd-sdw16
+ds-gp-prd-sdw17
+ds-gp-prd-sdw18
+ds-gp-prd-sdw19
+ds-gp-prd-sdw20
+ds-gp-prd-sdw21
+ds-gp-prd-sdw22
+ds-gp-prd-sdw23
+ds-gp-prd-sdw24
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig --list | grep -e iptables -e ip6tables )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-smdw.tcsbank.ru
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw1
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw2
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw3
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw4
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw5
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw6
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw7
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw8
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw9
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw10
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw11
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw12
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw13
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw14
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw15
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw16
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw17
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw18
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw19
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw20
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw21
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw22
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw23
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw24
+ip6tables       0:off   1:off   2:off   3:off   4:off   5:off   6:off
+iptables        0:off   1:off   2:off   3:off   4:off   5:off   6:off
+
+[root@ds-gp-prd-smdw ~]# cat /etc/sysconfig/iptables
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+[root@ds-gp-prd-smdw ~]# ssh mdw
+Last login: Wed Jan 13 18:48:37 2016 from smdw
+[root@ds-gp-prd-mdw ~]# cat /etc/sysconfig/iptables
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+[root@ds-gp-prd-mdw ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+
+
+[root@ds-gp-prd-smdw ~]# vim /etc/audit/audit.rules
+
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 8192
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+#-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+-a always,exit -F path=/sbin/iptables -F perm=x -F auid>=500 -F auid!=4294967295 -k software_iptables
+
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; md5sum /etc/audit/audit.rules )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-smdw.tcsbank.ru
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw1
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw2
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw3
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw4
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw5
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw6
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw7
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw8
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw9
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw10
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw11
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw12
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw13
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw14
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw15
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw16
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw17
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw18
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw19
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw20
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw21
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw22
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw23
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+ds-gp-prd-sdw24
+48209a7fef2327285e023ab7c0388012  /etc/audit/audit.rules
+[root@ds-gp-prd-smdw ~]# for var1 in mdw sdw{1..24} ; do scp /etc/audit/audit.rules ${var1}:/etc/audit/audit.rules ; done
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+audit.rules                                                                                                                                                               100% 1572     1.5KB/s   00:00
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; md5sum /etc/audit/audit.rules )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-smdw.tcsbank.ru
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw1
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw2
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw3
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw4
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw5
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw6
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw7
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw8
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw9
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw10
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw11
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw12
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw13
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw14
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw15
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw16
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw17
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw18
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw19
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw20
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw21
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw22
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw23
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+ds-gp-prd-sdw24
+a3852f6f0121021234d94adcf4a63410  /etc/audit/audit.rules
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; service auditd start )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+Starting auditd: [  OK  ]
+ds-gp-prd-smdw.tcsbank.ru
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw1
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw2
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw3
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw4
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw5
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw6
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw7
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw8
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw9
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw10
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw11
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw12
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw13
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw14
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw15
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw16
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw17
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw18
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw19
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw20
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw21
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw22
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw23
+Starting auditd: [  OK  ]
+ds-gp-prd-sdw24
+Starting auditd: [  OK  ]
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig --list | grep auditd )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-smdw.tcsbank.ru
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw1
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw2
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw3
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw4
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw5
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw6
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw7
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw8
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw9
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw10
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw11
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw12
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw13
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw14
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw15
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw16
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw17
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw18
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw19
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw20
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw21
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw22
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw23
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+ds-gp-prd-sdw24
+auditd          0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig auditd on )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+ds-gp-prd-smdw.tcsbank.ru
+ds-gp-prd-sdw1
+ds-gp-prd-sdw2
+ds-gp-prd-sdw3
+ds-gp-prd-sdw4
+ds-gp-prd-sdw5
+ds-gp-prd-sdw6
+ds-gp-prd-sdw7
+ds-gp-prd-sdw8
+ds-gp-prd-sdw9
+ds-gp-prd-sdw10
+ds-gp-prd-sdw11
+ds-gp-prd-sdw12
+ds-gp-prd-sdw13
+ds-gp-prd-sdw14
+ds-gp-prd-sdw15
+ds-gp-prd-sdw16
+ds-gp-prd-sdw17
+ds-gp-prd-sdw18
+ds-gp-prd-sdw19
+ds-gp-prd-sdw20
+ds-gp-prd-sdw21
+ds-gp-prd-sdw22
+ds-gp-prd-sdw23
+ds-gp-prd-sdw24
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh ${var1} "( hostname ; chkconfig --list | grep auditd )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-smdw.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw1
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw2
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw3
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw4
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw5
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw6
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw7
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw8
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw9
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw10
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw11
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw12
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw13
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw14
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw15
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw16
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw17
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw18
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw19
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw20
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw21
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw22
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw23
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+ds-gp-prd-sdw24
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-prd-smdw ~]# auditctl -l
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/sbin/iptables -F perm=x -F auid>=500 -F auid!=-1 -F key=software_iptables
+[root@ds-gp-prd-smdw ~]# ausearch -k software_iptables | aureport -i -f
+
+File Report
+===============================================
+# date time file syscall success exe auid event
+===============================================
+<no events of interest were found>
+
+[root@ds-gp-prd-smdw ~]# ausearch -k software_iptables
+----
+time->Thu Jan 14 15:16:36 2016
+type=CONFIG_CHANGE msg=audit(1452773796.273:6453258): auid=0 ses=336744 op="add rule" key="software_iptables" list=4 res=1
+[root@ds-gp-prd-smdw ~]#
+
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; ausearch -k software_iptables )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+----
+time->Thu Jan 14 15:16:36 2016
+type=CONFIG_CHANGE msg=audit(1452773796.071:106797964): auid=0 ses=5305943 op="add rule" key="software_iptables" list=4 res=1
+Connection to mdw closed.
+ds-gp-prd-smdw.tcsbank.ru
+----
+time->Thu Jan 14 15:16:36 2016
+type=CONFIG_CHANGE msg=audit(1452773796.273:6453258): auid=0 ses=336744 op="add rule" key="software_iptables" list=4 res=1
+Connection to smdw closed.
+ds-gp-prd-sdw1
+----
+time->Thu Jan 14 15:16:36 2016
+type=CONFIG_CHANGE msg=audit(1452773796.602:122249356): auid=0 ses=7664166 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+----
+time->Thu Jan 14 15:16:36 2016
+type=CONFIG_CHANGE msg=audit(1452773796.920:115309075): auid=0 ses=7244346 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+----
+time->Thu Jan 14 15:16:37 2016
+type=CONFIG_CHANGE msg=audit(1452773797.171:122229258): auid=0 ses=7521084 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+----
+time->Thu Jan 14 15:16:37 2016
+type=CONFIG_CHANGE msg=audit(1452773797.374:122233641): auid=0 ses=7521304 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+----
+time->Thu Jan 14 15:16:37 2016
+type=CONFIG_CHANGE msg=audit(1452773797.595:115309301): auid=0 ses=7244318 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+----
+time->Thu Jan 14 15:16:37 2016
+type=CONFIG_CHANGE msg=audit(1452773797.901:15): auid=0 ses=2572308 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+----
+time->Thu Jan 14 15:16:38 2016
+type=CONFIG_CHANGE msg=audit(1452773798.220:15): auid=0 ses=2241627 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+----
+time->Thu Jan 14 15:16:38 2016
+type=CONFIG_CHANGE msg=audit(1452773798.569:115306317): auid=0 ses=7244218 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+----
+time->Thu Jan 14 15:16:38 2016
+type=CONFIG_CHANGE msg=audit(1452773798.890:122227518): auid=0 ses=7521045 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+----
+time->Thu Jan 14 15:16:39 2016
+type=CONFIG_CHANGE msg=audit(1452773799.183:122230633): auid=0 ses=7521306 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+----
+time->Thu Jan 14 15:16:39 2016
+type=CONFIG_CHANGE msg=audit(1452773799.502:115307364): auid=0 ses=7244401 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+----
+time->Thu Jan 14 15:16:39 2016
+type=CONFIG_CHANGE msg=audit(1452773799.877:122226402): auid=0 ses=7521115 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+----
+time->Thu Jan 14 15:16:40 2016
+type=CONFIG_CHANGE msg=audit(1452773800.175:122229461): auid=0 ses=7521275 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+----
+time->Thu Jan 14 15:16:40 2016
+type=CONFIG_CHANGE msg=audit(1452773800.482:115306006): auid=0 ses=7244350 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+----
+time->Thu Jan 14 15:16:40 2016
+type=CONFIG_CHANGE msg=audit(1452773800.791:122225131): auid=0 ses=7521062 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+----
+time->Thu Jan 14 15:16:41 2016
+type=CONFIG_CHANGE msg=audit(1452773801.091:122228607): auid=0 ses=7521239 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+----
+time->Thu Jan 14 15:16:41 2016
+type=CONFIG_CHANGE msg=audit(1452773801.393:115305705): auid=0 ses=7244187 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+----
+time->Thu Jan 14 15:16:41 2016
+type=CONFIG_CHANGE msg=audit(1452773801.687:122227182): auid=0 ses=7520997 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+----
+time->Thu Jan 14 15:16:42 2016
+type=CONFIG_CHANGE msg=audit(1452773802.010:122227286): auid=0 ses=7521038 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+----
+time->Thu Jan 14 15:16:42 2016
+type=CONFIG_CHANGE msg=audit(1452773802.306:115304867): auid=0 ses=7244145 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+----
+time->Thu Jan 14 15:16:42 2016
+type=CONFIG_CHANGE msg=audit(1452773802.607:122224425): auid=0 ses=7520889 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+----
+time->Thu Jan 14 15:16:42 2016
+type=CONFIG_CHANGE msg=audit(1452773802.922:122227475): auid=0 ses=7521034 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+----
+time->Thu Jan 14 15:16:43 2016
+type=CONFIG_CHANGE msg=audit(1452773803.207:115304522): auid=0 ses=7244150 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+----
+time->Thu Jan 14 15:16:43 2016
+type=CONFIG_CHANGE msg=audit(1452773803.527:122223450): auid=0 ses=7520711 op="add rule" key="software_iptables" list=4 res=1
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]#
+
+
+[root@ds-gp-prd-sdw10 ~]# less /var/log/messages
+...
+Jan 14 12:56:52 sdw10 kernel: usb 1-1.6.2: new high speed USB device number 7 using ehci_hcd
+Jan 14 12:56:52 sdw10 kernel: usb 1-1.6.2: New USB device found, idVendor=0624, idProduct=0250
+Jan 14 12:56:52 sdw10 kernel: usb 1-1.6.2: New USB device strings: Mfr=4, Product=5, SerialNumber=6
+Jan 14 12:56:52 sdw10 kernel: usb 1-1.6.2: Product: Mass Storage Function
+Jan 14 12:56:52 sdw10 kernel: usb 1-1.6.2: Manufacturer: Avocent
+Jan 14 12:56:52 sdw10 kernel: usb 1-1.6.2: SerialNumber: 20120731
+Jan 14 12:56:52 sdw10 kernel: usb 1-1.6.2: configuration #1 chosen from 1 choice
+Jan 14 12:56:52 sdw10 kernel: scsi4 : SCSI emulation for USB Mass Storage devices
+Jan 14 12:56:53 sdw10 kernel: scsi 4:0:0:0: Direct-Access     iDRAC    SECUPD           0329 PQ: 0 ANSI: 0 CCS
+Jan 14 12:56:53 sdw10 kernel: sd 4:0:0:0: Attached scsi generic sg3 type 0
+Jan 14 12:56:53 sdw10 kernel: sd 4:0:0:0: [sdd] 2112 512-byte logical blocks: (1.08 MB/1.03 MiB)
+Jan 14 12:56:53 sdw10 kernel: sd 4:0:0:0: [sdd] Write Protect is off
+Jan 14 12:56:53 sdw10 kernel: sd 4:0:0:0: [sdd] Assuming drive cache: write through
+Jan 14 12:56:53 sdw10 kernel: sd 4:0:0:0: [sdd] Assuming drive cache: write through
+Jan 14 12:56:53 sdw10 kernel: sdd:
+Jan 14 12:56:53 sdw10 kernel: sd 4:0:0:0: [sdd] Assuming drive cache: write through
+Jan 14 12:56:53 sdw10 kernel: sd 4:0:0:0: [sdd] Attached SCSI removable disk
+Jan 14 12:57:11 sdw10 kernel: usb 1-1.6.2: USB disconnect, device number 7
+Jan 14 12:57:16 sdw10 kernel: usb 1-1.6.2: new high speed USB device number 8 using ehci_hcd
+Jan 14 12:57:16 sdw10 kernel: usb 1-1.6.2: New USB device found, idVendor=0624, idProduct=0250
+Jan 14 12:57:16 sdw10 kernel: usb 1-1.6.2: New USB device strings: Mfr=4, Product=5, SerialNumber=6
+Jan 14 12:57:16 sdw10 kernel: usb 1-1.6.2: Product: Mass Storage Function
+Jan 14 12:57:16 sdw10 kernel: usb 1-1.6.2: Manufacturer: Avocent
+Jan 14 12:57:16 sdw10 kernel: usb 1-1.6.2: SerialNumber: 20120731
+Jan 14 12:57:16 sdw10 kernel: usb 1-1.6.2: configuration #1 chosen from 1 choice
+Jan 14 12:57:16 sdw10 kernel: scsi5 : SCSI emulation for USB Mass Storage devices
+Jan 14 12:57:17 sdw10 kernel: scsi 5:0:0:0: Direct-Access     iDRAC    SECUPD           0329 PQ: 0 ANSI: 0 CCS
+Jan 14 12:57:17 sdw10 kernel: sd 5:0:0:0: Attached scsi generic sg3 type 0
+Jan 14 12:57:17 sdw10 kernel: sd 5:0:0:0: [sdd] 2112 512-byte logical blocks: (1.08 MB/1.03 MiB)
+Jan 14 12:57:18 sdw10 kernel: sd 5:0:0:0: [sdd] Write Protect is off
+Jan 14 12:57:18 sdw10 kernel: sd 5:0:0:0: [sdd] Assuming drive cache: write through
+Jan 14 12:57:18 sdw10 kernel: sd 5:0:0:0: [sdd] Assuming drive cache: write through
+Jan 14 12:57:18 sdw10 kernel: sdd:
+Jan 14 12:57:18 sdw10 kernel: sd 5:0:0:0: [sdd] Assuming drive cache: write through
+Jan 14 12:57:18 sdw10 kernel: sd 5:0:0:0: [sdd] Attached SCSI removable disk
+Jan 14 12:57:34 sdw10 kernel: usb 1-1.6.2: USB disconnect, device number 8
+Jan 14 12:57:56 sdw10 kernel: bnx2x 0000:01:00.2: em3: using MSI-X  IRQs: sp 189  fp[0] 191 ... fp[7] 198
+Jan 14 12:57:57 sdw10 kernel: ADDRCONF(NETDEV_UP): em3: link is not ready
+Jan 14 12:57:57 sdw10 kernel: bnx2x 0000:01:00.3: em4: using MSI-X  IRQs: sp 199  fp[0] 201 ... fp[7] 208
+Jan 14 12:57:57 sdw10 kernel: ADDRCONF(NETDEV_UP): em4: link is not ready
+Jan 14 12:58:08 sdw10 snmpd[118113]: Got trap from peer on fd 11
+Jan 14 12:58:13 sdw10 snmpd[118113]: Got trap from peer on fd 11
+Jan 14 12:58:18 sdw10 kernel: process `cp' is using deprecated sysctl (syscall) net.ipv6.neigh.default.retrans_time; Use net.ipv6.neigh.default.retrans_time_ms instead.
+Jan 14 12:58:19 sdw10 kernel: ip_tables: (C) 2000-2006 Netfilter Core Team
+Jan 14 12:58:19 sdw10 kernel: nf_conntrack version 0.5.0 (16384 buckets, 65536 max)
+Jan 14 12:58:21 sdw10 kernel: ACPI: No handler for Region [POWR] (ffff88305beb81e0) [IPMI]
+Jan 14 12:58:30 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 12:58:30 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 12:58:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 12:58:46 sdw10 kernel: nf_conntrack: table full, dropping packet.
+...
+Jan 14 14:21:35 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:36 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:42 sdw10 kernel: __ratelimit: 9 callbacks suppressed
+Jan 14 14:21:42 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:45 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:48 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:21:50 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:22:25 sdw10 kernel: __ratelimit: 1 callbacks suppressed
+Jan 14 14:22:25 sdw10 kernel: nf_conntrack: table full, dropping packet.
+...
+Jan 14 14:34:03 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:34:17 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:34:17 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:34:17 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:34:17 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:34:18 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:34:18 sdw10 kernel: nf_conntrack: table full, dropping packet.
+Jan 14 14:34:18 sdw10 kernel: nf_conntrack: table full, dropping packet.
+...
+
+
+
+
+
+
+
+
+
+
+

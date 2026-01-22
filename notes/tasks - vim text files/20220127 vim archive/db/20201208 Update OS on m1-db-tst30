@@ -1,0 +1,1437 @@
+
+................................................................................
+[20:55:51 root@m1-db-tst30 ~]# grep -ie "root" /etc/{passwd,shadow}
+/etc/passwd:root:x:0:0:root:/root:/bin/bash
+/etc/passwd:operator:x:11:0:operator:/root:/sbin/nologin
+/etc/shadow:root:$1$xxk16w6V$Y39wo0MXgdeeuJZ7cePE10::0:99999:7:::
+[20:59:39 root@m1-db-tst30 ~]#
+
+[21:02:06 root@m1-db-tst30 ~]# yum list kernel --show-duplicates --disablerepo="*" --enablerepo="rhel-7-server-rpms" | head
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-
+              : manager
+Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+Installed Packages
+kernel.x86_64              3.10.0-693.17.1.el7               @anaconda/7.4
+kernel.x86_64              3.10.0-862.14.4.el7               @rhel-7-server-rpms
+Available Packages
+kernel.x86_64              3.10.0-123.el7                    rhel-7-server-rpms
+kernel.x86_64              3.10.0-123.1.2.el7                rhel-7-server-rpms
+kernel.x86_64              3.10.0-123.4.2.el7                rhel-7-server-rpms
+kernel.x86_64              3.10.0-123.4.4.el7                rhel-7-server-rpms
+[21:02:18 root@m1-db-tst30 ~]# subscription-manager release --list
++-------------------------------------------+
+          Available Releases
++-------------------------------------------+
+7.0
+7.1
+7.2
+7.3
+7.4
+7.5
+7.6
+7.7
+7.8
+7.9
+7Server
+[21:02:28 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[21:02:28 root@m1-db-tst30 ~]# export rootvg=$(lvs --noheadings -o vg_name -S lv_dm_path=`findmnt -r -n -o SOURCE /`| tr -d ' ')
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+[21:03:36 root@m1-db-tst30 ~]#
+[21:03:52 root@m1-db-tst30 ~]# export rootvg=$(lvs --noheadings -o vg_name -S lv_dm_path=`findmnt -r -n -o SOURCE /`| tr -d ' ')
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+[21:04:45 root@m1-db-tst30 ~]# findmnt -r -n -o SOURCE /`| tr -d ' '
+>
+[21:05:49 root@m1-db-tst30 ~]# findmnt -r -n -o SOURCE /
+/dev/mapper/rootvg-root
+[21:06:15 root@m1-db-tst30 ~]# lvs --noheadings -o vg_name -S /dev/mapper/rootvg-root
+  Expecting field name
+  Selection syntax error at '/dev/mapper/rootvg-root'.
+  Use 'help' for selection to get more help.
+[21:06:51 root@m1-db-tst30 ~]# lvs --noheadings -o vg_name -S lv_dm_path=/dev/mapper/rootvg-root
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+  rootvg
+[21:09:22 root@m1-db-tst30 ~]# export rootvg=rootvg
+[21:10:01 root@m1-db-tst30 ~]# vgs -S vg_name=$rootvg
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+  VG     #PV #LV #SN Attr   VSize VFree
+  rootvg   1   5   0 wz--n- 1.09t 892.56g
+[21:10:19 root@m1-db-tst30 ~]# export rootvg=$(lvs --noheadings -o vg_name -S lv_dm_path=`findmnt -r -n -o SOURCE /`| tr -d ' ')
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+[21:11:14 root@m1-db-tst30 ~]# findmnt -r -n -o SOURCE /
+/dev/mapper/rootvg-root
+[21:11:32 root@m1-db-tst30 ~]# lvs  -S "vg_name=$rootvg && lv_role=snapshot"
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+[21:12:34 root@m1-db-tst30 ~]#
+[21:13:49 root@m1-db-tst30 ~]# mkdir -p /mnt/techsupport; mount -t nfs fs-nfsmb3.tcsbank.ru:/db_sosreport /mnt/techsupport -o rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard; mkdir /mnt/techsupport/sosreport/`uname -n`; /usr/sbin/sosreport --batch --tmp-dir=/mnt/techsupport/sosreport/`uname -n`; umount /mnt/techsupport
+
+sosreport (version 3.5)
+
+This command will collect diagnostic and configuration information from
+this Red Hat Enterprise Linux system and installed applications.
+
+An archive containing the collected information will be generated in
+/mnt/techsupport/sosreport/m1-db-tst30.tcsbank.ru/sos.S8HSuW and may be
+provided to a Red Hat support representative.
+
+Any information provided to Red Hat will be treated in accordance with
+the published support policies at:
+
+  https://access.redhat.com/support/
+
+The generated archive may contain data considered sensitive and its
+content should be reviewed by the originating organization before being
+passed to any third party.
+
+No changes will be made to system configuration.
+
+
+ Setting up archive ...
+ Setting up plugins ...
+caught exception in plugin method "grub2.setup()"
+writing traceback to sos_logs/grub2-plugin-errors.txt
+ Running plugins. Please wait ...
+
+  Running 1/90: abrt...
+  Running 2/90: anaconda...
+  Running 3/90: anacron...
+  Running 4/90: ata...
+  Running 5/90: auditd...
+  Running 6/90: autofs...
+  Running 7/90: block...
+  Running 8/90: boot...
+  Running 9/90: cgroups...
+  Running 10/90: clamav...
+  Running 11/90: cron...
+  Running 12/90: crypto...
+  Running 13/90: dbus...
+  Running 14/90: devicemapper...
+  Running 15/90: devices...
+  Running 16/90: dmraid...
+  Running 17/90: dracut...
+  Running 18/90: filesys...
+  Running 19/90: firewalld...
+  Running 20/90: general...
+  Running 21/90: grub2...
+  Running 22/90: hardware...
+  Running 23/90: hts...
+  Running 24/90: i18n...
+  Running 25/90: ipa...
+  Running 26/90: jars...
+  Running 27/90: java...
+  Running 28/90: kdump...
+  Running 29/90: kernel...
+  Running 30/90: keyutils...
+  Running 31/90: kpatch...
+  Running 32/90: krb5...
+  Running 33/90: kvm...
+  Running 34/90: last...
+  Running 35/90: ldap...
+  Running 36/90: libraries...
+  Running 37/90: libvirt...
+  Running 38/90: logrotate...
+  Running 39/90: logs...
+  Running 40/90: lsbrelease...
+  Running 41/90: lvm2...
+  Running 42/90: md...
+  Running 43/90: megacli...
+  Running 44/90: memory...
+  Running 45/90: mrggrid...
+  Running 46/90: mrgmessg...
+  Running 47/90: multipath...
+  Running 48/90: networking...
+  Running 49/90: nfs...
+  Running 50/90: nis...
+  Running 51/90: nss...
+  Running 52/90: ntb...
+  Running 53/90: ntp...
+  Running 54/90: oddjob...
+  Running 55/90: openhpi...
+  Running 56/90: openshift...
+  Running 57/90: openssl...
+  Running 58/90: pam...
+  Running 59/90: passwd...
+  Running 60/90: pci...
+  Running 61/90: perl...
+  Running 62/90: postfix...
+  Running 63/90: process...
+  Running 64/90: processor...
+  Running 65/90: psacct...
+  Running 66/90: puppet...
+  Running 67/90: python...
+  Running 68/90: rpm...
+  Running 69/90: samba...
+  Running 70/90: sar...
+  Running 71/90: scsi...
+  Running 72/90: selinux...
+  Running 73/90: services...
+  Running 74/90: soundcard...
+  Running 75/90: ssh...
+  Running 76/90: sssd...
+  Running 77/90: subscription_manager...
+  Running 78/90: system...
+  Running 79/90: systemd...
+  Running 80/90: systemtap...
+  Running 81/90: sysvipc...
+  Running 82/90: teamd...
+  Running 83/90: tuned...
+  Running 84/90: udev...
+  Running 85/90: usb...
+  Running 86/90: vhostmd...
+  Running 87/90: x11...
+  Running 88/90: xen...
+  Running 89/90: xfs...
+  Running 90/90: yum...
+
+Creating compressed archive...
+
+Your sosreport has been generated and saved in:
+  /mnt/techsupport/sosreport/m1-db-tst30.tcsbank.ru/sosreport-m1-db-tst30.tcsbank.ru-20201208211354.tar.xz
+
+The checksum is: 39b63230c58ae7fbf53a49af88ab2f28
+
+Please send this file to your support representative.
+
+[21:18:06 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# cd /drives/c/share/work/
+[s.belogrud@TCS4357]# ll
+total 2
+dr-xr-x---    1 s.belogr UsersGrp         0 Oct  7 17:57 ansible
+drwxr-xr-x    1 s.belogr UsersGrp         0 Nov 24 22:04 other
+dr-xr-x---    1 s.belogr UsersGrp         0 Oct 26 12:05 python
+[s.belogrud@TCS4357]# cd other
+[s.belogrud@TCS4357]# ll
+total 0
+drwxr-xr-x    1 s.belogr UsersGrp         0 Nov 24 22:05 vm-gitlab01.tcsbank.ru
+[s.belogrud@TCS4357]# cd vm-gitlab01.tcsbank.ru/
+[s.belogrud@TCS4357]# ll
+total 0
+drwxr-xr-x    1 s.belogr UsersGrp         0 Nov 24 22:06 infra-compute
+[s.belogrud@TCS4357]# cd infra-compute/
+[s.belogrud@TCS4357]# ll
+total 0
+drwxr-xr-x    1 s.belogr UsersGrp         0 Nov 24 22:06 sysctl_snapshots
+[s.belogrud@TCS4357]# cd sysctl_snapshots/
+[s.belogrud@TCS4357]# ll
+total 1
+-rw-r--r--    1 s.belogr UsersGrp       250 Nov 24 22:06 README.md
+drwxr-xr-x    1 s.belogr UsersGrp         0 Nov 24 22:06 db
+[s.belogrud@TCS4357]# git pull
+stty: standard input: Inappropriate ioctl for device
+remote: Enumerating objects: 36, done.
+remote: Counting objects: 100% (36/36), done.
+remote: Compressing objects: 100% (27/27), done.
+remote: Total 33 (delta 9), reused 1 (delta 0), pack-reused 0
+Распаковка объектов: 100% (33/33), готово.
+Из vm-gitlab01.tcsbank.ru:infra-compute/sysctl_snapshots
+   eb21123..deb6707  master     -> origin/master
+Обновление eb21123..deb6707
+Fast-forward
+ db/test/m1-db-tst09/.gitkeep                                    |    0
+ db/test/m1-db-tst09/boot.tgz                                    |  Bin 0 -> 150784127 bytes
+ db/test/m1-db-tst09/etc.tgz                                     |  Bin 0 -> 11251771 bytes
+ db/test/m1-db-tst09/sosreport-m1-db-tst09-20201125203516.tar.xz |  Bin 0 -> 49108512 bytes
+ db/test/m1-db-tst09/sysctl                                      | 1569 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ db/test/m1-db-tst28/boot_backup.tgz                             |  Bin 0 -> 146264201 bytes
+ db/test/m1-db-tst28/sysctl                                      | 1658 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 3227 insertions(+)
+ create mode 100644 db/test/m1-db-tst09/.gitkeep
+ create mode 100644 db/test/m1-db-tst09/boot.tgz
+ create mode 100644 db/test/m1-db-tst09/etc.tgz
+ create mode 100644 db/test/m1-db-tst09/sosreport-m1-db-tst09-20201125203516.tar.xz
+ create mode 100644 db/test/m1-db-tst09/sysctl
+ create mode 100644 db/test/m1-db-tst28/boot_backup.tgz
+ create mode 100644 db/test/m1-db-tst28/sysctl
+[s.belogrud@TCS4357]# mkdir sysctl_snapshots/db/test/m1-db-tst30
+mkdir: can't create directory 'sysctl_snapshots/db/test/m1-db-tst30': No such file or directory
+[s.belogrud@TCS4357]# mkdir db/test/m1-db-tst30
+[s.belogrud@TCS4357]# cd db/test/m1-db-tst30
+[s.belogrud@TCS4357]# ssh  bsv@m1-db-tst30 /usr/sbin/sysctl -a 2> /dev/null| grep -v -E 'fs.*-state|fs.*-nr|kernel.ns_last_pid|kernel.random.entropy_avail|kerne
+l.random.uuid|kernel.sched_domain*|kernel.random.boot_id|kernel.pty.nr' > sysctl
+[s.belogrud@TCS4357]# ll
+total 32
+-rw-r--r--    1 s.belogr UsersGrp     63078 Dec  8 21:20 sysctl
+[s.belogrud@TCS4357]# mv sysctl sysctl.before
+[s.belogrud@TCS4357]# git status
+На ветке master
+Ваша ветка обновлена в соответствии с «origin/master».
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        ../m1-db-tst29/sysctl.before
+        ./
+
+ничего не добавлено в коммит, но есть неотслеживаемые файлы (используйте «git add», чтобы отслеживать их)
+[s.belogrud@TCS4357]# pwd
+/drives/c/share/work/other/vm-gitlab01.tcsbank.ru/infra-compute/sysctl_snapshots/db/test/m1-db-tst30
+[s.belogrud@TCS4357]# ll
+total 32
+-rw-r--r--    1 s.belogr UsersGrp     63078 Dec  8 21:20 sysctl.before
+[s.belogrud@TCS4357]# cd ..
+[s.belogrud@TCS4357]# pwd
+/drives/c/share/work/other/vm-gitlab01.tcsbank.ru/infra-compute/sysctl_snapshots/db/test
+[s.belogrud@TCS4357]# cd ../../
+[s.belogrud@TCS4357]# ll
+total 1
+-rw-r--r--    1 s.belogr UsersGrp       250 Nov 24 22:06 README.md
+drwxr-xr-x    1 s.belogr UsersGrp         0 Nov 24 22:06 db
+[s.belogrud@TCS4357]# cd ..
+[s.belogrud@TCS4357]# git status
+fatal: not a git repository (or any parent up to mount point /drives)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+[s.belogrud@TCS4357]# cd sysctl_snapshots/
+[s.belogrud@TCS4357]# git status
+На ветке master
+Ваша ветка обновлена в соответствии с «origin/master».
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        db/test/m1-db-tst29/sysctl.before
+        db/test/m1-db-tst30/
+
+ничего не добавлено в коммит, но есть неотслеживаемые файлы (используйте «git add», чтобы отслеживать их)
+[s.belogrud@TCS4357]# git add db/test/m1-db-tst30/
+[s.belogrud@TCS4357]# git status
+На ветке master
+Ваша ветка обновлена в соответствии с «origin/master».
+
+Изменения, которые будут включены в коммит:
+  (используйте «git reset HEAD <файл>…», чтобы убрать из индекса)
+
+        новый файл:    db/test/m1-db-tst30/sysctl.before
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        db/test/m1-db-tst29/sysctl.before
+
+[s.belogrud@TCS4357]# git add db/test/m1-db-tst30/sysctl.before
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "Before m1-db-tst30 update." db/test/m1-db-tst30/sysctl.before
+[master dd1d87c] Before m1-db-tst30 update.
+ 1 file changed, 1639 insertions(+)
+ create mode 100644 db/test/m1-db-tst30/sysctl.before
+[s.belogrud@TCS4357]# cp db/test/m1-db-tst30/sysctl{.before,}
+[s.belogrud@TCS4357]# git status
+На ветке master
+Ваша ветка опережает «origin/master» на 1 коммит.
+  (используйте «git push», чтобы опубликовать ваши локальные коммиты)
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        db/test/m1-db-tst29/sysctl.before
+        db/test/m1-db-tst30/sysctl
+
+ничего не добавлено в коммит, но есть неотслеживаемые файлы (используйте «git add», чтобы отслеживать их)
+[s.belogrud@TCS4357]# git add db/test/m1-db-tst30/sysctl
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "Before m1-db-tst30 update." db/test/m1-db-tst30/sysctl
+[master ef0472c] Before m1-db-tst30 update.
+ 1 file changed, 1639 insertions(+)
+ create mode 100644 db/test/m1-db-tst30/sysctl
+[s.belogrud@TCS4357]# git push
+stty: standard input: Inappropriate ioctl for device
+Enumerating objects: 14, готово.
+Подсчет объектов: 100% (14/14), готово.
+Delta compression using up to 8 threads
+Сжатие объектов: 100% (8/8), готово.
+Запись объектов: 100% (11/11), 10.19 KiB | 163.00 KiB/s, готово.
+Total 11 (delta 2), reused 0 (delta 0)
+To vm-gitlab01.tcsbank.ru:infra-compute/sysctl_snapshots.git
+   deb6707..ef0472c  master -> master
+[s.belogrud@TCS4357]# git status
+На ветке master
+Ваша ветка обновлена в соответствии с «origin/master».
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        db/test/m1-db-tst29/sysctl.before
+
+ничего не добавлено в коммит, но есть неотслеживаемые файлы (используйте «git add», чтобы отслеживать их)
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[21:27:02 root@m1-db-tst30 ~]# mkdir /var/stage/
+[21:29:47 root@m1-db-tst30 ~]# tar -czvf /var/stage/boot_backup.tgz /boot
+tar: Removing leading `/' from member names
+/boot/
+/boot/vmlinuz-3.10.0-693.17.1.el7.x86_64
+/boot/initramfs-3.10.0-693.17.1.el7.x86_64kdump.img
+/boot/.vmlinuz-3.10.0-862.14.4.el7.x86_64.hmac
+/boot/initramfs-3.10.0-862.14.4.el7.x86_64.img
+/boot/efi/
+/boot/efi/EFI/
+/boot/efi/EFI/redhat/
+/boot/efi/EFI/redhat/fonts/
+/boot/efi/EFI/redhat/fonts/unicode.pf2
+/boot/efi/EFI/redhat/shimx64-redhat.efi
+/boot/efi/EFI/redhat/grubx64.efi
+/boot/efi/EFI/redhat/BOOT.CSV
+/boot/efi/EFI/redhat/BOOTX64.CSV
+/boot/efi/EFI/redhat/mmx64.efi
+/boot/efi/EFI/redhat/shim.efi
+/boot/efi/EFI/redhat/grubenv
+/boot/efi/EFI/redhat/shimx64.efi
+/boot/efi/EFI/redhat/grub.cfg
+/boot/efi/EFI/BOOT/
+/boot/efi/EFI/BOOT/BOOTX64.EFI
+/boot/efi/EFI/BOOT/fbx64.efi
+/boot/grub2/
+/boot/grub2/grubenv
+/boot/initramfs-3.10.0-862.14.4.el7.x86_64kdump.img
+/boot/lost+found/
+/boot/initrd-plymouth.img
+/boot/System.map-3.10.0-693.17.1.el7.x86_64
+/boot/initramfs-0-rescue-5b76b8db47104548b3ba7ca630cc61c3.img
+/boot/System.map-3.10.0-862.14.4.el7.x86_64
+/boot/config-3.10.0-862.14.4.el7.x86_64
+/boot/symvers-3.10.0-693.17.1.el7.x86_64.gz
+/boot/initramfs-3.10.0-693.17.1.el7.x86_64.img
+/boot/.vmlinuz-3.10.0-693.17.1.el7.x86_64.hmac
+/boot/symvers-3.10.0-862.14.4.el7.x86_64.gz
+/boot/vmlinuz-0-rescue-5b76b8db47104548b3ba7ca630cc61c3
+/boot/vmlinuz-3.10.0-862.14.4.el7.x86_64
+/boot/config-3.10.0-693.17.1.el7.x86_64
+[21:30:05 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[21:38:00 root@m1-db-tst30 ~]# grep snapshot_autoextend_ /etc/lvm/lvm.conf
+        # Configuration option activation/snapshot_autoextend_threshold.
+        # Also see snapshot_autoextend_percent.
+        # snapshot_autoextend_threshold = 70
+        snapshot_autoextend_threshold = 100
+        # Configuration option activation/snapshot_autoextend_percent.
+        # snapshot_autoextend_percent = 20
+        snapshot_autoextend_percent = 20
+[21:38:02 root@m1-db-tst30 ~]# systemctl restart -l lvm2-monitor
+[21:38:42 root@m1-db-tst30 ~]# systemctl status -l lvm2-monitor
+● lvm2-monitor.service - Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling
+   Loaded: loaded (/usr/lib/systemd/system/lvm2-monitor.service; enabled; vendor preset: enabled)
+   Active: active (exited) since Tue 2020-12-08 21:38:42 MSK; 11s ago
+     Docs: man:dmeventd(8)
+           man:lvcreate(8)
+           man:lvchange(8)
+           man:vgchange(8)
+  Process: 27769 ExecStop=/usr/sbin/lvm vgchange --monitor n --ignoreskippedcluster (code=exited, status=0/SUCCESS)
+  Process: 27774 ExecStart=/usr/sbin/lvm vgchange --monitor y --ignoreskippedcluster (code=exited, status=0/SUCCESS)
+ Main PID: 27774 (code=exited, status=0/SUCCESS)
+
+Dec 08 21:38:42 m1-db-tst30.tcsbank.ru systemd[1]: Starting Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling...
+Dec 08 21:38:42 m1-db-tst30.tcsbank.ru lvm[27774]: WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+Dec 08 21:38:42 m1-db-tst30.tcsbank.ru lvm[27774]: WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+Dec 08 21:38:42 m1-db-tst30.tcsbank.ru lvm[27774]: 5 logical volume(s) in volume group "rootvg" monitored
+Dec 08 21:38:42 m1-db-tst30.tcsbank.ru systemd[1]: Started Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling.
+[21:38:54 root@m1-db-tst30 ~]# pvs
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+  PV         VG      Fmt  Attr PSize    PFree
+  /dev/sda3  rootvg  lvm2 a--     1.09t  892.56g
+  [unknown]  flashvg lvm2 a-m  <512.00g <512.00g
+  [unknown]  flashvg lvm2 a-m  <512.00g <512.00g
+[21:39:28 root@m1-db-tst30 ~]# export snap_date=$(date +%m%d%y)
+[21:40:56 root@m1-db-tst30 ~]# for snap_vol in `lvs --noheadings -o lv_name -S "vg_name=$rootvg && lv_name!=swap"`; do lvcreate -s -L 10G -n ${snap_vol}_snap_upd_${snap_date} $rootvg/$snap_vol ; done
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+  Logical volume "opt_snap_upd_120820" created.
+  Logical volume "root_snap_upd_120820" created.
+  Reducing COW size 10.00 GiB down to maximum usable size <8.04 GiB.
+  Logical volume "tmp_snap_upd_120820" created.
+  Logical volume "var_snap_upd_120820" created.
+[21:41:35 root@m1-db-tst30 ~]#
+[21:41:59 root@m1-db-tst30 ~]# lvs  -S "lv_role=snapshot"
+  WARNING: Device for PV mhcchx-ihBe-k8ce-eU6D-VmPs-7c0G-TdSvsz not found or rejected by a filter.
+  WARNING: Device for PV o46icx-bu19-KRZ8-MggR-aoHi-QGeV-AE0u0f not found or rejected by a filter.
+  LV                   VG     Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  opt_snap_upd_120820  rootvg swi-a-s--- 10.00g      opt    0.01
+  root_snap_upd_120820 rootvg swi-a-s--- 10.00g      root   0.09
+  tmp_snap_upd_120820  rootvg swi-a-s--- <8.04g      tmp    0.02
+  var_snap_upd_120820  rootvg swi-a-s--- 10.00g      var    0.14
+[21:42:01 root@m1-db-tst30 ~]#
+
+
+................................................................................
+
+[21:43:26 root@m1-db-tst30 ~]# shutdown -r now
+WARNING !!! Going to start shutdown on server m1-db-tst30.tcsbank.ru in 60 seconds ! Press Ctrl+C if you not sure
+Connection to m1-db-tst30 closed by remote host.
+Connection to m1-db-tst30 closed.
+[s.belogrud@TCS4357]# ssh bsv@m1-db-tst30
+Last login: Tue Dec  8 20:55:44 2020 from tcs4357.tcsbank.ru
+[bsv@m1-db-tst30 ~]$ sudo -i
+[sudo] password for bsv:
+[21:47:07 root@m1-db-tst30 ~]#
+
+
+................................................................................
+
+[21:47:29 root@m1-db-tst30 ~]# subscription-manager release --list
++-------------------------------------------+
+          Available Releases
++-------------------------------------------+
+7.0
+7.1
+7.2
+7.3
+7.4
+7.5
+7.6
+7.7
+7.8
+7.9
+7Server
+[21:51:46 root@m1-db-tst30 ~]# subscription-manager release --set 7.7
+Release set to: 7.7
+[21:52:16 root@m1-db-tst30 ~]# rm -fr /var/cache/yum/*
+[21:53:26 root@m1-db-tst30 ~]# yum clean all
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+Cleaning repos: repo-linux.tcsbank.ru_epel_7Server_x86_64_ rhel-7-server-rpms tcs-epel tcs-netdata tcs-puppetlabs tcs-rhel-7-server-rpms
+Cleaning up everything
+Maybe you want: rm -rf /var/cache/yum, to also free up space taken by orphaned data from disabled or removed repos
+[21:53:41 root@m1-db-tst30 ~]# yum update --disablerepo="*" --enablerepo="rhel-7-server-extras-rpms" --enablerepo="rhel-7-server-optional-rpms" --enablerepo="rhel-7-server-rpms"
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+rhel-7-server-extras-rpms                                                                                                                | 3.4 kB  00:00:00
+rhel-7-server-optional-rpms                                                                                                              | 3.2 kB  00:00:00
+rhel-7-server-rpms                                                                                                                       | 3.5 kB  00:00:00
+(1/9): rhel-7-server-extras-rpms/x86_64/group                                                                                            |  124 B  00:00:00
+(2/9): rhel-7-server-extras-rpms/x86_64/primary_db                                                                                       | 658 kB  00:00:00
+(3/9): rhel-7-server-optional-rpms/x86_64/group                                                                                          |  26 kB  00:00:01
+(4/9): rhel-7-server-extras-rpms/x86_64/updateinfo                                                                                       | 238 kB  00:00:02
+(5/9): rhel-7-server-optional-rpms/x86_64/updateinfo                                                                                     | 2.6 MB  00:00:03
+(6/9): rhel-7-server-rpms/x86_64/group                                                                                                   | 767 kB  00:00:02
+(7/9): rhel-7-server-rpms/x86_64/updateinfo                                                                                              | 3.6 MB  00:00:03
+(8/9): rhel-7-server-optional-rpms/x86_64/primary_db                                                                                     | 8.8 MB  00:00:03
+(9/9): rhel-7-server-rpms/x86_64/primary_db                                                                                              |  68 MB  00:00:06
+...
+  wpa_supplicant.x86_64 1:2.6-12.el7                                         xfsprogs.x86_64 0:4.5.0-20.el7
+  xorg-x11-utils.x86_64 0:7.5-23.el7                                         yum.noarch 0:3.4.3-163.el7
+  yum-utils.noarch 0:1.1.31-52.el7                                           zlib.i686 0:1.2.7-18.el7
+  zlib.x86_64 0:1.2.7-18.el7                                                 zlib-devel.x86_64 0:1.2.7-18.el7
+
+Replaced:
+  python34.x86_64 0:3.4.9-1.el7                                                python34-libs.x86_64 0:3.4.9-1.el7
+
+Complete!
+[22:36:01 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[22:36:01 root@m1-db-tst30 ~]# shutdown -r now
+WARNING !!! Going to start shutdown on server m1-db-tst30.tcsbank.ru in 60 seconds ! Press Ctrl+C if you not sure
+Connection to m1-db-tst30 closed by remote host.
+Connection to m1-db-tst30 closed.
+[s.belogrud@TCS4357]# ssh bsv@m1-db-tst30
+Last login: Tue Dec  8 21:47:00 2020 from tcs4357.tcsbank.ru
+[bsv@m1-db-tst30 ~]$ sudo -i
+[sudo] password for bsv:
+[22:40:12 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[22:40:13 root@m1-db-tst30 ~]# cat /etc/os-release
+NAME="Red Hat Enterprise Linux Server"
+VERSION="7.7 (Maipo)"
+ID="rhel"
+ID_LIKE="fedora"
+VARIANT="Server"
+VARIANT_ID="server"
+VERSION_ID="7.7"
+PRETTY_NAME="Red Hat Enterprise Linux"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:redhat:enterprise_linux:7.7:GA:server"
+HOME_URL="https://www.redhat.com/"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+
+REDHAT_BUGZILLA_PRODUCT="Red Hat Enterprise Linux 7"
+REDHAT_BUGZILLA_PRODUCT_VERSION=7.7
+REDHAT_SUPPORT_PRODUCT="Red Hat Enterprise Linux"
+REDHAT_SUPPORT_PRODUCT_VERSION="7.7"
+[22:40:32 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@m1-db-tst30
+Last login: Tue Dec  8 22:40:06 2020 from tcs4357.tcsbank.ru
+[bsv@m1-db-tst30 ~]$ sudo -i
+[sudo] password for bsv:
+[00:21:26 root@m1-db-tst30 ~]# less /var/log/messages
+[00:21:42 root@m1-db-tst30 ~]#
+[00:21:44 root@m1-db-tst30 ~]#
+[00:21:44 root@m1-db-tst30 ~]#
+[00:21:44 root@m1-db-tst30 ~]#
+[00:21:44 root@m1-db-tst30 ~]# mkdir -p /mnt/techsupport; mount -t nfs fs-nfsmb3.tcsbank.ru:/db_sosreport /mnt/techsupport -o rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard; mkdir /mnt/techsupport/sosreport/`uname -n`; /usr/sbin/sosreport --batch --tmp-dir=/mnt/techsupport/sosreport/`uname -n`; umount /mnt/techsupport
+mkdir: cannot create directory ‘/mnt/techsupport/sosreport/m1-db-tst30.tcsbank.ru’: File exists
+
+sosreport (version 3.7)
+
+This command will collect diagnostic and configuration information from
+this Red Hat Enterprise Linux system and installed applications.
+
+An archive containing the collected information will be generated in
+/mnt/techsupport/sosreport/m1-db-tst30.tcsbank.ru/sos.H37Lnl and may be
+provided to a Red Hat support representative.
+
+Any information provided to Red Hat will be treated in accordance with
+the published support policies at:
+
+  https://access.redhat.com/support/
+
+The generated archive may contain data considered sensitive and its
+content should be reviewed by the originating organization before being
+passed to any third party.
+
+No changes will be made to system configuration.
+
+
+ Setting up archive ...
+ Setting up plugins ...
+ Running plugins. Please wait ...
+
+  Starting 1/99  abrt            [Running: abrt]
+  Starting 2/99  alternatives    [Running: abrt alternatives]
+  Starting 3/99  anaconda        [Running: abrt alternatives anaconda]
+  Starting 4/99  anacron         [Running: abrt alternatives anaconda anacron]
+  Starting 5/99  ata             [Running: abrt alternatives anaconda ata]
+  Starting 6/99  auditd          [Running: alternatives anaconda ata auditd]
+  Starting 7/99  autofs          [Running: alternatives auditd autofs]
+  Starting 8/99  block           [Running: alternatives auditd autofs block]
+  Starting 9/99  boot            [Running: auditd autofs block boot]
+  Starting 10/99 btrfs           [Running: autofs block boot btrfs]
+  Starting 11/99 cgroups         [Running: block boot btrfs cgroups]
+  Starting 12/99 clamav          [Running: block boot cgroups clamav]
+  Starting 13/99 cron            [Running: block boot cgroups cron]
+  Starting 14/99 crypto          [Running: block cgroups cron crypto]
+  Starting 15/99 date            [Running: block cgroups crypto date]
+  Starting 16/99 dbus            [Running: block cgroups date dbus]
+  Starting 17/99 devicemapper    [Running: block cgroups date devicemapper]
+  Starting 18/99 devices         [Running: block cgroups date devices]
+  Starting 19/99 dmraid          [Running: block cgroups devices dmraid]
+  Starting 20/99 dracut          [Running: block cgroups devices dracut]
+  Starting 21/99 filesys         [Running: block cgroups dracut filesys]
+  Starting 22/99 firewalld       [Running: block dracut filesys firewalld]
+  Starting 23/99 grub2           [Running: dracut filesys firewalld grub2]
+  Starting 24/99 gssproxy        [Running: filesys firewalld grub2 gssproxy]
+  Starting 25/99 hardware        [Running: filesys firewalld grub2 hardware]
+  Starting 26/99 host            [Running: filesys firewalld hardware host]
+  Starting 27/99 hts             [Running: filesys firewalld hardware hts]
+  Starting 28/99 i18n            [Running: filesys firewalld hardware i18n]
+  Starting 29/99 insights        [Running: filesys firewalld hardware insights]
+  Starting 30/99 ipa             [Running: filesys firewalld hardware ipa]
+  Starting 31/99 jars            [Running: filesys hardware ipa jars]
+  Starting 32/99 java            [Running: filesys hardware ipa java]
+  Starting 33/99 kdump           [Running: filesys hardware ipa kdump]
+  Starting 34/99 kernel          [Running: filesys hardware ipa kernel]
+  Starting 35/99 keyutils        [Running: hardware ipa kernel keyutils]
+  Starting 36/99 kpatch          [Running: hardware ipa kernel kpatch]
+  Starting 37/99 krb5            [Running: hardware ipa kernel krb5]
+  Starting 38/99 kvm             [Running: hardware ipa kernel kvm]
+  Starting 39/99 last            [Running: hardware ipa kernel last]
+  Starting 40/99 ldap            [Running: hardware ipa kernel ldap]
+  Starting 41/99 libraries       [Running: hardware ipa kernel libraries]
+  Starting 42/99 libvirt         [Running: hardware kernel libraries libvirt]
+  Starting 43/99 logrotate       [Running: hardware kernel libraries logrotate]
+  Starting 44/99 logs            [Running: hardware kernel logrotate logs]
+  Starting 45/99 lvm2            [Running: hardware kernel logs lvm2]
+  Starting 46/99 md              [Running: hardware kernel lvm2 md]
+  Starting 47/99 memory          [Running: hardware kernel memory]
+  Starting 48/99 mrggrid         [Running: hardware kernel memory mrggrid]
+  Starting 49/99 mrgmessg        [Running: hardware kernel memory mrgmessg]
+  Starting 50/99 multipath       [Running: hardware kernel memory multipath]
+  Starting 51/99 networking      [Running: hardware kernel memory networking]
+  Starting 52/99 networkmanager  [Running: hardware kernel networking networkmanager]
+  Starting 53/99 nfs             [Running: hardware kernel networking nfs]
+  Starting 54/99 nis             [Running: hardware kernel networking nis]
+  Starting 55/99 nss             [Running: hardware kernel networking nss]
+  Starting 56/99 ntb             [Running: hardware kernel networking ntb]
+  Starting 57/99 ntp             [Running: hardware kernel networking ntp]
+  Starting 58/99 nvme            [Running: hardware kernel networking nvme]
+  Starting 59/99 oddjob          [Running: hardware kernel networking oddjob]
+  Starting 60/99 openhpi         [Running: hardware kernel networking openhpi]
+  Starting 61/99 openshift       [Running: hardware kernel networking openshift]
+  Starting 62/99 openssl         [Running: hardware kernel networking openssl]
+  Starting 63/99 pam             [Running: hardware kernel networking pam]
+  Starting 64/99 passwd          [Running: hardware kernel networking passwd]
+  Starting 65/99 pci             [Running: hardware kernel networking pci]
+  Starting 66/99 perl            [Running: hardware kernel networking perl]
+  Starting 67/99 postfix         [Running: hardware kernel networking postfix]
+  Starting 68/99 process         [Running: hardware kernel networking process]
+  Starting 69/99 processor       [Running: hardware networking process processor]
+  Starting 70/99 psacct          [Running: hardware networking processor psacct]
+  Starting 71/99 python          [Running: hardware networking processor python]
+  Starting 72/99 release         [Running: hardware networking processor release]
+  Starting 73/99 rpm             [Running: hardware networking processor rpm]
+  Starting 74/99 samba           [Running: networking processor rpm samba]
+  Starting 75/99 sar             [Running: networking processor rpm sar]
+  Starting 76/99 scsi            [Running: networking processor sar scsi]
+  Starting 77/99 selinux         [Running: networking processor sar selinux]
+  Starting 78/99 services        [Running: networking processor selinux services]
+  Starting 79/99 soundcard       [Running: networking processor selinux soundcard]
+  Starting 80/99 ssh             [Running: networking processor selinux ssh]
+  Starting 81/99 sssd            [Running: networking processor selinux sssd]
+  Starting 82/99 subscription_manager [Running: networking processor selinux subscription_manager]
+  Starting 83/99 sudo            [Running: networking processor subscription_manager sudo]
+  Starting 84/99 sunrpc          [Running: networking processor subscription_manager sunrpc]
+  Starting 85/99 system          [Running: networking processor subscription_manager system]
+  Starting 86/99 systemd         [Running: networking subscription_manager system systemd]
+  Starting 87/99 systemtap       [Running: networking subscription_manager system systemtap]
+  Starting 88/99 sysvipc         [Running: subscription_manager system systemtap sysvipc]
+  Starting 89/99 teamd           [Running: subscription_manager system systemtap teamd]
+  Starting 90/99 tuned           [Running: subscription_manager system systemtap tuned]
+  Starting 91/99 udev            [Running: subscription_manager system systemtap udev]
+  Starting 92/99 unpackaged      [Running: subscription_manager system systemtap unpackaged]
+  Starting 93/99 usb             [Running: subscription_manager system systemtap usb]
+  Starting 94/99 vhostmd         [Running: subscription_manager system systemtap vhostmd]
+  Starting 95/99 wireless        [Running: subscription_manager system systemtap wireless]
+  Starting 96/99 x11             [Running: subscription_manager system systemtap x11]
+  Starting 97/99 xen             [Running: subscription_manager systemtap x11 xen]
+  Starting 98/99 xfs             [Running: subscription_manager systemtap x11 xfs]
+  Finishing plugins              [Running: subscription_manager systemtap x11]
+  Starting 99/99 yum             [Running: subscription_manager systemtap x11 yum]
+  Finishing plugins              [Running: subscription_manager systemtap yum]
+  Finishing plugins              [Running: subscription_manager yum]
+  Finishing plugins              [Running: yum]
+
+  Finished running plugins
+
+Creating compressed archive...
+
+Your sosreport has been generated and saved in:
+  /mnt/techsupport/sosreport/m1-db-tst30.tcsbank.ru/sosreport-m1-db-tst30-2020-12-09-mszrpoe.tar.xz
+
+The checksum is: f0af57ff105255b9d5476688427906f6
+
+Please send this file to your support representative.
+
+[00:30:21 root@m1-db-tst30 ~]# ls -Alh /oramnt/HRSPACE_TST
+total 0
+[00:30:59 root@m1-db-tst30 ~]# grep -ie "/oramnt/HRSPACE_TST" /etc/fstab
+db-hrspace-stb-nfs:/HRSPACE_TST_sngl_di             /oramnt/HRSPACE_TST   nfs    rw,retrans=1,retry=1,vers=3,tcp,nolock,timeo=600,rsize=65536,wsize=65536,hard    0 0
+[00:31:13 root@m1-db-tst30 ~]# mount -v /oramnt/HRSPACE_TST
+mount.nfs: timeout set for Wed Dec  9 00:32:27 2020
+mount.nfs: trying text-based options 'retrans=1,retry=1,vers=3,tcp,nolock,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.70.5'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.70.5 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.70.5 prog 100005 vers 3 prot TCP port 635
+mount.nfs: mount(2): Device or resource busy
+mount.nfs: /oramnt/HRSPACE_TST is busy or already mounted
+[00:31:28 root@m1-db-tst30 ~]# findmnt -t nfs | grep -ie "/oramnt/HRSPACE_TST"
+/oramnt/HRSPACE_TST db-hrspace-stb-nfs:/HRSPACE_TST_sngl_di nfs    rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,nolock,proto=tcp,timeo=600,retrans=1,sec=sys,mountaddr=10.217.70.5,mountvers=3,mountport=635,mountproto=tcp,local_lock=all,addr=10.217.70.5
+[00:31:53 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+umount.nfs: /oramnt/HRSPACE_TST: device is busy
+[00:36:16 root@m1-db-tst30 ~]# df -hT /oramnt/HRSPACE_TST
+Filesystem                              Type  Size  Used Avail Use% Mounted on
+db-hrspace-stb-nfs:/HRSPACE_TST_sngl_di nfs   100G   19M  100G   1% /oramnt/HRSPACE_TST
+[00:36:37 root@m1-db-tst30 ~]# pwd
+/root
+[00:38:43 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+umount.nfs: /oramnt/HRSPACE_TST: device is busy
+[00:38:47 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+umount.nfs: /oramnt/HRSPACE_TST: device is busy
+[00:38:49 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+umount.nfs: /oramnt/HRSPACE_TST: device is busy
+[00:39:05 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+umount.nfs: /oramnt/HRSPACE_TST: device is busy
+[00:39:11 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+umount.nfs: /oramnt/HRSPACE_TST: device is busy
+[00:39:19 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+umount.nfs: /oramnt/HRSPACE_TST: device is busy
+[00:39:24 root@m1-db-tst30 ~]# umount /oramnt/HRSPACE_TST
+[00:39:31 root@m1-db-tst30 ~]# ls -Alh /oramnt/HRSPACE_TST
+total 12K
+drwxr-xr-x 72 oracle oinstall 4.0K Dec  8 17:17 home
+drwxr-xr-x  2 oracle oinstall 4.0K Jul 21  2019 HRSPACE_prod_di01
+drwxr-xr-x  3 oracle oinstall 4.0K Jul 21  2019 HRSPACE_prod_redo
+[00:39:46 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# cd db/test/m1-db-tst30/
+[s.belogrud@TCS4357]# ll
+total 64
+-rw-r--r--    1 s.belogr UsersGrp     63078 Dec  8 21:24 sysctl
+-rw-r--r--    1 s.belogr UsersGrp     63078 Dec  8 21:20 sysctl.before
+[s.belogrud@TCS4357]# rm sysctl
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "Before m1-db-tst30 update." db/test/m1-db-tst30/sysctl
+error: pathspec 'db/test/m1-db-tst30/sysctl' did not match any file(s) known to git
+[s.belogrud@TCS4357]# ssh  bsv@m1-db-tst30 /usr/sbin/sysctl -a 2> /dev/null| grep -v -E 'fs.*-state|fs.*-nr|kernel.ns_last_pid|kernel.random.entropy_avail|kernel.random.uuid|kernel.sched_domain*|kernel.random.boot_id|kernel.pty.nr' > sysctl
+[s.belogrud@TCS4357]# ll
+total 66
+-rw-r--r--    1 s.belogr UsersGrp     66562 Dec  9 00:46 sysctl
+-rw-r--r--    1 s.belogr UsersGrp     63078 Dec  8 21:20 sysctl.before
+[s.belogrud@TCS4357]# cp sysctl sysctl.after
+[s.belogrud@TCS4357]# cd -
+/drives/c/share/work/other/vm-gitlab01.tcsbank.ru/infra-compute/sysctl_snapshots
+[s.belogrud@TCS4357]# git status
+На ветке master
+Ваша ветка обновлена в соответствии с «origin/master».
+
+Изменения, которые не в индексе для коммита:
+  (используйте «git add <файл>…», чтобы добавить файл в индекс)
+  (используйте «git checkout -- <файл>…», чтобы отменить изменения
+   в рабочем каталоге)
+
+        изменено:      db/test/m1-db-tst30/sysctl
+
+Неотслеживаемые файлы:
+  (используйте «git add <файл>…», чтобы добавить в то, что будет включено в коммит)
+
+        db/test/m1-db-tst29/sysctl.before
+        db/test/m1-db-tst30/sysctl.after
+
+нет изменений добавленных для коммита
+(используйте «git add» и/или «git commit -a»)
+[s.belogrud@TCS4357]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "After m1-db-tst30 update." db/test/m1-db-tst30/sysctl
+[master 53a9776] After m1-db-tst30 update.
+ 1 file changed, 107 insertions(+), 35 deletions(-)
+[s.belogrud@TCS4357]# git push
+stty: standard input: Inappropriate ioctl for device
+Enumerating objects: 11, готово.
+Подсчет объектов: 100% (11/11), готово.
+Delta compression using up to 8 threads
+Сжатие объектов: 100% (5/5), готово.
+Запись объектов: 100% (6/6), 1.66 KiB | 25.00 KiB/s, готово.
+Total 6 (delta 2), reused 0 (delta 0)
+To vm-gitlab01.tcsbank.ru:infra-compute/sysctl_snapshots.git
+   ef0472c..53a9776  master -> master
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# cd -
+/drives/c/share/work/other/vm-gitlab01.tcsbank.ru/infra-compute/sysctl_snapshots/db/test/m1-db-tst30
+[s.belogrud@TCS4357]# ll
+total 100
+-rw-r--r--    1 s.belogr UsersGrp     66562 Dec  9 00:46 sysctl
+-rw-r--r--    1 s.belogr UsersGrp     66562 Dec  9 00:46 sysctl.after
+-rw-r--r--    1 s.belogr UsersGrp     63078 Dec  8 21:20 sysctl.before
+[s.belogrud@TCS4357]# diff -Nuar sysctl.before sysctl.after
+--- sysctl.before
++++ sysctl.after
+@@ -3,6 +3,35 @@
+ debug.exception-trace = 1
+ debug.kprobes-optimization = 1
+ debug.panic_on_rcu_stall = 0
++dev.cdrom.autoclose = 1
++dev.cdrom.autoeject = 0
++dev.cdrom.check_media = 0
++dev.cdrom.debug = 0
++dev.cdrom.info = CD-ROM information, Id: cdrom.c 3.20 2003/12/17
++dev.cdrom.info =
++dev.cdrom.info = drive name:
++dev.cdrom.info = drive speed:
++dev.cdrom.info = drive # of slots:
++dev.cdrom.info = Can close tray:
++dev.cdrom.info = Can open tray:
++dev.cdrom.info = Can lock tray:
++dev.cdrom.info = Can change speed:
++dev.cdrom.info = Can select disk:
++dev.cdrom.info = Can read multisession:
++dev.cdrom.info = Can read MCN:
++dev.cdrom.info = Reports media changed:
++dev.cdrom.info = Can play audio:
++dev.cdrom.info = Can write CD-R:
++dev.cdrom.info = Can write CD-RW:
++dev.cdrom.info = Can read DVD:
++dev.cdrom.info = Can write DVD-R:
++dev.cdrom.info = Can write DVD-RAM:
++dev.cdrom.info = Can read MRW:
++dev.cdrom.info = Can write MRW:
++dev.cdrom.info = Can write RAM:
++dev.cdrom.info =
++dev.cdrom.info =
++dev.cdrom.lock = 1
+ dev.hpet.max-user-freq = 64
+ dev.mac_hid.mouse_button2_keycode = 97
+ dev.mac_hid.mouse_button3_keycode = 100
+@@ -17,7 +46,7 @@
+ fs.binfmt_misc.kshcomp = magic 0b1308
+ fs.binfmt_misc.status = enabled
+ fs.dir-notify-enable = 1
+-fs.epoll.max_user_watches = 81039769
++fs.epoll.max_user_watches = 81039810
+ fs.file-max = 6815744
+ fs.inotify.max_queued_events = 16384
+ fs.inotify.max_user_instances = 128
+@@ -37,7 +66,7 @@
+ fs.nfs.nlm_tcpport = 0
+ fs.nfs.nlm_timeout = 10
+ fs.nfs.nlm_udpport = 0
+-fs.nfs.nsm_local_state = 3
++fs.nfs.nsm_local_state = 5
+ fs.nfs.nsm_use_hostnames = 0
+ fs.nr_open = 1048576
+ fs.overflowgid = 65534
+@@ -51,26 +80,10 @@
+ fs.quota.free_dquots = 0
+ fs.quota.lookups = 0
+ fs.quota.reads = 0
+-fs.quota.syncs = 26
++fs.quota.syncs = 16
+ fs.quota.warnings = 1
+ fs.quota.writes = 0
+ fs.suid_dumpable = 0
+-fs.xfs.age_buffer_centisecs = 1500
+-fs.xfs.error_level = 3
+-fs.xfs.filestream_centisecs = 3000
+-fs.xfs.inherit_noatime = 1
+-fs.xfs.inherit_nodefrag = 1
+-fs.xfs.inherit_nodump = 1
+-fs.xfs.inherit_nosymlinks = 0
+-fs.xfs.inherit_sync = 1
+-fs.xfs.irix_sgid_inherit = 0
+-fs.xfs.irix_symlink_mode = 0
+-fs.xfs.panic_mask = 0
+-fs.xfs.rotorstep = 1
+-fs.xfs.speculative_prealloc_lifetime = 300
+-fs.xfs.stats_clear = 0
+-fs.xfs.xfsbufd_centisecs = 100
+-fs.xfs.xfssyncd_centisecs = 3000
+ fscache.object_max_active = 32
+ fscache.operation_max_active = 16
+ kernel.acct = 4        2       30
+@@ -95,7 +108,7 @@
+ kernel.hung_task_check_count = 4194304
+ kernel.hung_task_panic = 0
+ kernel.hung_task_timeout_secs = 120
+-kernel.hung_task_warnings = 0
++kernel.hung_task_warnings = 10
+ kernel.io_delay_type = 0
+ kernel.kexec_load_disabled = 0
+ kernel.keys.gc_delay = 300
+@@ -120,7 +133,7 @@
+ kernel.numa_balancing_scan_period_min_ms = 1000
+ kernel.numa_balancing_scan_size_mb = 256
+ kernel.numa_balancing_settle_count = 4
+-kernel.osrelease = 3.10.0-862.14.4.el7.x86_64
++kernel.osrelease = 3.10.0-1062.18.1.el7.x86_64
+ kernel.ostype = Linux
+ kernel.overflowgid = 65534
+ kernel.overflowuid = 65534
+@@ -131,7 +144,7 @@
+ kernel.panic_on_unrecovered_nmi = 0
+ kernel.panic_on_warn = 0
+ kernel.perf_cpu_time_max_percent = 25
+-kernel.perf_event_max_sample_rate = 40000
++kernel.perf_event_max_sample_rate = 100000
+ kernel.perf_event_mlock_kb = 516
+ kernel.perf_event_paranoid = 2
+ kernel.pid_max = 32768
+@@ -164,6 +177,8 @@
+ kernel.sched_time_avg_ms = 1000
+ kernel.sched_tunable_scaling = 1
+ kernel.sched_wakeup_granularity_ns = 15000000
++kernel.seccomp.actions_avail = kill trap errno trace allow
++kernel.seccomp.actions_logged = kill trap errno trace
+ kernel.sem = 256       131072  100     512
+ kernel.sem_next_id = -1
+ kernel.shm_next_id = -1
+@@ -177,16 +192,16 @@
+ kernel.sysctl_writes_strict = 1
+ kernel.sysrq = 16
+ kernel.tainted = 0
+-kernel.threads-max = 3088246
++kernel.threads-max = 3087695
+ kernel.timer_migration = 1
+ kernel.traceoff_on_warning = 0
+ kernel.unknown_nmi_panic = 0
+-kernel.version = #1 SMP Fri Sep 21 09:07:21 UTC 2018
++kernel.version = #1 SMP Wed Feb 12 14:08:31 UTC 2020
+ kernel.watchdog = 1
+ kernel.watchdog_cpumask = 0-31
+ kernel.watchdog_thresh = 10
+ kernel.yama.ptrace_scope = 0
+-net.core.bpf_jit_enable = 0
++net.core.bpf_jit_enable = 1
+ net.core.busy_poll = 0
+ net.core.busy_read = 0
+ net.core.default_qdisc = pfifo_fast
+@@ -197,7 +212,7 @@
+ net.core.message_cost = 5
+ net.core.netdev_budget = 300
+ net.core.netdev_max_backlog = 250000
+-net.core.netdev_rss_key = 1d:2b:1f:97:e5:23:b4:d6:80:6f:0c:1c:31:ad:d0:8a:d0:15:45:ed:f3:50:38:1b:6d:9d:89:c2:77:81:3d:0f:8a:92:f8:50:29:b1:32:c9:93:f6:37:dc:24:21:56:a0:40:17:ce:73
++net.core.netdev_rss_key = 18:39:22:e9:6b:1c:b6:84:5f:9d:c4:9b:7f:00:da:24:aa:b4:64:2e:ef:95:73:5a:ec:25:ac:3d:f8:ce:70:5a:df:bf:4e:86:f2:7a:ee:7f:e3:99:f9:f0:8e:45:5d:be:42:07:6b:bb
+ net.core.netdev_tstamp_prequeue = 1
+ net.core.optmem_max = 20480
+ net.core.rmem_default = 4194304
+@@ -228,6 +243,8 @@
+ net.ipv4.conf.all.disable_xfrm = 0
+ net.ipv4.conf.all.force_igmp_version = 0
+ net.ipv4.conf.all.forwarding = 0
++net.ipv4.conf.all.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.all.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.all.log_martians = 0
+ net.ipv4.conf.all.mc_forwarding = 0
+ net.ipv4.conf.all.medium_id = 0
+@@ -254,6 +271,8 @@
+ net.ipv4.conf.bond0.disable_xfrm = 0
+ net.ipv4.conf.bond0.force_igmp_version = 0
+ net.ipv4.conf.bond0.forwarding = 0
++net.ipv4.conf.bond0.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.bond0.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.bond0.log_martians = 0
+ net.ipv4.conf.bond0.mc_forwarding = 0
+ net.ipv4.conf.bond0.medium_id = 0
+@@ -280,6 +299,8 @@
+ net.ipv4.conf.bond0/1746.disable_xfrm = 0
+ net.ipv4.conf.bond0/1746.force_igmp_version = 0
+ net.ipv4.conf.bond0/1746.forwarding = 0
++net.ipv4.conf.bond0/1746.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.bond0/1746.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.bond0/1746.log_martians = 0
+ net.ipv4.conf.bond0/1746.mc_forwarding = 0
+ net.ipv4.conf.bond0/1746.medium_id = 0
+@@ -306,6 +327,8 @@
+ net.ipv4.conf.bond0/1768.disable_xfrm = 0
+ net.ipv4.conf.bond0/1768.force_igmp_version = 0
+ net.ipv4.conf.bond0/1768.forwarding = 0
++net.ipv4.conf.bond0/1768.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.bond0/1768.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.bond0/1768.log_martians = 0
+ net.ipv4.conf.bond0/1768.mc_forwarding = 0
+ net.ipv4.conf.bond0/1768.medium_id = 0
+@@ -332,6 +355,8 @@
+ net.ipv4.conf.default.disable_xfrm = 0
+ net.ipv4.conf.default.force_igmp_version = 0
+ net.ipv4.conf.default.forwarding = 0
++net.ipv4.conf.default.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.default.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.default.log_martians = 0
+ net.ipv4.conf.default.mc_forwarding = 0
+ net.ipv4.conf.default.medium_id = 0
+@@ -358,6 +383,8 @@
+ net.ipv4.conf.eno1.disable_xfrm = 0
+ net.ipv4.conf.eno1.force_igmp_version = 0
+ net.ipv4.conf.eno1.forwarding = 0
++net.ipv4.conf.eno1.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.eno1.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.eno1.log_martians = 0
+ net.ipv4.conf.eno1.mc_forwarding = 0
+ net.ipv4.conf.eno1.medium_id = 0
+@@ -384,6 +411,8 @@
+ net.ipv4.conf.eno2.disable_xfrm = 0
+ net.ipv4.conf.eno2.force_igmp_version = 0
+ net.ipv4.conf.eno2.forwarding = 0
++net.ipv4.conf.eno2.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.eno2.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.eno2.log_martians = 0
+ net.ipv4.conf.eno2.mc_forwarding = 0
+ net.ipv4.conf.eno2.medium_id = 0
+@@ -410,6 +439,8 @@
+ net.ipv4.conf.eno3.disable_xfrm = 0
+ net.ipv4.conf.eno3.force_igmp_version = 0
+ net.ipv4.conf.eno3.forwarding = 0
++net.ipv4.conf.eno3.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.eno3.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.eno3.log_martians = 0
+ net.ipv4.conf.eno3.mc_forwarding = 0
+ net.ipv4.conf.eno3.medium_id = 0
+@@ -436,6 +467,8 @@
+ net.ipv4.conf.eno4.disable_xfrm = 0
+ net.ipv4.conf.eno4.force_igmp_version = 0
+ net.ipv4.conf.eno4.forwarding = 0
++net.ipv4.conf.eno4.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.eno4.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.eno4.log_martians = 0
+ net.ipv4.conf.eno4.mc_forwarding = 0
+ net.ipv4.conf.eno4.medium_id = 0
+@@ -462,6 +495,8 @@
+ net.ipv4.conf.ens2f0.disable_xfrm = 0
+ net.ipv4.conf.ens2f0.force_igmp_version = 0
+ net.ipv4.conf.ens2f0.forwarding = 0
++net.ipv4.conf.ens2f0.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.ens2f0.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.ens2f0.log_martians = 0
+ net.ipv4.conf.ens2f0.mc_forwarding = 0
+ net.ipv4.conf.ens2f0.medium_id = 0
+@@ -488,6 +523,8 @@
+ net.ipv4.conf.ens2f1.disable_xfrm = 0
+ net.ipv4.conf.ens2f1.force_igmp_version = 0
+ net.ipv4.conf.ens2f1.forwarding = 0
++net.ipv4.conf.ens2f1.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.ens2f1.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.ens2f1.log_martians = 0
+ net.ipv4.conf.ens2f1.mc_forwarding = 0
+ net.ipv4.conf.ens2f1.medium_id = 0
+@@ -514,6 +551,8 @@
+ net.ipv4.conf.ens5f0.disable_xfrm = 0
+ net.ipv4.conf.ens5f0.force_igmp_version = 0
+ net.ipv4.conf.ens5f0.forwarding = 0
++net.ipv4.conf.ens5f0.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.ens5f0.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.ens5f0.log_martians = 0
+ net.ipv4.conf.ens5f0.mc_forwarding = 0
+ net.ipv4.conf.ens5f0.medium_id = 0
+@@ -540,6 +579,8 @@
+ net.ipv4.conf.ens5f1.disable_xfrm = 0
+ net.ipv4.conf.ens5f1.force_igmp_version = 0
+ net.ipv4.conf.ens5f1.forwarding = 0
++net.ipv4.conf.ens5f1.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.ens5f1.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.ens5f1.log_martians = 0
+ net.ipv4.conf.ens5f1.mc_forwarding = 0
+ net.ipv4.conf.ens5f1.medium_id = 0
+@@ -566,6 +607,8 @@
+ net.ipv4.conf.lo.disable_xfrm = 1
+ net.ipv4.conf.lo.force_igmp_version = 0
+ net.ipv4.conf.lo.forwarding = 0
++net.ipv4.conf.lo.igmpv2_unsolicited_report_interval = 10000
++net.ipv4.conf.lo.igmpv3_unsolicited_report_interval = 1000
+ net.ipv4.conf.lo.log_martians = 0
+ net.ipv4.conf.lo.mc_forwarding = 0
+ net.ipv4.conf.lo.medium_id = 0
+@@ -579,6 +622,7 @@
+ net.ipv4.conf.lo.shared_media = 1
+ net.ipv4.conf.lo.src_valid_mark = 0
+ net.ipv4.conf.lo.tag = 0
++net.ipv4.fib_multipath_hash_policy = 0
+ net.ipv4.fwmark_reflect = 0
+ net.ipv4.icmp_echo_ignore_all = 0
+ net.ipv4.icmp_echo_ignore_broadcasts = 1
+@@ -823,7 +867,8 @@
+ net.ipv4.tcp_max_ssthresh = 0
+ net.ipv4.tcp_max_syn_backlog = 2048
+ net.ipv4.tcp_max_tw_buckets = 262144
+-net.ipv4.tcp_mem = 9272454     12363275        18544908
++net.ipv4.tcp_mem = 9272454     12363274        18544908
++net.ipv4.tcp_min_snd_mss = 48
+ net.ipv4.tcp_min_tso_segs = 2
+ net.ipv4.tcp_moderate_rcvbuf = 1
+ net.ipv4.tcp_mtu_probing = 0
+@@ -851,7 +896,7 @@
+ net.ipv4.tcp_window_scaling = 1
+ net.ipv4.tcp_wmem = 4096       87380   4194304
+ net.ipv4.tcp_workaround_signed_windows = 0
+-net.ipv4.udp_mem = 9274266     12365689        18548532
++net.ipv4.udp_mem = 9274272     12365696        18548544
+ net.ipv4.udp_rmem_min = 4096
+ net.ipv4.udp_wmem_min = 4096
+ net.ipv4.xfrm4_gc_thresh = 32768
+@@ -868,10 +913,12 @@
+ net.ipv6.conf.all.autoconf = 1
+ net.ipv6.conf.all.dad_transmits = 1
+ net.ipv6.conf.all.disable_ipv6 = 1
++net.ipv6.conf.all.enhanced_dad = 1
+ net.ipv6.conf.all.force_mld_version = 0
+ net.ipv6.conf.all.force_tllao = 0
+ net.ipv6.conf.all.forwarding = 0
+ net.ipv6.conf.all.hop_limit = 64
++net.ipv6.conf.all.keep_addr_on_down = 0
+ net.ipv6.conf.all.max_addresses = 16
+ net.ipv6.conf.all.max_desync_factor = 600
+ net.ipv6.conf.all.mc_forwarding = 0
+@@ -901,10 +948,12 @@
+ net.ipv6.conf.bond0.autoconf = 1
+ net.ipv6.conf.bond0.dad_transmits = 1
+ net.ipv6.conf.bond0.disable_ipv6 = 1
++net.ipv6.conf.bond0.enhanced_dad = 1
+ net.ipv6.conf.bond0.force_mld_version = 0
+ net.ipv6.conf.bond0.force_tllao = 0
+ net.ipv6.conf.bond0.forwarding = 0
+ net.ipv6.conf.bond0.hop_limit = 64
++net.ipv6.conf.bond0.keep_addr_on_down = 0
+ net.ipv6.conf.bond0.max_addresses = 16
+ net.ipv6.conf.bond0.max_desync_factor = 600
+ net.ipv6.conf.bond0.mc_forwarding = 0
+@@ -934,10 +983,12 @@
+ net.ipv6.conf.bond0/1746.autoconf = 1
+ net.ipv6.conf.bond0/1746.dad_transmits = 1
+ net.ipv6.conf.bond0/1746.disable_ipv6 = 1
++net.ipv6.conf.bond0/1746.enhanced_dad = 1
+ net.ipv6.conf.bond0/1746.force_mld_version = 0
+ net.ipv6.conf.bond0/1746.force_tllao = 0
+ net.ipv6.conf.bond0/1746.forwarding = 0
+ net.ipv6.conf.bond0/1746.hop_limit = 64
++net.ipv6.conf.bond0/1746.keep_addr_on_down = 0
+ net.ipv6.conf.bond0/1746.max_addresses = 16
+ net.ipv6.conf.bond0/1746.max_desync_factor = 600
+ net.ipv6.conf.bond0/1746.mc_forwarding = 0
+@@ -967,10 +1018,12 @@
+ net.ipv6.conf.bond0/1768.autoconf = 1
+ net.ipv6.conf.bond0/1768.dad_transmits = 1
+ net.ipv6.conf.bond0/1768.disable_ipv6 = 1
++net.ipv6.conf.bond0/1768.enhanced_dad = 1
+ net.ipv6.conf.bond0/1768.force_mld_version = 0
+ net.ipv6.conf.bond0/1768.force_tllao = 0
+ net.ipv6.conf.bond0/1768.forwarding = 0
+ net.ipv6.conf.bond0/1768.hop_limit = 64
++net.ipv6.conf.bond0/1768.keep_addr_on_down = 0
+ net.ipv6.conf.bond0/1768.max_addresses = 16
+ net.ipv6.conf.bond0/1768.max_desync_factor = 600
+ net.ipv6.conf.bond0/1768.mc_forwarding = 0
+@@ -1000,10 +1053,12 @@
+ net.ipv6.conf.default.autoconf = 1
+ net.ipv6.conf.default.dad_transmits = 1
+ net.ipv6.conf.default.disable_ipv6 = 1
++net.ipv6.conf.default.enhanced_dad = 1
+ net.ipv6.conf.default.force_mld_version = 0
+ net.ipv6.conf.default.force_tllao = 0
+ net.ipv6.conf.default.forwarding = 0
+ net.ipv6.conf.default.hop_limit = 64
++net.ipv6.conf.default.keep_addr_on_down = 0
+ net.ipv6.conf.default.max_addresses = 16
+ net.ipv6.conf.default.max_desync_factor = 600
+ net.ipv6.conf.default.mc_forwarding = 0
+@@ -1033,10 +1088,12 @@
+ net.ipv6.conf.eno1.autoconf = 1
+ net.ipv6.conf.eno1.dad_transmits = 1
+ net.ipv6.conf.eno1.disable_ipv6 = 1
++net.ipv6.conf.eno1.enhanced_dad = 1
+ net.ipv6.conf.eno1.force_mld_version = 0
+ net.ipv6.conf.eno1.force_tllao = 0
+ net.ipv6.conf.eno1.forwarding = 0
+ net.ipv6.conf.eno1.hop_limit = 64
++net.ipv6.conf.eno1.keep_addr_on_down = 0
+ net.ipv6.conf.eno1.max_addresses = 16
+ net.ipv6.conf.eno1.max_desync_factor = 600
+ net.ipv6.conf.eno1.mc_forwarding = 0
+@@ -1066,10 +1123,12 @@
+ net.ipv6.conf.eno2.autoconf = 1
+ net.ipv6.conf.eno2.dad_transmits = 1
+ net.ipv6.conf.eno2.disable_ipv6 = 1
++net.ipv6.conf.eno2.enhanced_dad = 1
+ net.ipv6.conf.eno2.force_mld_version = 0
+ net.ipv6.conf.eno2.force_tllao = 0
+ net.ipv6.conf.eno2.forwarding = 0
+ net.ipv6.conf.eno2.hop_limit = 64
++net.ipv6.conf.eno2.keep_addr_on_down = 0
+ net.ipv6.conf.eno2.max_addresses = 16
+ net.ipv6.conf.eno2.max_desync_factor = 600
+ net.ipv6.conf.eno2.mc_forwarding = 0
+@@ -1099,10 +1158,12 @@
+ net.ipv6.conf.eno3.autoconf = 1
+ net.ipv6.conf.eno3.dad_transmits = 1
+ net.ipv6.conf.eno3.disable_ipv6 = 1
++net.ipv6.conf.eno3.enhanced_dad = 1
+ net.ipv6.conf.eno3.force_mld_version = 0
+ net.ipv6.conf.eno3.force_tllao = 0
+ net.ipv6.conf.eno3.forwarding = 0
+ net.ipv6.conf.eno3.hop_limit = 64
++net.ipv6.conf.eno3.keep_addr_on_down = 0
+ net.ipv6.conf.eno3.max_addresses = 16
+ net.ipv6.conf.eno3.max_desync_factor = 600
+ net.ipv6.conf.eno3.mc_forwarding = 0
+@@ -1132,10 +1193,12 @@
+ net.ipv6.conf.eno4.autoconf = 1
+ net.ipv6.conf.eno4.dad_transmits = 1
+ net.ipv6.conf.eno4.disable_ipv6 = 1
++net.ipv6.conf.eno4.enhanced_dad = 1
+ net.ipv6.conf.eno4.force_mld_version = 0
+ net.ipv6.conf.eno4.force_tllao = 0
+ net.ipv6.conf.eno4.forwarding = 0
+ net.ipv6.conf.eno4.hop_limit = 64
++net.ipv6.conf.eno4.keep_addr_on_down = 0
+ net.ipv6.conf.eno4.max_addresses = 16
+ net.ipv6.conf.eno4.max_desync_factor = 600
+ net.ipv6.conf.eno4.mc_forwarding = 0
+@@ -1165,10 +1228,12 @@
+ net.ipv6.conf.ens2f0.autoconf = 1
+ net.ipv6.conf.ens2f0.dad_transmits = 1
+ net.ipv6.conf.ens2f0.disable_ipv6 = 1
++net.ipv6.conf.ens2f0.enhanced_dad = 1
+ net.ipv6.conf.ens2f0.force_mld_version = 0
+ net.ipv6.conf.ens2f0.force_tllao = 0
+ net.ipv6.conf.ens2f0.forwarding = 0
+ net.ipv6.conf.ens2f0.hop_limit = 64
++net.ipv6.conf.ens2f0.keep_addr_on_down = 0
+ net.ipv6.conf.ens2f0.max_addresses = 16
+ net.ipv6.conf.ens2f0.max_desync_factor = 600
+ net.ipv6.conf.ens2f0.mc_forwarding = 0
+@@ -1198,10 +1263,12 @@
+ net.ipv6.conf.ens2f1.autoconf = 1
+ net.ipv6.conf.ens2f1.dad_transmits = 1
+ net.ipv6.conf.ens2f1.disable_ipv6 = 1
++net.ipv6.conf.ens2f1.enhanced_dad = 1
+ net.ipv6.conf.ens2f1.force_mld_version = 0
+ net.ipv6.conf.ens2f1.force_tllao = 0
+ net.ipv6.conf.ens2f1.forwarding = 0
+ net.ipv6.conf.ens2f1.hop_limit = 64
++net.ipv6.conf.ens2f1.keep_addr_on_down = 0
+ net.ipv6.conf.ens2f1.max_addresses = 16
+ net.ipv6.conf.ens2f1.max_desync_factor = 600
+ net.ipv6.conf.ens2f1.mc_forwarding = 0
+@@ -1231,10 +1298,12 @@
+ net.ipv6.conf.ens5f0.autoconf = 1
+ net.ipv6.conf.ens5f0.dad_transmits = 1
+ net.ipv6.conf.ens5f0.disable_ipv6 = 1
++net.ipv6.conf.ens5f0.enhanced_dad = 1
+ net.ipv6.conf.ens5f0.force_mld_version = 0
+ net.ipv6.conf.ens5f0.force_tllao = 0
+ net.ipv6.conf.ens5f0.forwarding = 0
+ net.ipv6.conf.ens5f0.hop_limit = 64
++net.ipv6.conf.ens5f0.keep_addr_on_down = 0
+ net.ipv6.conf.ens5f0.max_addresses = 16
+ net.ipv6.conf.ens5f0.max_desync_factor = 600
+ net.ipv6.conf.ens5f0.mc_forwarding = 0
+@@ -1264,10 +1333,12 @@
+ net.ipv6.conf.ens5f1.autoconf = 1
+ net.ipv6.conf.ens5f1.dad_transmits = 1
+ net.ipv6.conf.ens5f1.disable_ipv6 = 1
++net.ipv6.conf.ens5f1.enhanced_dad = 1
+ net.ipv6.conf.ens5f1.force_mld_version = 0
+ net.ipv6.conf.ens5f1.force_tllao = 0
+ net.ipv6.conf.ens5f1.forwarding = 0
+ net.ipv6.conf.ens5f1.hop_limit = 64
++net.ipv6.conf.ens5f1.keep_addr_on_down = 0
+ net.ipv6.conf.ens5f1.max_addresses = 16
+ net.ipv6.conf.ens5f1.max_desync_factor = 600
+ net.ipv6.conf.ens5f1.mc_forwarding = 0
+@@ -1297,10 +1368,12 @@
+ net.ipv6.conf.lo.autoconf = 1
+ net.ipv6.conf.lo.dad_transmits = 1
+ net.ipv6.conf.lo.disable_ipv6 = 1
++net.ipv6.conf.lo.enhanced_dad = 1
+ net.ipv6.conf.lo.force_mld_version = 0
+ net.ipv6.conf.lo.force_tllao = 0
+ net.ipv6.conf.lo.forwarding = 0
+ net.ipv6.conf.lo.hop_limit = 64
++net.ipv6.conf.lo.keep_addr_on_down = 0
+ net.ipv6.conf.lo.max_addresses = 16
+ net.ipv6.conf.lo.max_desync_factor = 600
+ net.ipv6.conf.lo.mc_forwarding = 0
+@@ -1516,7 +1589,7 @@
+ net.netfilter.nf_conntrack_acct = 0
+ net.netfilter.nf_conntrack_buckets = 65536
+ net.netfilter.nf_conntrack_checksum = 1
+-net.netfilter.nf_conntrack_count = 2342
++net.netfilter.nf_conntrack_count = 51
+ net.netfilter.nf_conntrack_dccp_loose = 1
+ net.netfilter.nf_conntrack_dccp_timeout_closereq = 64
+ net.netfilter.nf_conntrack_dccp_timeout_closing = 64
+@@ -1589,14 +1662,13 @@
+ sunrpc.tcp_slot_table_entries = 2
+ sunrpc.transports = tcp 1048576
+ sunrpc.transports = udp 32768
+-sunrpc.transports = tcp-bc 1048576
+ sunrpc.udp_slot_table_entries = 16
+-user.max_ipc_namespaces = 1544123
+-user.max_mnt_namespaces = 1544123
+-user.max_net_namespaces = 1544123
+-user.max_pid_namespaces = 1544123
++user.max_ipc_namespaces = 1543847
++user.max_mnt_namespaces = 1543847
++user.max_net_namespaces = 1543847
++user.max_pid_namespaces = 1543847
+ user.max_user_namespaces = 0
+-user.max_uts_namespaces = 1544123
++user.max_uts_namespaces = 1543847
+ vm.admin_reserve_kbytes = 8192
+ vm.block_dump = 0
+ vm.dirty_background_bytes = 0
+[s.belogrud@TCS4357]#
+
+[s.belogrud@TCS4357]# diff -Nuar sysctl.before sysctl.after | grep -e "^-" | wc -l
+36
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[00:49:29 root@m1-db-tst30 ~]# lvs  -S "lv_role=snapshot"
+  LV                   VG     Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  opt_snap_upd_120820  rootvg swi-a-s--- 10.00g      opt    0.87
+  root_snap_upd_120820 rootvg swi-a-s--- 10.00g      root   21.88
+  tmp_snap_upd_120820  rootvg swi-a-s--- <8.04g      tmp    38.96
+  var_snap_upd_120820  rootvg swi-a-s--- 10.00g      var    17.54
+[00:53:49 root@m1-db-tst30 ~]# findmnt -r -n -o SOURCE /
+/dev/mapper/rootvg-root
+[00:54:10 root@m1-db-tst30 ~]# lvs --noheadings -o vg_name -S lv_dm_path=/dev/mapper/rootvg-root
+  rootvg
+[00:54:38 root@m1-db-tst30 ~]# export rootvg=rootvg
+[00:55:11 root@m1-db-tst30 ~]# for snap_vol in `lvs --noheadings -o lv_dm_path -S "vg_name=$rootvg && lv_name=~_snap_upd && lv_role=snapshot" | tr -d ' '`; do lvremove -y $snap_vol ; done
+  Logical volume "opt_snap_upd_120820" successfully removed
+  Logical volume "root_snap_upd_120820" successfully removed
+  Logical volume "tmp_snap_upd_120820" successfully removed
+  Logical volume "var_snap_upd_120820" successfully removed
+[01:02:29 root@m1-db-tst30 ~]#
+
+[01:03:02 root@m1-db-tst30 ~]# pvs
+  PV         VG     Fmt  Attr PSize PFree
+  /dev/sda3  rootvg lvm2 a--  1.09t 892.56g
+[01:03:07 root@m1-db-tst30 ~]# lvs
+  LV   VG     Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  opt  rootvg -wi-ao----  50.00g
+  root rootvg -wi-ao----  50.00g
+  swap rootvg -wi-ao----  16.00g
+  tmp  rootvg -wi-ao----   8.00g
+  var  rootvg -wi-ao---- 100.00g
+[01:03:12 root@m1-db-tst30 ~]# vgs
+  VG     #PV #LV #SN Attr   VSize VFree
+  rootvg   1   5   0 wz--n- 1.09t 892.56g
+[01:03:14 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[01:07:24 root@m1-db-tst30 ~]# systemctl status telegraf
+● telegraf.service - The plugin-driven server agent for reporting metrics into InfluxDB
+   Loaded: loaded (/usr/lib/systemd/system/telegraf.service; enabled; vendor preset: disabled)
+   Active: active (running) since Wed 2020-12-09 00:19:25 MSK; 48min ago
+     Docs: https://github.com/influxdata/telegraf
+ Main PID: 14363 (telegraf)
+   CGroup: /system.slice/telegraf.service
+           └─14363 /usr/bin/telegraf -config /etc/telegraf/telegraf.conf -config-directory /etc/telegraf/telegraf.d
+
+Dec 09 01:05:00 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:05:00Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:05:10 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:05:10Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:05:20 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:05:20Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:05:30 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:05:30Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:05:40 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:05:40Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:06:10 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:06:10Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:06:20 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:06:20Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:06:30 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:06:30Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:06:50 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:06:50Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Dec 09 01:07:20 m1-db-tst30.tcsbank.ru telegraf[14363]: 2020-12-08T22:07:20Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process...status 1
+Hint: Some lines were ellipsized, use -l to show in full.
+[01:07:26 root@m1-db-tst30 ~]#
+
+[01:09:55 root@m1-db-tst30 ~]# tail /var/log/messages
+Dec  9 01:02:10 m1-db-tst30 journal: Suppressed 8310 messages from /system.slice/auditd.service
+Dec  9 01:09:39 m1-db-tst30 rsyslogd: imjournal: 48815 messages lost due to rate-limiting
+Dec  9 01:09:40 m1-db-tst30 telegraf: 2020-12-08T22:09:40Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process, exe: [sqlplus] pidfile: [] pattern: [] user: [] Error running /usr/bin/pgrep: exit status 1
+Dec  9 01:09:50 m1-db-tst30 telegraf: 2020-12-08T22:09:50Z E! Error in plugin [inputs.procstat]: E! Error: procstat getting process, exe: [sqlplus] pidfile: [] pattern: [] user: [] Error running /usr/bin/pgrep: exit status 1
+Dec  9 01:09:58 m1-db-tst30 systemd: Created slice User Slice of root.
+Dec  9 01:09:58 m1-db-tst30 systemd: Started Session c63 of user root.
+Dec  9 01:09:58 m1-db-tst30 systemd: Removed slice User Slice of root.
+Dec  9 01:10:01 m1-db-tst30 systemd: Created slice User Slice of root.
+Dec  9 01:10:01 m1-db-tst30 systemd: Started Session 76 of user root.
+Dec  9 01:10:01 m1-db-tst30 systemd: Removed slice User Slice of root.
+[01:10:05 root@m1-db-tst30 ~]#
+
+................................................................................
+
+[01:22:36 root@m1-db-tst30 ~]# subscription-manager remove --all && subscription-manager unregister
+1 local certificate has been deleted.
+1 subscription removed at the server.
+Unregistering from: subscription.rhsm.redhat.com:443/subscription
+System has been unregistered.
+[01:22:54 root@m1-db-tst30 ~]# subscription-manager status
++-------------------------------------------+
+   System Status Details
++-------------------------------------------+
+Overall Status: Unknown
+
+System Purpose Status: Unknown
+
+[01:23:10 root@m1-db-tst30 ~]#
+
+
+................................................................................
+
+
+

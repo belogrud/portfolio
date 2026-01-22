@@ -1,0 +1,151 @@
+
+................................................................................
+
+
+................................................................................
+
+[root@vm-dmz-app112 ~]# awk 'BEGIN {FS=":"; OFS=" ==> ";} $3>=1000 {print $3,$1}' /etc/passwd | sort -n
+1000 ==> dchl_service
+1001 ==> svyaznoy
+1002 ==> beeline
+1003 ==> a.ayana
+1004 ==> k.chuprakov
+1005 ==> i.mihailets
+1006 ==> a.shilov
+1007 ==> v.a.shishakin
+1008 ==> n.zavorina
+1009 ==> n.zhigunov
+1010 ==> sme_service
+1011 ==> commfactor
+1012 ==> v.gladkikh
+1013 ==> vmk
+1015 ==> k.bortsova
+1016 ==> k.stepanov
+1017 ==> a.suhova
+1018 ==> e.ivanova
+1019 ==> t.milshtein
+1021 ==> k.chuprakov_rosevrodev
+2001 ==> adobecatalyst
+3000 ==> qscan
+4042 ==> nalog2015
+65534 ==> nfsnobody
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# pwgen -c -n -s -C 10 1 ; grub-crypt
+0W64AXuyV4
+Password:
+Retype password:
+$6$AZZ/7IpixLMEvszs$3i7MZq9a9dt9qDpHF4lOX7Tq4QjAA/M9W/vB1WGBv5BdpbH5XxQ2VHRFoCuPVCycyYEnBNJvS1fIC22kV.V4h1
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# awk '/a.ayana/{print}' /etc/passwd
+a.ayana:x:1003:496::/home/sftp/a.ayana:/sbin/nologin
+[root@vm-dmz-app112 ~]# id a.ayana
+uid=1003(a.ayana) gid=496(sftpusers) groups=496(sftpusers)
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# useradd -g sftpusers -u 1022 -d /home/sftp/a.s.glavatskikh -s /sbin/nologin -p '$6$AZZ/7IpixLMEvszs$3i7MZq9a9dt9qDpHF4lOX7Tq4QjAA/M9W/vB1WGBv5BdpbH5XxQ2VHRFoCuPVCycyYEnBNJvS1fIC22kV.V4h1' a.s.glavatskikh && id a.s.glavatskikh
+uid=1022(a.s.glavatskikh) gid=496(sftpusers) groups=496(sftpusers)
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# ls -Alh ~a.s.glavatskikh
+total 16K
+-rw-r--r--. 1 a.s.glavatskikh sftpusers  18 Oct 16  2014 .bash_logout
+-rw-r--r--. 1 a.s.glavatskikh sftpusers 176 Oct 16  2014 .bash_profile
+-rw-r--r--. 1 a.s.glavatskikh sftpusers 124 Oct 16  2014 .bashrc
+-rw-r--r--. 1 a.s.glavatskikh sftpusers 658 Jun 23  2012 .zshrc
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# yes | rm ~a.s.glavatskikh/{.bash_logout,.bash_profile,.bashrc,.zshrc}
+
+[root@vm-dmz-app112 ~]# ls -Alh ~a.s.glavatskikh
+total 0
+[root@vm-dmz-app112 ~]#
+
+................................................................................
+
+[root@vm-dmz-app112 ~]# ls -Alh /home/sftp/a.ayana
+total 4.0K
+drwxr-xr-x. 4 root root 4.0K Mar 18  2016 beeline
+[root@vm-dmz-app112 ~]# ls -Alh ~i.mihailets
+total 4.0K
+drwxr-xr-x. 4 root root 4.0K Mar 18  2016 beeline
+[root@vm-dmz-app112 ~]#
+
+................................................................................
+
+[root@vm-dmz-app112 ~]# vim /etc/fstab
+...
+/home/sftp/beeline      /home/sftp/a.s.glavatskikh/beeline      none    rw,bind 0       0
+...
+
+[root@vm-dmz-app112 ~]# mkdir /home/sftp/a.s.glavatskikh/beeline
+[root@vm-dmz-app112 ~]# mount !$
+mount /home/sftp/a.s.glavatskikh/beeline
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# mount | awk '/a.s.glavatskikh/{print}'
+/home/sftp/beeline on /home/sftp/a.s.glavatskikh/beeline type none (rw,bind)
+[root@vm-dmz-app112 ~]# ls -Alh ~a.s.glavatskikh/
+total 4.0K
+drwxr-xr-x. 4 root root 4.0K Mar 18  2016 beeline
+[root@vm-dmz-app112 ~]# ls -A ~a.s.glavatskikh/beeline/
+From_Beeline  From_Tinkoff
+[root@vm-dmz-app112 ~]#
+
+................................................................................
+
+[support@centos00 ~]$ ls testfile.tmp
+testfile.tmp
+[support@centos00 ~]$ sftp a.s.glavatskikh@ftp03.tcsbank.ru
+Connecting to ftp03.tcsbank.ru...
+a.s.glavatskikh@ftp03.tcsbank.ru's password:
+Timeout, server not responding.
+Couldn't read packet: Connection reset by peer
+[support@centos00 ~]$
+
+[root@vm-dmz-app112 ~]# less /var/log/secure
+...
+Dec 15 12:05:57 vm-dmz-app112 sshd[15428]: Accepted password for a.s.glavatskikh from 172.16.28.74 port 64057 ssh2
+Dec 15 12:05:57 vm-dmz-app112 sshd[15428]: pam_unix(sshd:session): session opened for user a.s.glavatskikh by (uid=0)
+Dec 15 12:05:57 vm-dmz-app112 sshd[15456]: fatal: bad ownership or modes for chroot directory "/home/sftp/a.s.glavatskikh"
+Dec 15 12:05:57 vm-dmz-app112 sshd[15428]: pam_unix(sshd:session): session closed for user a.s.glavatskikh
+...
+
+[root@vm-dmz-app112 ~]# ls -Alh /home/sftp/
+total 88K
+drwxr-xr-x. 3 root            root      4.0K Mar 18  2016 a.ayana
+drwx------. 3 a.s.glavatskikh sftpusers 4.0K Dec 15 12:02 a.s.glavatskikh
+drwxr-xr-x. 3 root            root      4.0K Mar 18  2016 a.shilov
+...
+
+[root@vm-dmz-app112 ~]# chown root:root ~a.s.glavatskikh/ && chmod 0755 ~a.s.glavatskikh/
+
+[root@vm-dmz-app112 ~]# ls -Alhd ~a.s.glavatskikh/
+drwxr-xr-x. 3 root root 4.0K Dec 15 12:02 /home/sftp/a.s.glavatskikh/
+[root@vm-dmz-app112 ~]#
+
+
+................................................................................
+
+[support@centos00 ~]$ sftp a.s.glavatskikh@ftp03.tcsbank.ru
+Connecting to ftp03.tcsbank.ru...
+a.s.glavatskikh@ftp03.tcsbank.ru's password:
+Timeout, server not responding.
+Couldn't read packet: Connection reset by peer
+[support@centos00 ~]$ sftp a.s.glavatskikh@ftp03.tcsbank.ru
+Connecting to ftp03.tcsbank.ru...
+a.s.glavatskikh@ftp03.tcsbank.ru's password:
+sftp> ls -l
+drwxr-xr-x    4 0        0            4096 Mar 18  2016 beeline
+sftp> cd beeline
+sftp> ls
+From_Beeline  From_Tinkoff
+sftp> quit
+[support@centos00 ~]$
+
+................................................................................
+
+
+
+

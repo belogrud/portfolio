@@ -1,0 +1,648 @@
+
+
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@nag-prod
+Last login: Fri Oct  7 17:45:49 2016 from tcs4500.tcsbank.ru
+[bsv@vm-vol-nag4-prod ~]$ sudo -i
+[root@vm-vol-nag4-prod ~]# cat /var/spool/cron/root
+# For details see man 4 crontabs
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  *  command to be executed
+
+15 04 * * * /usr/local/nagios/libexec/opt/scripts/nagios_notes.sh
+15 05 * * * /usr/local/nagios/libexec/opt/scripts/make_notes.sh
+00 04 * * * /root/.pyenv/versions/nagnotes/bin/python /usr/local/nagios/libexec/opt/scripts/vmware_notes/nagnotes.py
+00 06 * * * rsync -avz /tmp/notes/total/ /usr/local/nagios/share/notes/
+* * * * * /usr/local/nagios/libexec/opt/scripts/nagstatus.sh
+00 12,14,16,18 * * 1,2,3,4,5 /usr/local/nagios/libexec/opt/scripts/git_puller.sh
+45 11 * * 1 /usr/local/nagios/libexec/opt/scripts/vcs_summary.sh
+
+# Follow script informs employee of the first line of technical support via separate emails about every troubled services. Then they will process every of these emails and create service desk case  to resolve it.
+02 23,10,17 * * * /opt/TCS/scripts/nagios/nagios_find_services_with_critical_state_more_then_8_hours_and_send_separate_emails_to_servicedesk.sh
+# Follow script is used exactly for debug purposes.
+# 03 23,10,17 * * * /opt/TCS/scripts/nagios/nagios_find_services_with_critical_state_more_then_8_hours_and_send_separate_emails_to_servicedesk.debug.sh
+# Follow script is used to send me email to be sure that engine of this scripts works properly. It send one email, that has info about all services in inapropriate state.
+04 23,10,17 * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_services_with_critical_state_more_then_8_hours_and_have_no_downtime_acknowledge_comment.sh
+# Follow two scripts inform me about some troubles on GreenPlum or Hadoop hardware servers. They send me separate email about it.
+*/10 * * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_greenplum_hardware_check_service_with_critical_state.sh
+*/10 * * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_hadoop_hardware_check_service_with_critical_state.sh
+# Send email every working days (without saturday and sunday)
+03 11 * * 1-5 /opt/TCS/scripts/nagios/email_notification_for_nagios_find_services_with_manually_turned_off_notification_via_web_gui_and_have_no_downtime_acknowledge_comment.sh
+
+# This two scripts arranged to start at time, when starts git_puller.sh script. Script git_puller.sh scheduled to start at 16:00.
+55 15 * * * /opt/TCS/scripts/nagios/nagios_save_not_persistant_comments.sh
+05 16 * * * /opt/TCS/scripts/nagios/nagios_restore_not_persistant_comments.sh
+# Run script every 15 minutes between 8 minutes and 53 minutes of every hours. This allow backup not persistent comments if nagios unexpectedly crush.
+8-53/15 * * * * /opt/TCS/scripts/nagios/nagios_save_not_persistant_comments.sh
+
+[root@vm-vol-nag4-prod ~]# cat /usr/local/nagios/libexec/opt/scripts/nagios_notes.sh
+#!/bin/bash
+
+authstr="--cacert /var/lib/puppet/ssl/certs/ca.pem --cert /var/lib/puppet/ssl/certs/vm-vol-nag4-prod.tcsbank.ru.pem --key /var/lib/puppet/ssl/private_keys/vm-vol-nag4-prod.tcsbank.ru.pem --tlsv1 -s"
+
+curl -s -X GET http://puppetdb:8080/v3/nodes | sed -e 's/[{}",]/''/g' |grep name|awk '{print $3}'|egrep -e "tcsbank|local" |grep -v '\\' > /tmp/notes/nodelist
+
+mkdir -p /tmp/notes/puppet
+
+while read node
+
+do
+
+curl -s -X GET http://puppetdb:8080/v3/nodes/$node/facts > /tmp/notes/$node
+kernelrelease=`cat /tmp/notes/$node | sed -e 's/[{}",]/''/g' |egrep -B 1 -e "kernelrelease"|grep value |awk -F ":" '{print $2}'`
+fqdn=`cat /tmp/notes/$node | sed -e 's/[{}",]/''/g' |egrep -B 1 -e "fqdn"|grep value |awk -F ":" '{print $2}'`
+productname=`cat /tmp/notes/$node | sed -e 's/[{}",]/''/g' |egrep -B 1 -e ' productname'|grep value |awk -F ":" '{print $2}'`
+serialnumber=`cat /tmp/notes/$node | sed -e 's/[{}",]/''/g' |egrep -B 1 -e ' serialnumber'|grep value |awk -F ":" '{print $2}'`
+os=`cat /tmp/notes/$node | sed -e 's/[{}",]/''/g' |egrep -B 1 -e ' lsbdistdescription'|grep value |awk -F ":" '{print $2}'`
+
+nodename=`echo $node |sed -s 's/\.tcsbank\.ru//g'`
+
+echo > /tmp/notes/puppet/$nodename.txt
+echo "----------------" >> /tmp/notes/puppet/$nodename.txt
+echo "Puppet notes" >> /tmp/notes/puppet/$nodename.txt
+echo "----------------" >> /tmp/notes/puppet/$nodename.txt
+echo "host: $fqdn" >> /tmp/notes/puppet/$nodename.txt
+echo "platform: $productname" >> /tmp/notes/puppet/$nodename.txt
+echo "serial: $serialnumber" >> /tmp/notes/puppet/$nodename.txt
+echo "os: $os" >> /tmp/notes/puppet/$nodename.txt
+echo "kernel: $kernelrelease" >> /tmp/notes/puppet/$nodename.txt
+
+echo "note for node $node writed"
+
+done < /tmp/notes/nodelist
+[root@vm-vol-nag4-prod ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-prod 20161024-1828]# curl -s -X GET http://puppetdb:8080/v3/nodes/ | head -n 20
+[ {
+  "name" : "cacti.tcsbank.ru",
+  "deactivated" : null,
+  "catalog_timestamp" : "2016-07-06T16:33:15.467Z",
+  "facts_timestamp" : "2016-10-24T15:02:43.464Z",
+  "report_timestamp" : null
+}, {
+  "name" : "cv-bcpmda01.tcsbank.ru",
+  "deactivated" : null,
+  "catalog_timestamp" : null,
+  "facts_timestamp" : "2016-10-24T15:05:28.693Z",
+  "report_timestamp" : null
+}, {
+  "name" : "devel.tcsbank.ru",
+  "deactivated" : null,
+  "catalog_timestamp" : "2016-07-06T16:32:18.804Z",
+  "facts_timestamp" : "2016-10-24T15:02:28.421Z",
+  "report_timestamp" : null
+}, {
+  "name" : "ds-aerospike01p.tcsbank.ru",
+[root@vm-vol-nag4-prod 20161024-1828]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-prod 20161024-1828]# curl -s -X GET http://puppetdb:8080/v3/nodes/vm-ossec01t.tcsbank.ru/facts/
+[ {
+  "value" : "Intel(R) Xeon(R) CPU E5-2680 0 @ 2.70GHz",
+  "name" : "processor0",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "None",
+  "name" : "boardserialnumber",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "VMware Virtual Platform",
+  "name" : "productname",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "Linux",
+  "name" : "kernel",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "127.0.0.0",
+  "name" : "network_lo",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1.8.7",
+  "name" : "rubyversion",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "root",
+  "name" : "id",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "x86_64",
+  "name" : "hardwaremodel",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "vmware",
+  "name" : "virtual",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "Intel Corporation",
+  "name" : "boardmanufacturer",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "255.255.255.0",
+  "name" : "netmask",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "ps -ef",
+  "name" : "ps",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "MSK",
+  "name" : "timezone",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "eth0,lo",
+  "name" : "interfaces",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "255.255.255.0",
+  "name" : "netmask_eth0",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "true",
+  "name" : "is_virtual",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "false",
+  "name" : "selinux",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "Other",
+  "name" : "type",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "255.0.0.0",
+  "name" : "netmask_lo",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "tcsbank.ru",
+  "name" : "domain",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "127.0.0.1",
+  "name" : "ipaddress_lo",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "VMware, Inc.",
+  "name" : "manufacturer",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "x86_64",
+  "name" : "hardwareisa",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "440BX Desktop Reference Platform",
+  "name" : "boardproductname",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "/usr/bin:/sbin:/bin:/usr/sbin",
+  "name" : "path",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "VMware IDE CDR10",
+  "name" : "blockdevice_sr0_model",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2.6.32",
+  "name" : "kernelversion",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2",
+  "name" : "tzdata_check",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "RedHat",
+  "name" : "osfamily",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "sda,sr0",
+  "name" : "blockdevices",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "6.00",
+  "name" : "bios_version",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "ext4,iso9660",
+  "name" : "filesystems",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "NECVMWar",
+  "name" : "blockdevice_sr0_vendor",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "x86_64",
+  "name" : "architecture",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "false",
+  "name" : "clientnoop",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "false",
+  "name" : "is_pe",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "Phoenix Technologies LTD",
+  "name" : "bios_vendor",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "Virtual disk",
+  "name" : "blockdevice_sda_model",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "/usr/lib/ruby/site_ruby/1.8",
+  "name" : "rubysitedir",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "6",
+  "name" : "operatingsystemmajrelease",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2.6",
+  "name" : "kernelmajversion",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2.00 GB",
+  "name" : "swapsize",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2.00 GB",
+  "name" : "swapfree",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "16436",
+  "name" : "mtu_lo",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1500",
+  "name" : "mtu_eth0",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "VMware",
+  "name" : "blockdevice_sda_vendor",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "/var/lib/puppet",
+  "name" : "puppet_vardir",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1073741312",
+  "name" : "blockdevice_sr0_size",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "vmxnet3",
+  "name" : "interface_eth0_driver",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "/root",
+  "name" : "root_home",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2047.99",
+  "name" : "swapfree_mb",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1.7.3",
+  "name" : "facterversion",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "6.4",
+  "name" : "operatingsystemrelease",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "0.9.0",
+  "name" : "augeasversion",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1.1.29.0-k-NAPI",
+  "name" : "interface_eth0_version",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2047.99",
+  "name" : "swapsize_mb",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1\n",
+  "name" : "cores_per_socket",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "6.4",
+  "name" : "lsbdistrelease",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "6",
+  "name" : "lsbmajdistrelease",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "161061273600",
+  "name" : "blockdevice_sda_size",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : ":base-4.0-amd64:base-4.0-noarch:core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch",
+  "name" : "lsbrelease",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "10.216.43.0",
+  "name" : "network_eth0",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1\n",
+  "name" : "sockets_count",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1",
+  "name" : "physicalprocessorcount",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1.83 GB",
+  "name" : "memorysize",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "2.6.32-358.el6.x86_64",
+  "name" : "kernelrelease",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1.83 GB",
+  "name" : "memorytotal",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "4.1.2-29.el6",
+  "name" : "bash_version",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "CentOS",
+  "name" : "operatingsystem",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "AAAAB3NzaC1kc3MAAACBANGSyoFnROeO8C3ICQkCc/3/SeWNCUdVWrnhQpNMk210yRc3WaZnXTR2RbP50PzmwdubWb/F3CaxiYAhZ7xNcMctp1KmxUgCvWmqvUA8lbc5ozVK/sl60vnCcePVyO7T670PTlGdbP6sh8sOcy4jd0d8dAKl3Uujy8+8ebtRqHaFAAAAFQChtX6DPPhn23/u89ljXt7g9nD95QAAAIEA0K270idRNMOuqKJJPzhPUmx+0jepwwhjzv5fR39MBk0rjbwv1XHSNy5iic3MrJDjvbZCBdIFW2v/uKfQ7W4ESYvbdYvn3ZliwipH0udXLQ7PclKFh3NiEuE8Dz6POs1JY0ZyISDKnSWsBx9DGWMfpiARj2I/t3AFLmVGtYfXFtkAAACAdJPX6Guf5IfcFD4sl2jULIJ8OfD2uTD5/ml+MfZRXHVpoHStze5YDyxoeM8vra583+nWBWSrp4VLpD3gnOOzAhIcO8+sGs63ZSs3WunleHBj3Nd7Zy39T4trw1OlfDOhLddFfYvRU9OPXestgbwnJ6XkoNjJmUaXcKN9/zQulGg=",
+  "name" : "sshdsakey",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "AAAAB3NzaC1yc2EAAAABIwAAAQEA1oA0/TLz9O2swbNz7xtZhbJ6cJliBuluxgMp06KsfN1kiv2P0mWrMIKeB3RWUB2xYSHnVOepJpHMsWvzyBHpR7frn2FX0YifHDUGsNW516KG6tzZbbTM4vBydph171VAtn6C5ew6zVLR0imsgR0Q0U5EmSyKD0dpV4SRvb0MVzkwTdfsoqA2f0llLmsgLsJMlLEwvsALgsaT2xioL/sDFsWkyk0nYWJmm5d1y8lyy/10zHazmSM1k2Y1V2DohgyMxymSApGob5mibHV4lkYc/U0nW5TYTi2vr7ZYBOw3xE897lkPRYR/yWHAnIYG8W99pC+ufAPa+v8bZxrD9u4cJw==",
+  "name" : "sshrsakey",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "Final",
+  "name" : "lsbdistcodename",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "SSHFP 1 1 1f7c11942a1f5cdbb733cb5470f0f769b6e2b837\nSSHFP 1 2 ecba79302bba7627c93fd8596be1e9104dcf7b60a7afbe448094c18022917cc2",
+  "name" : "sshfp_rsa",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "SSHFP 2 1 5df95a79f6efcfb80b902b36c675af1430259d0e\nSSHFP 2 2 cbb2259a812ff4de82ebafbe750a4853a123814f1052ae134c94b8b4f2c308e2",
+  "name" : "sshfp_dsa",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "CentOS",
+  "name" : "lsbdistid",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1",
+  "name" : "processorcount",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "CentOS release 6.4 (Final)",
+  "name" : "lsbdistdescription",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1877.56",
+  "name" : "memorysize_mb",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "d80a302b",
+  "name" : "uniqueid",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "00:50:56:93:23:C7",
+  "name" : "macaddress",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "vm-ossec01t.tcsbank.ru",
+  "name" : "fqdn",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "10.216.43.48",
+  "name" : "ipaddress",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "42139A7C-5165-F445-D6B1-C0C39CAE662B",
+  "name" : "uuid",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "VMware-42 13 9a 7c 51 65 f4 45-d6 b1 c0 c3 9c ae 66 2b",
+  "name" : "serialnumber",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "10.216.43.48",
+  "name" : "ipaddress_eth0",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "vm-ossec01t",
+  "name" : "hostname",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "00:50:56:93:23:C7",
+  "name" : "macaddress_eth0",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "vm-ossec01t.tcsbank.ru",
+  "name" : "clientcert",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1",
+  "name" : "uptime_days",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1 day",
+  "name" : "uptime",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "04/14/2014",
+  "name" : "bios_release_date",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "3.8.5",
+  "name" : "puppetversion",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "3.8.5",
+  "name" : "clientversion",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "tcs-atomic-centos-6-x86_64, tcs-centos-6.4-x86_64-iso-dvd1, tcs-centos-6.4-x86_64-iso-dvd2, tcs-centos-6-centosplus-x86_64, tcs-centos-6-extras-x86_64, tcs-centos-6-os-x86_64, tcs-centos-6-updates-x86_64, tcs-epel, tcs-puppetlabs-deps, tcs-puppetlabs-products",
+  "name" : "yum_repos",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.9.x86_64/jre/lib/amd64/server",
+  "name" : "java_libjvm_path",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "7",
+  "name" : "java_major_version",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1.7.0_09-icedtea",
+  "name" : "java_version",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "09-icedtea",
+  "name" : "java_patch_level",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.9.x86_64",
+  "name" : "java_default_home",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1.55 GB",
+  "name" : "memoryfree",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "45",
+  "name" : "uptime_hours",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "165140",
+  "name" : "uptime_seconds",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "1584.78",
+  "name" : "memoryfree_mb",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+} ][root@vm-vol-nag4-prod 20161024-1828]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# curl -s -X GET http://puppetdb:8080/v3/facts --data-urlencode 'query=["and",["~","certname","puppetdb?"],["or",["=","name","ipaddress"],["=","name","hostname"]]]'
+[ {
+  "value" : "vm-puppetdb01p",
+  "name" : "hostname",
+  "certname" : "vm-puppetdb01p.tcsbank.ru"
+}, {
+  "value" : "10.216.40.70",
+  "name" : "ipaddress",
+  "certname" : "vm-puppetdb01p.tcsbank.ru"
+} ][root@vm-vol-nag4-tst objects]#
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# curl -s -X GET http://puppetdb:8080/v3/facts --data-urlencode 'query=["and",["~","certname","vm-ossec01t?"],["or",["=","name","ipaddress"],["=","name","hostname"]]]'
+[ {
+  "value" : "vm-ossec01p",
+  "name" : "hostname",
+  "certname" : "vm-ossec01p.tcsbank.ru"
+}, {
+  "value" : "vm-ossec01t",
+  "name" : "hostname",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+}, {
+  "value" : "10.216.40.38",
+  "name" : "ipaddress",
+  "certname" : "vm-ossec01p.tcsbank.ru"
+}, {
+  "value" : "10.216.43.48",
+  "name" : "ipaddress",
+  "certname" : "vm-ossec01t.tcsbank.ru"
+} ][root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst 20161024-1846]# curl -s -X GET http://puppetdb:8080/v3/facts --data-urlencode 'query=["or",["=","name","kernelversion"],["=","name","operatingsystem"]]' | head -n 20
+[ {
+  "value" : "3.11.0",
+  "name" : "kernelversion",
+  "certname" : "vm-mason-worker01p.tcsbank.ru"
+}, {
+  "value" : "3.11.0",
+  "name" : "kernelversion",
+  "certname" : "vm-dmz-ssp-ui01.tcsbank.ru"
+}, {
+  "value" : "3.11.0",
+  "name" : "kernelversion",
+  "certname" : "vm-dmz-ssp-auc02.tcsbank.ru"
+}, {
+  "value" : "3.11.0",
+  "name" : "kernelversion",
+  "certname" : "vm-dmz-ssp-auc01.tcsbank.ru"
+}, {
+  "value" : "3.11.0",
+  "name" : "kernelversion",
+  "certname" : "vm-dmz-ssp-data01.tcsbank.ru"
+[root@vm-vol-nag4-tst 20161024-1846]#
+
+
+
+[root@vm-vol-nag4-tst 20161024-1846]# curl -s -X GET http://puppetdb:8080/v3/facts --data-urlencode 'query=["or",["=","name","kernelversion"],["=","name","operatingsystem"]]'
+...
+}, {
+  "value" : "CentOS",
+  "name" : "operatingsystem",
+  "certname" : "ds-gl-es01.ti.local"
+}, {
+  "value" : "CentOS",
+  "name" : "operatingsystem",
+  "certname" : "vm-asterisk01d.tcsbank.ru"
+}, {
+  "value" : "OracleLinux",
+  "name" : "operatingsystem",
+  "certname" : "m1-db07-prod.tcsbank.ru"
+}, {
+  "value" : "OracleLinux",
+  "name" : "operatingsystem",
+  "certname" : "m1-db02-prod.tcsbank.ru"
+}, {
+  "value" : "OracleLinux",
+  "name" : "operatingsystem",
+  "certname" : "ds-db02-prod.tcsbank.ru"
+}, {
+  "value" : "OracleLinux",
+  "name" : "operatingsystem",
+  "certname" : "ds-db-tst.tcsbank.ru"
+}, {
+  "value" : "Debian",
+  "name" : "operatingsystem",
+  "certname" : "zabbix-ds.tcsbank.ru"
+}, {
+  "value" : "Debian",
+  "name" : "operatingsystem",
+  "certname" : "zabbix.tcsbank.ru"
+} ][root@vm-vol-nag4-tst 20161024-1846]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst 20161024-1846]# curl -s -X GET http://puppetdb:8080/v3/nodes | jq -r '.[].name' | head
+cacti.tcsbank.ru
+cv-bcpmda01.tcsbank.ru
+devel.tcsbank.ru
+ds-aerospike01p.tcsbank.ru
+ds-aerospike01t.tcsbank.ru
+ds-aerospike02p.tcsbank.ru
+ds-aerospike02t.tcsbank.ru
+ds-aerospike03p.tcsbank.ru
+ds-afs-prod.tcsbank.ru
+ds-aic-mail01.tcsbank.ru
+[root@vm-vol-nag4-tst 20161024-1846]#
+
+
+

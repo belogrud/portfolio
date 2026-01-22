@@ -1,0 +1,204 @@
+
+
+...........................................................................
+
+[root@vm-var-ftp02 ~]# df -hT
+Filesystem    Type    Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+              ext3    7.7G  5.5G  1.8G  76% /
+/dev/sda1     ext3     99M   13M   82M  14% /boot
+/dev/sda2     ext3    2.0G  1.1G  874M  56% /var
+tmpfs        tmpfs    502M     0  502M   0% /dev/shm
+/dev/mapper/ftpsite_vg-lvol0
+              ext3    394G  254G  121G  68% /home/ftpsite_new
+[root@vm-var-ftp02 ~]# mysql vsftpd
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 1208954
+Server version: 5.0.77-log Source distribution
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql> INSERT INTO accounts (username,password) VALUES ('sravni_ru_service','G1KaphVlfR') ;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> exit
+Bye
+[root@vm-var-ftp02 ~]#
+
+
+[2017-09-06 16:23.16]  ~
+[s.belogrud.TCS4357] b pwgen -c -n -s -C 10 1
+G1KaphVlfR
+
+#
+#	Cannot connect to ftp02 with created username and password.
+#
+[root@vm-var-ftp02 ~]# mysql vsftpd
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 1209013
+Server version: 5.0.77-log Source distribution
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql> INSERT INTO accounts (username,password) VALUES ('sravni_ru','G1KaphVlfR') ;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> exit
+Bye
+[root@vm-var-ftp02 ~]#
+
+...........................................................................
+
+[root@vm-var-ftp02 ~]# mkdir /home/ftpsite_new/ftpsite2/sravni_ru
+
+[root@vm-var-ftp02 ~]# chown virtual:virtual /home/ftpsite_new/ftpsite2/sravni_ru
+
+[root@vm-var-ftp02 ~]# cp /etc/vsftpd_user_conf/{dchl_service,sravni_ru}
+
+[root@vm-var-ftp02 ~]# vim -O /etc/vsftpd_user_conf/{dchl_service,sravni_ru}
+2 files to edit
+[root@vm-var-ftp02 ~]# cat /etc/vsftpd_user_conf/sravni_ru
+local_root=/home/ftpsite_new/ftpsite2/sravni_ru
+write_enable=YES
+guest_enable=YES
+guest_username=virtual
+[root@vm-var-ftp02 ~]#
+
+[root@vm-var-ftp02 ~]# vim /etc/vsftpd/user_list
+[root@vm-var-ftp02 ~]# tail -n 1 !$
+tail -n 1 /etc/vsftpd/user_list
+sravni_ru_service
+[root@vm-var-ftp02 ~]#
+
+[root@vm-var-ftp02 ~]# service vsftpd restart
+Shutting down vsftpd:                                      [  OK  ]
+Starting vsftpd for vsftpd:                                [  OK  ]
+Starting vsftpd for vsftpd-secure:                         [  OK  ]
+[root@vm-var-ftp02 ~]#
+
+...........................................................................
+
+#
+#	Test connection to created account.
+#
+[2017-09-06 16:57.51]  ~
+[s.belogrud.TCS4357] b lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; ls ; bye" -u 'sravni_ru','G1KaphVlfR' ftp02.tcsbank.ru -p 2121
+
+
+#
+#	Try to put file
+#
+[2017-09-06 16:59.26]  ~
+[s.belogrud.TCS4357] b echo 'test' > test.tmp
+
+[2017-09-06 16:59.41]  ~
+[s.belogrud.TCS4357] b lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; ls ; put test.tmp ; ls ; bye" -u 'sravni_ru','G1KaphVlfR' ftp02.tcsbank.ru -p 2121
+5 bytes transferred
+-rw-------    1 503      503             5 Sep 06 17:00 test.tmp
+
+#
+#	Try to download file.
+#
+[2017-09-06 17:00.00]  ~
+[s.belogrud.TCS4357] b rm test.tmp
+
+[2017-09-06 17:00.12]  ~
+[s.belogrud.TCS4357] b lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; ls ; get test.tmp ; ls ; bye" -u 'sravni_ru','G1KaphVlfR' ftp02.tcsbank.ru -p 2121
+-rw-------    1 503      503             5 Sep 06 17:00 test.tmp
+5 bytes transferred
+-rw-------    1 503      503             5 Sep 06 17:00 test.tmp
+
+[2017-09-06 17:00.22]  ~
+[s.belogrud.TCS4357] b cat test.tmp
+test
+
+[2017-09-06 17:00.28]  ~
+[s.belogrud.TCS4357] b
+
+#
+#	Try to remove remote file.
+#
+[2017-09-06 17:02.37]  ~
+[s.belogrud.TCS4357] b lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no ; ls ; rm test.tmp ; ls ; bye" -u 'sravni_ru','G1KaphVlfR' ftp02.tcsbank.ru -p 2121
+-rw-------    1 503      503             5 Sep 06 17:00 test.tmp
+rm ok, `test.tmp' removed
+
+[2017-09-06 17:03.22]  ~
+[s.belogrud.TCS4357] b
+
+
+...........................................................................
+
+#
+#	Other test.
+#	Connection via 21 port.
+#	There was not removed command to move non exited directory "Contracts".
+[2017-09-06 16:23.22]  ~
+[s.belogrud.TCS4357] b lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no; cd Contracts; ls; bye" -u 'sravni_ru','G1KaphVlfR' ftp02.tcsbank.ru -p 21
+cd: Access failed: 550 Failed to change directory. (/Contracts)
+-rw-------    1 503      503             0 Sep 06 16:51 2017-08-15 16.42.00 Dell _ Thank You - Google Chrome.png
+
+[2017-09-06 16:56.34]  ~
+[s.belogrud.TCS4357] b lftp -e "set ftp:ssl-allow true; set ftp:ssl-protect-data true ; set passive-mode yes ; set ssl:verify-certificate no; cd Contracts; ls; bye" -u 'sravni_ru','G1KaphVlfR' ftp02.tcsbank.ru -p 2121
+cd: Access failed: 550 Failed to change directory. (/Contracts)
+
+[2017-09-06 16:57.14]  ~
+[s.belogrud.TCS4357] b
+
+...........................................................................
+...........................................................................
+
+
+[root@vm-var-ftp02 etc]# ls -Alh /etc/vsftpd_user_conf/ | grep gal
+-rw-r--r-- 1 root root  150 Dec 28  2016 d.galiullin
+[root@vm-var-ftp02 etc]# ls -Alh /etc/vsftpd_user_conf/ | grep sam
+-rw-r--r-- 1 root root   95 Jun  1  2015 a.p.samartseva
+[root@vm-var-ftp02 etc]# ls -Alh /etc/vsftpd_user_conf/ | grep sas
+-rw-r--r-- 1 root root  107 Jun 24  2013 sascatalist
+-rw-r--r-- 1 root root   95 Jun  5  2015 sassrv
+-rw-r--r-- 1 root root   98 Nov  8  2013 ttk-sas
+-rw-r--r-- 1 root root  107 Sep 14  2016 ulmart_sas
+-rw-r--r-- 1 root root  104 Nov 11  2016 wwf_sas
+[root@vm-var-ftp02 etc]#
+
+/home/ftpsite_new/ftpsite2/sravni_ru            /home/ftpsite_new/ftpsite3/d.galiullin/sravni_ru
+
+[root@vm-var-ftp02 etc]# vim /etc/fstab
+[root@vm-var-ftp02 etc]# mkdir /home/ftpsite_new/ftpsite3/d.galiullin/sravni_ru
+[root@vm-var-ftp02 etc]# chown virtual:virtual /home/ftpsite_new/ftpsite3/d.galiullin/sravni_ru
+[root@vm-var-ftp02 etc]# mount /home/ftpsite_new/ftpsite3/d.galiullin/sravni_ru
+[root@vm-var-ftp02 etc]#
+
+
+[root@vm-var-ftp02 etc]# cat /etc/vsftpd_user_conf/a.p.samartseva
+local_root=/home/ftpsite_new/ftpsite5
+write_enable=YES
+guest_enable=YES
+guest_username=virtual
+[root@vm-var-ftp02 etc]# cat /etc/vsftpd_user_conf/sassrv
+local_root=/home/ftpsite_new/ftpsite5
+write_enable=YES
+guest_enable=YES
+guest_username=virtual
+[root@vm-var-ftp02 etc]#
+
+[root@vm-var-ftp02 etc]# mkdir /home/ftpsite_new/ftpsite5/sravni_ru
+[root@vm-var-ftp02 etc]# chown virtual:virtual /home/ftpsite_new/ftpsite5/sravni_ru
+
+[root@vm-var-ftp02 etc]# vim /etc/fstab
+[root@vm-var-ftp02 etc]# tail -n 4 /etc/fstab
+# SD#639621
+# Was made to access a.p.samartseva and sassrv to sravni_ru.
+/home/ftpsite_new/ftpsite2/sravni_ru            /home/ftpsite_new/ftpsite5/sravni_ru                    none    rw,bind 0       0
+
+[root@vm-var-ftp02 etc]#
+
+[root@vm-var-ftp02 etc]# mount /home/ftpsite_new/ftpsite5/sravni_ru
+
+

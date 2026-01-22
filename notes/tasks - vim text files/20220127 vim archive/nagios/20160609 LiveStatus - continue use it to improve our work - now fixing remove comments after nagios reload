@@ -1,0 +1,50 @@
+
+
+[root@vm-vol-nag4-prod nagios]# echo -e "GET comments\nFilter: persistent = 0\nFilter: type = 2\nFilter: entry_type = 1\nColumns: host_name service_description author source comment" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+m1-asttel-web01;C:\ Drive Space;bsv;0;SD#895471
+vm-dbamon01;AG - Send mkd monitoring view;bsv;0;SD#897395
+[root@vm-vol-nag4-prod nagios]#
+
+[root@vm-vol-nag4-tst nagios]# echo -e "COMMAND [$(date +%s)] ADD_SVC_COMMENT;vm-ossec01t;Current Load;0;bsv;test comment 1 *** Original comment date is: 20160609-1757.\n" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+[root@vm-vol-nag4-tst nagios]#
+
+
+[root@vm-vol-nag4-tst nagios]# ./nagios_save_not_persistant_comments.sh && cat /var/tmp/nagios_not_persistant_comments.backup && echo "###" && cat /var/tmp/nagios_not_persistant_comments_ready_to_import_into_nagios
+vm-ossec01t;Current Load;bsv;test comment 2 *** Original comment date is: 20160609-1818.
+###
+COMMAND [1465485531] ADD_SVC_COMMENT;vm-ossec01t;Current Load;0;bsv;test comment 2
+[root@vm-vol-nag4-tst nagios]# echo -e "COMMAND [1465485531] ADD_SVC_COMMENT;vm-ossec01t;Current Load;0;bsv;test comment 2" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+[root@vm-vol-nag4-tst nagios]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst nagios]# ./nagios_save_not_persistant_comments.sh && cat /var/tmp/nagios_not_persistant_comments.backup                                                                        vm-ossec01t;Current Load;bsv;test comment 2;1465485531
+[root@vm-vol-nag4-tst nagios]# ./nagios_restore_not_persistant_comments.sh
+COMMAND [bsv] ADD_SVC_COMMENT;COMMAND [1465485531] ADD_SVC_COMMENT;vm-ossec01t;0;Current Load;0
+[root@vm-vol-nag4-tst nagios]#
+
+-rwxr-xr-x 1 root root 1851 Jun  9 19:52 nagios_restore_not_persistant_comments.sh
+-rwxr-xr-x 1 root root 1923 Jun  9 19:52 nagios_save_not_persistant_comments.sh
+
+................................................................................
+
+
+
+[root@vm-vol-nag4-prod nagios]# echo -e "GET comments\nFilter: persistent = 0\nFilter: type = 2\nFilter: entry_type = 1\nColumns: host_name service_description author comment entry_time" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+m1-asttel-web01;C:\ Drive Space;bsv;SD#895471;1465478640
+ds-sasfront02p;/mnt/projects_new;support;SD 899504;1465503677
+[root@vm-vol-nag4-prod nagios]#
+
+[root@vm-vol-nag4-prod nagios]# echo -e "GET comments\nFilter: host_name = vm-1c-server\nColumns: host_name service_description author comment entry_time" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+vm-1c-server;1C Agent;s.barkov;Название сервеса поменялось;1465541259
+[root@vm-vol-nag4-prod nagios]#
+
+[root@vm-vol-nag4-prod nagios]# echo -e "GET comments\nFilter: host_name = vm-1c-server\nColumns: host_name service_description author comment entry_time type entry_type" | /usr/local/bin/unixcat /usr/local/nagios/var/rw/live
+vm-1c-server;1C Agent;s.barkov;Название сервеса поменялось;1465541259;2;4
+[root@vm-vol-nag4-prod nagios]#
+
+
+
+
+
+

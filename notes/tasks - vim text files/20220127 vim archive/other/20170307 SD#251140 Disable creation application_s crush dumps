@@ -1,0 +1,104 @@
+
+
+
+
+Тема
+
+Выключить генерацию coredumps
+Номер
+
+251140
+Описание
+Для unix-admins
+Просьба на vm-insite04p вырубить генерацию coredumps.
+Спасибо!
+
+................................................................................
+
+#
+#   First of all, I had seen on follow directories.
+#   When I found no any files into it, I thought, that's unusual.
+#   The explanation was simple, author of this task, removed all files in these
+#   directories, and even chaned rights to these directories.
+#
+
+[root@vm-insite04p ~]# ls -alh /var/coredumps/
+total 4.0K
+d---------.  2 root root    6 Mar  7 13:32 .
+drwxr-xr-x. 21 root root 4.0K Mar  7 10:31 ..
+[root@vm-insite04p ~]#
+
+[root@vm-insite04p ~]# ls -alh /var/crash/
+total 4.0K
+drwxr-xr-x.  2 root root    6 Nov  7 13:44 .
+drwxr-xr-x. 21 root root 4.0K Mar  7 10:31 ..
+[root@vm-insite04p ~]#
+
+
+................................................................................
+
+#   Author of this task want to stop generation application crash dumps.
+#   It's not a operation system core dumps. I asked author by phone about it.
+
+................................................................................
+
+[root@vm-insite04p ~]# cat /etc/system-release
+CentOS Linux release 7.3.1611 (Core)
+[root@vm-insite04p ~]#
+
+................................................................................
+
+
+#   https://access.redhat.com/solutions/4896
+#   On this web page I found follow:
+#
+#   For Red Hat Enteprise Linux 7
+#
+#   The limit is set by systemd, and the following setting in /etc/systemd/system.conf can be set it as unlimited.
+#
+#   Raw
+#   DefaultLimitCORE=infinity
+#   Reboot the system
+
+#   This means, I can use same option to turn it back to default (disabled) state.
+
+
+................................................................................
+
+[root@vm-insite04p ~]# vim +view /etc/systemd/system.conf
+...
+#DefaultLimitDATA=
+#DefaultLimitSTACK=
+DefaultLimitCORE=infinity
+#DefaultLimitRSS=
+#DefaultLimitNOFILE=
+...
+
+................................................................................
+
+#
+#   To be sure, I've seen same option at other server with rhel 7 installed.
+#
+[bsv@ds-pr-iris12p ~]$ awk '/DefaultLimitCORE/{print}' /etc/systemd/system.conf
+#DefaultLimitCORE=
+[bsv@ds-pr-iris12p ~]$
+
+[bsv@ds-pr-iris12p ~]$ ls -alh /var/coredumps/
+ls: cannot access /var/coredumps/: No such file or directory
+[bsv@ds-pr-iris12p ~]$ ls -alh /var/crash/
+total 4.0K
+drwxr-xr-x.  2 root root    6 Oct 21  2015 .
+drwxr-xr-x. 21 root root 4.0K Feb 20 18:23 ..
+[bsv@ds-pr-iris12p ~]$
+
+................................................................................
+
+#
+#   I had removed parameter of this option, comment it out and write a question to Chernykh Aleksandr.
+#
+[bsv@ds-pr-iris12p ~]$ awk '/DefaultLimitCORE/{print}' /etc/systemd/system.conf
+#DefaultLimitCORE=
+[bsv@ds-pr-iris12p ~]$
+
+
+

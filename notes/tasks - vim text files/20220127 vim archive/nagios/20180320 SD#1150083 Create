@@ -1,0 +1,275 @@
+
+
+................................................................................
+
+grud@TCS4357]# ssh bsv@nag-tst
+Last login: Mon Mar  5 16:27:51 2018 from 172.16.28.74
+[bsv@vm-vol-nag4-tst ~]$ sudo -i
+[root@vm-vol-nag4-tst ~]#
+[root@vm-vol-nag4-tst ~]# curl ds-mvno-tm-gate01 8080
+
+[root@vm-vol-nag4-tst ~]# curl http://ds-mvno-tm-gate01:8080/health
+
+[root@vm-vol-nag4-tst ~]# curl http://ds-mvno-tm-gate01:8080/health/
+
+[root@vm-vol-nag4-tst ~]# check_http -H ds-mvno-tm-gate01 -p 8080 -e "200 OK" -r "\{.*\}" -u "/health"
+CRITICAL - Socket timeout after 10 seconds
+[root@vm-vol-nag4-tst ~]# curl http://ds-mvno-tm-gate01:8080/health/
+curl: (7) couldn't connect to host
+[root@vm-vol-nag4-tst ~]# check_http -H ds-mvno-tm-gate01 -p 8080 -e "200 OK" -v -u "http://ds-mvno-tm-gate01:8080/health"
+CRITICAL - Socket timeout after 10 seconds
+[root@vm-vol-nag4-tst ~]# check_http -H ds-mvno-tm-gate01 -p 8080 -e "200 OK" -r "\{.*\"status\":\"UP\"\}" -u "http://ds-mvno-tm-gate01:8080/health"
+CRITICAL - Socket timeout after 10 seconds
+[root@vm-vol-nag4-tst ~]#
+
+
+................................................................................
+
+[root@ds-mvno-tm-gate01 ~]# /usr/lib64/nagios/plugins/check_http -H localhost -p 8080 -e "200 OK" -r "\{.*\"status\":\"UP\"\}" -u "http://ds-mvno-tm-gate01:8080/health"
+HTTP OK: Status line output matched "200 OK" - HTTP/1.1 200 OK - 452 bytes in 0.003 second response time |time=0.002993s;;;0.000000 size=452B;;;0
+[root@ds-mvno-tm-gate01 ~]#
+
+
+[root@ds-mvno-tm-gate01 ~]# /usr/lib64/nagios/plugins/check_http -H localhost -p 8080 -e "200 OK" -r "\{.*\"status\":\"UP\"\}" -u "http://localhost:8080/health" -v
+GET http://localhost:8080/health HTTP/1.1
+User-Agent: check_http/v2.2.1 (nagios-plugins 2.2.1)
+Connection: close
+Host: localhost:8080
+Accept: */*
+
+
+http://localhost:8080http://localhost:8080/health is 452 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Connection: close
+Date: Tue, 20 Mar 2018 12:12:08 GMT
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+X-Frame-Options: DENY
+Strict-Transport-Security: max-age=31536000 ; includeSubDomains
+X-Application-Context: application:8080
+Content-Type: application/vnd.spring-boot.actuator.v1+json;charset=UTF-8
+**** CONTENT ****
+{"status":"UP"}
+Status line output matched "200 OK" -
+HTTP OK: Status line output matched "200 OK" - HTTP/1.1 200 OK - 452 bytes in 0.001 second response time |time=0.001286s;;;0.000000 size=452B;;;0
+[root@ds-mvno-tm-gate01 ~]#
+
+
+[root@ds-mvno-tm-gate01 ~]# vim /etc/nrpe.d/check_http.cfg
+[root@ds-mvno-tm-gate01 ~]# cat !$
+cat /etc/nrpe.d/check_http.cfg
+command[check_http_lo_8080_json]=/usr/lib64/nagios/plugins/check_http -H localhost -p 8080 -e "200 OK" -r "\{.*\"status\":\"UP\"\}" -u "http://localhost:8080/health"
+[root@ds-mvno-tm-gate01 ~]#
+
+
+
+[root@vm-vol-nag4-tst ~]# pynag list filename where object_type=host and host_name__contains="ds-mvno-tm-gate01" --quiet
+/usr/local/nagios/etc/objects/servers/vmware/ds-mvno-tm-gate01.cfg
+[root@vm-vol-nag4-tst ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim -o servers/vmware/ds-mvno-pr-tpg01.cfg servers/vmware/ds-mvno-tm-gate01.cfg
+2 files to edit
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name service_description check_command where object_type=service where check_command__contains="http" --quiet
+ds-bc10-bl01         HTTPS                check_http!-S
+ds-bc10-bl02         HTTPS                check_http!-S
+ds-bc10-bl03         HTTPS                check_http!-S
+ds-bc10-bl04         HTTPS                check_http!-S
+ds-bc10-bl05         HTTPS                check_http!-S
+ds-bc10-bl06         HTTPS                check_http!-S
+ds-bc10-bl07         HTTPS                check_http!-S
+ds-bc10-bl08         HTTPS                check_http!-S
+ds-bc10-bl09         HTTPS                check_http!-S
+ds-bc10-bl10         HTTPS                check_http!-S
+ds-bc10-bl11         HTTPS                check_http!-S
+ds-bc10-bl12         HTTPS                check_http!-S
+ds-bc10-bl13         HTTPS                check_http!-S
+ds-bc10-bl14         HTTPS                check_http!-S
+ds-bc10-bl15         HTTPS                check_http!-S
+ds-bc10-bl16         HTTPS                check_http!-S
+ds-bc11-bl01         HTTPS                check_http!-S
+ds-bc11-bl02         HTTPS                check_http!-S
+ds-bc11-bl03         HTTPS                check_http!-S
+ds-bc11-bl04         HTTPS                check_http!-S
+ds-bc11-bl05         HTTPS                check_http!-S
+ds-bc11-bl06         HTTPS                check_http!-S
+ds-bc11-bl07         HTTPS                check_http!-S
+ds-bc11-bl08         HTTPS                check_http!-S
+ds-bc11-bl09         HTTPS                check_http!-S
+ds-bc11-bl10         HTTPS                check_http!-S
+ds-bc11-bl11         HTTPS                check_http!-S
+ds-bc11-bl12         HTTPS                check_http!-S
+ds-bc11-bl13         HTTPS                check_http!-S
+ds-bc11-bl14         HTTPS                check_http!-S
+ds-bc11-bl15         HTTPS                check_http!-S
+ds-bc11-bl16         HTTPS                check_http!-S
+ds-bc12-bl01         HTTPS                check_http!-S
+ds-bc12-bl02         HTTPS                check_http!-S
+ds-bc12-bl03         HTTPS                check_http!-S
+ds-bc12-bl04         HTTPS                check_http!-S
+ds-bc12-bl05         HTTPS                check_http!-S
+ds-bc12-bl06         HTTPS                check_http!-S
+ds-bc12-bl07         HTTPS                check_http!-S
+ds-bc12-bl08         HTTPS                check_http!-S
+ds-bc12-bl09         HTTPS                check_http!-S
+ds-bc12-bl10         HTTPS                check_http!-S
+ds-bc12-bl11         HTTPS                check_http!-S
+ds-bc12-bl12         HTTPS                check_http!-S
+ds-bc12-bl13         HTTPS                check_http!-S
+ds-bc12-bl14         HTTPS                check_http!-S
+ds-bc12-bl15         HTTPS                check_http!-S
+ds-bc12-bl16         HTTPS                check_http!-S
+ds-esxi01p           HTTPS                check_http!-S
+ds-esxi02p           HTTPS                check_http!-S
+ds-kvk-prod-be01     HTTP                 check_http!-u /system/ping -e 200
+ds-kvk-prod-be02     HTTP                 check_http!-u /system/ping -e 200
+ds-linotp01          Check https://ds-linotp01/account/login check_http! -H ds-linotp01 --ssl -e "576 Logout from LinOTP selfservice" -u "/account/login"
+ds-mss-tta-prod-api01 Trading API port 8080 check_http2!-H ds-mss-tta-prod-api01 -p 8080 -t 30
+ds-mvno-dxa01p       Diameter Traffic Processor - report information about http dtp-console errors check_nrpe!check_dtp_report_http_errors
+ds-mvno-pr-tpg01     TPG - NGINX          check_nrpe!check_http_lo_80
+ds-mvno-tm-gate01    Check HTTP 8080      check_nrpe!check_http_lo_8080_json
+ds-pr-atmapi01p      Check DS_NODE_ATMAPI_Health check_atm_health!http://ds-pr-atmapi01p:18080/health
+ds-pr-ig03           IG_AFISHA            check_http!-p 5505 --url=/afisha/ws/afishaWs?wsdl
+ds-tcb-prod-app01    Check http://ds-tcb-prod-app01:8080/api/v1/version check_http! -H ds-tcb-prod-app01 -p 8080 -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+ha-graylog           HTTPS                check_http!-S
+hq-vol-proxy01       LTE access           check_squid_proxy!http://ya.ru
+hq-vol-proxy02       LTE access           check_squid_proxy!http://ya.ru
+hq-vol-proxy03       LTE access           check_squid_proxy!http://ya.ru
+localhost            HTTP                 check_http
+localhost            HTTP availability of afs.tcsbank.ru/afs/tcssearchapplications check_http_status_code!http://afs.tcsbank.ru/afs/tcssearchapplications!401
+localhost            HTTP availability of loans aliexpress static content check_http2!-H static2.tinkoff.ru!-u /loans/aliexpress/index.html
+localhost            HTTP availability of loans static content check_http2!-H static2.tinkoff.ru!-u /loans/index.html
+localhost            HTTP availability of tcb landing static content check_http2!-H static2.tinkoff.ru!-u /tcb/landing/index.html
+localhost            HTTP availability of tcb static content check_http2!-H static2.tinkoff.ru!-u /tcb/index.html
+localhost            status code HTTPS Tinkoff Stories check_http_status_code!https://ms-dsp.tinkoff.ru/v1/status!200
+localhost            status json HTTPS Tinkoff Stories check_nrpe!check_http_json
+m1-bc10-bl01         HTTPS                check_http!-S
+m1-bc10-bl02         HTTPS                check_http!-S
+m1-bc10-bl03         HTTPS                check_http!-S
+m1-bc10-bl04         HTTPS                check_http!-S
+m1-bc10-bl05         HTTPS                check_http!-S
+m1-bc10-bl06         HTTPS                check_http!-S
+m1-bc10-bl07         HTTPS                check_http!-S
+m1-bc10-bl08         HTTPS                check_http!-S
+m1-bc10-bl09         HTTPS                check_http!-S
+m1-bc10-bl10         HTTPS                check_http!-S
+m1-bc10-bl11         HTTPS                check_http!-S
+m1-bc10-bl12         HTTPS                check_http!-S
+m1-bc10-bl13         HTTPS                check_http!-S
+m1-bc10-bl14         HTTPS                check_http!-S
+m1-bc10-bl15         HTTPS                check_http!-S
+m1-bc10-bl16         HTTPS                check_http!-S
+m1-bc11-bl01         HTTPS                check_http!-S
+m1-bc11-bl02         HTTPS                check_http!-S
+m1-bc11-bl03         HTTPS                check_http!-S
+m1-bc11-bl04         HTTPS                check_http!-S
+m1-bc11-bl05         HTTPS                check_http!-S
+m1-bc11-bl06         HTTPS                check_http!-S
+m1-bc11-bl07         HTTPS                check_http!-S
+m1-bc11-bl08         HTTPS                check_http!-S
+m1-bc11-bl09         HTTPS                check_http!-S
+m1-bc11-bl10         HTTPS                check_http!-S
+m1-bc11-bl11         HTTPS                check_http!-S
+m1-bc11-bl12         HTTPS                check_http!-S
+m1-bc11-bl13         HTTPS                check_http!-S
+m1-bc11-bl14         HTTPS                check_http!-S
+m1-bc11-bl15         HTTPS                check_http!-S
+m1-bc11-bl16         HTTPS                check_http!-S
+m1-bc12-bl01         HTTPS                check_http!-S
+m1-bc12-bl02         HTTPS                check_http!-S
+m1-bc12-bl03         HTTPS                check_http!-S
+m1-bc12-bl04         HTTPS                check_http!-S
+m1-bc12-bl05         HTTPS                check_http!-S
+m1-bc12-bl06         HTTPS                check_http!-S
+m1-bc12-bl07         HTTPS                check_http!-S
+m1-bc12-bl08         HTTPS                check_http!-S
+m1-bc12-bl09         HTTPS                check_http!-S
+m1-bc12-bl10         HTTPS                check_http!-S
+m1-bc12-bl11         HTTPS                check_http!-S
+m1-bc12-bl12         HTTPS                check_http!-S
+m1-bc12-bl13         HTTPS                check_http!-S
+m1-bc12-bl14         HTTPS                check_http!-S
+m1-bc12-bl15         HTTPS                check_http!-S
+m1-bc12-bl16         HTTPS                check_http!-S
+m1-esxi01p           HTTPS                check_http!-S
+m1-esxi02p           HTTPS                check_http!-S
+m1-kvk-prod-be01     HTTP                 check_http!-u /system/ping -e 200
+m1-kvk-prod-be02     HTTP                 check_http!-u /system/ping -e 200
+m1-linotp01          Check https://m1-linotp01/account/login check_http! -H m1-linotp01 --ssl -e "576 Logout from LinOTP selfservice" -u "/account/login"
+m1-mss-tta-prod-api01 Trading API port 8080 check_http2!-H m1-mss-tta-prod-api01 -p 8080 -t 30
+m1-mvno-dxa01p       Diameter Traffic Processor - report information about http dtp-console errors check_nrpe!check_dtp_report_http_errors
+m1-mvno-pr-tpg01     TPG - NGINX          check_nrpe!check_http_lo_80
+m1-pr-atmapi01p      Check M1_NODE_ATMAPI_Health check_atm_health!http://m1-pr-atmapi01p:18080/health
+m1-pr-ig03           IG_AFISHA            check_http!-p 5505 --url=/afisha/ws/afishaWs?wsdl
+m1-smev01            m1-smev01:8080/bank_client check_http! -H m1-smev01 -p 8080 -u /bank_client
+m1-tcb-prod-app01    Check http://m1-tcb-prod-app01:8080/api/v1/version check_http! -H m1-tcb-prod-app01 -p 8080 -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+ms-ssp               service status       check_http2!-H ms-ssp.tinkoff.ru!-u /status -S
+pr-ops-f5            http 8080            check_http!-p 3340
+ru-tf0004.activeby.net http://www.tcsbank.ru over Qurator check_nrpe!check_qurator_http
+ru-tf0004.activeby.net https://www.tcsbank.ru over Qurator check_nrpe!check_qurator_https
+ru-tf0004.activeby.net site Video Hosting TINKOV COM check_http2!-H ru-tf0004.activeby.net -p 80 -t 30
+static.datamind.ru   static.datamind.ru/dsp/uswfobject.js check_static_http_2
+static.datamind.ru   static.datamind.ru/iframe/pixels.html check_static_http
+tcrm-api.tinkoff.ru  TCRM - API-gateway status check_tcrm_api!https://tcrm-api.tinkoff.ru/management/health
+tcrm-api.tinkoff.ru  TCRM - MQ status     check_tcrm_api!https://tcrm-api.tinkoff.ru/mq/management/health
+tcrm-api.tinkoff.ru  TCRM - Monolith status check_tcrm_api!https://tcrm-api.tinkoff.ru/tcrm/management/health
+tcrm-api.tinkoff.ru  TCRM - Param-engine status check_tcrm_api!https://tcrm-api.tinkoff.ru/param-engine/management/health
+tcrm-api.tinkoff.ru  TCRM - Procedure status check_tcrm_api!https://tcrm-api.tinkoff.ru/procedure/management/health
+tinkoff.loans        Check https://tinkoff.loans/api/v1/version check_http! -H tinkoff.loans --ssl -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+vd-webim-prod-app01  PHP                  check_http2!-H webim.tinkoff.ru!-S -u /client.php -t 5
+vd-webim-prod-app01  webim pingservice    check_http2!-H webim.tinkoff.ru!-u /l/a/pingservice -S -a wadmin:mfkwhre4535rg2445gwrf -t 5
+vm-afs-web01         HTTP Service - AFS   check_http! -e 401 -u /afs
+vm-afs-web02         HTTP Service - AFS   check_http! -e 401 -u /afs
+vm-agent-sched01p    vm-agent-sched01p.tcsbank.ru 8080 port check check_http!-p 8080
+vm-agent-sched02p    vm-agent-sched02p.tcsbank.ru 8080 port check check_http!-p 8080
+vm-akf-app01         http 91.109.204.82 8805 check_nrpe!check_ext_http_response
+vm-akf-app01         http vm-akf-app01.tcsbank.ru 8805 check_akf_http_response
+vm-cache-app01       http 8080            check_http!-p 8080
+vm-cache-app02       http 8080            check_http!-p 8080
+vm-cache-app03       http 8080            check_http!-p 8080
+vm-cache-app04       http 8080            check_http!-p 8080
+vm-cache-app05       http 8080            check_http!-p 8080
+vm-crr-app01         BKI                  check_http_request!"http://10.216.40.37:8080/credit_registry"!'name="login"'
+vm-crr-app02         BKI                  check_http_request!"http://10.216.40.37:8080/credit_registry"!'name="login"'
+vm-crr-app03         BKI                  check_http_request!"http://10.216.40.39:8080/credit_registry"!'name="login"'
+vm-crr-app04         BKI                  check_http_request!"http://10.216.40.205:8080/credit_registry"!'name="login"'
+vm-crr-app05         BKI                  check_http_request!"http://10.216.40.90:8080/credit_registry"!'name="login"'
+vm-crr-app06         HTTP availability of Credit Registry content check_http!-H vm-crr-app06.tcsbank.ru -p 8080 -u /credit_registry/wicket/LogonPage?0
+vm-dbamon01          MERCHANT - API - Payments check_https_pg2_rest_api
+vm-dmz-app111        443 http             check_http! -S
+vm-dmz-app16         Web Service          check_http!-p 80
+vm-dmz-nextcloud01p  HTTPS                check_http!-S
+vm-dmz-nextcloud01p  SSL Cert             check_http!-C 30
+vm-fssp-exch01p      FSSP Exchange        check_http!-p 8080
+vm-fssp-exch01t      FSSP Exchange        check_http!-p 8080
+vm-kvk-dmz-mail01    HTTP                 check_http! -p 8010 -u /Master/MainAdmin/ -e 200
+vm-kvk-prod-stat01   HTTP                 check_http
+vm-m1c-nagios01      http://www.tcsbank.ru over Qurator check_nrpe!check_qurator_http
+vm-m1c-nagios01      https://www.tcsbank.ru over Qurator check_nrpe!check_qurator_https
+vm-m1c-nagios01      site Video Hosting TINKOV COM check_http2!-H ru-tf0004.activeby.net -p 80 -t 30
+vm-mon-app01         http vm-mon-app01 8805 check_akf_http_response
+vm-pr-cp-atmapi01p   Check CP_ATMAPI_Health check_atm_health!http://vm-pr-cp-atmapi01p:8081/health
+vm-pr-evops01        Check evops service health check_http!-p 9999 -u /health -s '{"status":"UP"}'
+vm-pr-ops01          http 8080            check_http!-p 3340
+vm-pr-ops02          http 8080            check_http!-p 3340
+vm-pr-ops04          http 8080            check_http!-p 3340
+vm-pr-ops05          http 8080            check_http!-p 3340
+vm-sasmon01p         DWH monitoring not acceptable check_http!-p 8080 -u /login/ -r 'email or username'
+vm-vp-app01          Tinkoff POM WebPage  check_http! -H 10.216.80.101 -p 8080 -e "200 OK" -u "http://10.216.80.101:8080/Tinkoff_POM/Start"
+vm-vp-app02          Tinkoff POM WebPage  check_http! -H 10.216.80.102 -p 8080 -e "200 OK" -u "http://10.216.80.102:8080/Tinkoff_POM/Start"
+vm-xibo01            Xibo HTTP Service    check_http! -H $HOSTADDRESS$ -u /xibo-server -f follow -s 'Please provide your credentials'
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+

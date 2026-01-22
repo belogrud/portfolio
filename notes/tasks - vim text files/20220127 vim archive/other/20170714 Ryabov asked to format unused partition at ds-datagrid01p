@@ -1,0 +1,325 @@
+[2017-07-14 18:12.48]  ~
+[s.belogrud.TCS4357] ➤ ssh bsv@ds-datagrid01p
+Last login: Wed Jul 12 15:27:24 2017 from tcs4500.tcsbank.ru
+[bsv@ds-datagrid01p ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-datagrid01p ~]#
+[root@ds-datagrid01p ~]#
+[root@ds-datagrid01p ~]#
+[root@ds-datagrid01p ~]# df -hT
+df: ‘/tmp/SECUPD’: Input/output error
+Filesystem            Type      Size  Used Avail Use% Mounted on
+/dev/mapper/rhel-root xfs        50G   20G   31G  40% /
+devtmpfs              devtmpfs  1.5T     0  1.5T   0% /dev
+tmpfs                 tmpfs     1.5T  4.0K  1.5T   1% /dev/shm
+tmpfs                 tmpfs     1.5T  250M  1.5T   1% /run
+tmpfs                 tmpfs     1.5T     0  1.5T   0% /sys/fs/cgroup
+/dev/sda1             xfs       497M  140M  358M  29% /boot
+/dev/mapper/rhel-opt  xfs       225G   11G  214G   5% /opt
+tmpfs                 tmpfs     1.0T  8.2G 1016G   1% /mnt/ramdisk
+tmpfs                 tmpfs     303G     0  303G   0% /run/user/1063
+tmpfs                 tmpfs     303G     0  303G   0% /run/user/525
+[root@ds-datagrid01p ~]# ls -Alh /data
+ls: cannot access /data: No such file or directory
+[root@ds-datagrid01p ~]# lsblk
+NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda             8:0    0 278.9G  0 disk
+├─sda1          8:1    0   500M  0 part /boot
+└─sda2          8:2    0 278.3G  0 part
+  ├─rhel-root 253:0    0    50G  0 lvm  /
+  ├─rhel-swap 253:1    0     4G  0 lvm  [SWAP]
+  └─rhel-opt  253:2    0 224.3G  0 lvm  /opt
+sdb             8:16   0   4.4T  0 disk
+├─sdb1          8:17   0  63.8M  0 part
+└─sdb2          8:18   0   4.4T  0 part
+[root@ds-datagrid01p ~]# mkdir /data
+[root@ds-datagrid01p ~]# mount /dev/sdb1 /data
+mount: /dev/sdb1 is write-protected, mounting read-only
+mount: unknown filesystem type '(null)'
+[root@ds-datagrid01p ~]# parted /dev/sdb print
+Model: DELL PERC H730P Adp (scsi)
+Disk /dev/sdb: 4796GB
+Sector size (logical/physical): 4096B/4096B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      262kB   67.1MB  66.9MB               primary
+ 2      67.4MB  4796GB  4796GB               primary
+
+[root@ds-datagrid01p ~]# dmidecode -t system
+# dmidecode 2.12-dmifs
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R930
+        Version: Not Specified
+        Serial Number: 1TXGSG2
+        UUID: 4C4C4544-0054-5810-8047-B1C04F534732
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R930
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-datagrid01p ~]# cat /etc/system
+systemd/            system-release      system-release-cpe
+[root@ds-datagrid01p ~]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 7.2 (Maipo)
+[root@ds-datagrid01p ~]# parted -a optimal /dev/sdb mklabel GPT print mkpart primary xfs 0% 100% print
+Warning: The existing disk label on /dev/sdb will be destroyed and all data on this disk will be lost. Do you want to continue?
+parted: invalid token: print
+Yes/No? Yes
+Information: You may need to update /etc/fstab.
+
+[root@ds-datagrid01p ~]# lsblk
+NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda             8:0    0 278.9G  0 disk
+├─sda1          8:1    0   500M  0 part /boot
+└─sda2          8:2    0 278.3G  0 part
+  ├─rhel-root 253:0    0    50G  0 lvm  /
+  ├─rhel-swap 253:1    0     4G  0 lvm  [SWAP]
+  └─rhel-opt  253:2    0 224.3G  0 lvm  /opt
+sdb             8:16   0   4.4T  0 disk
+[root@ds-datagrid01p ~]# parted -a optimal /dev/sdb mklabel GPT print mkpart primary xfs 0% 100% print
+Warning: The existing disk label on /dev/sdb will be destroyed and all data on this disk will be lost. Do you want to continue?
+parted: invalid token: print
+Yes/No?
+[root@ds-datagrid01p ~]# parted /dev/sdb
+GNU Parted 3.1
+Using /dev/sdb
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) print
+Model: DELL PERC H730P Adp (scsi)
+Disk /dev/sdb: 4796GB
+Sector size (logical/physical): 4096B/4096B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+(parted) mklabel GPT
+Warning: The existing disk label on /dev/sdb will be destroyed and all data on this disk will be lost. Do you want to continue?
+Yes/No? Yes
+(parted) mkpart primary xfs 0% 100%
+(parted) print
+Model: DELL PERC H730P Adp (scsi)
+Disk /dev/sdb: 4796GB
+Sector size (logical/physical): 4096B/4096B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  4796GB  4796GB               primary
+
+(parted) quit
+Information: You may need to update /etc/fstab.
+
+[root@ds-datagrid01p ~]# lsblk
+NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda             8:0    0 278.9G  0 disk
+├─sda1          8:1    0   500M  0 part /boot
+└─sda2          8:2    0 278.3G  0 part
+  ├─rhel-root 253:0    0    50G  0 lvm  /
+  ├─rhel-swap 253:1    0     4G  0 lvm  [SWAP]
+  └─rhel-opt  253:2    0 224.3G  0 lvm  /opt
+sdb             8:16   0   4.4T  0 disk
+└─sdb1          8:17   0   4.4T  0 part
+[root@ds-datagrid01p ~]# mkfs.xfs /dev/sdb1
+meta-data=/dev/sdb1              isize=256    agcount=5, agsize=268435455 blks
+         =                       sectsz=4096  attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=1170996736, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=521728, version=2
+         =                       sectsz=4096  sunit=1 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@ds-datagrid01p ~]# lsblk
+NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda             8:0    0 278.9G  0 disk
+├─sda1          8:1    0   500M  0 part /boot
+└─sda2          8:2    0 278.3G  0 part
+  ├─rhel-root 253:0    0    50G  0 lvm  /
+  ├─rhel-swap 253:1    0     4G  0 lvm  [SWAP]
+  └─rhel-opt  253:2    0 224.3G  0 lvm  /opt
+sdb             8:16   0   4.4T  0 disk
+└─sdb1          8:17   0   4.4T  0 part
+[root@ds-datagrid01p ~]# blkid | grep sdb1
+/dev/sdb1: UUID="d2b147cc-2909-4420-8f75-d109cd17c809" TYPE="xfs" PARTLABEL="primary" PARTUUID="05d47188-a6dc-44ba-9393-a40eb2bcb5a0"
+[root@ds-datagrid01p ~]# vim /etc/fstab
+[root@ds-datagrid01p ~]# mount -v /data
+mount: /dev/sdb1 mounted on /data.
+[root@ds-datagrid01p ~]# df -hT
+df: ‘/tmp/SECUPD’: Input/output error
+Filesystem            Type      Size  Used Avail Use% Mounted on
+/dev/mapper/rhel-root xfs        50G   21G   30G  42% /
+devtmpfs              devtmpfs  1.5T     0  1.5T   0% /dev
+tmpfs                 tmpfs     1.5T  4.0K  1.5T   1% /dev/shm
+tmpfs                 tmpfs     1.5T  250M  1.5T   1% /run
+tmpfs                 tmpfs     1.5T     0  1.5T   0% /sys/fs/cgroup
+/dev/sda1             xfs       497M  140M  358M  29% /boot
+/dev/mapper/rhel-opt  xfs       225G   11G  214G   5% /opt
+tmpfs                 tmpfs     1.0T  8.2G 1016G   1% /mnt/ramdisk
+tmpfs                 tmpfs     303G     0  303G   0% /run/user/1063
+tmpfs                 tmpfs     303G     0  303G   0% /run/user/525
+/dev/sdb1             xfs       4.4T   33M  4.4T   1% /data
+[root@ds-datagrid01p ~]# df -hT /data
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/sdb1      xfs   4.4T   33M  4.4T   1% /data
+[root@ds-datagrid01p ~]#
+
+...........................................................................
+
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_openmanage -H ds-datagrid01p -C tcspub -P 1 -p -d
+   System:      PowerEdge R930           OMSA version:    8.4.0
+   ServiceTag:  1TXGSG2                  Plugin version:  3.7.12
+   BIOS/date:   2.1.3 08/08/2016         Checking mode:   SNMPv1 UDP/IPv4
+-----------------------------------------------------------------------------
+   Storage Components
+=============================================================================
+  STATE  |    ID    |  MESSAGE TEXT
+---------+----------+--------------------------------------------------------
+      OK |        0 | Controller 0 [PERC H730P Adapter] is Ready
+      OK |  0:0:1:0 | Physical Disk 0:1:0 [SAS-HDD 300GB] on ctrl 0 is Online
+      OK |  0:0:1:1 | Physical Disk 0:1:1 [SAS-HDD 300GB] on ctrl 0 is Online
+      OK |  0:0:1:2 | Physical Disk 0:1:2 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK |  0:0:1:3 | Physical Disk 0:1:3 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK |  0:0:1:4 | Physical Disk 0:1:4 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK |  0:0:1:5 | Physical Disk 0:1:5 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK |  0:0:1:6 | Physical Disk 0:1:6 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK |  0:0:1:7 | Physical Disk 0:1:7 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK |  0:0:1:8 | Physical Disk 0:1:8 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK |  0:0:1:9 | Physical Disk 0:1:9 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:10 | Physical Disk 0:1:10 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:11 | Physical Disk 0:1:11 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:12 | Physical Disk 0:1:12 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:13 | Physical Disk 0:1:13 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:14 | Physical Disk 0:1:14 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:15 | Physical Disk 0:1:15 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:16 | Physical Disk 0:1:16 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:17 | Physical Disk 0:1:17 [SAS-HDD 600GB] on ctrl 0 is Online
+      OK | 0:0:1:18 | Physical Disk 0:1:18 [SAS-HDD 600GB] on ctrl 0 is Ready (Global HS)
+      OK |      0:0 | Logical Drive '/dev/sda' [RAID-1, 278.88 GB] is Ready
+      OK |      0:1 | Logical Drive '/dev/sdb' [RAID-10, 4467.00 GB] is Ready
+      OK |      0:0 | Cache Battery 0 in controller 0 is Ready
+      OK |      0:0 | Connector 0 [SAS] on controller 0 is Ready
+      OK |    0:0:1 | Enclosure 0:0:1 [Backplane] on controller 0 is Ready
+-----------------------------------------------------------------------------
+   Chassis Components
+=============================================================================
+  STATE  |  ID  |  MESSAGE TEXT
+---------+------+------------------------------------------------------------
+      OK |    0 | Memory module 0 [A1, 32768 MB] is Ok
+      OK |    1 | Memory module 1 [A2, 32768 MB] is Ok
+      OK |    2 | Memory module 2 [A3, 32768 MB] is Ok
+      OK |    3 | Memory module 3 [A4, 32768 MB] is Ok
+      OK |    4 | Memory module 4 [A5, 32768 MB] is Ok
+      OK |    5 | Memory module 5 [A6, 32768 MB] is Ok
+      OK |    6 | Memory module 6 [A7, 32768 MB] is Ok
+      OK |    7 | Memory module 7 [A8, 32768 MB] is Ok
+      OK |    8 | Memory module 8 [A9, 32768 MB] is Ok
+      OK |    9 | Memory module 9 [A10, 32768 MB] is Ok
+      OK |   10 | Memory module 10 [A11, 32768 MB] is Ok
+      OK |   11 | Memory module 11 [A12, 32768 MB] is Ok
+      OK |   12 | Memory module 12 [B1, 32768 MB] is Ok
+      OK |   13 | Memory module 13 [B2, 32768 MB] is Ok
+      OK |   14 | Memory module 14 [B3, 32768 MB] is Ok
+      OK |   15 | Memory module 15 [B4, 32768 MB] is Ok
+      OK |   16 | Memory module 16 [B5, 32768 MB] is Ok
+      OK |   17 | Memory module 17 [B6, 32768 MB] is Ok
+      OK |   18 | Memory module 18 [B7, 32768 MB] is Ok
+      OK |   19 | Memory module 19 [B8, 32768 MB] is Ok
+      OK |   20 | Memory module 20 [B9, 32768 MB] is Ok
+      OK |   21 | Memory module 21 [B10, 32768 MB] is Ok
+      OK |   22 | Memory module 22 [B11, 32768 MB] is Ok
+      OK |   23 | Memory module 23 [B12, 32768 MB] is Ok
+      OK |   24 | Memory module 24 [C1, 32768 MB] is Ok
+      OK |   25 | Memory module 25 [C2, 32768 MB] is Ok
+      OK |   26 | Memory module 26 [C3, 32768 MB] is Ok
+      OK |   27 | Memory module 27 [C4, 32768 MB] is Ok
+      OK |   28 | Memory module 28 [C5, 32768 MB] is Ok
+      OK |   29 | Memory module 29 [C6, 32768 MB] is Ok
+      OK |   30 | Memory module 30 [C7, 32768 MB] is Ok
+      OK |   31 | Memory module 31 [C8, 32768 MB] is Ok
+      OK |   32 | Memory module 32 [C9, 32768 MB] is Ok
+      OK |   33 | Memory module 33 [C10, 32768 MB] is Ok
+      OK |   34 | Memory module 34 [C11, 32768 MB] is Ok
+      OK |   35 | Memory module 35 [C12, 32768 MB] is Ok
+      OK |   36 | Memory module 36 [D1, 32768 MB] is Ok
+      OK |   37 | Memory module 37 [D2, 32768 MB] is Ok
+      OK |   38 | Memory module 38 [D3, 32768 MB] is Ok
+      OK |   39 | Memory module 39 [D4, 32768 MB] is Ok
+      OK |   40 | Memory module 40 [D5, 32768 MB] is Ok
+      OK |   41 | Memory module 41 [D6, 32768 MB] is Ok
+      OK |   42 | Memory module 42 [D7, 32768 MB] is Ok
+      OK |   43 | Memory module 43 [D8, 32768 MB] is Ok
+      OK |   44 | Memory module 44 [D9, 32768 MB] is Ok
+      OK |   45 | Memory module 45 [D10, 32768 MB] is Ok
+      OK |   46 | Memory module 46 [D11, 32768 MB] is Ok
+      OK |   47 | Memory module 47 [D12, 32768 MB] is Ok
+      OK |    0 | Chassis fan 0 [System Board Fan1] reading: 5160 RPM
+      OK |    1 | Chassis fan 1 [System Board Fan2] reading: 5160 RPM
+      OK |    2 | Chassis fan 2 [System Board Fan3] reading: 5040 RPM
+      OK |    3 | Chassis fan 3 [System Board Fan4] reading: 5160 RPM
+      OK |    4 | Chassis fan 4 [System Board Fan5] reading: 4920 RPM
+      OK |    5 | Chassis fan 5 [System Board Fan6] reading: 5160 RPM
+      OK |    0 | Power Supply 0 [AC]: Presence detected
+      OK |    1 | Power Supply 1 [AC]: Presence detected
+      OK |    2 | Power Supply 2 [AC]: Presence detected
+      OK |    0 | Temperature Probe 0 [System Board Inlet Temp] reads 22 C (min=3/-7, max=42/47)
+      OK |    1 | Temperature Probe 1 [System Board Exhaust Temp] reads 28 C (max=70/75)
+      OK |    2 | Temperature Probe 2 [CPU1 Temp] reads 46 C (min=8/3, max=92/97)
+      OK |    3 | Temperature Probe 3 [CPU2 Temp] reads 38 C (min=8/3, max=92/97)
+      OK |    0 | Processor 0 [Intel Xeon E7-8890 v4 2.20GHz] is Present
+      OK |    1 | Processor 1 [Intel Xeon E7-8890 v4 2.20GHz] is Present
+      OK |    0 | Voltage sensor 0 [CPU1 VCORE PG] is Good
+      OK |    1 | Voltage sensor 1 [CPU2 VCORE PG] is Good
+      OK |    2 | Voltage sensor 2 [System Board Combined PG] is Good
+      OK |    3 | Voltage sensor 3 [System Board BP 5V PG] is Good
+      OK |    4 | Voltage sensor 4 [CPU1 Mem Rsr B PG] is Good
+      OK |    5 | Voltage sensor 5 [CPU2 FIVR PG] is Good
+      OK |    6 | Voltage sensor 6 [CPU1 FIVR PG] is Good
+      OK |    7 | Voltage sensor 7 [CPU2 Mem Rsr C PG] is Good
+      OK |    8 | Voltage sensor 8 [CPU1 Mem Rsr A PG] is Good
+      OK |    9 | Voltage sensor 9 [NDC NDC PG] is Good
+      OK |   10 | Voltage sensor 10 [CPU2 VTT PG] is Good
+      OK |   11 | Voltage sensor 11 [CPU1 VTT PG] is Good
+      OK |   12 | Voltage sensor 12 [CPU1 VMSE PG] is Good
+      OK |   13 | Voltage sensor 13 [CPU2 Mem Rsr D PG] is Good
+      OK |   14 | Voltage sensor 14 [CPU3 VMSE PG] is Good
+      OK |   15 | Voltage sensor 15 [System Board PS1 PG Fail] is Good
+      OK |   16 | Voltage sensor 16 [System Board PS2 PG Fail] is Good
+      OK |   17 | Voltage sensor 17 [PS1 Voltage 1] reads 230 V
+      OK |   18 | Voltage sensor 18 [PS2 Voltage 2] reads 230 V
+      OK |   19 | Voltage sensor 19 [SAS DC1 SAS DC1 PG] is Good
+      OK |   20 | Voltage sensor 20 [System Board PS3 PG Fail] is Good
+      OK |   21 | Voltage sensor 21 [PS3 Voltage 3] reads 232 V
+      OK |    0 | Battery probe 0 [System Board CMOS Battery] is Presence Detected
+      OK |    0 | Amperage probe 0 [PS1 Current 1] reads 0.8 A
+      OK |    1 | Amperage probe 1 [PS2 Current 2] reads 0.8 A
+      OK |    2 | Amperage probe 2 [System Board Pwr Consumption] reads 550 W
+      OK |    5 | Amperage probe 5 [PS3 Current 3] reads 0.8 A
+      OK |    0 | Chassis intrusion 0 detection: Ok (Not Breached)
+      OK |    0 | SD Card 0 [vFlash] is Absent
+-----------------------------------------------------------------------------
+   Other messages
+=============================================================================
+  STATE  |  MESSAGE TEXT
+---------+-------------------------------------------------------------------
+      OK | ESM log health is Ok (less than 80% full)
+      OK | Chassis Service Tag is sane
+
+INTERNAL ERROR: Use of uninitialized value $reading in numeric eq (==) at /usr/lib64/nagios/plugins/check_openmanage line 4302.
+INTERNAL ERROR: Use of uninitialized value $reading in numeric eq (==) at /usr/lib64/nagios/plugins/check_openmanage line 4302.[root@vm-vol-nag4-tst objects]#
+[root@vm-vol-nag4-tst objects]#
+

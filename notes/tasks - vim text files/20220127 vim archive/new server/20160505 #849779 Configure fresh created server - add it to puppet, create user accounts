@@ -1,0 +1,192 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   849779
+Название    №849779
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  29.04.2016 11:19
+Дата регистрации    29.04.2016 11:19
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, прошу создать VM:
+
+1. название проекта: построение мониторинга
+2. краткое описание: сервер для формирования изображений
+3. ответственный сотрудник: Курицын А.
+4. схема потоков данных приложения: -
+5. схема сетевого взаимодействия: с 172.16.28.154, 172.16.28.25, 172.16.28.152
+6. имя (hostname сервера): vm-xibo.tcsbank.ru
+7. ОС и количественные характеристики:
+ОС Ubuntu 15.04 32bit
+Цпу - 4
+Память - 8Гб
+Диск - 50 Гб
+8. ответственный пользователь сервера: Обухов М, Талько С, Курицын А.
+
+
+С уважением,
+Обухов Михаил
+Главный специалист ИБ
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Обухов Михаил
+Соглашение  - Каталог сервисов
+Сервис  99. Другое
+Контактное лицо Обухов Михаил
+Контактный e-mail   m.obukhov@tinkoff.ru
+Контактные телефоны 79153438333, 2366
+
+................................................................................
+
+Дата
+Комментарий Автор
+05.05.2016 11:14    ВМ создал:
+vm-xibo01 / 10.216.40.131
+
+Запись в DNS добавил.
+
+@unix-admins
+- добавить в Puppet
+- сделать доступы по SSH
+@net-admins
+- открыть правила на МСЭ    Бегизардов Павел
+04.05.2016 15:54    давайте в 1640  Обухов Михаил
+04.05.2016 15:53    10.216.98.0 Никоненко Андрей
+04.05.2016 15:50    В какой сети размещать? Бегизардов Павел
+
+................................................................................
+
+#
+#   This is Ubuntoo server!
+#
+
+[support@centos00 ~]$ ssh root@vm-xibo01
+root@vm-xibo01's password:
+Welcome to Ubuntu 16.04 LTS (GNU/Linux 4.4.0-21-generic i686)
+
+ * Documentation:  https://help.ubuntu.com/
+
+0 packages can be updated.
+0 updates are security updates.
+
+Last login: Thu May  5 11:10:34 2016 from 172.16.28.71
+root@vm-xibo01:~# puppet agent -t
+Exiting; no certificate found and waitforcert is disabled
+root@vm-xibo01:~#
+
+................................................................................
+
+[root@puppet ~]# puppet cert list | grep vm-xib
+  "vm-xibo01.tcsbank.ru"              (SHA256) 9F:54:C2:2D:D1:43:F9:0E:63:19:62:12:F1:E7:1F:72:49:05:B2:BD:28:B9:AE:3B:66:29:16:1B:67:8C:B7:E9
+[root@puppet ~]# puppet cert sign vm-xibo01.tcsbank.ru
+Notice: Signed certificate request for vm-xibo01.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest vm-xibo01.tcsbank.ru at '/var/lib/puppet/ssl/ca/requests/vm-xibo01.tcsbank.ru.pem'
+[root@puppet ~]#
+
+................................................................................
+
+root@vm-xibo01:~# puppet agent -t
+Notice: Skipping run of Puppet configuration client; administratively disabled (Reason: 'Disabled by default on new or unconfigured old installations');
+Use 'puppet agent --enable' to re-enable.
+root@vm-xibo01:~# puppet agent --enable
+root@vm-xibo01:~# puppet agent -t
+Info: Caching certificate_revocation_list for ca
+Warning: Unable to fetch my node definition, but the agent run will continue:
+Warning: undefined method `include?' for nil:NilClass
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Notice: /File[/var/lib/puppet/lib/puppet]/ensure: created
+...
+Notice: Finished catalog run in 20.67 seconds
+root@vm-xibo01:~#
+
+................................................................................
+
+root@vm-xibo01:~# groupadd wheel
+root@vm-xibo01:~# grep wheel /etc/group
+wheel:x:1000:
+root@vm-xibo01:~#
+
+root@vm-xibo01:~# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for vm-xibo01.tcsbank.ru
+Info: Applying configuration version '1462458875'
+Notice: /Stage[main]/Accounts::Admins/User[a.leonov]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[a.leonov@tcs5020.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[zbir]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[zbir@tcs7308.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[avk]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[che]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[avk@tcs6365.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[bsv]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[ash]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[ash@m1-pds01.ti.local]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[tan]/ensure: created
+Notice: Finished catalog run in 0.71 seconds
+root@vm-xibo01:~#
+
+
+root@vm-xibo01:~# visudo
+...
+# User privilege specification
+root    ALL=(ALL:ALL) ALL
+
+# Members of the admin group may gain root privileges
+%admin ALL=(ALL) ALL
+%wheel  ALL=(ALL:ALL) ALL
+...
+
+
+root@vm-xibo01:~# grep wheel /etc/sudoers
+%wheel  ALL=(ALL:ALL) ALL
+root@vm-xibo01:~#
+
+
+................................................................................
+
+[support@centos00 20160427-1724]$ pwgen -c -n -s -C 10 28
+...
+dXu7F2Fh2P
+
+[support@centos00 20160427-1724]$ grub-crypt
+Password:
+Retype password:
+$6$F6WEmK0Kak.HrQ1M$33Gipv9F2P1g/Lf8Y6xj4An89.UQ5eDD3DxlzmhXtsdqPN39uL0fS2QUW3mBBf6izw0231jVXHTutNRFnG.a/1
+[support@centos00 20160427-1724]$
+
+root@vm-xibo01:~# groupadd -g 522 kua && useradd -u 522 -g kua -c "SD#849779. Kuritcyn Andrey" -m -G root,wheel -s /bin/bash -p '$6$F6WEmK0Kak.HrQ1M$33Gipv9F2P1g/Lf8Y6xj4An89.UQ5eDD3DxlzmhXtsdqPN39uL0fS2QUW3mBBf6izw0231jVXHTutNRFnG.a/1' kua
+root@vm-xibo01:~# id kua
+uid=522(kua) gid=522(kua) groups=522(kua),0(root),1000(wheel)
+root@vm-xibo01:~#
+
+
+................................................................................
+
+#
+#   As Obukhov Mikhail asked, the root password was changed and sent to him.
+#   This allow him to connect to server and serve it as He want.
+#   Mikhail have said he have no his account on linux servers, only on McAfee servers. This
+#   means there are no record in our wiki table, that contains info about user name, uid, and so on.
+#
+
+6ByY6qmNGQ
+
+root@vm-xibo01:~# passwd
+Enter new UNIX password:
+Retype new UNIX password:
+passwd: password updated successfully
+root@vm-xibo01:~#
+
+
+

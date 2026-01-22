@@ -1,0 +1,231 @@
+
+................................................................................
+
+[root@m1-sasfront01p ~]# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 3.1 present.
+# SMBIOS implementations newer than version 3.0 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x00FE, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL560 Gen10
+        Version: Not Specified
+        Serial Number: CZJ8110HS4
+        UUID: 37313438-3033-5A43-4A38-313130485334
+        Wake-up Type: Power Switch
+        SKU Number: 841730-B21
+        Family: ProLiant
+
+Handle 0x011B, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-sasfront01p ~]# ip a | grep -w inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.4.60/24 brd 10.216.4.255 scope global noprefixroute team1
+    inet 10.216.26.27/24 brd 10.216.26.255 scope global noprefixroute team0.vlan1626
+    inet 10.217.164.39/24 brd 10.217.164.255 scope global noprefixroute team0.vlan2764
+    inet 10.217.65.51/24 brd 10.217.65.255 scope global noprefixroute team0.vlan1765
+[root@m1-sasfront01p ~]#
+[root@m1-sasfront01p ~]# ip route
+default via 10.216.26.254 dev team0.vlan1626 proto static metric 400
+10.216.2.0/24 via 10.216.4.254 dev team1
+10.216.4.0/24 dev team1 proto kernel scope link src 10.216.4.60 metric 351
+10.216.26.0/24 dev team0.vlan1626 proto kernel scope link src 10.216.26.27 metric 400
+10.217.65.0/24 dev team0.vlan1765 proto kernel scope link src 10.217.65.51 metric 403
+10.217.100.0/24 via 10.216.4.254 dev team1
+10.217.101.0/24 via 10.216.4.254 dev team1
+10.217.164.0/24 dev team0.vlan2764 proto kernel scope link src 10.217.164.39 metric 402
+[root@m1-sasfront01p ~]#
+[root@m1-sasfront01p ~]# netstat -nr
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+0.0.0.0         10.216.26.254   0.0.0.0         UG        0 0          0 team0.vlan1626
+10.216.2.0      10.216.4.254    255.255.255.0   UG        0 0          0 team1
+10.216.4.0      0.0.0.0         255.255.255.0   U         0 0          0 team1
+10.216.26.0     0.0.0.0         255.255.255.0   U         0 0          0 team0.vlan1626
+10.217.65.0     0.0.0.0         255.255.255.0   U         0 0          0 team0.vlan1765
+10.217.100.0    10.216.4.254    255.255.255.0   UG        0 0          0 team1
+10.217.101.0    10.216.4.254    255.255.255.0   UG        0 0          0 team1
+10.217.164.0    0.0.0.0         255.255.255.0   U         0 0          0 team0.vlan2764
+[root@m1-sasfront01p ~]#
+
+[root@m1-sasfront01p ~]# ifconfig | grep -w inet
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet 10.216.4.60  netmask 255.255.255.0  broadcast 10.216.4.255
+        inet 10.216.26.27  netmask 255.255.255.0  broadcast 10.216.26.255
+        inet 10.217.65.51  netmask 255.255.255.0  broadcast 10.217.65.255
+        inet 10.217.164.39  netmask 255.255.255.0  broadcast 10.217.164.255
+[root@m1-sasfront01p ~]#
+[root@m1-sasfront01p ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+/etc/sysconfig/network-scripts/ifcfg-eno1
+TYPE=Ethernet
+IPV6INIT=no
+NAME=eno1
+UUID=e1c8afee-ddd0-41ea-a863-2259789ed779
+DEVICE=eno1
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 100}'
+
+/etc/sysconfig/network-scripts/ifcfg-eno2
+TYPE=Ethernet
+IPV6INIT=no
+NAME=eno2
+UUID=c192ef63-876a-4804-83b9-d7b68deb40e8
+DEVICE=eno2
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 200}'
+
+/etc/sysconfig/network-scripts/ifcfg-ens3f0
+TYPE=Ethernet
+IPV6INIT=no
+NAME=ens3f0
+UUID=0ef1da11-48b8-4212-91c6-174811397606
+DEVICE=ens3f0
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team1
+TEAM_PORT_CONFIG='{"prio": 100}'
+
+
+/etc/sysconfig/network-scripts/ifcfg-ens3f1
+TYPE=Ethernet
+IPV6INIT=no
+NAME=ens3f1
+UUID=42940fd0-c698-4ab2-81f6-8e87f5be6313
+DEVICE=ens3f1
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team1
+TEAM_PORT_CONFIG='{"prio": 200}'
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+DEVICETYPE=Team
+IPV6INIT=no
+ONBOOT=yes
+BOOTPROTO=none
+#TEAM_CONFIG='{"runner": {"name": "activebackup"}, "link_watch": {"name": "ethtool"}}'
+TEAM_CONFIG='{"runner": {"name": "lacp", "fast_rate": true}, "link_watch": {"name": "ethtool"}}'
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-team1
+DEVICE=team1
+DEVICETYPE=Team
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=10.216.4.60
+PREFIX=24
+TEAM_CONFIG='{"runner": {"name": "activebackup"}, "link_watch": {"name": "ethtool"}}'
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1626
+VLAN=yes
+TYPE=Vlan
+DEVICE=team0.vlan1626
+PHYSDEV=team0
+VLAN_ID=1626
+REORDER_HDR=0
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1626
+ONBOOT=yes
+MTU=1500
+IPADDR=10.216.26.27
+PREFIX=24
+GATEWAY=10.216.26.254
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1765
+VLAN=yes
+TYPE=Vlan
+DEVICE=team0.vlan1765
+PHYSDEV=team0
+VLAN_ID=1765
+REORDER_HDR=0
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1765
+ONBOOT=yes
+MTU=9000
+IPADDR=10.217.65.51
+PREFIX=24
+#NM_CONTROLLED=no
+
+
+/etc/sysconfig/network-scripts/ifcfg-vlan2764
+VLAN=yes
+TYPE=Vlan
+DEVICE=team0.vlan2764
+PHYSDEV=team0
+VLAN_ID=2764
+REORDER_HDR=0
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan2764
+ONBOOT=yes
+MTU=9000
+IPADDR=10.217.164.39
+PREFIX=24
+
+[root@m1-sasfront01p ~]#
+
+
+[root@m1-sasfront01p ~]# findmnt -t nfs -o SOURCE,TARGET
+SOURCE                                                                 TARGET
+v6250-m1-nfs2:/vol/integration_fs/integration3                         /mnt/integration3
+v6250-m1-nfs2:/vol/integration_fs/CytoAML                              └─/mnt/integration3/cytoaml
+v6250-m1-nfs2:/vol/sas/projects                                        /mnt/projects_new
+fs-nfsmb2.tcsbank.ru:/dwh_integration                                  /mnt/dwh_integration
+v6250-ds-nfs:/vol/sas_distr_sata                                       /mnt/sas_distr
+fs-unixfiles:/sas_tf_sch2_release                                      /mnt/projects_sch2
+v6250-m1-nfs2:/vol/integration_fs/integration3/luxoft/OPS              /mnt/luxoft/OPS
+fs-nfsmb2:/cre_sas_exchange                                            /mnt/cre_sas_exchange
+v6250-ds-nfs:/vol/common/all_docs/CallManagers/Call-центр/ООП/Schedule /mnt/callmanagers
+v6250-m1-nfs2:/vol/inspase                                             /mnt/EMP/Inspase
+ha-drbd01p-metro.tcsbank.ru:/drbd0                                     /mnt/data2ma_drdb_new
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data                   /mnt/drbd_analyst_data
+fs-nfsmb2:/sas_reports                                                 /mnt/user_reports
+fs-nfsdata:/afs_data_prod                                              /mnt/afs_data_prod
+fs-qa2:/afs_data_test                                                  /mnt/afs_data_test
+fs-nfsmb2:/sas_ma_code                                                 /mnt/sas_ma_code
+[root@m1-sasfront01p ~]#
+
+[root@m1-sasfront01p ~]# w
+ 17:00:59 up 456 days, 46 min,  2 users,  load average: 4.03, 2.54, 2.26
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+root     tty1                      15May18 449days  0.30s  0.30s -bash
+bsv      pts/1    tcs4357.tcsbank. Tue15    3.00s  0.04s  0.02s sshd: bsv [priv]
+[root@m1-sasfront01p ~]#
+
+................................................................................
+
+
+
+
+
+
+

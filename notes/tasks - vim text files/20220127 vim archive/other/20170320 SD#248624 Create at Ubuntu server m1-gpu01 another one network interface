@@ -1,0 +1,469 @@
+
+
+
+root@m1-gpu01:~# uname -a
+Linux m1-gpu01 4.4.0-53-generic #74-Ubuntu SMP Fri Dec 2 15:59:10 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# vim /etc/network/interfaces
+
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+auto eno1
+iface eno1 inet manual
+bond-master bond0
+bond-primary eno1
+
+auto eno2
+iface eno2 inet manual
+bond-master bond0
+
+auto bond0
+iface bond0 inet manual
+bond-mode 1
+bond-miimon 100
+bond-slaves none
+
+auto bond0.1871
+iface bond0.1871 inet static
+address 10.218.71.10
+gateway 10.218.71.254
+netmask 255.255.255.0
+
+dns-search tcsbank.ru
+dns-nameservers 10.216.40.4 10.216.42.5
+
+root@m1-gpu01:~#
+
+................................................................................
+root@m1-gpu01:~# ping -c 3 10.217.65.50
+PING 10.217.65.50 (10.217.65.50) 56(84) bytes of data.
+
+--- 10.217.65.50 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2015ms
+
+root@m1-gpu01:~# host !$
+host 10.217.65.50
+Host 50.65.217.10.in-addr.arpa. not found: 3(NXDOMAIN)
+root@m1-gpu01:~#
+................................................................................
+
+root@m1-gpu01:~# vim /etc/network/interfaces
+...
+auto bond0.1765
+iface bond0.1765 inet static
+address 10.217.65.50
+gateway 10.217.65.254
+netmask 255.255.255.0
+...
+
+
+root@m1-gpu01:~# ifup bond0.1765
+Set name-type for VLAN subsystem. Should be visible in /proc/net/vlan/config
+Added VLAN with VID == 1765 to IF -:bond0:-
+RTNETLINK answers: File exists
+Failed to bring up bond0.1765.
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+9: bond0.1871@bond0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.218.71.10/24 brd 10.218.71.255 scope global bond0.1871
+       valid_lft forever preferred_lft forever
+10: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
+    inet 172.17.0.1/16 scope global docker0
+       valid_lft forever preferred_lft forever
+197: bond0.1765@bond0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.217.65.50/24 brd 10.217.65.255 scope global bond0.1765
+       valid_lft forever preferred_lft forever
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ifconfig bond0.1765
+bond0.1765 Link encap:Ethernet  HWaddr 18:66:da:7b:f7:8e
+          inet addr:10.217.65.50  Bcast:10.217.65.255  Mask:255.255.255.0
+          inet6 addr: fe80::1a66:daff:fe7b:f78e/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:10 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:8 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:652 (652.0 B)  TX bytes:648 (648.0 B)
+
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ping -c 3 10.217.65.254
+PING 10.217.65.254 (10.217.65.254) 56(84) bytes of data.
+From 10.217.65.50 icmp_seq=1 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=2 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=3 Destination Host Unreachable
+
+--- 10.217.65.254 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2016ms
+pipe 3
+root@m1-gpu01:~#
+
+
+root@m1-gpu01:~# ping -c 3 -I bond0.1765 10.217.65.254
+PING 10.217.65.254 (10.217.65.254) from 10.217.65.50 bond0.1765: 56(84) bytes of data.
+From 10.217.65.50 icmp_seq=1 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=2 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=3 Destination Host Unreachable
+
+--- 10.217.65.254 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2015ms
+pipe 3
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# arping -c 3 -I bond0.1765 10.217.65.254
+The program 'arping' can be found in the following packages:
+ * iputils-arping
+ * arping
+Try: apt install <selected package>
+root@m1-gpu01:~#
+
+
+root@m1-gpu01:~# apt-get install arping
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  linux-headers-4.4.0-31 linux-headers-4.4.0-31-generic linux-headers-4.4.0-57 linux-headers-4.4.0-57-generic linux-headers-4.4.0-59 linux-headers-4.4.0-59-generic linux-headers-4.4.0-62
+  linux-headers-4.4.0-62-generic linux-image-4.4.0-31-generic linux-image-4.4.0-57-generic linux-image-4.4.0-59-generic linux-image-4.4.0-62-generic linux-image-extra-4.4.0-31-generic
+  linux-image-extra-4.4.0-57-generic linux-image-extra-4.4.0-59-generic linux-image-extra-4.4.0-62-generic
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  libnet1
+The following NEW packages will be installed:
+  arping libnet1
+0 upgraded, 2 newly installed, 0 to remove and 77 not upgraded.
+Need to get 67.3 kB of archives.
+After this operation, 273 kB of additional disk space will be used.
+Do you want to continue? [Y/n] Y
+Get:1 http://repo-linux.tcsbank.ru/ubuntu xenial/main amd64 libnet1 amd64 1.1.6+dfsg-3 [42.1 kB]
+Get:2 http://repo-linux.tcsbank.ru/ubuntu xenial/universe amd64 arping amd64 2.14-1 [25.2 kB]
+Fetched 67.3 kB in 0s (845 kB/s)
+Selecting previously unselected package libnet1:amd64.
+(Reading database ... 297272 files and directories currently installed.)
+Preparing to unpack .../libnet1_1.1.6+dfsg-3_amd64.deb ...
+Unpacking libnet1:amd64 (1.1.6+dfsg-3) ...
+Selecting previously unselected package arping.
+Preparing to unpack .../arping_2.14-1_amd64.deb ...
+Unpacking arping (2.14-1) ...
+Processing triggers for man-db (2.7.5-1) ...
+Setting up libnet1:amd64 (1.1.6+dfsg-3) ...
+Setting up arping (2.14-1) ...
+Processing triggers for libc-bin (2.23-0ubuntu5) ...
+root@m1-gpu01:~# arping -c 3 -I bond0.1765 10.217.65.254
+ARPING 10.217.65.254
+Timeout
+Timeout
+Timeout
+
+--- 10.217.65.254 statistics ---
+3 packets transmitted, 0 packets received, 100% unanswered (0 extra)
+
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ping -c 3 -I 10.217.65.50 10.217.65.254
+PING 10.217.65.254 (10.217.65.254) from 10.217.65.50 : 56(84) bytes of data.
+From 10.217.65.50 icmp_seq=1 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=2 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=3 Destination Host Unreachable
+
+--- 10.217.65.254 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 1999ms
+pipe 3
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# lsmod | grep ip_
+ip_tables              24576  2 iptable_filter,iptable_nat
+x_tables               36864  7 ip_tables,xt_tcpudp,ipt_MASQUERADE,xt_conntrack,xt_nat,iptable_filter,xt_addrtype
+root@m1-gpu01:~#
+
+................................................................................
+
+root@m1-gpu01:~# iptables -n -L -t filter ; iptables -n -L -t nat ; iptables -n -L -t  mangle
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+DOCKER-ISOLATION  all  --  0.0.0.0/0            0.0.0.0/0
+DOCKER     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain DOCKER (1 references)
+target     prot opt source               destination
+ACCEPT     tcp  --  0.0.0.0/0            172.17.0.5           tcp dpt:8080
+ACCEPT     tcp  --  0.0.0.0/0            172.17.0.2           tcp dpt:8888
+
+Chain DOCKER-ISOLATION (1 references)
+target     prot opt source               destination
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+DOCKER     all  --  0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+MASQUERADE  all  --  172.17.0.0/16        0.0.0.0/0
+MASQUERADE  tcp  --  172.17.0.5           172.17.0.5           tcp dpt:8080
+MASQUERADE  tcp  --  172.17.0.2           172.17.0.2           tcp dpt:8888
+
+Chain DOCKER (2 references)
+target     prot opt source               destination
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:8080 to:172.17.0.5:8080
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:8888 to:172.17.0.2:8888
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+root@m1-gpu01:~#
+
+................................................................................
+
+root@m1-gpu01:~# ping -c 3 -I 10.218.71.10 10.218.71.254
+PING 10.218.71.254 (10.218.71.254) from 10.218.71.10 : 56(84) bytes of data.
+64 bytes from 10.218.71.254: icmp_seq=1 ttl=64 time=0.392 ms
+64 bytes from 10.218.71.254: icmp_seq=2 ttl=64 time=0.411 ms
+64 bytes from 10.218.71.254: icmp_seq=3 ttl=64 time=0.391 ms
+
+--- 10.218.71.254 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+rtt min/avg/max/mdev = 0.391/0.398/0.411/0.009 ms
+root@m1-gpu01:~# ping -c 3 -I 10.217.65.50 10.217.65.254
+PING 10.217.65.254 (10.217.65.254) from 10.217.65.50 : 56(84) bytes of data.
+From 10.217.65.50 icmp_seq=1 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=2 Destination Host Unreachable
+From 10.217.65.50 icmp_seq=3 Destination Host Unreachable
+
+--- 10.217.65.254 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2016ms
+pipe 3
+root@m1-gpu01:~#
+
+................................................................................
+
+root@m1-gpu01:~# host v6250-ds-nfs2
+v6250-ds-nfs2.tcsbank.ru has address 10.217.65.9
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ping -c 3 -I 10.217.65.50 10.217.65.9
+PING 10.217.65.9 (10.217.65.9) from 10.217.65.50 : 56(84) bytes of data.
+64 bytes from 10.217.65.9: icmp_seq=1 ttl=255 time=0.696 ms
+64 bytes from 10.217.65.9: icmp_seq=2 ttl=255 time=0.339 ms
+64 bytes from 10.217.65.9: icmp_seq=3 ttl=255 time=0.349 ms
+
+--- 10.217.65.9 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 1999ms
+rtt min/avg/max/mdev = 0.339/0.461/0.696/0.166 ms
+root@m1-gpu01:~#
+
+................................................................................
+
+#   Make DNS record, becaus vm-pinger doesn't ping this isolated vlan.
+m1-gpu01-v1765
+
+................................................................................
+
+root@m1-gpu01:~# df -hT
+Filesystem                     Type      Size  Used Avail Use% Mounted on
+udev                           devtmpfs  126G     0  126G   0% /dev
+tmpfs                          tmpfs      26G  1.3G   24G   6% /run
+/dev/mapper/m1--gpu01--vg-root ext4      1.1T  726G  254G  75% /
+tmpfs                          tmpfs     126G  2.6M  126G   1% /dev/shm
+tmpfs                          tmpfs     5.0M     0  5.0M   0% /run/lock
+tmpfs                          tmpfs     126G     0  126G   0% /sys/fs/cgroup
+/dev/sda1                      ext2      472M  343M  105M  77% /boot
+tmpfs                          tmpfs      26G     0   26G   0% /run/user/1074
+tmpfs                          tmpfs      26G   24K   26G   1% /run/user/1003
+tmpfs                          tmpfs      26G   20K   26G   1% /run/user/1004
+tmpfs                          tmpfs      26G  4.0K   26G   1% /run/user/1005
+tmpfs                          tmpfs      26G     0   26G   0% /run/user/1006
+none                           aufs      1.1T  726G  254G  75% /var/lib/docker/aufs/mnt/63d547cdc4dc55ff7770bce43f6d629891cae819d39b46c262898f92f2f89cd4
+shm                            tmpfs      64M     0   64M   0% /var/lib/docker/containers/d2303b717f74000cf71d4eb2b7dfd2775949276bb85b4444609709c3bcbd4d7c/shm
+none                           aufs      1.1T  726G  254G  75% /var/lib/docker/aufs/mnt/d159b76aa971a1cb5bad4ed78dac42ac836a01431bcda687fae842ccc8a27f0b
+shm                            tmpfs      64M     0   64M   0% /var/lib/docker/containers/37cddcaec819fa17f3b5ce384d5e322721b02e7252cb25285a1036e57c748c51/shm
+tmpfs                          tmpfs      26G     0   26G   0% /run/user/525
+root@m1-gpu01:~#
+
+................................................................................
+................................................................................
+
+root@m1-gpu01:~# apt-get install nfs-common
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  linux-headers-4.4.0-31 linux-headers-4.4.0-31-generic linux-headers-4.4.0-57 linux-headers-4.4.0-57-generic linux-headers-4.4.0-59 linux-headers-4.4.0-59-generic linux-headers-4.4.0-62
+  linux-headers-4.4.0-62-generic linux-image-4.4.0-31-generic linux-image-4.4.0-57-generic linux-image-4.4.0-59-generic linux-image-4.4.0-62-generic linux-image-extra-4.4.0-31-generic
+  linux-image-extra-4.4.0-57-generic linux-image-extra-4.4.0-59-generic linux-image-extra-4.4.0-62-generic
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  keyutils libnfsidmap2
+Suggested packages:
+  watchdog
+The following NEW packages will be installed:
+  keyutils libnfsidmap2 nfs-common
+0 upgraded, 3 newly installed, 0 to remove and 77 not upgraded.
+Need to get 264 kB of archives.
+After this operation, 997 kB of additional disk space will be used.
+Do you want to continue? [Y/n] Y
+Get:1 http://repo-linux.tcsbank.ru/ubuntu xenial/main amd64 libnfsidmap2 amd64 0.25-5 [32.2 kB]
+Get:2 http://repo-linux.tcsbank.ru/ubuntu xenial/main amd64 keyutils amd64 1.5.9-8ubuntu1 [47.1 kB]
+Get:3 http://repo-linux.tcsbank.ru/ubuntu xenial/main amd64 nfs-common amd64 1:1.2.8-9ubuntu12 [185 kB]
+Fetched 264 kB in 0s (11.7 MB/s)
+Selecting previously unselected package libnfsidmap2:amd64.
+(Reading database ... 297293 files and directories currently installed.)
+Preparing to unpack .../libnfsidmap2_0.25-5_amd64.deb ...
+Unpacking libnfsidmap2:amd64 (0.25-5) ...
+Selecting previously unselected package keyutils.
+Preparing to unpack .../keyutils_1.5.9-8ubuntu1_amd64.deb ...
+Unpacking keyutils (1.5.9-8ubuntu1) ...
+Selecting previously unselected package nfs-common.
+Preparing to unpack .../nfs-common_1%3a1.2.8-9ubuntu12_amd64.deb ...
+Unpacking nfs-common (1:1.2.8-9ubuntu12) ...
+Processing triggers for man-db (2.7.5-1) ...
+Processing triggers for systemd (229-4ubuntu13) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Setting up libnfsidmap2:amd64 (0.25-5) ...
+Setting up keyutils (1.5.9-8ubuntu1) ...
+Setting up nfs-common (1:1.2.8-9ubuntu12) ...
+
+Creating config file /etc/idmapd.conf with new version
+
+Creating config file /etc/default/nfs-common with new version
+Adding system user `statd' (UID 116) ...
+Adding new user `statd' (UID 116) with group `nogroup' ...
+Not creating home directory `/var/lib/nfs'.
+nfs-utils.service is a disabled or a static unit, not starting it.
+Processing triggers for libc-bin (2.23-0ubuntu5) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+root@m1-gpu01:~#
+
+
+root@m1-gpu01:~# showmount -e v6250-ds-nfs2 | grep -e "/vol/wof_dmz_dmp"
+/vol/wof_dmz_dmp                                        vm-wof-dmz-stt01-nfs2,vm-wof-dmz-stt01
+root@m1-gpu01:~#
+
+#
+#   DNS was created, storage admins granted access.
+#
+root@m1-gpu01:~# showmount -e v6250-ds-nfs2 | grep -e "/vol/wof_dmz_dmp"
+/vol/wof_dmz_dmp                                        m1-gpu01-v1765,vm-wof-dmz-stt01-nfs2,vm-wof-dmz-stt01
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# apt-get install nfs-kernel-server
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  linux-headers-4.4.0-31 linux-headers-4.4.0-31-generic linux-headers-4.4.0-57 linux-headers-4.4.0-57-generic linux-headers-4.4.0-59 linux-headers-4.4.0-59-generic linux-headers-4.4.0-62
+  linux-headers-4.4.0-62-generic linux-image-4.4.0-31-generic linux-image-4.4.0-57-generic linux-image-4.4.0-59-generic linux-image-4.4.0-62-generic linux-image-extra-4.4.0-31-generic
+  linux-image-extra-4.4.0-57-generic linux-image-extra-4.4.0-59-generic linux-image-extra-4.4.0-62-generic
+Use 'sudo apt autoremove' to remove them.
+The following NEW packages will be installed:
+  nfs-kernel-server
+0 upgraded, 1 newly installed, 0 to remove and 77 not upgraded.
+Need to get 88.0 kB of archives.
+After this operation, 487 kB of additional disk space will be used.
+Get:1 http://repo-linux.tcsbank.ru/ubuntu xenial/main amd64 nfs-kernel-server amd64 1:1.2.8-9ubuntu12 [88.0 kB]
+Fetched 88.0 kB in 0s (2,328 kB/s)
+Selecting previously unselected package nfs-kernel-server.
+(Reading database ... 297409 files and directories currently installed.)
+Preparing to unpack .../nfs-kernel-server_1%3a1.2.8-9ubuntu12_amd64.deb ...
+Unpacking nfs-kernel-server (1:1.2.8-9ubuntu12) ...
+Processing triggers for systemd (229-4ubuntu13) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Processing triggers for man-db (2.7.5-1) ...
+Setting up nfs-kernel-server (1:1.2.8-9ubuntu12) ...
+
+Creating config file /etc/exports with new version
+
+Creating config file /etc/default/nfs-kernel-server with new version
+Processing triggers for systemd (229-4ubuntu13) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# mkdir /mnt/wof_dmz_dmp
+
+root@m1-gpu01:~# cat /etc/issue
+Ubuntu 16.04.1 LTS \n \l
+
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# vim /etc/fstab
+root@m1-gpu01:~# tail -n 1 /etc/fstab
+v6250-ds-nfs2:/vol/wof_dmz_dmp  /mnt/wof_dmz_dmp        nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# mount -v /mnt/wof_dmz_dmp
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.65.9'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.65.9 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.65.9 prog 100005 vers 3 prot TCP port 4046
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# df -hT /mnt/wof_dmz_dmp/
+Filesystem                     Type  Size  Used Avail Use% Mounted on
+v6250-ds-nfs2:/vol/wof_dmz_dmp nfs   380G  1.9M  380G   1% /mnt/wof_dmz_dmp
+root@m1-gpu01:~#
+
+
+root@m1-gpu01:~# systemctl status rpcbind
+● rpcbind.service - RPC bind portmap service
+   Loaded: loaded (/lib/systemd/system/rpcbind.service; indirect; vendor preset: enabled)
+  Drop-In: /run/systemd/generator/rpcbind.service.d
+           └─50-rpcbind-$portmap.conf
+   Active: active (running) since Mon 2017-03-20 17:12:01 MSK; 10min ago
+ Main PID: 116846 (rpcbind)
+    Tasks: 1
+   Memory: 560.0K
+      CPU: 9ms
+   CGroup: /system.slice/rpcbind.service
+           └─116846 /sbin/rpcbind -f -w
+
+Mar 20 17:12:01 m1-gpu01 systemd[1]: Starting RPC bind portmap service...
+Mar 20 17:12:01 m1-gpu01 rpcbind[116846]: rpcbind: xdr_/run/rpcbind/rpcbind.xdr: failed
+Mar 20 17:12:01 m1-gpu01 rpcbind[116846]: rpcbind: xdr_/run/rpcbind/portmap.xdr: failed
+Mar 20 17:12:01 m1-gpu01 systemd[1]: Started RPC bind portmap service.
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# touch /mnt/wof_dmz_dmp/test.tmp && ls -Alh /mnt/wof_dmz_dmp/test.tmp && rm /mnt/wof_dmz_dmp/test.tmp
+-rw-r--r-- 1 root root 0 Mar 20 17:24 /mnt/wof_dmz_dmp/test.tmp
+root@m1-gpu01:~#
+
+
+

@@ -1,0 +1,201 @@
+
+[s.belogrud@TCS4357]# pwgen -c -n -s -C 10 1
+vZ3vmX8vtK
+[s.belogrud@TCS4357]#
+
+
+[root@vm-dmz-app112 ~]# awk 'BEGIN {FS=":"; OFS=" ==> ";} $3>=1000 {print $3,$1}' /etc/passwd | sort -n
+...
+4190 ==> mtsbank
+4191 ==> job_svc_user
+4192 ==> l.koroleva
+4275 ==> d.mironov
+9999 ==> plm
+20000 ==> v.tsyganov
+20001 ==> cityads
+20002 ==> yandex_zp
+20003 ==> yandex_zp_test
+20004 ==> yandex_zp_app
+20005 ==> yandex_zp_app_test
+20006 ==> m.gridnev
+20007 ==> a.l.sergeev
+65534 ==> nfsnobody
+[root@vm-dmz-app112 ~]# grub-crypt
+Password:
+Retype password:
+$6$NOJv5/MWH9SC4ems$1kYN/Z7hyN9qfoYu05.rrQER2XUK.F23uhirO2FyzqS.uoiXkfp/xhhGbvVK7KZCZlaSdE.p7DHiOXLfvz/Sw1
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# useradd -g sftpusers -u 4193 -d /home/sftp/p.matveeva -s /sbin/nologin -p '$6$NOJv5/MWH9SC4ems$1kYN/Z7hyN9qfoYu05.rrQER2XUK.F23uhirO2FyzqS.uoiXkfp/xhhGbvVK7KZCZlaSdE.p7DHiOXLfvz/Sw1' p.matveeva
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# yes | rm /home/sftp/p.matveeva/{.bash_logout,.bash_profile,.bashrc,.zshrc}
+[root@vm-dmz-app112 ~]#
+
+
+[root@vm-dmz-app112 ~]# chown p.matveeva:sftpusers /home/sftp/p.matveeva/adobecatalyst
+[root@vm-dmz-app112 ~]#
+
+
+[root@vm-dmz-app112 ~]# chown root:root /home/sftp/p.matveeva
+[root@vm-dmz-app112 ~]# chmod 0755 /home/sftp/p.matveeva
+[root@vm-dmz-app112 ~]# service sshd restart
+Stopping sshd:                                             [  OK  ]
+Starting sshd:                                             [  OK  ]
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# vim /etc/fstab
+[root@vm-dmz-app112 ~]# tail -n 2 /etc/fstab
+# SD#1497328
+/home/adobecatalyst             /home/sftp/p.matveeva/adobecatalyst     none    rw,bind 0 0
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# mount /home/sftp/p.matveeva/adobecatalyst
+
+................................................................................
+
+[s.belogrud@TCS4357]# sftp p.matveeva@ftp03
+p.matveeva@ftp03's password:
+Connected to ftp03.
+sftp> ls
+adobecatalyst
+sftp> cd adobecatalyst/
+sftp> ls
+remote readdir("/adobecatalyst"): Permission denied
+sftp> exit
+[s.belogrud@TCS4357]#
+
+
+[root@vm-dmz-app112 ~]# ls /home/sftp/p.matveeva/adobecatalyst
+live  livefines  livesme  livetest
+[root@vm-dmz-app112 ~]# ls -Alhd /home/sftp/p.matveeva/adobecatalyst
+drwxr-x---. 6 adobecatalyst adobecatalyst 12K Jun  2  2017 /home/sftp/p.matveeva/adobecatalyst
+[root@vm-dmz-app112 ~]# ls -Alhd /home/adobecatalyst
+drwxr-x---. 6 adobecatalyst adobecatalyst 12K Jun  2  2017 /home/adobecatalyst
+[root@vm-dmz-app112 ~]#
+
+
+
+[s.belogrud@TCS4357]# lftp -e "ls ; bye" -u "p.matveeva",'vZ3vmX8vtK' ftp03 -p 21
+drwxr-x---    6 2001     2001        12288 Jun 02  2017 adobecatalyst
+[s.belogrud@TCS4357]# lftp -e "ls ; cd adobecatalyst ; ls ; bye" -u "p.matveeva",'vZ3vmX8vtK' ftp03 -p 21
+drwxr-x---    6 2001     2001        12288 Jun 02  2017 adobecatalyst
+ls: Access failed: 550 Failed to change directory.
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+[root@vm-dmz-app112 ~]# gpasswd -a p.matveeva adobecatalyst
+Adding user p.matveeva to group adobecatalyst
+[root@vm-dmz-app112 ~]# id p.matveeva
+uid=4193(p.matveeva) gid=496(sftpusers) groups=496(sftpusers),2001(adobecatalyst)
+[root@vm-dmz-app112 ~]#
+
+[s.belogrud@TCS4357]# lftp -e "ls ; cd adobecatalyst ; ls ; bye" -u "p.matveeva",'vZ3vmX8vtK' ftp03 -p 21
+drwxr-x---    6 2001     2001        12288 Jun 02  2017 adobecatalyst
+drwxrwsr-x    5 2001     511       2093056 Jul 10 14:18 live
+drwxrwsr-x    2 2001     511       1011712 Jul 10 02:17 livefines
+drwxrwsr-x    2 2001     511        512000 Jul 10 14:18 livesme
+drwxr-xr-x    2 2001     0           20480 Jun 08  2017 livetest
+[s.belogrud@TCS4357]#
+
+
+
+[root@vm-dmz-app112 ~]# ls -Alh /home/adobecatalyst/
+total 3.5M
+drwxrwsr-x. 5 adobecatalyst  511 2.0M Jul 10 17:18 live
+drwxrwsr-x. 2 adobecatalyst  511 988K Jul 10 05:17 livefines
+drwxrwsr-x. 2 adobecatalyst  511 500K Jul 10 17:18 livesme
+drwxr-xr-x. 2 adobecatalyst root  20K Jun  8  2017 livetest
+[root@vm-dmz-app112 ~]# gpasswd -a p.matveeva adobecatalyst
+Adding user p.matveeva to group adobecatalyst
+[root@vm-dmz-app112 ~]# id p.matveeva
+uid=4193(p.matveeva) gid=496(sftpusers) groups=496(sftpusers),2001(adobecatalyst)
+[root@vm-dmz-app112 ~]# grep -ie "511" /etc/group
+group   group-
+[root@vm-dmz-app112 ~]# grep -ie "511" /etc/group
+[root@vm-dmz-app112 ~]# groupadd -g 511 adobecatalyst_files
+[root@vm-dmz-app112 ~]# ls -Alh /home/adobecatalyst/
+total 3.5M
+drwxrwsr-x. 5 adobecatalyst adobecatalyst_files 2.0M Jul 10 17:18 live
+drwxrwsr-x. 2 adobecatalyst adobecatalyst_files 988K Jul 10 05:17 livefines
+drwxrwsr-x. 2 adobecatalyst adobecatalyst_files 500K Jul 10 17:18 livesme
+drwxr-xr-x. 2 adobecatalyst root                 20K Jun  8  2017 livetest
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# gpasswd -a p.matveeva adobecatalyst_files
+Adding user p.matveeva to group adobecatalyst_files
+[root@vm-dmz-app112 ~]# id p.matveeva
+uid=4193(p.matveeva) gid=496(sftpusers) groups=496(sftpusers),2001(adobecatalyst),511(adobecatalyst_files)
+[root@vm-dmz-app112 ~]#
+
+
+[root@vm-dmz-app112 ~]# ls -Alh /home/adobecatalyst/live | head
+total 9.4G
+drwxrwsr-x. 2 beeline       adobecatalyst_files 580K Jun 14 16:02 bad
+drwxrwsr-x. 2 beeline       adobecatalyst_files 2.6M Jul 10 00:00 loaded
+drwxrwsr-x. 2 beeline       adobecatalyst_files  16K Jun 28 18:02 reject
+-rw-r--r--  1 adobecatalyst adobecatalyst_files  21M Jul  1 02:55 tcsbank_20180701-010000.tar.gz
+-rw-r--r--  1 adobecatalyst adobecatalyst_files  209 Jul  1 02:55 tcsbank_20180701-010000.txt
+-rw-r--r--  1 adobecatalyst adobecatalyst_files  19M Jul  1 04:40 tcsbank_20180701-020000.tar.gz
+-rw-r--r--  1 adobecatalyst adobecatalyst_files  209 Jul  1 04:40 tcsbank_20180701-020000.txt
+-rw-r--r--  1 adobecatalyst adobecatalyst_files  17M Jul  1 04:45 tcsbank_20180701-030000.tar.gz
+-rw-r--r--  1 adobecatalyst adobecatalyst_files  209 Jul  1 04:45 tcsbank_20180701-030000.txt
+[root@vm-dmz-app112 ~]# id adobecatalyst
+uid=2001(adobecatalyst) gid=2001(adobecatalyst) groups=2001(adobecatalyst)
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# ls -Alh /home/adobecatalyst/
+total 3.5M
+drwxrwsr-x. 5 adobecatalyst adobecatalyst_files 2.0M Jul 10 17:18 live
+drwxrwsr-x. 2 adobecatalyst adobecatalyst_files 988K Jul 10 05:17 livefines
+drwxrwsr-x. 2 adobecatalyst adobecatalyst_files 500K Jul 10 17:18 livesme
+drwxr-xr-x. 2 adobecatalyst root                 20K Jun  8  2017 livetest
+[root@vm-dmz-app112 ~]# chown adobecatalyst:adobecatalyst_files /home/adobecatalyst/livetest
+[root@vm-dmz-app112 ~]# ls -Alh /home/adobecatalyst/
+total 3.5M
+drwxrwsr-x. 5 adobecatalyst adobecatalyst_files 2.0M Jul 10 17:18 live
+drwxrwsr-x. 2 adobecatalyst adobecatalyst_files 988K Jul 10 05:17 livefines
+drwxrwsr-x. 2 adobecatalyst adobecatalyst_files 500K Jul 10 17:18 livesme
+drwxr-xr-x. 2 adobecatalyst adobecatalyst_files  20K Jun  8  2017 livetest
+[root@vm-dmz-app112 ~]#
+
+
+#
+#	Sftp connection works too.
+#
+[s.belogrud@TCS4357]# sftp p.matveeva@ftp03
+Connected to ftp03.
+sftp> ls
+adobecatalyst
+sftp> cd adobecatalyst/
+sftp> ll
+Invalid command.
+sftp> ls
+live       livefines  livesme    livetest
+sftp> cd livetest
+sftp> ls
+tcsfines_20170605-000000.tar.gz          tcsfines_20170605-000000.txt             tcsfines_20170605-020000.tar.gz          tcsfines_20170605-020000.txt             tcsfines_20170605-030000.tar.gz
+...
+sftp> exit
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+From: Belogrud Sergey Vladimirovich 
+Sent: Tuesday, July 10, 2018 6:01 PM
+To: Matveeva Polina Rivkatovna <p.matveeva@tinkoff.ru>
+Subject: Доступ к ftp03 под учётной записью p.matveeva по SD#1497328
+
+Добрый день.
+
+Дополнительная информация для SD#1497328 по доступу к ftp03 под учётной записью p.matveeva.
+На сервере ftp03.tcsbank.ru создана учётная запись для подключения по протоколу sftp или ftp.
+Username: p.matveeva
+Password: vZ3vmX8vtK
+
+С уважением,
+
+Сергей Белогруд
+Старший системный администратор
+

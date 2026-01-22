@@ -1,0 +1,591 @@
+
+
+
+
+................................................................................
+
+From: Rodriges Aleksandr Osvaldovich
+Sent: Friday, January 13, 2017 7:34 PM
+To: Belogrud Sergey Vladimirovich
+Cc: Terentev Aleksey; Morozkin Stanislav; Lazykin Mikhail Aleksandrovich; Ekimova Ekaterina Igorevna; Myalin Dmitriy
+Subject: RE: Установка ОС на новые сервера для IRIS
+
+Ответы на вопросы:
+
+На текущий момент мне не известно – что это за серверы, кто для Вас их подготавливал, с кем Вы общались по подготовке.
+Этот вопрос уже решен.
+
+Вы не сообщили какие разделы создавать на серверах. В какие файловые системы их форматировать.
+Приложение должно стоять на одном логическом разделе
+RAID5
+В прошлом году обсуждали, Дмитрий М. писал:
+«…Там сейчас работает на 3 SATA 7200 в рейд5, и проблем почти нет (кроме работы с метаданными во время удаления, привет ext4, но там и кэш 10/90 распределение, что влияет, я бы рекомендовал 30/70, может 25/75), а вы предлагаете сразу гвозди микроскопом забивать.
+Считаю более чем достаточным 5 дисков в raid5 600гб 15к + 1 hs (как раз примерно 2.4тб), можно сделать 6 дисков, чтобы запас был, но ценой потери ровного блока. Для данного профиля нагрузки будет идеально…»
+1)      На текущих серверах кэш 10/90, рекомендация - 30/70
+2)      чем хуже 6 дисков против 5? На что влияет потеря ровного блока?
+
+Вы не написали как назвать серверы.
+ds-pr-iris03p
+m1-pr-iris03p
+ds-pr-iris04p
+
+Вы не написали из каких подсетей выделять ip-адреса для этих серверов.
+В тех же подсетях, что и старые сервера (ds-pr-iris02p, m1-pr-iris02p, ds-pr-iris03p)
+
+Вы не написали чью учётную запись создавать на этих серверах для обслуживания прикладного ПО.
+УЗ irisuser просьба скопировать с любого из старых серверов.
+
+Возможно ответы на эти вопросы есть в двух вложениях к задаче, но они не открываются в новом Service Desk – поэтому пришлите их пожалуйста отдельно вложением к письму, например.
+Во вложении.
+
+
+Alexandr Rodriguez Gonzalez
+Tel.: +7 495 648-10-00, ext. 2638
+
+
+................................................................................
+
+#
+#   Here is a link to search in racktables old IRIS servers.
+#   https://racktables.tcsbank.ru/?page=search&last_page=index&last_tab=default&q=iris
+#
+#   Old IRIS servers are:
+#   ds-pr-iris02p   CZJ44804Q7  https://racktables.tcsbank.ru/index.php?page=object&tab=default&object_id=718
+                    [root@ds-pr-iris02p ~]# ip -f inet addr
+                    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+                        inet 127.0.0.1/8 scope host lo
+                    8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+                        inet 10.217.11.49/24 brd 10.217.11.255 scope global bond0
+                    [root@ds-pr-iris02p ~]#
+                    [root@ds-pr-iris02p ~]# df -hT
+                    Filesystem                                               Type   Size  Used Avail Use% Mounted on
+                    /dev/sda3                                                ext4    16G  2.5G   13G  17% /
+                    tmpfs                                                    tmpfs  190G     0  190G   0% /dev/shm
+                    /dev/sda1                                                vfat   500M  272K  500M   1% /boot/efi
+                    /dev/sdb1                                                ext4   1.8T  601G  1.2T  35% /data
+                    /dev/sda6                                                ext4    81G  3.2G   73G   5% /opt
+                    /dev/sda5                                                ext4   7.7G  146M  7.2G   2% /tmp
+                    /dev/sda4                                                ext4    16G   11G  4.4G  70% /var
+                    v6250-m1:/vol/integration_fs/integration3/iris_file_exch nfs    6.4T  4.9T  1.5T  78% /mnt/iris_file_exch
+                    [root@ds-pr-iris02p ~]#
+        [root@ds-pr-iris02p ~]# cat /etc/system-release
+        Red Hat Enterprise Linux Server release 6.5 (Santiago)
+        [root@ds-pr-iris02p ~]#
+        [root@ds-pr-iris02p ~]# dmidecode -t system
+        # dmidecode 2.11
+        # SMBIOS entry point at 0x788fb000
+        SMBIOS 2.8 present.
+        # SMBIOS implementations newer than version 2.7 are not
+        # fully supported by this version of dmidecode.
+
+        Handle 0x0009, DMI type 1, 27 bytes
+        System Information
+                Manufacturer: HP
+                Product Name: ProLiant DL360 Gen9
+                Version: Not Specified
+                Serial Number: CZJ44804Q7
+                UUID: 32353537-3236-5A43-4A34-343830345137
+                Wake-up Type: Power Switch
+                SKU Number: 755262-B21
+                Family: ProLiant
+
+        Handle 0x00BE, DMI type 32, 11 bytes
+        System Boot Information
+                Status: No errors detected
+
+        [root@ds-pr-iris02p ~]#
+        [root@ds-pr-iris02p ~]# mkdir -p ~/work/20170116-1734
+        [root@ds-pr-iris02p ~]# cd !$
+        cd ~/work/20170116-1734
+        [root@ds-pr-iris02p 20170116-1734]#
+        [root@ds-pr-iris02p 20170116-1734]#  hpssascripting -c $(pwd)/$(date +%Y%m%d-%H%M).hpssascripting.dat
+        [root@ds-pr-iris02p 20170116-1734]# ll
+        total 4
+        -rw------- 1 root root 1460 Jan 16 17:35 20170116-1735.hpssascripting.dat
+        [root@ds-pr-iris02p 20170116-1734]#
+
+        [root@ds-pr-iris02p 20170116-1734]# cat 20170116-1735.hpssascripting.dat
+        ; Date captured: Mon Jan 16 17:35:57 2017
+
+        ; Version: 2.10.14.0
+
+        Action= Configure
+        Method= Custom
+
+
+        ; Controller Specifications
+        ; Controller HP Smart Array P440ar, FirmwareVersion 2.14, License Keys Supported
+        ; SerialNumber PDNLH0BRH7N7YF
+        ; DriverName hpsa
+        ; DriverVersion 3.4.0
+        ; SSDSmartPath Supported
+        Controller= SLOT 0
+        ; PowerMode= MaxPerformance
+        ReadCache= 10
+        WriteCache= 90
+        RebuildPriority= High
+        ExpandPriority= Medium
+        ParallelSurfaceScanCount= 1
+        SurfaceScanMode= Idle
+        SurfaceScanDelay= 3
+        Latency= Disable
+        DriveWriteCache= Disabled
+        NoBatteryWriteCache= Disabled
+        MNPDelay= 60
+        IRPEnable= Disabled
+        DPOEnable= Disabled
+        ElevatorSortEnable= Enabled
+        QueueDepth= Automatic
+        PredictiveSpareActivation= Disable
+
+        ; Array Specifications
+        Array= A
+        ; Array Drive Type is SAS
+        ; Array Free Space 6832 KB
+        ; 1I:1:1 (146 GB, SAS), 1I:1:2 (146 GB, SAS)
+        Drive= 1I:1:1, 1I:1:2
+        OnlineSpare= No
+
+        ; Logical Drive Specifications
+        LogicalDrive= 1
+        RAID= 1
+        Size= 139979
+        ; SizeBlocks= 286677120
+        Sectors= 32
+        StripSize= 256
+        Caching= Enabled
+        ; VolumeUniqueID= 600508B1001C2F0D45358CB86DABE82C
+
+        ; Array Specifications
+        Array= B
+        ; Array Drive Type is SAS
+        ; Array Free Space 768 KB
+        ; 1I:1:3 (1000.2 GB, SAS), 1I:1:4 (1000.2 GB, SAS), 2I:1:5 (1000.2 GB, SAS)
+        Drive= 1I:1:3, 1I:1:4, 2I:1:5
+        OnlineSpare= No
+
+        ; Logical Drive Specifications
+        LogicalDrive= 2
+        RAID= 5
+        Size= 1907674
+        ; SizeBlocks= 3906917808
+        Sectors= 32
+        StripSize= 256
+        Caching= Enabled
+        ; VolumeUniqueID= 600508B1001C6D20989CCD44880C7E70
+        [root@ds-pr-iris02p 20170116-1734]#
+
+
+#   m1-pr-iris02p   CZJ44804QH  https://racktables.tcsbank.ru/index.php?page=object&tab=default&object_id=720
+        [root@m1-pr-iris02p ~]# ip -f inet addr
+        1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+            inet 127.0.0.1/8 scope host lo
+        8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+            inet 10.217.10.49/24 brd 10.217.10.255 scope global bond0
+        [root@m1-pr-iris02p ~]# df -hT
+        Filesystem                                               Type   Size  Used Avail Use% Mounted on
+        /dev/sda2                                                ext4    16G  2.6G   13G  18% /
+        tmpfs                                                    tmpfs  190G     0  190G   0% /dev/shm
+        /dev/sda1                                                vfat   500M  272K  500M   1% /boot/efi
+        /dev/sdb1                                                ext4   1.8T  601G  1.2T  35% /data
+        /dev/sda6                                                ext4    81G  3.5G   73G   5% /opt
+        /dev/sda5                                                ext4   7.7G  146M  7.2G   2% /tmp
+        /dev/sda3                                                ext4    16G  9.9G  4.8G  68% /var
+        v6250-m1:/vol/integration_fs/integration3/iris_file_exch nfs    6.4T  4.9T  1.5T  78% /mnt/iris_file_exch
+        [root@m1-pr-iris02p ~]# cat /etc/system-release
+        Red Hat Enterprise Linux Server release 6.5 (Santiago)
+        [root@m1-pr-iris02p ~]# dmidecode -t system
+        # dmidecode 2.11
+        # SMBIOS entry point at 0x788fb000
+        SMBIOS 2.8 present.
+        # SMBIOS implementations newer than version 2.7 are not
+        # fully supported by this version of dmidecode.
+
+        Handle 0x0009, DMI type 1, 27 bytes
+        System Information
+                Manufacturer: HP
+                Product Name: ProLiant DL360 Gen9
+                Version: Not Specified
+                Serial Number: CZJ44804QH
+                UUID: 32353537-3236-5A43-4A34-343830345148
+                Wake-up Type: Power Switch
+                SKU Number: 755262-B21
+                Family: ProLiant
+
+        Handle 0x00BB, DMI type 32, 11 bytes
+        System Boot Information
+                Status: No errors detected
+
+        [root@m1-pr-iris02p ~]#
+
+        [root@m1-pr-iris02p ~]# ifconfig
+        bond0     Link encap:Ethernet  HWaddr 8C:DC:D4:00:13:40
+                  inet addr:10.217.10.49  Bcast:10.217.10.255  Mask:255.255.255.0
+                  inet6 addr: fe80::8edc:d4ff:fe00:1340/64 Scope:Link
+                  UP BROADCAST RUNNING MASTER MULTICAST  MTU:1500  Metric:1
+                  RX packets:6520098223 errors:0 dropped:0 overruns:0 frame:0
+                  TX packets:3686950741 errors:0 dropped:0 overruns:0 carrier:0
+                  collisions:0 txqueuelen:0
+                  RX bytes:7552320623248 (6.8 TiB)  TX bytes:2777447604936 (2.5 TiB)
+
+        eth0      Link encap:Ethernet  HWaddr 8C:DC:D4:00:13:40
+                  UP BROADCAST RUNNING SLAVE MULTICAST  MTU:1500  Metric:1
+                  RX packets:6515600120 errors:0 dropped:0 overruns:0 frame:0
+                  TX packets:3686950741 errors:0 dropped:0 overruns:0 carrier:0
+                  collisions:0 txqueuelen:1000
+                  RX bytes:7552028103393 (6.8 TiB)  TX bytes:2777447604936 (2.5 TiB)
+                  Interrupt:16 Memory:93800000-93ffffff
+
+        eth1      Link encap:Ethernet  HWaddr 8C:DC:D4:00:13:40
+                  UP BROADCAST RUNNING SLAVE MULTICAST  MTU:1500  Metric:1
+                  RX packets:4498103 errors:0 dropped:0 overruns:0 frame:0
+                  TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+                  collisions:0 txqueuelen:1000
+                  RX bytes:292519855 (278.9 MiB)  TX bytes:0 (0.0 b)
+                  Interrupt:17 Memory:94800000-94ffffff
+
+        lo        Link encap:Local Loopback
+                  inet addr:127.0.0.1  Mask:255.0.0.0
+                  inet6 addr: ::1/128 Scope:Host
+                  UP LOOPBACK RUNNING  MTU:16436  Metric:1
+                  RX packets:82834178 errors:0 dropped:0 overruns:0 frame:0
+                  TX packets:82834178 errors:0 dropped:0 overruns:0 carrier:0
+                  collisions:0 txqueuelen:0
+                  RX bytes:30116311462 (28.0 GiB)  TX bytes:30116311462 (28.0 GiB)
+
+        [root@m1-pr-iris02p ~]# ethtool eth0
+        Settings for eth0:
+                Supported ports: [ FIBRE ]
+                Supported link modes:   1000baseT/Full
+                                        10000baseT/Full
+                Supported pause frame use: Symmetric Receive-only
+                Supports auto-negotiation: No
+                Advertised link modes:  10000baseT/Full
+                Advertised pause frame use: No
+                Advertised auto-negotiation: No
+                Speed: 10000Mb/s
+                Duplex: Full
+                Port: Direct Attach Copper
+                PHYAD: 1
+                Transceiver: internal
+                Auto-negotiation: off
+                Supports Wake-on: d
+                Wake-on: d
+                Current message level: 0x00000000 (0)
+
+                Link detected: yes
+        [root@m1-pr-iris02p ~]# ethtool eth1
+        Settings for eth1:
+                Supported ports: [ FIBRE ]
+                Supported link modes:   1000baseT/Full
+                                        10000baseT/Full
+                Supported pause frame use: Symmetric Receive-only
+                Supports auto-negotiation: No
+                Advertised link modes:  10000baseT/Full
+                Advertised pause frame use: No
+                Advertised auto-negotiation: No
+                Speed: 10000Mb/s
+                Duplex: Full
+                Port: Direct Attach Copper
+                PHYAD: 1
+                Transceiver: internal
+                Auto-negotiation: off
+                Supports Wake-on: d
+                Wake-on: d
+                Current message level: 0x00000000 (0)
+
+                Link detected: yes
+        [root@m1-pr-iris02p ~]#
+
+#   ds-pr-iris03p   CZJ44804Q5  https://racktables.tcsbank.ru/index.php?page=object&tab=default&object_id=719
+#
+        [root@m1-pr-iris02p ~]# ip -f inet addr
+        1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+            inet 127.0.0.1/8 scope host lo
+        8: bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+            inet 10.217.10.49/24 brd 10.217.10.255 scope global bond0
+        [root@m1-pr-iris02p ~]# df -hT
+        Filesystem                                               Type   Size  Used Avail Use% Mounted on
+        /dev/sda2                                                ext4    16G  2.6G   13G  18% /
+        tmpfs                                                    tmpfs  190G     0  190G   0% /dev/shm
+        /dev/sda1                                                vfat   500M  272K  500M   1% /boot/efi
+        /dev/sdb1                                                ext4   1.8T  601G  1.2T  35% /data
+        /dev/sda6                                                ext4    81G  3.5G   73G   5% /opt
+        /dev/sda5                                                ext4   7.7G  146M  7.2G   2% /tmp
+        /dev/sda3                                                ext4    16G  9.9G  4.8G  68% /var
+        v6250-m1:/vol/integration_fs/integration3/iris_file_exch nfs    6.4T  4.9T  1.5T  78% /mnt/iris_file_exch
+        [root@m1-pr-iris02p ~]# cat /etc/system-release
+        Red Hat Enterprise Linux Server release 6.5 (Santiago)
+        [root@m1-pr-iris02p ~]# dmidecode -t system
+        # dmidecode 2.11
+        # SMBIOS entry point at 0x788fb000
+        SMBIOS 2.8 present.
+        # SMBIOS implementations newer than version 2.7 are not
+        # fully supported by this version of dmidecode.
+
+        Handle 0x0009, DMI type 1, 27 bytes
+        System Information
+                Manufacturer: HP
+                Product Name: ProLiant DL360 Gen9
+                Version: Not Specified
+                Serial Number: CZJ44804QH
+                UUID: 32353537-3236-5A43-4A34-343830345148
+                Wake-up Type: Power Switch
+                SKU Number: 755262-B21
+                Family: ProLiant
+
+        Handle 0x00BB, DMI type 32, 11 bytes
+        System Boot Information
+                Status: No errors detected
+
+        [root@m1-pr-iris02p ~]#
+
+
+
+................................................................................
+
+#
+#   This is link to search in racktables new IRIS servers.
+https://racktables.tcsbank.ru/index.php?andor=and&cft%5B%5D=142&cft%5B%5D=131&cfe=&page=depot&tab=default
+#
+#   ds-pr-iris12p    D2CFRG2 https://racktables.tcsbank.ru/index.php?page=object&object_id=2313
+#                    [support@centos00 ~]$ host D2CFRG2.mgmt.tcsbank.ru
+#                    D2CFRG2.mgmt.tcsbank.ru has address 10.219.11.137
+#
+                    ip for server: 10.217.11.27
+
+#
+#   m1-pr-iris11p    D2D8RG2 https://racktables.tcsbank.ru/index.php?page=object&object_id=2336
+#                    [support@centos00 ~]$ host D2D8RG2.mgmt.tcsbank.ru
+#                    D2D8RG2.mgmt.tcsbank.ru has address 10.219.9.167
+#
+                    ip for server: 10.217.10.28
+#
+#   m1-pr-iris13p    D2F6RG2 https://racktables.tcsbank.ru/index.php?page=object&object_id=2337
+#                    [support@centos00 ~]$ host D2F6RG2.mgmt.tcsbank.ru
+#                    D2F6RG2.mgmt.tcsbank.ru has address 10.219.9.168
+#
+                    ip for server: 10.217.10.29
+
+
+
+................................................................................
+
+#   1. Tuffin access from Dell OME.
+#   2. Discover, add servers into Dell OME.
+#   3. Update firmware, apply configuration on servers.
+
+................................................................................
+#   1. Create access from Dell OME server to these servers (tuffin and network admis).
+#   2. In Dell OME find and discovery servers.
+#   2.1. Update firmware on servers.
+#   2.2. Apply common configuration for iDRAC (access via domain authorization).
+#   2.3. Change root password for iDRAC.
+#   2.4. Create raid array configuration.
+#   3. Find free ip-addresses via vm-pinger and fix it for defined serves.
+#   3.1.    Create task to write DNS names for A and PTR zones for choosen ip-addresses.
+#   4. Create Service Desk task for network admins to configure switch for appropriate ports and give vlan's.
+#   5. Run deployment tool "F10" and start manual installation.
+#   6. Login on installed server with its console as root and test and add network configs.
+#   7. Login on serves via ssh and disable firewald.
+#   8. Add repositories. Configure it to work.
+#   9. Install puppet.
+#   10. Add servers into puppet. Apply manifests.
+#   11. Create users, that will use this server (lzn and other).
+#   12. Install software for monitoring (idrac and so on).
+#   13. Nagios monitoring configure.
+#   14. Update information in racktables about servers.
+
+................................................................................
+
+#   4. Find and get appropriate ip-address for servers.
+#   In DS.
+10.217.11.
+
+#   In M1:
+10.217.10.
+
+#   5. ip-addresses were written into DNS.
+
+
+[support@centos00 ~]$ host ds-pr-iris12p
+ds-pr-iris12p.tcsbank.ru has address 10.217.11.27
+[support@centos00 ~]$ host m1-pr-iris11p
+m1-pr-iris11p.tcsbank.ru has address 10.217.10.28
+[support@centos00 ~]$ host m1-pr-iris13p
+m1-pr-iris13p.tcsbank.ru has address 10.217.10.29
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ while read -p "Enter service tag: " var1_servicetag ; do var2_username="$( SSHPASS="$(pass common/windows-current)" sshpass -e ssh -t -oStrictHostKeyChecking=no tcsbank.ru\\s.belogrud@${var1_servicetag}.mgmt.tcsbank.ru racadm get idrac.users.2.username | grep UserName | cut -d "=" -f2 | tr -d '\r' )" ; if [ "${var2_username}" = "root" ] ; then echo -e "Service tag: ${var1_servicetag}\nServer: ${var1_servicetag}.mgmt.tcsbank.ru\nUser: ${var2_username}" ; var3_newpassword="$(pwgen -c -n -s -C 10 1)" ; echo "Password: ${var3_newpassword}" ; SSHPASS="$(pass common/windows-current)" sshpass -e ssh -t -oStrictHostKeyChecking=no tcsbank.ru\\s.belogrud@${var1_servicetag}.mgmt.tcsbank.ru racadm set idrac.users.2.password "${var3_newpassword}" | tee -a ./$(date +%Y%m%d-%H%M).racadm.set.${var1_servicetag}.txt ; else echo "No, we mightn't change pasword for user: ${var2_username}." ; fi ; done
+Enter service tag: D2CFRG2
+Warning: Permanently added 'd2cfrg2.mgmt.tcsbank.ru,10.219.11.137' (RSA) to the list of known hosts.
+Connection to D2CFRG2.mgmt.tcsbank.ru closed.
+Service tag: D2CFRG2
+Server: D2CFRG2.mgmt.tcsbank.ru
+User: root
+Password: KhWAlg2ZCo
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to D2CFRG2.mgmt.tcsbank.ru closed.
+Enter service tag: D2D8RG2
+Warning: Permanently added 'd2d8rg2.mgmt.tcsbank.ru,10.219.9.167' (RSA) to the list of known hosts.
+Connection to D2D8RG2.mgmt.tcsbank.ru closed.
+Service tag: D2D8RG2
+Server: D2D8RG2.mgmt.tcsbank.ru
+User: root
+Password: suzZ1p8tnn
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to D2D8RG2.mgmt.tcsbank.ru closed.
+Enter service tag: D2F6RG2
+Warning: Permanently added 'd2f6rg2.mgmt.tcsbank.ru,10.219.9.168' (RSA) to the list of known hosts.
+Connection to D2F6RG2.mgmt.tcsbank.ru closed.
+Service tag: D2F6RG2
+Server: D2F6RG2.mgmt.tcsbank.ru
+User: root
+Password: kNw1XyRnEX
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to D2F6RG2.mgmt.tcsbank.ru closed.
+Enter service tag: ^C
+[support@centos00 ~]$
+
+................................................................................
+
+#
+#   20170201
+#
+#   Forgotten tune options for network interfaces.
+#
+
+#
+#   Below we can see dropped packets on interface team0.
+#   I suppose the reason is scribed above.
+#
+[root@m1-pr-iris13p ~]# ip -s link show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    RX: bytes  packets  errors  dropped overrun mcast
+    500083     2409     0       0       0       0
+    TX: bytes  packets  errors  dropped carrier collsns
+    500083     2409     0       0       0       0
+2: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq master team0 state UP mode DEFAULT qlen 1000
+    link/ether 18:66:da:7b:f7:fa brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    50142241491 34593415 0       0       0       620
+    TX: bytes  packets  errors  dropped carrier collsns
+    1061424460 9823018  0       0       0       0
+3: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq master team0 state UP mode DEFAULT qlen 1000
+    link/ether 18:66:da:7b:f7:fa brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    59850783644 41382637 36      0       0       619
+    TX: bytes  packets  errors  dropped carrier collsns
+    1060502909 9822382  0       0       0       0
+4: em3: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT qlen 1000
+    link/ether 18:66:da:7b:f7:fe brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    0          0        0       0       0       0
+    TX: bytes  packets  errors  dropped carrier collsns
+    0          0        0       0       0       0
+5: em4: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT qlen 1000
+    link/ether 18:66:da:7b:f8:00 brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    0          0        0       0       0       0
+    TX: bytes  packets  errors  dropped carrier collsns
+    0          0        0       0       0       0
+6: team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT
+    link/ether 18:66:da:7b:f7:fa brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    105659987519 18924221 0       1238    0       1239
+    TX: bytes  packets  errors  dropped carrier collsns
+    2027031140 19343412 0       0       0       0
+[root@m1-pr-iris13p ~]#
+
+
+[root@m1-pr-iris13p ~]# ls -Alh /etc/sysconfig/network-scripts/ifcfg-*
+-rw-r--r--. 1 root root 255 Jan 30 14:03 /etc/sysconfig/network-scripts/ifcfg-em1
+-rw-r--r--. 1 root root 255 Jan 30 14:03 /etc/sysconfig/network-scripts/ifcfg-em2
+-rw-r--r--. 1 root root 271 Jan 30 14:03 /etc/sysconfig/network-scripts/ifcfg-em3
+-rw-r--r--. 1 root root 271 Jan 30 14:03 /etc/sysconfig/network-scripts/ifcfg-em4
+-rw-r--r--. 1 root root 254 Sep 16  2015 /etc/sysconfig/network-scripts/ifcfg-lo
+-rw-r--r--. 1 root root 148 Jan 30 14:03 /etc/sysconfig/network-scripts/ifcfg-team0_slave_1
+-rw-r--r--. 1 root root 148 Jan 30 14:03 /etc/sysconfig/network-scripts/ifcfg-team0_slave_2
+-rw-r--r--. 1 root root 273 Jan 30 14:03 /etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+[root@m1-pr-iris13p ~]#
+
+[root@m1-pr-iris13p ~]# vim -o /etc/sysconfig/network-scripts/ifcfg-team0_slave_1 /etc/sysconfig/network-scripts/ifcfg-team0_slave_2 /etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+
+[root@m1-pr-iris13p ~]# tail -n 1 /etc/sysconfig/network-scripts/ifcfg-team0_slave_1 /etc/sysconfig/network-scripts/ifcfg-team0_slave_2 /etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+==> /etc/sysconfig/network-scripts/ifcfg-team0_slave_1 <==
+TEAM_PORT_CONFIG='{"prio":100}'
+
+==> /etc/sysconfig/network-scripts/ifcfg-team0_slave_2 <==
+TEAM_PORT_CONFIG='{"prio":200}'
+
+==> /etc/sysconfig/network-scripts/ifcfg-Team_connection_1 <==
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+[root@m1-pr-iris13p ~]#
+
+[root@m1-pr-iris13p ~]# systemctl list-unit-files | grep -ie "network"
+dbus-org.freedesktop.network1.service       invalid
+dbus-org.freedesktop.NetworkManager.service enabled
+NetworkManager-dispatcher.service           enabled
+NetworkManager-wait-online.service          disabled
+NetworkManager.service                      enabled
+systemd-networkd.socket                     disabled
+network-online.target                       static
+network-pre.target                          static
+network.target                              static
+[root@m1-pr-iris13p ~]#
+
+................................................................................
+
+[root@m1-pr-iris11p ~]# ip -s link show team0
+6: team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT
+    link/ether 18:66:da:7b:db:52 brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    155463628186 69575501 0       7942    0       7019
+    TX: bytes  packets  errors  dropped carrier collsns
+    73544860994 53150226 0       0       0       0
+[root@m1-pr-iris11p ~]#
+
+................................................................................
+
+[root@ds-pr-iris12p ~]# ip -s link show team0
+6: team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT
+    link/ether 18:66:da:7a:61:2b brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    77683074852 146615043 0       14646   0       13599
+    TX: bytes  packets  errors  dropped carrier collsns
+    290794287630 105317444 0       0       0       0
+[root@ds-pr-iris12p ~]#
+
+................................................................................
+
+#
+#   After reboot, again see dropped packets.
+#
+[root@ds-pr-iris12p ~]# ip -s link show team0
+6: team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT
+    link/ether 18:66:da:7a:61:2b brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    215161     1439     0       207     0       6
+    TX: bytes  packets  errors  dropped carrier collsns
+    191964     1265     0       0       0       0
+[root@ds-pr-iris12p ~]# tail -n 1 /etc/sysconfig/network-scripts/ifcfg-team0_slave_1 /etc/sysconfig/network-scripts/ifcfg-team0_slave_2 /etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+==> /etc/sysconfig/network-scripts/ifcfg-team0_slave_1 <==
+TEAM_PORT_CONFIG='{"prio":100}'
+
+==> /etc/sysconfig/network-scripts/ifcfg-team0_slave_2 <==
+TEAM_PORT_CONFIG='{"prio":200}'
+
+==> /etc/sysconfig/network-scripts/ifcfg-Team_connection_1 <==
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+[root@ds-pr-iris12p ~]#
+
+................................................................................
+
+
+

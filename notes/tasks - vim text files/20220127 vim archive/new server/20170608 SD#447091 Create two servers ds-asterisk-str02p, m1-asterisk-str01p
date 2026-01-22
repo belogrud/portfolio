@@ -1,0 +1,579 @@
+
+...........................................................................
+
+#	Here were created by Chernykh Aleksandr two server.
+#	ds-asterisk-str01p
+#	m1-asterisk-str01p
+#	Leonov Aleksey made cluster configuration. And other.
+
+...........................................................................
+
+[root@m1-asterisk-str01p ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+7: team0.1696@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 10.216.96.100/24 brd 10.216.96.255 scope global team0.1696
+       valid_lft forever preferred_lft forever
+8: team0.1765@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP qlen 1000
+    inet 10.217.65.122/24 brd 10.217.65.255 scope global team0.1765
+       valid_lft forever preferred_lft forever
+[root@m1-asterisk-str01p ~]#
+
+[root@m1-asterisk-str01p ~]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ; echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+NAME=em1
+DEVICE=em1
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=teamport
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+NAME=em2
+DEVICE=em2
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=teamport
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+BOOTPROTO=dhcp
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em3
+UUID=560d6b8e-ce18-4b42-aad0-fc987950d9fd
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+BOOTPROTO=dhcp
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=em4
+UUID=c655d5e0-275b-4ac5-b466-9bbdd9b157c4
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+DEVICETYPE=team
+NAME=team0
+ONBOOT=yes
+TEAM_CONFIG='{"runner": {"name": "activebackup"}, "link_watch": {"name": "ethtool"}}'
+NM_CONTROLLED=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1696
+VLAN=yes
+TYPE=vlan
+DEVICE=team0.1696
+PHYSDEV=team0
+VLAN_ID=1696
+BOOTPROTO=static
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1696
+ONBOOT=yes
+IPADDR=10.216.96.100
+PREFIX=24
+GATEWAY=10.216.96.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+NM_CONTROLLED=no
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-vlan1765
+VLAN=yes
+TYPE=vlan
+DEVICE=team0.1765
+PHYSDEV=team0
+VLAN_ID=1765
+BOOTPROTO=static
+IPADDR=10.217.65.122
+PREFIX=24
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1765
+ONBOOT=yes
+NM_CONTROLLED=no
+MTU=9000
+[root@m1-asterisk-str01p ~]#
+
+
+[root@m1-asterisk-str01p ~]# mount -t nfs
+ds-asterisk-str01p-nfs:/data on /dataDS type nfs (rw,relatime,vers=3,rsize=32768,wsize=32768,namlen=255,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,hard,nolock,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.65.121,mountvers=3,mountport=20048,mountproto=tcp,local_lock=all,addr=10.217.65.121)
+v6250-m1-nfs2:/vol/asterisk_sata on /data_v6250 type nfs (rw,relatime,vers=3,rsize=32768,wsize=32768,namlen=255,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,hard,nolock,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.65.8,mountvers=3,mountport=4046,mountproto=tcp,local_lock=all,addr=10.217.65.8)
+[root@m1-asterisk-str01p ~]# df -hT
+Filesystem                       Type      Size  Used Avail Use% Mounted on
+/dev/sda1                        ext4      275G   53G  208G  21% /
+devtmpfs                         devtmpfs   63G     0   63G   0% /dev
+tmpfs                            tmpfs      63G     0   63G   0% /dev/shm
+tmpfs                            tmpfs      63G   50M   63G   1% /run
+tmpfs                            tmpfs      63G     0   63G   0% /sys/fs/cgroup
+/dev/sdb1                        xfs        59T   23T   37T  38% /data
+ds-asterisk-str01p-nfs:/data     nfs        59T   23T   37T  39% /dataDS
+v6250-m1-nfs2:/vol/asterisk_sata nfs        49T   44T  4.8T  91% /data_v6250
+tmpfs                            tmpfs      13G     0   13G   0% /run/user/556
+tmpfs                            tmpfs      13G     0   13G   0% /run/user/525
+[root@m1-asterisk-str01p ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Tue Feb 14 13:39:12 2017
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+UUID=37c392c4-17b3-43be-8ea3-ea5c6938cc37 /                       ext4    defaults        1 1
+UUID=5b4cbc72-da50-4bd8-bc20-985fc9867bc0 /data                   xfs     defaults        1 1
+
+#asterisk backup
+ds-asterisk-str01p-nfs:/data    /dataDS                 nfs     rw,bg,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock  0 0
+v6250-m1-nfs2:/vol/asterisk_sata        /data_v6250                     nfs     rw,bg,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock  0 0
+/swapfile          swap            swap    defaults        0 0
+[root@m1-asterisk-str01p ~]#
+
+
+...........................................................................
+
+
+#	Important thing is to add MTU=9000 for this NFS vlan interface.
+#	
+
+[root@m1-asterisk-str02p network-scripts]# for var1 in $(ls -A1 /etc/sysconfig/network-scripts/ifcfg-*) ; do echo ; echo ${var1} ; cat ${var1} ; done
+
+/etc/sysconfig/network-scripts/ifcfg-em1
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em1
+UUID=14d00994-3ed7-4924-980a-cd6212bf2864
+DEVICE=em1
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em2
+TYPE=Ethernet
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em2
+UUID=28db3db7-a9a8-43ac-8f36-91dc1c18e4bb
+DEVICE=em2
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em3
+TYPE=Ethernet
+BOOTPROTO=dhcp
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em3
+UUID=6d76cf27-f64e-4f59-aee5-d74012f9c9a5
+DEVICE=em3
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-em4
+TYPE=Ethernet
+BOOTPROTO=dhcp
+DEFROUTE=yes
+PEERDNS=yes
+PEERROUTES=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=em4
+UUID=8820ec33-f025-4abb-880b-0ad08dbf3131
+DEVICE=em4
+ONBOOT=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/ifcfg-team0_slave_1
+HWADDR=24:6E:96:55:24:80
+NAME="team0 slave 1"
+UUID=67055729-094b-44f5-8bf0-7c6f0957e87e
+DEVICE=em1
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=TeamPort
+TEAM_PORT_CONFIG='{"prio":100}'
+
+/etc/sysconfig/network-scripts/ifcfg-team0_slave_2
+HWADDR=24:6E:96:55:24:82
+NAME="team0 slave 2"
+UUID=c46ec9e1-82e1-4768-841b-10020ab0a2a5
+DEVICE=em2
+ONBOOT=yes
+TEAM_MASTER=team0
+DEVICETYPE=TeamPort
+TEAM_PORT_CONFIG='{"prio":200}'
+
+/etc/sysconfig/network-scripts/ifcfg-Team_connection_1
+DEVICE=team0
+IPV6INIT=no
+NAME="Team connection 1"
+UUID=dcc9d0a6-30ee-459b-a42f-845da7ad7eac
+ONBOOT=yes
+DEVICETYPE=Team
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-VLAN_connection_1
+VLAN=yes
+TYPE=Vlan
+DEVICE=team0.1696
+PHYSDEV=dcc9d0a6-30ee-459b-a42f-845da7ad7eac
+VLAN_ID=1696
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+BOOTPROTO=none
+IPADDR=10.216.96.101
+PREFIX=24
+GATEWAY=10.216.96.254
+DNS1=10.216.40.4
+DNS2=10.216.42.5
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="VLAN connection 1"
+UUID=abcea893-58c6-4a7c-862a-c7522e08b138
+ONBOOT=yes
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-VLAN_connection_2
+VLAN=yes
+TYPE=Vlan
+DEVICE=team0.1765
+# PHYSDEV=dcc9d0a6-30ee-459b-a42f-845da7ad7eac
+VLAN_ID=1765
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+BOOTPROTO=none
+IPADDR=10.217.65.190
+PREFIX=24
+# GATEWAY=10.216.96.254
+# DNS1=10.216.40.4
+# DNS2=10.216.42.5
+# DOMAIN=tcsbank.ru
+# DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="VLAN connection 2"
+# UUID=abcea893-58c6-4a7c-862a-c7522e08b138
+ONBOOT=yes
+MTU=9000
+[root@m1-asterisk-str02p network-scripts]#
+
+...........................................................................
+
+[root@ds-asterisk-str02p network-scripts]# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: em3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 24:6e:96:55:2e:44 brd ff:ff:ff:ff:ff:ff
+3: em4: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 24:6e:96:55:2e:45 brd ff:ff:ff:ff:ff:ff
+4: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq master team0 state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+5: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq master team0 state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+6: team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+7: team0.1697@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet 10.216.97.106/24 brd 10.216.97.255 scope global team0.1697
+       valid_lft forever preferred_lft forever
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+8: team0.1765@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet 10.217.65.191/24 brd 10.217.65.255 scope global team0.1765
+       valid_lft forever preferred_lft forever
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+[root@ds-asterisk-str02p network-scripts]# systemctl restart network
+[root@ds-asterisk-str02p network-scripts]#
+[root@ds-asterisk-str02p network-scripts]# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: em3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 24:6e:96:55:2e:44 brd ff:ff:ff:ff:ff:ff
+3: em4: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 24:6e:96:55:2e:45 brd ff:ff:ff:ff:ff:ff
+4: em1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq master team0 state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+5: em2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq master team0 state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+9: team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+10: team0.1697@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet 10.216.97.106/24 brd 10.216.97.255 scope global team0.1697
+       valid_lft forever preferred_lft forever
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+11: team0.1765@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP qlen 1000
+    link/ether 24:6e:96:55:2e:40 brd ff:ff:ff:ff:ff:ff
+    inet 10.217.65.191/24 brd 10.217.65.255 scope global team0.1765
+       valid_lft forever preferred_lft forever
+    inet6 fe80::266e:96ff:fe55:2e40/64 scope link
+       valid_lft forever preferred_lft forever
+[root@ds-asterisk-str02p network-scripts]#
+
+...........................................................................
+
+
+[root@m1-asterisk-str02p ~]# echo "proxy=http://repo-linux.tcsbank.ru:80" >> /etc/yum.conf
+
+[root@m1-asterisk-str02p yum.repos.d]# yum install http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+
+#[root@m1-asterisk-str02p ~]# yum install http://repo-linux.tcsbank.ru/epel/epel-release-latest-7.noarch.rpm
+[root@m1-asterisk-str02p yum.repos.d]# curl repo-linux/tcs-epel-7-x86_64.repo.sh | sh
+[root@m1-asterisk-str02p yum.repos.d]# yum install etckeeper
+
+[root@m1-asterisk-str02p ~]# yum install puppet facter
+
+[root@m1-asterisk-str02p ~]# yum -y install net-snmp net-snmp-utils
+
+[root@m1-asterisk-str02p ~]# curl repo-linux/tcs-dell-dsu-rhel7.repo.sh | sh
+
+[root@m1-asterisk-str02p yum.repos.d]# yum install srvadmin-idracadm7 srvadmin-idracadm dcism               
+[root@m1-asterisk-str02p yum.repos.d]# yum install srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp
+
+[root@m1-asterisk-str02p ~]# systemctl stop firewalld
+[root@m1-asterisk-str02p ~]# systemctl disable firewalld
+
+
+[root@m1-asterisk-str02p ~]# grep "^SELINUX=" /etc/selinux/config
+SELINUX=disabled
+[root@m1-asterisk-str02p ~]#
+
+[root@vm-vol-nag4-tst ~]# /usr/lib64/nagios/plugins/check_openmanage -H 10.216.96.101 -C tcspub -P 2c -p
+OK - System: 'PowerEdge R730xd', SN: 'D94LXJ2', 64 GB ram (4 dimms), 2 logical drives, 14 physical drives|T0_System_Board_Inlet=31C;42;47 T1_System_Board_Exhaust=44C;70;75 T2_CPU1=46C;87;92 T3_CPU2=56C;87;92 W2_System_Board_Pwr_Consumption=210W;0;0 A0_PS1_Current_1=0.4A;0;0 A1_PS2_Current_2=0.6A;0;0 V27_PS1_Voltage_1=228V;0;0 V28_PS2_Voltage_2=228V;0;0 F0_System_Board_Fan1=6840rpm;0;0 F1_System_Board_Fan2=6840rpm;0;0 F2_System_Board_Fan3=6840rpm;0;0 F3_System_Board_Fan4=6600rpm;0;0 F4_System_Board_Fan5=6840rpm;0;0 F5_System_Board_Fan6=6720rpm;0;0
+[root@vm-vol-nag4-tst ~]#
+
+[root@m1-asterisk-str02p ~]# yum install nrpe
+
+[root@m1-asterisk-str02p ~]# systemctl start nrpe.service
+[root@m1-asterisk-str02p ~]# systemctl status nrpe.service
+
+[root@m1-asterisk-str02p ~]# systemctl enable nrpe.service
+
+...........................................................................
+
+
+[root@m1-asterisk-str02p ~]# yum install nfs-utils
+
+[root@m1-asterisk-str02p ~]# chmod -R 777 /data
+
+
+[root@m1-asterisk-str02p ~]# systemctl enable rpcbind
+[root@m1-asterisk-str02p ~]# systemctl enable nfs-server
+Created symlink from /etc/systemd/system/multi-user.target.wants/nfs-server.service to /usr/lib/systemd/system/nfs-server.service.
+[root@m1-asterisk-str02p ~]# systemctl enable nfs-lock
+[root@m1-asterisk-str02p ~]# systemctl enable nfs-idmap
+[root@m1-asterisk-str02p ~]# systemctl start rpcbind
+[root@m1-asterisk-str02p ~]# systemctl start nfs-server
+[root@m1-asterisk-str02p ~]# systemctl start nfs-lock
+[root@m1-asterisk-str02p ~]# systemctl start nfs-idmap
+
+
+
+[root@m1-asterisk-str02p ~]# ip -f inet addr show team0.1765
+8: team0.1765@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP qlen 1000
+    inet 10.217.65.190/24 brd 10.217.65.255 scope global team0.1765
+       valid_lft forever preferred_lft forever
+[root@m1-asterisk-str02p ~]#
+[root@m1-asterisk-str02p ~]# cat /etc/exports
+/data   10.217.65.191(rw,no_root_squash)
+[root@m1-asterisk-str02p ~]#
+
+
+[root@ds-asterisk-str02p ~]# ip -f inet addr show team0.1765
+8: team0.1765@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc noqueue state UP qlen 1000
+    inet 10.217.65.191/24 brd 10.217.65.255 scope global team0.1765
+       valid_lft forever preferred_lft forever
+[root@ds-asterisk-str02p ~]#
+[root@ds-asterisk-str02p ~]# cat /etc/exports
+/data   10.217.65.190(rw,no_root_squash)
+[root@ds-asterisk-str02p ~]#
+
+
+[root@m1-asterisk-str02p ~]# systemctl restart nfs-server
+[root@m1-asterisk-str02p ~]# systemctl status nfs-server
+● nfs-server.service - NFS server and services
+   Loaded: loaded (/usr/lib/systemd/system/nfs-server.service; enabled; vendor preset: disabled)
+   Active: active (exited) since Wed 2017-07-05 16:07:14 MSK; 5s ago
+  Process: 19481 ExecStopPost=/usr/sbin/exportfs -f (code=exited, status=0/SUCCESS)
+  Process: 19478 ExecStopPost=/usr/sbin/exportfs -au (code=exited, status=0/SUCCESS)
+  Process: 19475 ExecStop=/usr/sbin/rpc.nfsd 0 (code=exited, status=0/SUCCESS)
+  Process: 19496 ExecStart=/usr/sbin/rpc.nfsd $RPCNFSDARGS (code=exited, status=0/SUCCESS)
+  Process: 19493 ExecStartPre=/usr/sbin/exportfs -r (code=exited, status=0/SUCCESS)
+ Main PID: 19496 (code=exited, status=0/SUCCESS)
+   CGroup: /system.slice/nfs-server.service
+
+Jul 05 16:07:14 m1-asterisk-str02p.tcsbank.ru systemd[1]: Starting NFS server and services...
+Jul 05 16:07:14 m1-asterisk-str02p.tcsbank.ru systemd[1]: Started NFS server and services.
+[root@m1-asterisk-str02p ~]#
+[root@m1-asterisk-str02p ~]# exportfs
+/data           10.217.65.191
+[root@m1-asterisk-str02p ~]# showmount -e 10.217.65.191
+Export list for 10.217.65.191:
+/data 10.217.65.190
+[root@m1-asterisk-str02p ~]#
+
+
+
+[root@ds-asterisk-str02p ~]# systemctl restart nfs-server
+[root@ds-asterisk-str02p ~]# systemctl status nfs-server
+● nfs-server.service - NFS server and services
+   Loaded: loaded (/usr/lib/systemd/system/nfs-server.service; enabled; vendor preset: disabled)
+   Active: active (exited) since Wed 2017-07-05 16:07:14 MSK; 5s ago
+  Process: 19479 ExecStopPost=/usr/sbin/exportfs -f (code=exited, status=0/SUCCESS)
+  Process: 19476 ExecStopPost=/usr/sbin/exportfs -au (code=exited, status=0/SUCCESS)
+  Process: 19473 ExecStop=/usr/sbin/rpc.nfsd 0 (code=exited, status=0/SUCCESS)
+  Process: 19494 ExecStart=/usr/sbin/rpc.nfsd $RPCNFSDARGS (code=exited, status=0/SUCCESS)
+  Process: 19491 ExecStartPre=/usr/sbin/exportfs -r (code=exited, status=0/SUCCESS)
+ Main PID: 19494 (code=exited, status=0/SUCCESS)
+   CGroup: /system.slice/nfs-server.service
+
+Jul 05 16:07:14 ds-asterisk-str02p.tcsbank.ru systemd[1]: Starting NFS server and services...
+Jul 05 16:07:14 ds-asterisk-str02p.tcsbank.ru systemd[1]: Started NFS server and services.
+[root@ds-asterisk-str02p ~]#
+[root@ds-asterisk-str02p ~]# exportfs
+/data           10.217.65.190
+[root@ds-asterisk-str02p ~]# showmount -e 10.217.65.190
+Export list for 10.217.65.190:
+/data 10.217.65.191
+[root@ds-asterisk-str02p ~]#
+
+[root@m1-asterisk-str02p ~]# mkdir /dataDS
+
+[root@ds-asterisk-str02p ~]# mkdir /dataM1
+
+[root@m1-asterisk-str02p ~]# tail -n 1 /etc/fstab
+ds-asterisk-str02p-metro2:/data    /dataDS                 nfs     rw,bg,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock  0 0
+[root@m1-asterisk-str02p ~]#
+
+[root@ds-asterisk-str02p ~]# tail -n 1 /etc/fstab
+m1-asterisk-str02p-metro2:/data    /dataM1                 nfs     rw,bg,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock  0 0
+[root@ds-asterisk-str02p ~]#
+
+
+[root@m1-asterisk-str02p ~]# mount -v /dataDS
+mount.nfs: trying text-based options 'bg,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock,addr=10.217.65.191'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.65.191 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.65.191 prog 100005 vers 3 prot TCP port 20048
+[root@m1-asterisk-str02p ~]#
+
+[root@ds-asterisk-str02p ~]# mount -v /dataM1
+mount.nfs: trying text-based options 'bg,rsize=32768,wsize=32768,nfsvers=3,actimeo=0,timeo=600,tcp,nolock,addr=10.217.65.190'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.65.190 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.65.190 prog 100005 vers 3 prot TCP port 20048
+[root@ds-asterisk-str02p ~]#
+
+
+
+
+
+
+

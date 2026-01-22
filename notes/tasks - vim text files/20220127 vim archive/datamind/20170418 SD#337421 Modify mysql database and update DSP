@@ -1,0 +1,309 @@
+
+
+
+
+ 1850  find / -name enter_mysql.sh
+ 1851  vim /usr/local/dspweb/enter_mysql.sh
+ 1852  vim /etc/mysql/my.cnf
+ 1853  vim /etc/mysql/debian.cnf
+ 1854  mysql -u debian-sys-maint -p$(awk '{if ($1=="password") print $3}' /etc/m
+ysql/debian.cnf|uniq)
+ 1855  top
+ 1856  cat /etc/mysql/my.cnf
+ 1857  mysql -u debian-sys-maint -p$(awk '{if ($1=="password") print $3}' /etc/mysql/debian.cnf|uniq)
+
+
+root@dsp-test ~ # vim +view /etc/mysql/debian.cnf
+...
+user     = debian-sys-maint
+password = SbY3r14EKFOYFpyj
+...
+
+................................................................................
+
+root@dsp-test ~ # mysql --user=debian-sys-maint tcs_test -p
+Enter password:
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 3437284
+Server version: 5.5.35-0ubuntu0.12.04.2-log (Ubuntu)
+
+Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| tcs_test           |
+| test               |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> ALTER TABLE `line_item`
+    -> ADD COLUMN `target_group` varchar(128) DEFAULT NULL,
+    -> ADD COLUMN `target_event` varchar(128) DEFAULT NULL;
+Query OK, 428 rows affected (0.38 sec)
+Records: 428  Duplicates: 0  Warnings: 0
+
+mysql> quit
+Bye
+root@dsp-test ~ #
+
+................................................................................
+
+root@dsp-test ~ # sudo su dsp
+dsp@dsp-test:/root$ cd /usr/local/dspweb/
+dsp@dsp-test:/usr/local/dspweb$ ./kill_all.sh
+tinkoff_bidding_agent_runner: no process found
+budget_manager_runner: no process found
+dsp@dsp-test:/usr/local/dspweb$ exit
+root@dsp-test ~ # dpkg -i dspweb_1.0.2566_amd64.deb
+dpkg: error processing dspweb_1.0.2566_amd64.deb (--install):
+ cannot access archive: No such file or directory
+Errors were encountered while processing:
+ dspweb_1.0.2566_amd64.deb
+root@dsp-test ~ #
+
+
+root@dsp-test ~ # dpkg -i /home/d.a.saraev/dsp-update/dspweb_1.0.2566_amd64.deb
+(Reading database ... 82672 files and directories currently installed.)
+Preparing to replace dsp-web 1.0.2562 (using .../dspweb_1.0.2566_amd64.deb) ...
+Unpacking replacement dsp-web ...
+Setting up dsp-web (1.0.2566) ...
+Set dsp ("dsp")
+/usr/local/dspweb/adserver_runner: RPATH=fakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpath
+/usr/local/dspweb/adserver_runner: new RPATH: /home/dsp/local/lib:/home/dsp/libs/rtbkit/build/x86_64/bin
+RTBKit files moved
+root@dsp-test ~ #
+
+................................................................................
+
+root@dsp-test ~ # sudo su dsp
+dsp@dsp-test:/root$ cd /usr/local/dspweb/
+dsp@dsp-test:/usr/local/dspweb$ ./run_all.sh
+dsp@dsp-test:/usr/local/dspweb$ exit
+root@dsp-test ~ #
+
+................................................................................
+................................................................................
+
+
+bsv@bk1:~$ ssh bsv@ui1.datamind.ru
+Warning: Permanently added 'ui1.datamind.ru,148.251.1.137' (ECDSA) to the list of known hosts.
+bsv@ui1.datamind.ru's password:
+Welcome to Ubuntu 12.04.3 LTS (GNU/Linux 3.8.0-33-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+New release '14.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Fri Sep 25 16:00:11 2015 from puppet
+bsv@ui1:~$ sudo -i
+[sudo] password for bsv:
+root@ui1 ~ #
+
+root@ui1 ~ # cat /etc/mysql/debian.cnf
+# Automatically generated for Debian scripts. DO NOT TOUCH!
+[client]
+host     = localhost
+user     = debian-sys-maint
+password = ltLdJVoDJ50yRymr
+socket   = /var/run/mysqld/mysqld.sock
+[mysql_upgrade]
+host     = localhost
+user     = debian-sys-maint
+password = ltLdJVoDJ50yRymr
+socket   = /var/run/mysqld/mysqld.sock
+basedir  = /usr
+root@ui1 ~ #
+
+root@ui1 ~ # mysql --user=debian-sys-maint tcs -p
+Enter password:
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 1257360
+Server version: 5.5.34-0ubuntu0.12.04.1-log (Ubuntu)
+
+Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| tcs                |
+| test               |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> ALTER TABLE `line_item`
+    -> ADD COLUMN `target_group` varchar(128) DEFAULT NULL,
+    -> ADD COLUMN `target_event` varchar(128) DEFAULT NULL;
+Query OK, 458 rows affected (0.35 sec)
+Records: 458  Duplicates: 0  Warnings: 0
+
+mysql> quit
+Bye
+root@ui1 ~ #
+
+root@ui1 ~ # logout
+bsv@ui1:~$ logout
+Connection to ui1.datamind.ru closed.
+bsv@bk1:~$
+................................................................................
+
+v@dsp1:~$ sudo -i
+[sudo] password for bsv:
+Sorry, try again.
+[sudo] password for bsv:
+root@dsp1 ~ # scp /home/d.a.saraev/dsp-update/dspweb_1.0.2566_amd64.deb bsv@dsp6.datamind.ru:/tmp/
+bsv@dsp6.datamind.ru's password:
+dspweb_1.0.2566_amd64.deb                                                                                                                                                        100%   96MB  96.4MB/s   00:01
+root@dsp1 ~ #
+................................................................................
+
+
+bsv@bk1:~$ ssh bsv@dsp6.datamind.ru
+Warning: Permanently added 'dsp6.datamind.ru,148.251.1.133' (ECDSA) to the list of known hosts.
+bsv@dsp6.datamind.ru's password:
+Welcome to Ubuntu 12.04.3 LTS (GNU/Linux 3.8.0-33-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+New release '14.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Mon Oct 19 18:12:11 2015 from puppet
+bsv@dsp6:~$ sudo -i
+[sudo] password for bsv:
+root@dsp6 ~ # sudo su dsp
+dsp@dsp6:/root$ cd /usr/local/dspweb/
+dsp@dsp6:/usr/local/dspweb$ ./kill_all.sh
+agent_configuration_service_runner: no process found
+monitor_service_runner: no process found
+tinkoff_bidding_agent_runner: no process found
+banker_service_runner: no process found
+budget_manager_runner: no process found
+dsp@dsp6:/usr/local/dspweb$ exit
+root@dsp6 ~ #
+
+root@dsp6 ~ # dpkg -i /tmp/dspweb_1.0.2566_amd64.deb
+(Reading database ... 81252 files and directories currently installed.)
+Preparing to replace dsp-web 1.0.2563 (using /tmp/dspweb_1.0.2566_amd64.deb) ...
+Unpacking replacement dsp-web ...
+Setting up dsp-web (1.0.2566) ...
+Set dsp ("dsp")
+/usr/local/dspweb/adserver_runner: RPATH=fakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpath
+/usr/local/dspweb/adserver_runner: new RPATH: /home/dsp/local/lib:/home/dsp/libs/rtbkit/build/x86_64/bin
+RTBKit files moved
+root@dsp6 ~ #
+
+
+t@dsp6 ~ # sudo su dsp
+dsp@dsp6:/root$ cd /usr/local/dspweb/
+dsp@dsp6:/usr/local/dspweb$ ./run_all.sh
+dsp@dsp6:/usr/local/dspweb$ exit
+root@dsp6 ~ # logout
+bsv@dsp6:~$ logout
+Connection to dsp6.datamind.ru closed.
+bsv@bk1:~$
+
+
+................................................................................
+................................................................................
+
+root@dsp1 ~ # scp /home/d.a.saraev/dsp-update/dspweb_1.0.2566_amd64.deb bsv@dsp5.datamind.ru:/tmp/
+bsv@dsp5.datamind.ru's password:
+dspweb_1.0.2566_amd64.deb                                                                                                                                                        100%   96MB  96.4MB/s   00:01
+root@dsp1 ~ # scp /home/d.a.saraev/dsp-update/dspweb_1.0.2566_amd64.deb bsv@dsp4.datamind.ru:/tmp/
+bsv@dsp4.datamind.ru's password:
+dspweb_1.0.2566_amd64.deb                                                                                                                                                        100%   96MB  96.4MB/s   00:01
+root@dsp1 ~ # scp /home/d.a.saraev/dsp-update/dspweb_1.0.2566_amd64.deb bsv@dsp3.datamind.ru:/tmp/
+bsv@dsp3.datamind.ru's password:
+dspweb_1.0.2566_amd64.deb                                                                                                                                                        100%   96MB  48.2MB/s   00:02
+root@dsp1 ~ # scp /home/d.a.saraev/dsp-update/dspweb_1.0.2566_amd64.deb bsv@dsp2.datamind.ru:/tmp/
+bsv@dsp2.datamind.ru's password:
+dspweb_1.0.2566_amd64.deb                                                                                                                                                        100%   96MB  96.4MB/s   00:01
+root@dsp1 ~ # scp /home/d.a.saraev/dsp-update/dspweb_1.0.2566_amd64.deb bsv@dsp1.datamind.ru:/tmp/
+The authenticity of host 'dsp1.datamind.ru (148.251.1.143)' can't be established.
+ECDSA key fingerprint is fa:83:6a:ff:62:50:35:47:0a:e3:0c:de:85:58:3f:52.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'dsp1.datamind.ru,148.251.1.143' (ECDSA) to the list of known hosts.
+bsv@dsp1.datamind.ru's password:
+dspweb_1.0.2566_amd64.deb                                                                                                                                                        100%   96MB  96.4MB/s   00:01
+root@dsp1 ~ #
+v@bk1:~$ ssh bsv@dsp5.datamind.ru
+Warning: Permanently added 'dsp5.datamind.ru,148.251.1.134' (ECDSA) to the list of known hosts.
+bsv@dsp5.datamind.ru's password:
+Welcome to Ubuntu 12.04.3 LTS (GNU/Linux 3.8.0-33-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+New release '14.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Mon Oct 19 18:12:24 2015 from puppet
+bsv@dsp5:~$ sudo -i
+[sudo] password for bsv:
+root@dsp5 ~ # sudo su dsp
+dsp@dsp5:/root$ cd /usr/local/dspweb/
+dsp@dsp5:/usr/local/dspweb$ ./kill_all.sh
+agent_configuration_service_runner: no process found
+monitor_service_runner: no process found
+tinkoff_bidding_agent_runner: no process found
+banker_service_runner: no process found
+budget_manager_runner: no process found
+dsp@dsp5:/usr/local/dspweb$ exit
+root@dsp5 ~ #
+
+
+root@dsp5 ~ # dpkg -i /tmp/dspweb_1.0.2566_amd64.deb
+(Reading database ... 71391 files and directories currently installed.)
+Preparing to replace dsp-web 1.0.2563 (using /tmp/dspweb_1.0.2566_amd64.deb) ...
+Unpacking replacement dsp-web ...
+Setting up dsp-web (1.0.2566) ...
+Set dsp ("dsp")
+/usr/local/dspweb/adserver_runner: RPATH=fakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpathfakerpath
+/usr/local/dspweb/adserver_runner: new RPATH: /home/dsp/local/lib:/home/dsp/libs/rtbkit/build/x86_64/bin
+RTBKit files moved
+root@dsp5 ~ #
+
+root@dsp5 ~ # sudo su dsp
+dsp@dsp5:/root$ cd /usr/local/dspweb/
+dsp@dsp5:/usr/local/dspweb$ ./run_all.sh
+dsp@dsp5:/usr/local/dspweb$ exit
+root@dsp5 ~ # logout
+bsv@dsp5:~$ logout
+Connection to dsp5.datamind.ru closed.
+bsv@bk1:~$
+
+................................................................................
+................................................................................
+
+
+
+
+
+
+
+
+

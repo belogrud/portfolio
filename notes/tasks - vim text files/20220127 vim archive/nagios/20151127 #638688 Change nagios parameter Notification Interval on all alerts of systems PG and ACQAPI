@@ -1,0 +1,986 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   638688
+Название    №638688
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  26.11.2015 13:35
+Дата регистрации    26.11.2015 13:35
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день, коллеги.
+
+Просьба изменить параметр Notification Interval для всех алертов Nagios систем PG и ACQAPI. Задачу назначить на unix_admins
+
+Для алертов PG Notification Interval установить в значение 10.
+Алерты:
+
+PG no requests
+
+PG Beeline bad requests
+
+PG Cyperplat bad requests
+
+PG Elecsnet bad requests
+
+PG Insurance bad requests
+
+PG MTS bad requests
+
+PG Megafon bad requests
+
+PG Online bad requests
+
+PG Prime bad requests
+
+PG Qiwi bad requests
+
+PG QiwiWallet bad requests
+
+PG Xsolla
+
+PG Yandex Money bad requests
+
+PG c2c-out bad requests
+
+PG Megafon Balance
+
+PG Regular payments
+
+PG Rapida bad requests
+
+PG Transfer Post Listener
+
+PG Pay Post Listener
+
+PG P2P Error Status
+
+PG Transfers
+
+PG C2C In
+
+PG Yandex Money Agg
+
+PG C2C BT
+
+
+
+Для системы ACQAPI Notification Interval установить в значение 5
+
+Алерты:
+
+
+ACQAPI - No operations
+
+
+ACQAPI - PA-RE errors from Online
+
+
+ACQAPI - Node state
+
+
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+
+
+ACQAPI - VE-CH errors from MPI
+
+
+ACQAPI - Operations without 3DS
+
+
+ACQAPI - Timeouts from Online
+
+
+ACQAPI - Execution time exceeded
+
+
+ACQAPI - 96 errors from Online
+
+
+ACQAPI - Errors from IRIS
+
+
+ACQAPI - Requests with non-unique order id
+
+
+ACQAPI - Requests from unregistered terminals
+
+
+ACQAPI - Registry send error
+
+
+ACQAPI - Checking of incoming traffic
+
+
+ACQAPI - Internal error critical
+
+
+ACQAPI - Internal error warning
+
+
+ACQAPI - Too many CheckPares errors from MPI
+
+
+
+С уважением,
+
+Виталий Лещук
+Старший специалист
+
+
+................................................................................
+................................................................................
+
+Добрый день, коллеги.
+
+Просьба изменить параметр Notification Interval для всех алертов Nagios систем PG и ACQAPI. Задачу назначить на unix_admins
+
+Для алертов PG Notification Interval установить в значение 10.
+Алерты:
+
+PG no requests
+PG Beeline bad requests
+PG Cyperplat bad requests
+PG Elecsnet bad requests
+PG Insurance bad requests
+PG MTS bad requests
+PG Megafon bad requests
+PG Online bad requests
+PG Prime bad requests
+PG Qiwi bad requests
+PG QiwiWallet bad requests
+PG Xsolla
+PG Yandex Money bad requests
+PG c2c-out bad requests
+PG Megafon Balance
+PG Regular payments
+PG Rapida bad requests
+PG Transfer Post Listener
+PG Pay Post Listener
+PG P2P Error Status
+PG Transfers
+PG C2C In
+PG Yandex Money Agg
+PG C2C BT
+
+
+Для системы ACQAPI Notification Interval установить в значение 5
+Алерты:
+ACQAPI - No operations
+ACQAPI - PA-RE errors from Online
+ACQAPI - Node state
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+ACQAPI - VE-CH errors from MPI
+ACQAPI - Operations without 3DS
+ACQAPI - Timeouts from Online
+ACQAPI - Execution time exceeded
+ACQAPI - 96 errors from Online
+ACQAPI - Errors from IRIS
+ACQAPI - Requests with non-unique order id
+ACQAPI - Requests from unregistered terminals
+ACQAPI - Registry send error
+ACQAPI - Checking of incoming traffic
+ACQAPI - Internal error critical
+ACQAPI - Internal error warning
+ACQAPI - Too many CheckPares errors from MPI
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t ~]# pynag list service_description where object_type=service and service_description__contains=PG
+
+[root@vm-vol-nag01t ~]# pynag list service_description where object_type=service and service_description__contains="PG Beeline bad requests"
+service_description
+--------------------------------------------------------------------------------
+PG Beeline bad requests
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t ~]# pynag list host_name and service_description where object_type=service and service_description__contains="PG Beeline bad requests"
+host_name            and                  service_description
+--------------------------------------------------------------------------------
+vm-dbamon01          null                 PG Beeline bad requests
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t ~]#
+
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg
+
+  notification_interval    60
+
+
+[root@vm-vol-nag01t ~]# pynag list host_name and service_description and notification_interval where object_type=service and service_description__contains="PG Beeline bad requests"
+host_name            and                  service_description  and                  notification_interval
+--------------------------------------------------------------------------------
+vm-dbamon01          null                 PG Beeline bad requests null                 null
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t ~]#
+
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG Beeline bad requests
+        check_command                   check_nrpe!check_tcs_mon_pg2_bep
+        normal_check_interval           1
+        first_notification_delay        0
+        contacts                        s.morozkin_sms,s.morozkin_email,processing_duty_sms,a.ivonin_email,cards_24x7_email,servicedesk_duty_sms_critical,servicedesk_duty_khutor_sms_critical,s.belyakov_email,s.belyakov_sms,n.yatsishena_email,n.yatsishena_sms,v.bayshev_email,e.s.kuzmina_email,e.s.kuzmina_sms,k.vasilyev_email,a.b.popov_email,p.silaev_email,t.gaydukova_email
+        contact_groups                  empty-group
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notifications_enabled           1
+}
+
+[root@vm-vol-nag01t ~]# pynag update set notification_interval=10 where object_type=service and service_description__contains="PG Beeline bad requests"
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+service              vm-dbamon01/PG Beeline bad requests /etc/nagios/objects/servers/vmware/vm-dbamon01.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) y
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Beeline bad requests): changed notification_interval to 10
+Updated 1 objects
+[root@vm-vol-nag01t ~]#
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG Beeline bad requests
+        check_command                   check_nrpe!check_tcs_mon_pg2_bep
+        normal_check_interval           1
+        first_notification_delay        0
+        contacts                        s.morozkin_sms,s.morozkin_email,processing_duty_sms,a.ivonin_email,cards_24x7_email,servicedesk_duty_sms_critical,servicedesk_duty_khutor_sms_critical,s.belyakov_email,s.belyakov_sms,n.yatsishena_email,n.yatsishena_sms,v.bayshev_email,e.s.kuzmina_email,e.s.kuzmina_sms,k.vasilyev_email,a.b.popov_email,p.silaev_email,t.gaydukova_email
+        contact_groups                  empty-group
+        notification_options            w,u,c,r
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notifications_enabled           1
+        notification_interval         10
+}
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# pynag list host_name and service_description and notification_interval where object_type=service and service_description="PG Beeline bad requests"
+host_name            and                  service_description  and                  notification_interval
+--------------------------------------------------------------------------------
+vm-dbamon01          null                 PG Beeline bad requests null                 10
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]# pynag list host_name and service_description and notification_interval where object_type=service and service_description="PG Beeline bad requests" --quiet
+vm-dbamon01          null                 PG Beeline bad requests null                 10
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+
+[root@vm-vol-nag01t nagios]# cat | while read var1 ; do pynag list host_name and service_description and notification_interval where object_type=service and service_description="${var1}" --quiet ; done
+PG no requests
+PG Beeline bad requests
+PG Cyperplat bad requests
+PG Elecsnet bad requests
+PG Insurance bad requests
+PG MTS bad requests
+PG Megafon bad requests
+PG Online bad requests
+PG Prime bad requests
+PG Qiwi bad requests
+PG QiwiWallet bad requests
+PG Xsolla
+PG Yandex Money bad requests
+PG c2c-out bad requests
+PG Megafon Balance
+PG Regular payments
+PG Rapida bad requests
+PG Transfer Post Listener
+PG Pay Post Listener
+PG P2P Error Status
+PG Transfers
+PG C2C In
+PG Yandex Money Agg
+PG C2C BT
+vm-dbamon01          null                 PG no requests       null                 null
+vm-dbamon01          null                 PG Beeline bad requests null                 10
+vm-dbamon01          null                 PG Cyperplat bad requests null                 null
+vm-dbamon01          null                 PG Elecsnet bad requests null                 null
+vm-dbamon01          null                 PG Insurance bad requests null                 null
+vm-dbamon01          null                 PG MTS bad requests  null                 null
+vm-dbamon01          null                 PG Megafon bad requests null                 null
+vm-dbamon01          null                 PG Online bad requests null                 null
+vm-dbamon01          null                 PG Prime bad requests null                 null
+vm-dbamon01          null                 PG Qiwi bad requests null                 null
+vm-dbamon01          null                 PG QiwiWallet bad requests null                 null
+vm-dbamon01          null                 PG Xsolla            null                 null
+vm-dbamon01          null                 PG Yandex Money bad requests null                 null
+vm-dbamon01          null                 PG c2c-out bad requests null                 null
+vm-dbamon01          null                 PG Megafon Balance   null                 null
+vm-dbamon01          null                 PG Regular payments  null                 null
+vm-dbamon01          null                 PG Rapida bad requests null                 null
+vm-dbamon01          null                 PG Transfers         null                 null
+vm-dbamon01          null                 PG Yandex Money Agg  null                 null
+[root@vm-vol-nag01t nagios]#
+
+
+#   Not found.
+PG Transfer Post Listener
+PG Pay Post Listener
+PG P2P Error Status
+PG C2C In
+PG C2C BT
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# cat | while read var1 ; do echo -e "\n${var1}" ; pynag list host_name and service_description and notification_interval where object_type=service and service_description="${var1}" --quiet ; done
+PG no requests
+PG Beeline bad requests
+PG Cyperplat bad requests
+PG Elecsnet bad requests
+PG Insurance bad requests
+PG MTS bad requests
+PG Megafon bad requests
+PG Online bad requests
+PG Prime bad requests
+PG Qiwi bad requests
+PG QiwiWallet bad requests
+PG Xsolla
+PG Yandex Money bad requests
+PG c2c-out bad requests
+PG Megafon Balance
+PG Regular payments
+PG Rapida bad requests
+PG Transfer Post Listener
+PG Pay Post Listener
+PG P2P Error Status
+PG Transfers
+PG C2C in
+PG Yandex Money Agg
+PG C2C bt
+PG no requests
+vm-dbamon01          null                 PG no requests       null                 null
+
+PG Beeline bad requests
+vm-dbamon01          null                 PG Beeline bad requests null                 10
+
+PG Cyperplat bad requests
+vm-dbamon01          null                 PG Cyperplat bad requests null                 null
+
+PG Elecsnet bad requests
+vm-dbamon01          null                 PG Elecsnet bad requests null                 null
+
+PG Insurance bad requests
+vm-dbamon01          null                 PG Insurance bad requests null                 null
+
+PG MTS bad requests
+vm-dbamon01          null                 PG MTS bad requests  null                 null
+
+PG Megafon bad requests
+vm-dbamon01          null                 PG Megafon bad requests null                 null
+
+PG Online bad requests
+vm-dbamon01          null                 PG Online bad requests null                 null
+
+PG Prime bad requests
+vm-dbamon01          null                 PG Prime bad requests null                 null
+
+PG Qiwi bad requests
+vm-dbamon01          null                 PG Qiwi bad requests null                 null
+
+PG QiwiWallet bad requests
+vm-dbamon01          null                 PG QiwiWallet bad requests null                 null
+
+PG Xsolla
+vm-dbamon01          null                 PG Xsolla            null                 null
+
+PG Yandex Money bad requests
+vm-dbamon01          null                 PG Yandex Money bad requests null                 null
+
+PG c2c-out bad requests
+vm-dbamon01          null                 PG c2c-out bad requests null                 null
+
+PG Megafon Balance
+vm-dbamon01          null                 PG Megafon Balance   null                 null
+
+PG Regular payments
+vm-dbamon01          null                 PG Regular payments  null                 null
+
+PG Rapida bad requests
+vm-dbamon01          null                 PG Rapida bad requests null                 null
+
+PG Transfer Post Listener
+
+PG Pay Post Listener
+
+PG P2P Error Status
+
+PG Transfers
+vm-dbamon01          null                 PG Transfers         null                 null
+
+PG C2C in
+vm-dbamon01          null                 PG C2C in            null                 null
+
+PG Yandex Money Agg
+vm-dbamon01          null                 PG Yandex Money Agg  null                 null
+
+
+PG C2C bt
+vm-dbamon01          null                 PG C2C bt            null                 null
+
+
+
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+PG no requests
+PG Beeline bad requests
+PG Cyperplat bad requests
+PG Elecsnet bad requests
+PG Insurance bad requests
+PG MTS bad requests
+PG Megafon bad requests
+PG Online bad requests
+PG Prime bad requests
+PG Qiwi bad requests
+PG QiwiWallet bad requests
+PG Xsolla
+PG Yandex Money bad requests
+PG c2c-out bad requests
+PG Megafon Balance
+PG Regular payments
+PG Rapida bad requests
+PG Transfer Post Listener
+PG Pay Post Listener
+PG P2P Error Status
+PG Transfers
+PG C2C in
+PG Yandex Money Agg
+PG C2C bt
+
+................................................................................
+................................................................................
+
+#   Here is how I did changes.
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do echo -e "\n${var1}" ; pynag update set notification_interval=10 where object_type=service and service_description="${var1}" --force ; done
+PG no requests
+PG Beeline bad requests
+PG Cyperplat bad requests
+PG Elecsnet bad requests
+PG Insurance bad requests
+PG MTS bad requests
+PG Megafon bad requests
+PG Online bad requests
+PG Prime bad requests
+PG Qiwi bad requests
+PG QiwiWallet bad requests
+PG Xsolla
+PG Yandex Money bad requests
+PG c2c-out bad requests
+PG Megafon Balance
+PG Regular payments
+PG Rapida bad requests
+PG Transfer Post Listener
+PG Pay Post Listener
+PG P2P Error Status
+PG Transfers
+PG C2C in
+PG Yandex Money Agg
+PG C2C bt
+
+PG no requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG no requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Beeline bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Beeline bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Cyperplat bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Cyperplat bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Elecsnet bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Elecsnet bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Insurance bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Insurance bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG MTS bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG MTS bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Megafon bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Megafon bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Online bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Online bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Prime bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Prime bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Qiwi bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Qiwi bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG QiwiWallet bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG QiwiWallet bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Xsolla
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Xsolla): changed notification_interval to 10
+Updated 1 objects
+
+PG Yandex Money bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Yandex Money bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG c2c-out bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG c2c-out bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Megafon Balance
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Megafon Balance): changed notification_interval to 10
+Updated 1 objects
+
+PG Regular payments
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Regular payments): changed notification_interval to 10
+Updated 1 objects
+
+PG Rapida bad requests
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Rapida bad requests): changed notification_interval to 10
+Updated 1 objects
+
+PG Transfer Post Listener
+Updated 0 objects
+
+PG Pay Post Listener
+Updated 0 objects
+
+PG P2P Error Status
+Updated 0 objects
+
+PG Transfers
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Transfers): changed notification_interval to 10
+Updated 1 objects
+
+PG C2C in
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG C2C in): changed notification_interval to 10
+Updated 1 objects
+
+PG Yandex Money Agg
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Yandex Money Agg): changed notification_interval to 10
+Updated 1 objects
+
+PG C2C bt
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG C2C bt): changed notification_interval to 10
+Updated 1 objects
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do echo -e "\n${var1}" ; pynag list host_name and service_description and notification_interval where object_type=service and service_description__contains="${var1}" --quiet ; done
+ACQAPI - No operations
+ACQAPI - PA-RE errors from Online
+ACQAPI - Node state
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+ACQAPI - VE-CH errors from MPI
+ACQAPI - Operations without 3DS
+ACQAPI - Timeouts from Online
+ACQAPI - Execution time exceeded
+ACQAPI - 96 errors from Online
+ACQAPI - Errors from IRIS
+ACQAPI - Requests with non-unique order id
+ACQAPI - Requests from unregistered terminals
+ACQAPI - Registry send error
+ACQAPI - Checking of incoming traffic
+ACQAPI - Internal error critical
+ACQAPI - Internal error warning
+ACQAPI - Too many CheckPares errors from MPI
+
+ACQAPI - No operations
+
+ACQAPI - PA-RE errors from Online
+
+ACQAPI - Node state
+
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+
+ACQAPI - VE-CH errors from MPI
+
+ACQAPI - Operations without 3DS
+
+ACQAPI - Timeouts from Online
+
+ACQAPI - Execution time exceeded
+
+ACQAPI - 96 errors from Online
+
+ACQAPI - Errors from IRIS
+
+ACQAPI - Requests with non-unique order id
+
+ACQAPI - Requests from unregistered terminals
+
+ACQAPI - Registry send error
+vm-dbamon01          null                 ACQAPI - Registry send error null                 null
+
+ACQAPI - Checking of incoming traffic
+vm-dbamon01          null                 ACQAPI - Checking of incoming traffic null                 null
+
+ACQAPI - Internal error critical
+vm-dbamon01          null                 ACQAPI - Internal error critical null                 null
+
+ACQAPI - Internal error warning
+vm-dbamon01          null                 ACQAPI - Internal error warning null                 null
+
+ACQAPI - Too many CheckPares errors from MPI
+vm-dbamon01          null                 ACQAPI - Too many CheckPares errors from MPI null                 null
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do echo -e "\n${var1}" ; pynag list host_name and service_description and notification_interval where object_type=service and service_description__contains="${var1}" --quiet ; done
+ACQAPI - No operations
+ACQAPI - PA-RE errors from Online
+ACQAPI - Node state
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+ACQAPI - VE-CH errors from MPI
+ACQAPI - Operations without 3DS
+ACQAPI - Timeouts from Online
+ACQAPI - Execution time exceeded
+ACQAPI - 96 errors from Online
+ACQAPI - Errors from IRIS
+ACQAPI - Requests with non-unique order id
+ACQAPI - Requests from unregistered terminals
+ACQAPI - Registry send error
+ACQAPI - Checking of incoming traffic
+ACQAPI - Internal error critical
+ACQAPI - Internal error warning
+ACQAPI - Too many CheckPares errors from MPI
+
+ACQAPI - No operations
+vm-dbamon01          null                 ACQAPI - No operations null                 null
+
+ACQAPI - PA-RE errors from Online
+vm-dbamon01          null                 ACQAPI - PA-RE errors from Online null                 null
+
+ACQAPI - Node state
+
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+
+ACQAPI - VE-CH errors from MPI
+vm-dbamon01          null                 ACQAPI - VE-CH errors from MPI null                 null
+
+ACQAPI - Operations without 3DS
+vm-dbamon01          null                 ACQAPI - Operations without 3DS null                 null
+
+ACQAPI - Timeouts from Online
+vm-dbamon01          null                 ACQAPI - Timeouts from Online crit null                 null
+vm-dbamon01          null                 ACQAPI - Timeouts from Online warn null                 null
+
+ACQAPI - Execution time exceeded
+vm-dbamon01          null                 ACQAPI - Execution time exceeded crit null                 null
+vm-dbamon01          null                 ACQAPI - Execution time exceeded warn null                 null
+
+ACQAPI - 96 errors from Online
+vm-dbamon01          null                 ACQAPI - 96 errors from Online crit null                 null
+vm-dbamon01          null                 ACQAPI - 96 errors from Online warn null                 null
+
+ACQAPI - Errors from IRIS
+vm-dbamon01          null                 ACQAPI - Errors from IRIS null                 null
+
+ACQAPI - Requests with non-unique order id
+vm-dbamon01          null                 ACQAPI - Requests with non-unique order id null                 null
+vm-dbamon01          null                 ACQAPI - Requests with non-unique order id warn null                 null
+
+ACQAPI - Requests from unregistered terminals
+vm-dbamon01          null                 ACQAPI - Requests from unregistered terminals null                 null
+
+ACQAPI - Registry send error
+vm-dbamon01          null                 ACQAPI - Registry send error null                 null
+
+ACQAPI - Checking of incoming traffic
+vm-dbamon01          null                 ACQAPI - Checking of incoming traffic null                 null
+
+ACQAPI - Internal error critical
+vm-dbamon01          null                 ACQAPI - Internal error critical null                 null
+
+ACQAPI - Internal error warning
+vm-dbamon01          null                 ACQAPI - Internal error warning null                 null
+
+ACQAPI - Too many CheckPares errors from MPI
+vm-dbamon01          null                 ACQAPI - Too many CheckPares errors from MPI null                 null
+[root@vm-vol-nag01t nagios]#
+
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do echo -e "\n${var1}" ; pynag list host_name and service_description and notification_interval where object_type=service and service_description="${var1}" --quiet ; done
+ACQAPI - No operations
+ACQAPI - PA-RE errors from Online
+ACQAPI - Node state
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+ACQAPI - VE-CH errors from MPI
+ACQAPI - Operations without 3DS
+ACQAPI - Timeouts from Online
+ACQAPI - Execution time exceeded
+ACQAPI - 96 errors from Online
+ACQAPI - Errors from IRIS
+ACQAPI - Requests with non-unique order id
+ACQAPI - Requests from unregistered terminals
+ACQAPI - Registry send error
+ACQAPI - Checking of incoming traffic
+ACQAPI - Internal error critical
+ACQAPI - Internal error warning
+ACQAPI - Too many CheckPares errors from MPI
+
+ACQAPI - No operations
+vm-dbamon01          null                 ACQAPI - No operations null                 null
+
+ACQAPI - PA-RE errors from Online
+vm-dbamon01          null                 ACQAPI - PA-RE errors from Online null                 null
+
+ACQAPI - Node state
+
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+
+ACQAPI - VE-CH errors from MPI
+vm-dbamon01          null                 ACQAPI - VE-CH errors from MPI null                 null
+
+ACQAPI - Operations without 3DS
+vm-dbamon01          null                 ACQAPI - Operations without 3DS null                 null
+
+ACQAPI - Timeouts from Online
+
+ACQAPI - Execution time exceeded
+
+ACQAPI - 96 errors from Online
+
+ACQAPI - Errors from IRIS
+vm-dbamon01          null                 ACQAPI - Errors from IRIS null                 null
+
+ACQAPI - Requests with non-unique order id
+vm-dbamon01          null                 ACQAPI - Requests with non-unique order id null                 null
+
+ACQAPI - Requests from unregistered terminals
+vm-dbamon01          null                 ACQAPI - Requests from unregistered terminals null                 null
+
+ACQAPI - Registry send error
+vm-dbamon01          null                 ACQAPI - Registry send error null                 null
+
+ACQAPI - Checking of incoming traffic
+vm-dbamon01          null                 ACQAPI - Checking of incoming traffic null                 null
+
+ACQAPI - Internal error critical
+vm-dbamon01          null                 ACQAPI - Internal error critical null                 null
+
+ACQAPI - Internal error warning
+vm-dbamon01          null                 ACQAPI - Internal error warning null                 null
+
+ACQAPI - Too many CheckPares errors from MPI
+vm-dbamon01          null                 ACQAPI - Too many CheckPares errors from MPI null                 null
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do echo -e "\n${var1}" ; pynag update set notification_interval=5 where object_type=service and service_description="${var1}" --force ; done
+ACQAPI - No operations
+ACQAPI - PA-RE errors from Online
+ACQAPI - Node state
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+ACQAPI - VE-CH errors from MPI
+ACQAPI - Operations without 3DS
+ACQAPI - Timeouts from Online
+ACQAPI - Execution time exceeded
+ACQAPI - 96 errors from Online
+ACQAPI - Errors from IRIS
+ACQAPI - Requests with non-unique order id
+ACQAPI - Requests from unregistered terminals
+ACQAPI - Registry send error
+ACQAPI - Checking of incoming traffic
+ACQAPI - Internal error critical
+ACQAPI - Internal error warning
+ACQAPI - Too many CheckPares errors from MPI
+
+ACQAPI - No operations
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - No operations): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - PA-RE errors from Online
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - PA-RE errors from Online): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Node state
+Updated 0 objects
+
+ACQAPI - Moscow Bank Adapter (Yandex) node state
+Updated 0 objects
+
+ACQAPI - VE-CH errors from MPI
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - VE-CH errors from MPI): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Operations without 3DS
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Operations without 3DS): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Timeouts from Online
+Updated 0 objects
+
+ACQAPI - Execution time exceeded
+Updated 0 objects
+
+ACQAPI - 96 errors from Online
+Updated 0 objects
+
+ACQAPI - Errors from IRIS
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Errors from IRIS): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Requests with non-unique order id
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Requests with non-unique order id): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Requests from unregistered terminals
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Requests from unregistered terminals): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Registry send error
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Registry send error): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Checking of incoming traffic
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Checking of incoming traffic): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Internal error critical
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Internal error critical): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Internal error warning
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Internal error warning): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Too many CheckPares errors from MPI
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Too many CheckPares errors from MPI): changed notification_interval to 5
+Updated 1 objects
+[root@vm-vol-nag01t nagios]#
+
+
+................................................................................
+
+
+#   Mon Nov 30 15:55:08 MSK 2015
+#   Continue working on this case.
+................................................................................
+
+Дата
+Комментарий Автор
+30.11.2015 14:11    Поправил названия недостающих алертов.
+
+PG Transfer listener
+PG Pay listener
+PG P2P_ERROR_STATUS_COUNT
+
+ACQAPI - Timeouts from Online crit
+ACQAPI - Timeouts from Online warn
+ACQAPI - Execution time exceeded crit
+ACQAPI - Execution time exceeded warn
+ACQAPI - 96 errors from Online crit
+ACQAPI - 96 errors from Online warn
+
+ Лещук Виталий
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do echo -e "\n${var1}" ; pynag update set notification_interval=10 where object_type=service and service_description="${var1}" --force ; done
+PG Transfer listener
+PG Pay listener
+PG P2P_ERROR_STATUS_COUNT
+
+PG Transfer listener
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Transfer listener): changed notification_interval to 10
+Updated 1 objects
+
+PG Pay listener
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG Pay listener): changed notification_interval to 10
+Updated 1 objects
+
+PG P2P_ERROR_STATUS_COUNT
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/PG P2P_ERROR_STATUS_COUNT): changed notification_interval to 10
+Updated 1 objects
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do echo -e "\n${var1}" ; pynag update set notification_interval=5 where object_type=service and service_description="${var1}" --force ; done
+ACQAPI - Timeouts from Online crit
+ACQAPI - Timeouts from Online warn
+ACQAPI - Execution time exceeded crit
+ACQAPI - Execution time exceeded warn
+ACQAPI - 96 errors from Online crit
+ACQAPI - 96 errors from Online warn
+
+
+ACQAPI - Timeouts from Online crit
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Timeouts from Online crit): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Timeouts from Online warn
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Timeouts from Online warn): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Execution time exceeded crit
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Execution time exceeded crit): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - Execution time exceeded warn
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - Execution time exceeded warn): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - 96 errors from Online crit
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - 96 errors from Online crit): changed notification_interval to 5
+Updated 1 objects
+
+ACQAPI - 96 errors from Online warn
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ACQAPI - 96 errors from Online warn): changed notification_interval to 5
+Updated 1 objects
+
+
+Updated 0 objects
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# git commit -m "SD#638688. Change notification interval to 10 and 5 minutes for systems PG and ACQAPI. Finishing task." objects/servers/vmware/vm-dbamon01.cfg
+[master e21c9b0] SD#638688. Change notification interval to 10 and 5 minutes for systems PG and ACQAPI. Finishing task.
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git push
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 629 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios/vm-vol-nag01t.git
+   c544e99..e21c9b0  master -> master
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]#
+
+
+
+

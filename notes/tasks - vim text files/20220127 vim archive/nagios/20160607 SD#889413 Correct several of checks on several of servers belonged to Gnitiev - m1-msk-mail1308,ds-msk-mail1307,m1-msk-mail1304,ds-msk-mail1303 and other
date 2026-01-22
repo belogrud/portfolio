@@ -1,0 +1,331 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   889413
+Название    №889413
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  02.06.2016 13:49
+Дата регистрации    02.06.2016 13:49
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Unix-Admins:
+
+1. Необходимо скопировать параметры мониторинга с сервера ds-msk-mail1303 на сервера:
+- ds-msk-mail1307
+- m1-msk-mail1308
+(все, за исключением дисков).
+Список дисков на обоих этих серверах (их тоже нужно занести в мониторинг):
+- C:\
+- H:\
+Warning Alert – 15% free.
+Critical Alert – 10% free.
+
+2. На серверах:
+-ds-msk-mail1303
+-m1-msk-mail1304
+Нужно поправить список дисков. Актуальный список дисков для обоих этих серверов одинаков:
+- C:\
+- D:\
+- E:\
+- F:\
+- G:\
+- Y:\
+
+3. Добавьте на всех серверах:
+- ds-msk-mail13*
+- m1-msk-mail13*
+Проверки истечения сроков действия сертификатов на сервисах: HTTPS, IMAP-SSL, POP3-SSL.
+
+4. На серверах:
+- ds-msk-mail1307
+- m1-msk-mail1308
+Для проверки Memory Usage нужно скорректировать лимиты:
+Warning – 30Gb
+Critical – 32Gb
+(физической/виртуальной памяти на серверах по 32ГБ, попробуем уследить, чтобы она использовалась эффективно, но не уходила в swap).
+
+
+
+С уважением,
+
+Виктор Гнитиёв
+Старший системный администратор
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Гнитиёв Виктор
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Гнитиёв Виктор
+Контактный e-mail   v.gnitiev@tinkoff.ru
+Контактные телефоны 79253003690, 2065
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# find . -name ds-msk-mail1303*
+./servers/dc-ds/windows/exchange/ds-msk-mail1303.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# find . -name ds-msk-mail1307*
+./servers/dc-ds/windows/exchange/ds-msk-mail1307.cfg
+
+[root@vm-vol-nag4-tst objects]# find . -name m1-msk-mail1308*
+./servers/dc-m1/windows/exchange/m1-msk-mail1308.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       new file:   servers/vmware/vm-caent-sub02.cfg
+#       new file:   servers/vmware/vm-caent02.cfg
+#
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   servers/dc-ds/windows/exchange/ds-msk-mail1307.cfg
+#       modified:   servers/dc-m1/windows/exchange/m1-msk-mail1308.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       servers/cluster-resources/db-grmapm-prod.cfg
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#889413. Changes in checkings, that asked Gnitiev Viktor." servers/dc-ds/windows/exchange/ds-msk-mail1307.cfg servers/dc-m1/windows/exchange/m1-msk-mail1308.cfg
+[master 0b1ddfa] SD#889413. Changes in checkings, that asked Gnitiev Viktor.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 487 insertions(+), 94 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# find . -name ds-msk-mail1303*
+./servers/dc-ds/windows/exchange/ds-msk-mail1303.cfg
+[root@vm-vol-nag4-tst objects]# find . -name m1-msk-mail1304*
+./servers/dc-m1/windows/exchange/m1-msk-mail1304.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# expr 30 \* 100 / 32
+93
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# find . -name ds-msk-mail13*
+./servers/dc-ds/windows/exchange/ds-msk-mail1301.cfg
+./servers/dc-ds/windows/exchange/ds-msk-mail13.cfg
+./servers/dc-ds/windows/exchange/ds-msk-mail1307.cfg
+./servers/dc-ds/windows/exchange/ds-msk-mail1305.cfg
+./servers/dc-ds/windows/exchange/ds-msk-mail1303.cfg
+[root@vm-vol-nag4-tst objects]# find . -name m1-msk-mail13*
+./servers/dc-m1/windows/exchange/m1-msk-mail1304.cfg
+./servers/dc-m1/windows/exchange/m1-msk-mail1308.cfg
+./servers/dc-m1/windows/exchange/m1-msk-mail1306.cfg
+./servers/dc-m1/windows/exchange/m1-msk-mail1302.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# find . -name m1-msk-mail20*
+./servers/dc-m1/windows/exchange/m1-msk-mail20.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim $(find . -name m1-msk-mail20*)
+...
+define service{
+    use                     generic-service
+    host_name               m1-msk-mail20
+    service_description     m1-msk-mail20.tcsbank.ru:443 SSL check
+    servicegroups           Certificate Validation - Service Group
+    check_command           check-ssl-cert!90!7!m1-msk-mail20.tcsbank.ru:443
+    check_interval          1440
+    notification_interval   1440
+    contact_groups          secure-admins,exchange-admins
+}
+
+
+[root@vm-vol-nag4-tst objects]# grep -e check-ssl-cert -A 3 ./commands.cfg
+# 'check-ssl-cert' command definition
+define command{
+    command_name    check-ssl-cert
+    command_line    /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_cert.pl -w $ARG1$ -c $ARG2$ -h $ARG3$
+}
+
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_cert.pl --help
+check_ssl_cert.pl - utility for check SSL cert.
+usage: check_ssl_cert.pl -w WARNING_LEVEL -c CRITICAL_LEVEL -h HOST
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim ./servers/dc-ds/windows/exchange/ds-msk-mail1301.cfg
+...
+{
+        use                     generic-service
+        host_name               ds-msk-mail1301
+        service_description     ds-msk-mail1301.tcsbank.ru:443 SSL check
+        servicegroups           Certificate Validation - Service Group
+        check_command           check-ssl-cert!90!7!ds-msk-mail1301.tcsbank.ru:443
+        check_interval          1440
+        notification_interval   1440
+        contact_groups          secure-admins,exchange-admins
+}
+...
+
+................................................................................
+................................................................................
+................................................................................
+
+https://exchange.nagios.org/directory/Plugins/Network-Protocols/HTTP/check_ssl_certificate/details
+
+#   This script checks the expiration of an SSL certificate.
+#   This script will check SSL certificates to see if they have expired. It is known to work with imap (w/starttls), imaps, pop (w/starttls), pops, https, ldap (w/starttls) and ldaps. It requires the openssl program (from the OpenSSL toolkit). The current version is 1.2.
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no ~/mnt/share/nagios/check_ssl_certificate bsv@nag-tst:/tmp/
+[support@centos00 ~]$
+
+[root@vm-vol-nag4-tst objects]# cp /tmp/check_ssl_certificate /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl -H ds-msk-mail1307.tcsbank.ru -p 993
+unable to load certificate
+140648742541128:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:703:Expecting: TRUSTED CERTIFICATE
+Use of uninitialized value $date in substitution (s///) at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 130.
+Use of uninitialized value $date in split at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 132.
+Use of uninitialized value $month in concatenation (.) or string at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 133.
+Use of uninitialized value $day in concatenation (.) or string at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 133.
+Use of uninitialized value $hour in concatenation (.) or string at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 133.
+Use of uninitialized value $min in concatenation (.) or string at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 133.
+Use of uninitialized value $sec in concatenation (.) or string at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 133.
+Use of uninitialized value $year in concatenation (.) or string at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 133.
+Use of uninitialized value $tz in concatenation (.) or string at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 133.
+m=, d=, h=, m=, s=, y=, z=
+Use of uninitialized value $month in hash element at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 135.
+Use of uninitialized value $year in subtraction (-) at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 135.
+Use of uninitialized value within @_ in list assignment at /usr/share/perl5/Time/Local.pm line 92.
+Use of uninitialized value $month in integer gt (>) at /usr/share/perl5/Time/Local.pm line 102.
+Use of uninitialized value $month in integer lt (<) at /usr/share/perl5/Time/Local.pm line 102.
+Use of uninitialized value $month in array element at /usr/share/perl5/Time/Local.pm line 106.
+Use of uninitialized value $month in integer eq (==) at /usr/share/perl5/Time/Local.pm line 107.
+Use of uninitialized value $mday in integer gt (>) at /usr/share/perl5/Time/Local.pm line 110.
+Use of uninitialized value $mday in integer lt (<) at /usr/share/perl5/Time/Local.pm line 110.
+Use of uninitialized value $mday in concatenation (.) or string at /usr/share/perl5/Time/Local.pm line 110.
+Use of uninitialized value in scalar assignment at /usr/share/perl5/Carp/Heavy.pm line 104.
+Day '' out of range 1..31 at /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl line 135
+[root@vm-vol-nag4-tst objects]# telnet ds-msk-mail1307.tcsbank.ru 993
+Trying 10.216.60.137...
+Connected to ds-msk-mail1307.tcsbank.ru.
+Escape character is '^]'.
+Connection closed by foreign host.
+[root@vm-vol-nag4-tst objects]# /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl -H ds-msk-mail1305.tcsbank.ru -p 993
+m=Jun, d=29, h=15, m=49, s=21, y=2017, z=GMT
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl -H ds-msk-mail1305.tcsbank.ru -p 993 -c 400 ; echo $?
+m=Jun, d=29, h=15, m=49, s=21, y=2017, z=GMT
+check_ssl_certificates: CRITICAL - only 386 day(s) left for this certificate.
+2
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl -H ds-msk-mail1305.tcsbank.ru -p 995 -c 400 ; echo $?
+m=Jun, d=29, h=15, m=49, s=21, y=2017, z=GMT
+check_ssl_certificates: CRITICAL - only 386 day(s) left for this certificate.
+2
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim commands.cfg
+...
+# 'check-ssl-certificate' command definition.
+# This test using to notify about expired ssl certificate on imap-ssl and pop3-ssl services. It could be used for other tests too.
+define command{
+    command_name    check-ssl-certificate
+    command_line    /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl -H $HOSTNAME$ -p $ARG1$ -w $ARG2$ -c $ARG3$
+}
+define command{
+    command_name    check-ssl-certificate-imap
+    command_line    /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl -H $HOSTNAME$ -p 993 -w $ARG1$ -c $ARG2$
+}
+define command{
+    command_name    check-ssl-certificate-pop
+    command_line    /usr/bin/perl /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl -H $HOSTNAME$ -p 995 -w $ARG1$ -c $ARG2$
+}
+
+
+[root@vm-vol-nag4-tst objects]# vim ./servers/dc-ds/windows/exchange/ds-msk-mail1305.cfg
+...
+define service{
+        use                     generic-service
+        host_name               ds-msk-mail1305
+        service_description     ds-msk-mail1305:993 IMAP-SSL check
+        servicegroups           Certificate Validation - Service Group
+        check_command           check-ssl-certificate-imap!90!7
+        check_interval          1440
+        notification_interval   1440
+        contact_groups          exchange-admins
+}
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no ~/mnt/share/nagios/check_ssl_certificate bsv@nag-prep:/tmp/
+Warning: Permanently added the RSA host key for IP address '172.16.1.115' to the list of known hosts.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no ~/mnt/share/nagios/check_ssl_certificate bsv@nag-prod:/tmp/
+Warning: the RSA host key for 'nag-prod' differs from the key for the IP address '172.16.1.11'
+Offending key for IP in /home/support/.ssh/known_hosts:477
+Matching host key in /home/support/.ssh/known_hosts:1042
+[support@centos00 ~]$
+
+[root@vm-vol-nag4-prep ~]# cp /tmp/check_ssl_certificate /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl
+[root@vm-vol-nag4-prep ~]# ll !$
+ll /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl
+-rwxr-xr-x 1 root root 5564 Jun  8 19:43 /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl
+[root@vm-vol-nag4-prep ~]#
+
+[root@vm-vol-nag4-prod nagios]# cp /tmp/check_ssl_certificate /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl
+[root@vm-vol-nag4-prod nagios]# ll !$
+ll /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl
+-rwxr-xr-x 1 root root 5564 Jun  8 19:44 /usr/local/nagios/libexec/opt/command/check_ssl_certificate.pl
+[root@vm-vol-nag4-prod nagios]#
+
+................................................................................
+
+
+
+
+

@@ -1,0 +1,149 @@
+
+................................................................................
+
+[root@vm-dmz-app112 ~]# awk 'BEGIN {FS=":"; OFS=" ==> ";} $3>=1000 {print $3,$1}' /etc/passwd | sort -n
+1000 ==> dchl_service
+1001 ==> svyaznoy
+1002 ==> beeline
+1003 ==> a.ayana
+1004 ==> k.chuprakov
+1005 ==> i.mihailets
+1006 ==> a.shilov
+1007 ==> v.a.shishakin
+1008 ==> n.zavorina
+1009 ==> n.zhigunov
+1010 ==> sme_service
+1011 ==> commfactor
+1012 ==> v.gladkikh
+1013 ==> vmk
+1015 ==> k.bortsova
+1016 ==> k.stepanov
+1017 ==> a.suhova
+1018 ==> e.ivanova
+1019 ==> t.milshtein
+1021 ==> k.chuprakov_rosevrodev
+1022 ==> a.s.glavatskikh
+1023 ==> a.kurochkina
+1024 ==> v.khachaturyan
+1025 ==> d.ananyev
+1026 ==> nbki
+1027 ==> d.korotov
+1028 ==> a.a.melnikov
+1029 ==> a.zhabykeev
+2001 ==> adobecatalyst
+3000 ==> qscan
+4042 ==> nalog2015
+4081 ==> megafon
+4082 ==> i.savchenko
+9999 ==> plm
+65534 ==> nfsnobody
+[root@vm-dmz-app112 ~]#
+
+
+[root@vm-vol-nag4-tst etc]# pwgen -c -n -s -C 10 1 ; grub-crypt
+a86bncPuPj
+Password:
+Retype password:
+$6$D.5FxZjPDQ5q3nRX$BuSHvQQfKfNc.MetP.Bxsvu32e4ayibns0NSIDFR2kbeWKwqKTcVoW9NlslcHSNUcheP.b7YX/jjODgmH0zYU1
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-dmz-app112 ~]# useradd -g sftpusers -u 4083 -d /home/sftp/dwh_service -s /sbin/nologin -p '$6$D.5FxZjPDQ5q3nRX$BuSHvQQfKfNc.MetP.Bxsvu32e4ayibns0NSIDFR2kbeWKwqKTcVoW9NlslcHSNUcheP.b7YX/jjODgmH0zYU1' dwh_service
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# rm ~dwh_service/{.bash_logout,.bash_profile,.bashrc,.zshrc}
+[root@vm-dmz-app112 ~]# chown root:root ~dwh_service/
+[root@vm-dmz-app112 ~]# chmod g+rx,o+rx ~dwh_service/
+[root@vm-dmz-app112 ~]# ls -Alh ~dwh_service/
+total 0
+[root@vm-dmz-app112 ~]# ls -Alhd ~dwh_service/
+drwxr-xr-x 2 root root 4.0K Dec 18 12:12 /home/sftp/dwh_service/
+[root@vm-dmz-app112 ~]# mkdir ~dwh_service/nbki
+[root@vm-dmz-app112 ~]#
+
+
+[root@vm-dmz-app112 ~]# vim /etc/fstab
+
+
+#	Here is known bug, when wants to mount directory with bind option and with read-only rights.
+#
+#	https://unix.stackexchange.com/questions/128336/why-doesnt-mount-respect-the-read-only-option-for-bind-mounts
+#
+#
+[root@vm-dmz-app112 ~]# tail -n 3 /etc/fstab
+# SD#916248
+# Follow folder needs to be mounted as read-only, but existing linux-util not supported it until version >=2.27. This issue is resolving if use second command mount with option -o ro. I put it into /etc/rc.local.
+/home/sftp/nbki         /home/sftp/dwh_service/nbki             none    bind 0 0
+[root@vm-dmz-app112 ~]#
+
+
+[root@vm-dmz-app112 ~]# mount /home/sftp/dwh_service/nbki
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# mount | grep dwh_service
+/home/sftp/nbki on /home/sftp/dwh_service/nbki type none (rw,bind)
+[root@vm-dmz-app112 ~]# mount -o remount,ro /home/sftp/dwh_service/nbki
+[root@vm-dmz-app112 ~]# mount | grep dwh_service
+/home/sftp/nbki on /home/sftp/dwh_service/nbki type none (ro,bind)
+[root@vm-dmz-app112 ~]#
+
+[root@vm-dmz-app112 ~]# vim /etc/rc.local
+[root@vm-dmz-app112 ~]# tail -n 2 /etc/rc.local
+# SD#916248
+/bin/mount -o remount,ro /home/sftp/dwh_service/nbki
+[root@vm-dmz-app112 ~]#
+
+
+
+
+................................................................................
+
+
+[s.belogrud@TCS4357]# sftp dwh_service@ftp03.tcsbank.ru
+dwh_service@ftp03.tcsbank.ru's password:
+Connected to ftp03.tcsbank.ru.
+sftp> ls
+nbki
+sftp> cd nbki
+sftp> ls
+filter   reports
+sftp> ls filter/
+filter/20171123.gz.done   filter/20171206.gz.done
+sftp> quit
+[s.belogrud@TCS4357]#
+
+
+[s.belogrud@TCS4357]# lftp -e "pwd ; cd nbki ; ls -Alh ; cd reports ; ls ; bye
+" -u 'dwh_service','a86bncPuPj' ftp03.tcsbank.ru
+ftp://dwh_service:a86bncPuPj@ftp03.tcsbank.ru
+cd ok, cwd=/nbki
+drwxrwxrwx    2 0        0            4096 Dec 06 23:52 filter
+drwxrwxrwx    2 0        0            4096 Dec 17 22:33 reports
+cd ok, cwd=/nbki/reports
+-rw-rw-r--    1 1026     496         58952 Nov 17 13:57 20171117.gz
+-rw-rw-r--    1 1026     496        444910 Nov 23 17:24 20171123.gz
+-rw-rw-r--    1 1026     496        417050 Dec 05 05:31 20171205.gz
+-rw-rw-r--    1 1026     496        409221 Dec 06 05:28 20171206.gz
+-rw-rw-r--    1 1026     496       1997209 Dec 06 23:57 20171207.gz
+-rw-rw-r--    1 1026     496       1632744 Dec 07 23:22 20171208.gz
+-rw-rw-r--    1 1026     496       1607856 Dec 08 23:25 20171209.gz
+-rw-rw-r--    1 1026     496       1590761 Dec 09 23:22 20171210.gz
+-rw-rw-r--    1 1026     496       1211512 Dec 10 22:38 20171211.gz
+-rw-rw-r--    1 1026     496       2573779 Dec 11 23:24 20171212.gz
+-rw-rw-r--    1 1026     496       2168840 Dec 12 22:54 20171213.gz
+-rw-rw-r--    1 1026     496       2588209 Dec 13 23:09 20171214.gz
+-rw-rw-r--    1 1026     496       2064957 Dec 14 23:13 20171215.gz
+-rw-rw-r--    1 1026     496       1736182 Dec 15 22:59 20171216.gz
+-rw-rw-r--    1 1026     496       3421276 Dec 16 23:08 20171217.gz
+-rw-rw-r--    1 1026     496       2245078 Dec 17 22:33 20171218.gz
+[s.belogrud@TCS4357]#
+
+
+
+................................................................................
+
+
+
+
+
+
+

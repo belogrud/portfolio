@@ -1,0 +1,649 @@
+
+root@vd-webim-prod-app01:~# df -hT
+Filesystem                   Type      Size  Used Avail Use% Mounted on
+udev                         devtmpfs   16G     0   16G   0% /dev
+tmpfs                        tmpfs     3.2G  360M  2.8G  12% /run
+/dev/sda2                    ext4      225G   92G  122G  43% /
+tmpfs                        tmpfs      16G     0   16G   0% /dev/shm
+tmpfs                        tmpfs     5.0M     0  5.0M   0% /run/lock
+tmpfs                        tmpfs      16G     0   16G   0% /sys/fs/cgroup
+/dev/sdb1                    ext4      917G  349G  522G  41% /var/pro/client-data
+v6250-m1-nfs:/vol/webim_logs nfs       2.4T  614M  2.4T   1% /mnt/webim_logs
+v6250-m1:/vol/webim_dck      nfs4      499G  260G  240G  53% /mnt/webim_fs
+tmpfs                        tmpfs     3.2G     0  3.2G   0% /run/user/26003
+tmpfs                        tmpfs     3.2G     0  3.2G   0% /run/user/26008
+tmpfs                        tmpfs     3.2G     0  3.2G   0% /run/user/525
+root@vd-webim-prod-app01:~# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    inet 172.17.64.11/24 brd 172.17.64.255 scope global enp1s0
+       valid_lft forever preferred_lft forever
+root@vd-webim-prod-app01:~# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+
+Handle 0x0001, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Gigabyte Technology Co., Ltd.
+        Product Name: To be filled by O.E.M.
+        Version: To be filled by O.E.M.
+        Serial Number: To be filled by O.E.M.
+        UUID: 031B021C-040D-0571-6106-860700080009
+        Wake-up Type: Power Switch
+        SKU Number: To be filled by O.E.M.
+        Family: To be filled by O.E.M.
+
+Handle 0x0023, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: To Be Filled By O.E.M.
+
+Handle 0x0024, DMI type 32, 20 bytes
+System Boot Information
+        Status: No errors detected
+
+root@vd-webim-prod-app01:~# mount -t nfs
+v6250-m1-nfs:/vol/webim_logs on /mnt/webim_logs type nfs (rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.64.8,mountvers=3,mountport=4046,mountproto=tcp,local_lock=none,addr=10.217.64.8)
+root@vd-webim-prod-app01:~# nfsstat
+Client rpc stats:
+calls      retrans    authrefrsh
+66367368   2514       66369062
+
+Client nfs v3:
+null         getattr      setattr      lookup       access       readlink
+0         0% 152755    7% 2166      0% 404       0% 1775      0% 0         0%
+read         write        create       mkdir        symlink      mknod
+0         0% 1124129  51% 246       0% 0         0% 0         0% 0         0%
+remove       rmdir        rename       link         readdir      readdirplus
+116       0% 0         0% 0         0% 0         0% 0         0% 7         0%
+fsstat       fsinfo       pathconf     commit
+895045   41% 2         0% 1         0% 0         0%
+
+Client nfs v4:
+null         read         write        commit       open         open_conf
+0         0% 0         0% 10914926 17% 0         0% 7987210  12% 0         0%
+open_noat    open_dgrd    close        setattr      fsinfo       renew
+0         0% 0         0% 5934101   9% 11986653 18% 14        0% 125861    0%
+setclntid    confirm      lock         lockt        locku        access
+7         0% 7         0% 0         0% 0         0% 0         0% 1935542   3%
+getattr      lookup       lookup_root  remove       rename       link
+7995626  12% 3999761   6% 6         0% 0         0% 3995550   6% 0         0%
+symlink      create       pathconf     statfs       readlink     readdir
+0         0% 3912      0% 8         0% 685966    1% 0         0% 8627334  13%
+server_caps  delegreturn  getacl       setacl       fs_locations rel_lkowner
+22        0% 0         0% 0         0% 0         0% 0         0% 0         0%
+secinfo      exchange_id  create_ses   destroy_ses  sequence     get_lease_t
+0         0% 0         0% 0         0% 0         0% 0         0% 0         0%
+reclaim_comp layoutget    getdevinfo   layoutcommit layoutreturn getdevlist
+0         0% 0         0% 0         0% 0         0% 0         0% 0         0%
+(null)
+0         0%
+
+root@vd-webim-prod-app01:~# 
+
+root@vd-webim-prod-app01:~# ip -s link show enp1s0
+2: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP mode DEFAULT group default qlen 1000
+    link/ether 1c:1b:0d:71:61:86 brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast
+    12122331101573 18374298218 0       718     0       101942
+    TX: bytes  packets  errors  dropped carrier collsns
+    10744535839625 14790558747 0       0       0       0
+root@vd-webim-prod-app01:~# 
+
+................................................................................
+
+
+root@vd-webim-prod-app01:~# grep -e "nfs" /var/log/syslog{,.1} ; zcat /var/log/syslog*gz | grep -e "nfs"
+
+root@vd-webim-prod-app01:~# zcat /var/log/kern.log.{4,3,2}.gz | grep -e "nfs"
+
+
+Dec 20 02:03:32 vd-webim-prod-app01 kernel: [11316931.922190] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:05:32 vd-webim-prod-app01 kernel: [11317051.973455] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:05:39 vd-webim-prod-app01 kernel: [11317059.192529] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:05:39 vd-webim-prod-app01 kernel: [11317059.192542] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:07:50 vd-webim-prod-app01 kernel: [11317189.434469] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:07:50 vd-webim-prod-app01 kernel: [11317189.434478] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:10:03 vd-webim-prod-app01 kernel: [11317322.724282] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:10:03 vd-webim-prod-app01 kernel: [11317322.724322] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:12:22 vd-webim-prod-app01 kernel: [11317462.248976] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:12:22 vd-webim-prod-app01 kernel: [11317462.248990] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:14:54 vd-webim-prod-app01 kernel: [11317613.788669] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:14:54 vd-webim-prod-app01 kernel: [11317613.788682] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:17:49 vd-webim-prod-app01 kernel: [11317789.185771] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:17:49 vd-webim-prod-app01 kernel: [11317789.185813] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:21:33 vd-webim-prod-app01 kernel: [11318012.661899] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 02:21:33 vd-webim-prod-app01 kernel: [11318012.661913] nfs: server v6250-m1-nfs not responding, still trying
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.457525] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.458921] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.460062] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.492167] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.492170] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.492613] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.492884] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.493521] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.494009] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.494017] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.494022] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.497360] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.510901] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.512280] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.512284] nfs: server v6250-m1-nfs OK
+Dec 20 06:05:54 vd-webim-prod-app01 kernel: [11331472.512803] nfs: server v6250-m1-nfs OK
+
+Dec 22 02:03:35 vd-webim-prod-app01 kernel: [11489716.591538] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:05:36 vd-webim-prod-app01 kernel: [11489836.898406] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:05:43 vd-webim-prod-app01 kernel: [11489843.877707] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:05:43 vd-webim-prod-app01 kernel: [11489843.877751] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:07:53 vd-webim-prod-app01 kernel: [11489974.115732] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:07:53 vd-webim-prod-app01 kernel: [11489974.115745] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:10:06 vd-webim-prod-app01 kernel: [11490107.392939] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:10:06 vd-webim-prod-app01 kernel: [11490107.392967] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:12:26 vd-webim-prod-app01 kernel: [11490246.945855] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:12:26 vd-webim-prod-app01 kernel: [11490246.945868] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:14:57 vd-webim-prod-app01 kernel: [11490398.293258] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:14:57 vd-webim-prod-app01 kernel: [11490398.293284] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:17:53 vd-webim-prod-app01 kernel: [11490573.634403] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:17:53 vd-webim-prod-app01 kernel: [11490573.634417] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:21:36 vd-webim-prod-app01 kernel: [11490797.061830] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:21:36 vd-webim-prod-app01 kernel: [11490797.061842] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 02:26:55 vd-webim-prod-app01 kernel: [11491116.551330] nfs: server v6250-m1-nfs not responding, still trying
+Dec 22 06:05:57 vd-webim-prod-app01 kernel: [11504256.862357] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:57 vd-webim-prod-app01 kernel: [11504256.864106] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:57 vd-webim-prod-app01 kernel: [11504256.865903] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:57 vd-webim-prod-app01 kernel: [11504256.867233] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504258.947605] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504258.950925] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504258.952619] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504258.952628] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504258.952630] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504258.952926] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504259.032642] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504259.037106] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504259.037115] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504259.037117] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504259.037118] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504259.037369] nfs: server v6250-m1-nfs OK
+Dec 22 06:05:59 vd-webim-prod-app01 kernel: [11504259.037373] nfs: server v6250-m1-nfs OK
+
+Dec 23 02:03:32 vd-webim-prod-app01 kernel: [11576103.696584] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:05:32 vd-webim-prod-app01 kernel: [11576224.003664] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:05:39 vd-webim-prod-app01 kernel: [11576230.958921] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:05:39 vd-webim-prod-app01 kernel: [11576230.958935] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:07:49 vd-webim-prod-app01 kernel: [11576361.216640] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:07:49 vd-webim-prod-app01 kernel: [11576361.216668] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:10:03 vd-webim-prod-app01 kernel: [11576494.522395] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:10:03 vd-webim-prod-app01 kernel: [11576494.522427] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:12:22 vd-webim-prod-app01 kernel: [11576634.019637] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:12:22 vd-webim-prod-app01 kernel: [11576634.019652] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:14:54 vd-webim-prod-app01 kernel: [11576785.563081] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:14:54 vd-webim-prod-app01 kernel: [11576785.563094] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:17:49 vd-webim-prod-app01 kernel: [11576960.968511] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 02:17:49 vd-webim-prod-app01 kernel: [11576960.968525] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.488505] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.490852] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.547136] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.547145] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.553700] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.555741] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.555751] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.556671] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.556675] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.556970] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.556974] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.556975] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.557267] nfs: server v6250-m1-nfs OK
+Dec 23 06:05:54 vd-webim-prod-app01 kernel: [11590644.557271] nfs: server v6250-m1-nfs OK
+
+Dec 23 06:09:26 vd-webim-prod-app01 kernel: [11590856.419404] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:11:26 vd-webim-prod-app01 kernel: [11590976.726600] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:11:33 vd-webim-prod-app01 kernel: [11590983.670084] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:11:33 vd-webim-prod-app01 kernel: [11590983.670098] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:13:44 vd-webim-prod-app01 kernel: [11591113.943942] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:13:44 vd-webim-prod-app01 kernel: [11591113.943987] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:15:57 vd-webim-prod-app01 kernel: [11591247.205698] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:15:57 vd-webim-prod-app01 kernel: [11591247.205743] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:18:16 vd-webim-prod-app01 kernel: [11591386.710976] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:18:16 vd-webim-prod-app01 kernel: [11591386.710989] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:20:48 vd-webim-prod-app01 kernel: [11591537.962797] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:20:48 vd-webim-prod-app01 kernel: [11591537.962812] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:23:43 vd-webim-prod-app01 kernel: [11591713.344005] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:23:43 vd-webim-prod-app01 kernel: [11591713.344019] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:27:27 vd-webim-prod-app01 kernel: [11591936.892038] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:27:27 vd-webim-prod-app01 kernel: [11591936.892052] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:32:46 vd-webim-prod-app01 kernel: [11592256.365603] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:32:46 vd-webim-prod-app01 kernel: [11592256.365614] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:39:54 vd-webim-prod-app01 kernel: [11592684.375533] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:39:54 vd-webim-prod-app01 kernel: [11592684.375544] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:47:02 vd-webim-prod-app01 kernel: [11593112.373818] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:47:02 vd-webim-prod-app01 kernel: [11593112.373832] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:54:10 vd-webim-prod-app01 kernel: [11593540.355599] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 06:54:10 vd-webim-prod-app01 kernel: [11593540.355614] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:01:18 vd-webim-prod-app01 kernel: [11593968.397664] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:01:18 vd-webim-prod-app01 kernel: [11593968.397703] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:08:26 vd-webim-prod-app01 kernel: [11594396.307608] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:08:26 vd-webim-prod-app01 kernel: [11594396.307638] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:15:34 vd-webim-prod-app01 kernel: [11594824.277590] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:15:34 vd-webim-prod-app01 kernel: [11594824.277599] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:22:42 vd-webim-prod-app01 kernel: [11595252.299578] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:22:42 vd-webim-prod-app01 kernel: [11595252.299599] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:29:50 vd-webim-prod-app01 kernel: [11595680.289500] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:29:50 vd-webim-prod-app01 kernel: [11595680.289542] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:36:58 vd-webim-prod-app01 kernel: [11596108.243314] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:36:58 vd-webim-prod-app01 kernel: [11596108.243342] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:44:07 vd-webim-prod-app01 kernel: [11596536.245449] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:44:07 vd-webim-prod-app01 kernel: [11596536.245463] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:51:15 vd-webim-prod-app01 kernel: [11596964.218868] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:51:15 vd-webim-prod-app01 kernel: [11596964.218900] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:58:23 vd-webim-prod-app01 kernel: [11597392.260642] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 07:58:23 vd-webim-prod-app01 kernel: [11597392.260655] nfs: server v6250-m1-nfs not responding, still trying
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.679225] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.682316] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.684905] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.687005] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.688881] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.690622] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.691955] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.693569] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.695238] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.696467] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.697596] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.698838] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.700055] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.701191] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.702299] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.703311] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.711578] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.712457] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.713027] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.713803] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.714366] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.715877] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.715985] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.717069] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.717623] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.718199] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.718732] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.719267] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.719893] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.720447] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.721035] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.721564] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.722168] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.726593] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.726690] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.726988] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.727106] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.727246] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.727361] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.727501] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.729212] nfs: server v6250-m1-nfs OK
+Dec 23 10:11:48 vd-webim-prod-app01 kernel: [11605396.729214] nfs: server v6250-m1-nfs OK
+
+Dec 26 02:03:34 vd-webim-prod-app01 kernel: [11835278.261217] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:05:35 vd-webim-prod-app01 kernel: [11835398.568534] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:05:42 vd-webim-prod-app01 kernel: [11835405.531506] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:05:42 vd-webim-prod-app01 kernel: [11835405.531520] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:07:52 vd-webim-prod-app01 kernel: [11835535.777540] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:07:52 vd-webim-prod-app01 kernel: [11835535.777584] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:10:05 vd-webim-prod-app01 kernel: [11835669.055178] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:10:05 vd-webim-prod-app01 kernel: [11835669.055222] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:12:25 vd-webim-prod-app01 kernel: [11835808.380179] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:12:25 vd-webim-prod-app01 kernel: [11835808.380211] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:14:56 vd-webim-prod-app01 kernel: [11835959.688088] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:14:56 vd-webim-prod-app01 kernel: [11835959.688101] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:17:51 vd-webim-prod-app01 kernel: [11836135.033012] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:17:51 vd-webim-prod-app01 kernel: [11836135.033055] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 02:21:35 vd-webim-prod-app01 kernel: [11836358.508912] nfs: server v6250-m1-nfs not responding, still trying
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.542312] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.543765] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.545412] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.546796] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.547993] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.589958] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.590182] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.590330] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.590530] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.619248] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.631870] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.632119] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.633758] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.633760] nfs: server v6250-m1-nfs OK
+Dec 26 06:05:56 vd-webim-prod-app01 kernel: [11849818.633761] nfs: server v6250-m1-nfs OK
+
+Dec 27 02:03:34 vd-webim-prod-app01 kernel: [11921668.942422] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:05:35 vd-webim-prod-app01 kernel: [11921789.249438] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:05:42 vd-webim-prod-app01 kernel: [11921796.200965] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:05:42 vd-webim-prod-app01 kernel: [11921796.200977] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:07:52 vd-webim-prod-app01 kernel: [11921926.470765] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:07:52 vd-webim-prod-app01 kernel: [11921926.470806] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:10:05 vd-webim-prod-app01 kernel: [11922059.736416] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:10:05 vd-webim-prod-app01 kernel: [11922059.736426] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:12:25 vd-webim-prod-app01 kernel: [11922199.285558] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:12:25 vd-webim-prod-app01 kernel: [11922199.285585] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 02:14:56 vd-webim-prod-app01 kernel: [11922350.813160] nfs: server v6250-m1-nfs not responding, still trying
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.218909] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.240188] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.240191] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.240300] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.240444] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.240600] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.243684] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.243813] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.243985] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.245451] nfs: server v6250-m1-nfs OK
+Dec 27 06:05:56 vd-webim-prod-app01 kernel: [11936209.245453] nfs: server v6250-m1-nfs OK
+
+Dec 28 02:03:33 vd-webim-prod-app01 kernel: [12008058.051213] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:05:33 vd-webim-prod-app01 kernel: [12008178.358264] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:05:40 vd-webim-prod-app01 kernel: [12008185.325563] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:05:40 vd-webim-prod-app01 kernel: [12008185.325605] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:07:50 vd-webim-prod-app01 kernel: [12008315.603590] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:07:50 vd-webim-prod-app01 kernel: [12008315.603613] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:10:04 vd-webim-prod-app01 kernel: [12008449.117314] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:10:04 vd-webim-prod-app01 kernel: [12008449.117329] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:12:23 vd-webim-prod-app01 kernel: [12008588.650146] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 02:12:23 vd-webim-prod-app01 kernel: [12008588.650160] nfs: server v6250-m1-nfs not responding, still trying
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022598.846336] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022598.848272] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.018113] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.029963] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.089356] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.089361] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.089362] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.089363] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.089365] nfs: server v6250-m1-nfs OK
+Dec 28 06:05:55 vd-webim-prod-app01 kernel: [12022599.089373] nfs: server v6250-m1-nfs OK
+
+Dec 31 02:03:31 vd-webim-prod-app01 kernel: [12267228.507807] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:05:32 vd-webim-prod-app01 kernel: [12267348.815088] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:05:39 vd-webim-prod-app01 kernel: [12267355.746194] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:05:39 vd-webim-prod-app01 kernel: [12267355.746219] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:07:49 vd-webim-prod-app01 kernel: [12267486.232141] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:07:49 vd-webim-prod-app01 kernel: [12267486.232152] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:10:03 vd-webim-prod-app01 kernel: [12267619.709928] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:10:03 vd-webim-prod-app01 kernel: [12267619.709954] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:12:22 vd-webim-prod-app01 kernel: [12267759.194600] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:12:22 vd-webim-prod-app01 kernel: [12267759.194613] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:14:53 vd-webim-prod-app01 kernel: [12267910.430607] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:14:53 vd-webim-prod-app01 kernel: [12267910.430621] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:17:49 vd-webim-prod-app01 kernel: [12268085.759747] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:17:49 vd-webim-prod-app01 kernel: [12268085.759760] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:21:32 vd-webim-prod-app01 kernel: [12268309.239388] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:21:32 vd-webim-prod-app01 kernel: [12268309.239419] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:26:52 vd-webim-prod-app01 kernel: [12268628.937007] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:26:52 vd-webim-prod-app01 kernel: [12268628.937032] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 02:33:59 vd-webim-prod-app01 kernel: [12269056.427172] nfs: server v6250-m1-nfs not responding, still trying
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.795602] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.820902] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.821055] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.821259] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.821365] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.821669] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.821670] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.821771] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.822981] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.823715] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.824026] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.824126] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.824304] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.824561] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.824726] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.824874] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.826009] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.826035] nfs: server v6250-m1-nfs OK
+Dec 31 06:05:53 vd-webim-prod-app01 kernel: [12281768.830307] nfs: server v6250-m1-nfs OK
+
+Jan  1 02:03:35 vd-webim-prod-app01 kernel: [12353622.501524] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:05:35 vd-webim-prod-app01 kernel: [12353742.552789] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:05:42 vd-webim-prod-app01 kernel: [12353749.739862] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:05:42 vd-webim-prod-app01 kernel: [12353749.739873] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:07:52 vd-webim-prod-app01 kernel: [12353880.237807] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:07:52 vd-webim-prod-app01 kernel: [12353880.237821] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:10:06 vd-webim-prod-app01 kernel: [12354013.499579] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:10:06 vd-webim-prod-app01 kernel: [12354013.499592] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:12:25 vd-webim-prod-app01 kernel: [12354152.772567] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:12:25 vd-webim-prod-app01 kernel: [12354152.772580] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:14:56 vd-webim-prod-app01 kernel: [12354304.028244] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:14:56 vd-webim-prod-app01 kernel: [12354304.028256] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:17:52 vd-webim-prod-app01 kernel: [12354479.413309] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:17:52 vd-webim-prod-app01 kernel: [12354479.413323] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:21:35 vd-webim-prod-app01 kernel: [12354702.720883] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:21:35 vd-webim-prod-app01 kernel: [12354702.720895] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:26:54 vd-webim-prod-app01 kernel: [12355022.170365] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:26:54 vd-webim-prod-app01 kernel: [12355022.170390] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 02:34:02 vd-webim-prod-app01 kernel: [12355450.156367] nfs: server v6250-m1-nfs not responding, still trying
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.543609] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.543805] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544084] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544209] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544350] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544495] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544649] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544797] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544931] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.544970] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.546993] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.546994] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.551374] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.551376] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.551437] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.551587] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.551760] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.552679] nfs: server v6250-m1-nfs OK
+Jan  1 06:05:56 vd-webim-prod-app01 kernel: [12368162.552680] nfs: server v6250-m1-nfs OK
+
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204453] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204488] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204511] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204534] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204540] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204541] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204542] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204543] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204544] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204545] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204546] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204547] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204548] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204549] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:02 vd-webim-prod-app01 kernel: [12958324.204549] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 02:03:03 vd-webim-prod-app01 kernel: [12958325.848308] nfs: server v6250-m1-nfs not responding, still trying
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.142513] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.144939] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.147131] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.149405] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.151532] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.153087] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.154924] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.156463] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.157857] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.164107] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.165280] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.167105] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.258323] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.258344] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.258717] nfs: server v6250-m1-nfs OK
+Jan  8 06:05:52 vd-webim-prod-app01 kernel: [12972893.258721] nfs: server v6250-m1-nfs OK
+
+Jan 10 02:03:36 vd-webim-prod-app01 kernel: [13131139.592355] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:05:36 vd-webim-prod-app01 kernel: [13131259.643452] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:05:43 vd-webim-prod-app01 kernel: [13131266.858671] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:05:43 vd-webim-prod-app01 kernel: [13131266.858713] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:07:53 vd-webim-prod-app01 kernel: [13131397.120557] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:07:53 vd-webim-prod-app01 kernel: [13131397.120583] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:10:06 vd-webim-prod-app01 kernel: [13131530.390416] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:10:06 vd-webim-prod-app01 kernel: [13131530.390430] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:12:26 vd-webim-prod-app01 kernel: [13131669.943342] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 02:12:26 vd-webim-prod-app01 kernel: [13131669.943356] nfs: server v6250-m1-nfs not responding, still trying
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.616363] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.798319] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.868750] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.876417] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.876426] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.876428] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.876429] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.876928] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.876934] nfs: server v6250-m1-nfs OK
+Jan 10 06:05:57 vd-webim-prod-app01 kernel: [13145679.876935] nfs: server v6250-m1-nfs OK
+
+Jan 13 02:03:33 vd-webim-prod-app01 kernel: [13390308.514380] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:05:33 vd-webim-prod-app01 kernel: [13390428.565412] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:05:40 vd-webim-prod-app01 kernel: [13390435.784624] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:05:40 vd-webim-prod-app01 kernel: [13390435.784635] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:07:50 vd-webim-prod-app01 kernel: [13390566.054558] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:07:50 vd-webim-prod-app01 kernel: [13390566.054588] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:10:04 vd-webim-prod-app01 kernel: [13390699.600135] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:10:04 vd-webim-prod-app01 kernel: [13390699.600149] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:12:23 vd-webim-prod-app01 kernel: [13390839.117364] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:12:23 vd-webim-prod-app01 kernel: [13390839.117378] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:14:55 vd-webim-prod-app01 kernel: [13390990.444818] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 02:14:55 vd-webim-prod-app01 kernel: [13390990.444862] nfs: server v6250-m1-nfs not responding, still trying
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.526734] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.560794] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.560853] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.561015] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.561154] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.561301] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.561435] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.561481] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.561599] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.561898] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.565746] nfs: server v6250-m1-nfs OK
+Jan 13 06:05:54 vd-webim-prod-app01 kernel: [13404848.565897] nfs: server v6250-m1-nfs OK
+
+Jan 15 02:03:33 vd-webim-prod-app01 kernel: [13563090.140841] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:05:33 vd-webim-prod-app01 kernel: [13563210.447869] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:05:40 vd-webim-prod-app01 kernel: [13563217.379105] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:05:40 vd-webim-prod-app01 kernel: [13563217.379119] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:07:51 vd-webim-prod-app01 kernel: [13563347.864757] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:07:51 vd-webim-prod-app01 kernel: [13563347.864767] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:10:04 vd-webim-prod-app01 kernel: [13563481.358607] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:10:04 vd-webim-prod-app01 kernel: [13563481.358622] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:12:23 vd-webim-prod-app01 kernel: [13563620.627333] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:12:23 vd-webim-prod-app01 kernel: [13563620.627354] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:14:55 vd-webim-prod-app01 kernel: [13563771.931059] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:14:55 vd-webim-prod-app01 kernel: [13563771.931098] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:17:50 vd-webim-prod-app01 kernel: [13563947.300128] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:17:50 vd-webim-prod-app01 kernel: [13563947.300157] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:21:33 vd-webim-prod-app01 kernel: [13564170.640122] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:21:33 vd-webim-prod-app01 kernel: [13564170.640147] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:26:53 vd-webim-prod-app01 kernel: [13564490.597746] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:26:53 vd-webim-prod-app01 kernel: [13564490.597761] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:34:01 vd-webim-prod-app01 kernel: [13564918.567359] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:34:01 vd-webim-prod-app01 kernel: [13564918.567404] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:41:09 vd-webim-prod-app01 kernel: [13565346.549411] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:41:09 vd-webim-prod-app01 kernel: [13565346.549426] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:48:18 vd-webim-prod-app01 kernel: [13565774.535063] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:48:18 vd-webim-prod-app01 kernel: [13565774.535077] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 02:55:26 vd-webim-prod-app01 kernel: [13566202.552923] nfs: server v6250-m1-nfs not responding, still trying
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.940228] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.940870] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.941850] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.942831] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.943325] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.943360] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.943433] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.943705] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.943791] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.943872] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.943934] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.944069] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.944247] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.945634] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.945638] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.946332] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.946477] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.946683] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.947670] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.949141] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.949282] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.949372] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.949419] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.949612] nfs: server v6250-m1-nfs OK
+Jan 15 06:05:55 vd-webim-prod-app01 kernel: [13577630.950130] nfs: server v6250-m1-nfs OK
+
+................................................................................
+
+root@vd-webim-prod-app01:~# mount -t nfs
+v6250-m1-nfs:/vol/webim_logs on /mnt/webim_logs type nfs (rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.64.8,mountvers=3,mountport=4046,mountproto=tcp,local_lock=none,addr=10.217.64.8)
+root@vd-webim-prod-app01:~# mount -t nfs4
+v6250-m1:/vol/webim_dck on /mnt/webim_fs type nfs4 (rw,relatime,vers=4.0,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,port=0,timeo=600,retrans=2,sec=sys,clientaddr=172.17.64.11,local_lock=none,addr=10.217.67.8)
+root@vd-webim-prod-app01:~#
+
+................................................................................
+
+root@vd-webim-prod-app01:~# cat /etc/fstab
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda2 during installation
+UUID=20dcec01-1da6-4ae0-b101-3dc992249140 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=18473c2e-382c-4e4c-b3b5-2a5583ae6e68 none            swap    sw              0       0
+# Add new HDD 08.08.2017 by Moroz
+UUID=956c2ed4-da21-4274-885d-edb61ace24c3 /var/pro/client-data  ext4    defaults        0       2
+
+#SD
+v6250-m1-nfs:/vol/webim_logs    /mnt/webim_logs    nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+root@vd-webim-prod-app01:~#
+
+................................................................................
+
+root@vd-webim-prod-app01:~# history | grep -ie "webim_dck"
+ 2013  history | grep -ie "webim_dck"
+root@vd-webim-prod-app01:~# uptime
+ 15:04:54 up 157 days, 12:57,  4 users,  load average: 0.98, 0.99, 1.00
+root@vd-webim-prod-app01:~#
+
+................................................................................
+
+root@vd-webim-prod-app01:~# ls /mnt/webim_fs
+mnogo_failov  tcsbankru_site_logo.png  testfile.txt
+root@vd-webim-prod-app01:~# ls /mnt/webim_logs
+ls: cannot open directory '/mnt/webim_logs': Permission denied
+root@vd-webim-prod-app01:~# ls -Alhd /mnt/webim_logs
+drwxrwxrwx 3 root root 12K Jan 15 06:05 /mnt/webim_logs
+root@vd-webim-prod-app01:~#
+
+................................................................................
+
+root@vd-webim-prod-app01:~# tail /var/spool/cron/crontabs/root
+# DO NOT EDIT THIS FILE - edit the master and reinstall.
+# (/tmp/crontab.MqcDT8/crontab installed on Thu Sep 14 14:38:29 2017)
+# (Cron version -- $Id: crontab.c,v 2.13 1994/01/17 03:20:37 vixie Exp $)
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+0 5 * * * root   /usr/local/bin/webim-send-stats > /tmp/webim-stats.log
+
+root@vd-webim-prod-app01:~#
+
+root@vd-webim-prod-app01:~# tail /var/spool/cron/crontabs/webim
+# email to the user the crontab file belongs to (unless redirected).
+#
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+#
+# For more information see the manual pages of crontab(5) and cron(8)
+#
+# m h  dom mon dow   command
+0 2 * * * sh /bin/execute_me/copy_webim_logs.sh > /tmp/webim-trace-to-share.log
+root@vd-webim-prod-app01:~#
+
+
+................................................................................
+
+
+
+
+
+
+

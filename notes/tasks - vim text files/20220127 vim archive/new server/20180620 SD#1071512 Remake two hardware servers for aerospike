@@ -1,0 +1,719 @@
+
+................................................................................
+
+[root@ds-prod-tbru-ts-as-2 ~]# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 3.1.1 present.
+# SMBIOS implementations newer than version 3.0 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x008D, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL360 Gen10
+        Version: Not Specified
+        Serial Number: CZJ8110RNH
+        UUID: 39373638-3935-5A43-4A38-313130524E48
+        Wake-up Type: Power Switch
+        SKU Number: 867959-B21
+        Family: ProLiant
+
+Handle 0x00AD, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+[root@ds-prod-tbru-ts-as-2 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+9: team0.vlan1808@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.218.8.164/24 brd 10.218.8.255 scope global noprefixroute team0.vlan1808
+       valid_lft forever preferred_lft forever
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+[root@ds-prod-tbru-ts-as-2 ~]# ip route
+default via 10.218.8.254 dev team0.vlan1808 proto static metric 400
+10.218.8.0/24 dev team0.vlan1808 proto kernel scope link src 10.218.8.164 metric 400
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+[root@ds-prod-tbru-ts-as-2 ~]# cat /etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+DEVICETYPE=Team
+IPV6INIT=no
+ONBOOT=yes
+BOOTPROTO=none
+TEAM_CONFIG='{"runner": {"name": "lacp", "fast_rate": true}, "link_watch": {"name": "ethtool"}}'
+MTU=9000
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+[root@ds-prod-tbru-ts-as-2 ~]# cat /etc/sysconfig/network-scripts/ifcfg-vlan1808
+VLAN=yes
+Type=Vlan
+DEVICE=team0.vlan1808
+PHYSDEV=team0
+VLAN_ID=1808
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1808
+ONBOOT=yes
+MTU=1500
+IPADDR=10.218.8.164
+PREFIX=24
+GATEWAY=10.218.8.254
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+[root@ds-prod-tbru-ts-as-2 ~]# cat /etc/sysconfig/network-scripts/ifcfg-eno5
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=no
+IPV6_DEFROUTE=no
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno5
+UUID=15a94d69-98ed-4143-b55e-49fb47203978
+DEVICE=eno5
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 100}'
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+
+[root@ds-prod-tbru-ts-as-2 ~]# cat /etc/sysconfig/network-scripts/ifcfg-eno6
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=no
+IPV6_DEFROUTE=no
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno6
+UUID=1b9e9cb2-c447-4368-b61e-1cfc3caaecce
+DEVICE=eno6
+ONBOOT=yes
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 200}'
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+
+[root@ds-prod-tbru-ts-as-2 ~]# teamdctl team0 state view -v
+setup:
+  runner: lacp
+  kernel team mode: loadbalance
+  D-BUS enabled: yes
+  ZeroMQ enabled: no
+  debug level: 0
+  daemonized: no
+  PID: 1278
+  PID file: /var/run/teamd/team0.pid
+ports:
+  eno5
+    ifindex: 6
+    addr: 04:09:73:d1:e6:30
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 6, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 04:09:73:d1:e6:30
+        key: 0
+        port_priority: 255
+        port: 6
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 01:21:22:00:00:33
+        key: 15
+        port_priority: 127
+        port: 16
+        state: 0x3f
+  eno6
+    ifindex: 7
+    addr: 04:09:73:d1:e6:30
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 6, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 04:09:73:d1:e6:30
+        key: 0
+        port_priority: 255
+        port: 7
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 01:21:22:00:00:33
+        key: 15
+        port_priority: 127
+        port: 16
+        state: 0x3f
+runner:
+  active: yes
+  fast rate: yes
+  system priority: 65535
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+[root@ds-prod-tbru-ts-as-2 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                                    TYPE MOUNTPOINT FSTYPE        SIZE
+sda                                     disk                        558.9G
+├─sda1                                  part /boot/efi  vfat          200M
+├─sda2                                  part /boot      xfs             1G
+└─sda3                                  part            LVM2_member 557.7G
+  ├─rhel_ds--prod--tbru--ts--as--2-root lvm  /          xfs         553.7G
+  └─rhel_ds--prod--tbru--ts--as--2-swap lvm  [SWAP]     swap            4G
+sdb                                     disk                          2.6T
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+[root@ds-prod-tbru-ts-as-2 ~]# grep -ie "kocher" /etc/{shadow,passwd}
+/etc/shadow:i.kochergin:$6$jMfDuvpv$rbSAcnNbY59bSwo8gsBSr5p6w18tkDS9zxvbrTDJsVbkCoCJ5CrafOOAx1BOpz4Zpl8sw0RbBIYwwS9cuawJv0:17702:0:99999:7:::
+/etc/passwd:i.kochergin:x:789:789:Igor Kochergin:/home/i.kochergin:/bin/bash
+[root@ds-prod-tbru-ts-as-2 ~]#
+
+
+................................................................................
+................................................................................
+
+[root@m1-prod-tbru-ts-as-1 ~]# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 3.1.1 present.
+# SMBIOS implementations newer than version 3.0 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x008D, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL360 Gen10
+        Version: Not Specified
+        Serial Number: CZJ8110RNJ
+        UUID: 39373638-3935-5A43-4A38-313130524E4A
+        Wake-up Type: Power Switch
+        SKU Number: 867959-B21
+        Family: ProLiant
+
+Handle 0x00AD, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+[root@m1-prod-tbru-ts-as-1 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+9: team0.vlan1803@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.218.3.161/24 brd 10.218.3.255 scope global noprefixroute team0.vlan1803
+       valid_lft forever preferred_lft forever
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+[root@m1-prod-tbru-ts-as-1 ~]# ip route
+default via 10.218.3.254 dev team0.vlan1803 proto static metric 400
+10.218.3.0/24 dev team0.vlan1803 proto kernel scope link src 10.218.3.161 metric 400
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+[root@m1-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+DEVICETYPE=Team
+IPV6INIT=no
+ONBOOT=yes
+BOOTPROTO=none
+TEAM_CONFIG='{"runner": {"name": "lacp", "fast_rate": true}, "link_watch": {"name": "ethtool"}}'
+MTU=9000
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+[root@m1-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-vlan1803
+VLAN=yes
+Type=Vlan
+DEVICE=team0.vlan1803
+PHYSDEV=team0
+VLAN_ID=1803
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1803
+ONBOOT=yes
+MTU=1500
+IPADDR=10.218.3.161
+PREFIX=24
+GATEWAY=10.218.3.254
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+[root@m1-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-eno5
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=no
+IPV6_DEFROUTE=no
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno5
+UUID=6e58ed93-7836-4e58-be18-771720cbd174
+DEVICE=eno5
+ONBOOT=yes
+IPV6_PRIVACY=no
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 100}'
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+[root@m1-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-eno6
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=no
+IPV6_DEFROUTE=no
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno6
+UUID=28f20433-7dcd-4f15-9065-32dd6e85db1c
+DEVICE=eno6
+ONBOOT=yes
+IPV6_PRIVACY=no
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 200}'
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+
+[root@m1-prod-tbru-ts-as-1 ~]# teamdctl team0 state view -v
+setup:
+  runner: lacp
+  kernel team mode: loadbalance
+  D-BUS enabled: yes
+  ZeroMQ enabled: no
+  debug level: 0
+  daemonized: no
+  PID: 1276
+  PID file: /var/run/teamd/team0.pid
+ports:
+  eno5
+    ifindex: 6
+    addr: 04:09:73:d1:e6:40
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 7, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 04:09:73:d1:e6:40
+        key: 0
+        port_priority: 255
+        port: 6
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 02:21:24:09:09:22
+        key: 29
+        port_priority: 127
+        port: 29
+        state: 0x3f
+  eno6
+    ifindex: 7
+    addr: 04:09:73:d1:e6:40
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 7, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 04:09:73:d1:e6:40
+        key: 0
+        port_priority: 255
+        port: 7
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 02:21:24:09:09:22
+        key: 29
+        port_priority: 127
+        port: 29
+        state: 0x3f
+runner:
+  active: yes
+  fast rate: yes
+  system priority: 65535
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+[root@m1-prod-tbru-ts-as-1 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                                    TYPE MOUNTPOINT FSTYPE        SIZE
+sda                                     disk                        558.9G
+├─sda1                                  part /boot/efi  vfat          200M
+├─sda2                                  part /boot      xfs             1G
+└─sda3                                  part            LVM2_member 557.7G
+  ├─rhel_m1--prod--tbru--ts--as--1-root lvm  /          xfs         553.7G
+  └─rhel_m1--prod--tbru--ts--as--1-swap lvm  [SWAP]     swap            4G
+sdb                                     disk                          2.6T
+[root@m1-prod-tbru-ts-as-1 ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-prod-tbru-ts-as-1 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 7.5 (Maipo)
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 3.1.1 present.
+# SMBIOS implementations newer than version 3.0 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x008D, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL360 Gen10
+        Version: Not Specified
+        Serial Number: CZJ8110RNG
+        UUID: 39373638-3935-5A43-4A38-313130524E47
+        Wake-up Type: Power Switch
+        SKU Number: 867959-B21
+        Family: ProLiant
+
+Handle 0x00AD, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+9: team0.vlan1808@team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.218.8.163/24 brd 10.218.8.255 scope global noprefixroute team0.vlan1808
+       valid_lft forever preferred_lft forever
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# ip route
+default via 10.218.8.254 dev team0.vlan1808 proto static metric 400
+10.218.8.0/24 dev team0.vlan1808 proto kernel scope link src 10.218.8.163 metric 400
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-team0
+DEVICE=team0
+DEVICETYPE=Team
+IPV6INIT=no
+ONBOOT=yes
+BOOTPROTO=none
+TEAM_CONFIG='{"runner": {"name": "lacp", "fast_rate": true}, "link_watch": {"name": "ethtool"}}'
+MTU=9000
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-vlan1808
+VLAN=yes
+Type=Vlan
+DEVICE=team0.vlan1808
+PHYSDEV=team0
+VLAN_ID=1808
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=vlan1808
+ONBOOT=yes
+MTU=1500
+IPADDR=10.218.8.163
+PREFIX=24
+GATEWAY=10.218.8.254
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-eno5
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=no
+IPV6_DEFROUTE=no
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno5
+UUID=4f0cee06-dc95-4991-a6a8-9ac40ec6bd8c
+DEVICE=eno5
+ONBOOT=yes
+IPV6_PRIVACY=no
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 100}'
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# cat /etc/sysconfig/network-scripts/ifcfg-eno6
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+IPV6_AUTOCONF=no
+IPV6_DEFROUTE=no
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=eno6
+UUID=943c6f48-b7a5-4823-a5ae-b40976c4710d
+DEVICE=eno6
+ONBOOT=yes
+IPV6_PRIVACY=no
+DEVICETYPE=TeamPort
+TEAM_MASTER=team0
+TEAM_PORT_CONFIG='{"prio": 200}'
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+
+[root@ds-prod-tbru-ts-as-1 ~]# teamdctl team0 state view -v
+setup:
+  runner: lacp
+  kernel team mode: loadbalance
+  D-BUS enabled: yes
+  ZeroMQ enabled: no
+  debug level: 0
+  daemonized: no
+  PID: 1276
+  PID file: /var/run/teamd/team0.pid
+ports:
+  eno5
+    ifindex: 6
+    addr: 04:09:73:d1:e6:20
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 6, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 04:09:73:d1:e6:20
+        key: 0
+        port_priority: 255
+        port: 6
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 01:21:22:00:00:22
+        key: 14
+        port_priority: 127
+        port: 15
+        state: 0x3f
+  eno6
+    ifindex: 7
+    addr: 04:09:73:d1:e6:20
+    ethtool link: 10000mbit/fullduplex/up
+    link watches:
+      link summary: up
+      instance[link_watch_0]:
+        name: ethtool
+        link: up
+        down count: 0
+        link up delay: 0
+        link down delay: 0
+    runner:
+      aggregator ID: 6, Selected
+      selected: yes
+      state: current
+      key: 0
+      priority: 255
+      actor LACPDU info:
+        system priority: 65535
+        system: 04:09:73:d1:e6:20
+        key: 0
+        port_priority: 255
+        port: 7
+        state: 0x3f
+      partner LACPDU info:
+        system priority: 127
+        system: 01:21:22:00:00:22
+        key: 14
+        port_priority: 127
+        port: 15
+        state: 0x3f
+runner:
+  active: yes
+  fast rate: yes
+  system priority: 65535
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+[root@ds-prod-tbru-ts-as-1 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME                                    TYPE MOUNTPOINT FSTYPE        SIZE
+sda                                     disk                        558.9G
+├─sda1                                  part /boot/efi  vfat          200M
+├─sda2                                  part /boot      xfs             1G
+└─sda3                                  part            LVM2_member 557.7G
+  ├─rhel_ds--prod--tbru--ts--as--1-root lvm  /          xfs         553.7G
+  └─rhel_ds--prod--tbru--ts--as--1-swap lvm  [SWAP]     swap            4G
+sdb                                     disk                          2.6T
+[root@ds-prod-tbru-ts-as-1 ~]#
+
+................................................................................
+................................................................................
+
+root@ds-prod-tbru-ts-dsp-as-1:~# cat /etc/network/interfaces.d/ifcfg-eth0.conf
+auto eth0
+iface eth0 inet static
+        address 10.218.8.77
+        netmask 255.255.255.0
+        gateway 10.218.8.254
+root@ds-prod-tbru-ts-dsp-as-1:~#
+
+
+................................................................................
+................................................................................
+
+#
+#	After Ubuntu was installed.
+#
+root@m1-prod-tbru-ts-as-1:~# cat /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+# auto eno5
+# iface eno5 inet dhcp
+
+auto eno5
+iface eno5 inet manual
+bond-master bond0
+bond-primary eno5
+
+auto eno6
+iface eno6 inet manual
+bond-master bond0
+
+auto bond0
+iface bond0 inet manual
+bond-mode 1
+bond-miimon 100
+bond-slaves none
+
+auto bond0.1803
+iface bond0.1803 inet static
+address 10.218.3.161
+netmask 255.255.255.0
+gateway 10.218.3.254
+
+dns-search tcsbank.ru
+dns-nameservers 10.216.42.5 10.216.40.4
+
+root@m1-prod-tbru-ts-as-1:~#
+
+
+root@m1-prod-tbru-ts-as-1:~# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.218.15.111/24 brd 10.218.15.255 scope global eno5
+    inet 10.218.3.161/24 brd 10.218.3.255 scope global bond0.1803
+root@m1-prod-tbru-ts-as-1:~#
+
+root@m1-prod-tbru-ts-as-1:~# puppet agent -t
+Info: Using configured environment 'production'
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for m1-prod-tbru-ts-as-1.tcsbank.ru
+Info: Applying configuration version 'vm-puppetmaster02p.tcsbank.ru-production-f7d5cef72cb'
+Notice: Applied catalog in 0.81 seconds
+root@m1-prod-tbru-ts-as-1:~# 
+
+
+
+root@m1-prod-tbru-ts-as-1:~# lsblk
+NAME                                     MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda                                        8:0    1 558.9G  0 disk
+├─sda1                                     8:1    1   512M  0 part /boot/efi
+├─sda2                                     8:2    1   488M  0 part /boot
+└─sda3                                     8:3    1 557.9G  0 part
+  ├─m1--prod--tbru--ts--as--1--vg-root   252:0    0 462.2G  0 lvm  /
+  └─m1--prod--tbru--ts--as--1--vg-swap_1 252:1    0  95.7G  0 lvm  [SWAP]
+sdb                                        8:16   1 894.2G  0 disk
+sdc                                        8:32   1 894.2G  0 disk
+sdd                                        8:48   1 894.2G  0 disk
+root@m1-prod-tbru-ts-as-1:~#
+
+
+

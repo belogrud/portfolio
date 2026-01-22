@@ -1,0 +1,251 @@
+
+................................................................................
+
+[12:13:19 root@m1-db27-dr ~]# lsblk
+NAME                       MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda                          8:0    0  1.1T  0 disk
+├─sda1                       8:1    0  200M  0 part /boot/efi
+├─sda2                       8:2    0    1G  0 part /boot
+└─sda3                       8:3    0  1.1T  0 part
+  ├─rootvg-root            253:1    0   50G  0 lvm  /
+  ├─rootvg-swap            253:4    0   16G  0 lvm  [SWAP]
+  ├─rootvg-opt             253:10   0  500G  0 lvm  /opt
+  ├─rootvg-var             253:12   0  100G  0 lvm  /var
+  └─rootvg-tmp             253:15   0    8G  0 lvm  /tmp
+nvme0n1                    259:1    0  1.5T  0 disk
+├─nvme0n1p1                259:3    0  512G  0 part
+│ ├─flashvg-vol01_rmeta_0  253:5    0    4M  0 lvm
+│ │ └─flashvg-vol01        253:9    0  512G  0 lvm  /oramnt/flash
+│ └─flashvg-vol01_rimage_0 253:6    0  512G  0 lvm
+│   └─flashvg-vol01        253:9    0  512G  0 lvm  /oramnt/flash
+└─nvme0n1p2                259:5    0  512G  0 part
+nvme1n1                    259:0    0  1.5T  0 disk
+├─nvme1n1p1                259:2    0  512G  0 part
+│ ├─flashvg-vol01_rmeta_1  253:7    0    4M  0 lvm
+│ │ └─flashvg-vol01        253:9    0  512G  0 lvm  /oramnt/flash
+│ └─flashvg-vol01_rimage_1 253:8    0  512G  0 lvm
+│   └─flashvg-vol01        253:9    0  512G  0 lvm  /oramnt/flash
+└─nvme1n1p2                259:4    0  512G  0 part
+[12:13:45 root@m1-db27-dr ~]#
+
+[12:15:35 root@m1-db27-dr ~]# pvs
+  PV             VG      Fmt  Attr PSize    PFree
+  /dev/nvme0n1p1 flashvg lvm2 a--  <512.00g      0
+  /dev/nvme1n1p1 flashvg lvm2 a--  <512.00g      0
+  /dev/sda3      rootvg  lvm2 a--     1.09t 442.56g
+[12:15:59 root@m1-db27-dr ~]# vgs
+  VG      #PV #LV #SN Attr   VSize    VFree
+  flashvg   2   1   0 wz--n- 1023.99g      0
+  rootvg    1   5   0 wz--n-    1.09t 442.56g
+[12:16:02 root@m1-db27-dr ~]# lvs
+  LV    VG      Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  vol01 flashvg rwi-aor--- 511.99g                                    100.00
+  opt   rootvg  -wi-ao---- 500.00g
+  root  rootvg  -wi-ao----  50.00g
+  swap  rootvg  -wi-ao----  16.00g
+  tmp   rootvg  -wi-ao----   8.00g
+  var   rootvg  -wi-ao---- 100.00g
+[12:16:03 root@m1-db27-dr ~]#
+
+[12:16:03 root@m1-db27-dr ~]# umount /oramnt/flash/
+[12:16:26 root@m1-db27-dr ~]# vim /etc/fstab
+[12:17:14 root@m1-db27-dr ~]# grep -ie "/oramnt/flash" /etc/fstab
+#/dev/flashvg/vol01 /oramnt/flash xfs defaults 0 0
+[12:17:20 root@m1-db27-dr ~]#
+
+[12:20:20 root@m1-db27-dr ~]# vgremove flashvg
+Do you really want to remove volume group "flashvg" containing 1 logical volumes? [y/n]: y
+Do you really want to remove active logical volume flashvg/vol01? [y/n]: y
+  Logical volume "vol01" successfully removed
+  Volume group "flashvg" successfully removed
+[12:21:58 root@m1-db27-dr ~]#
+
+[12:22:30 root@m1-db27-dr ~]# lsblk
+NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda               8:0    0  1.1T  0 disk
+├─sda1            8:1    0  200M  0 part /boot/efi
+├─sda2            8:2    0    1G  0 part /boot
+└─sda3            8:3    0  1.1T  0 part
+  ├─rootvg-root 253:1    0   50G  0 lvm  /
+  ├─rootvg-swap 253:4    0   16G  0 lvm  [SWAP]
+  ├─rootvg-opt  253:10   0  500G  0 lvm  /opt
+  ├─rootvg-var  253:12   0  100G  0 lvm  /var
+  └─rootvg-tmp  253:15   0    8G  0 lvm  /tmp
+nvme0n1         259:1    0  1.5T  0 disk
+├─nvme0n1p1     259:3    0  512G  0 part
+└─nvme0n1p2     259:5    0  512G  0 part
+nvme1n1         259:0    0  1.5T  0 disk
+├─nvme1n1p1     259:2    0  512G  0 part
+└─nvme1n1p2     259:4    0  512G  0 part
+[12:22:39 root@m1-db27-dr ~]#
+
+
+[12:33:43 root@m1-db27-dr ~]# parted /dev/nvme0n1 print
+Model: NVMe Device (nvme)
+Disk /dev/nvme0n1: 1600GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size   File system  Name        Flags
+ 1      1049kB  550GB   550GB               flashvg     lvm
+ 2      550GB   1100GB  550GB               oraflash01
+
+[12:33:59 root@m1-db27-dr ~]# parted /dev/nvme0n1 rm 1
+Information: You may need to update /etc/fstab.
+
+[12:34:12 root@m1-db27-dr ~]# parted /dev/nvme0n1 rm 2
+Information: You may need to update /etc/fstab.
+
+[12:34:18 root@m1-db27-dr ~]# parted /dev/nvme0n1 print
+Model: NVMe Device (nvme)
+Disk /dev/nvme0n1: 1600GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+[12:34:23 root@m1-db27-dr ~]#
+
+[12:34:55 root@m1-db27-dr ~]# parted /dev/nvme1n1 print
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 1600GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size   File system  Name        Flags
+ 1      1049kB  550GB   550GB               flashvg     lvm
+ 2      550GB   1100GB  550GB               oraflash01
+
+[12:35:09 root@m1-db27-dr ~]# parted /dev/nvme1n1 rm 2 rm 1
+Information: You may need to update /etc/fstab.
+
+[12:35:22 root@m1-db27-dr ~]# parted /dev/nvme1n1 print
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 1600GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+[12:35:28 root@m1-db27-dr ~]#
+
+[12:35:53 root@m1-db27-dr ~]# lsblk
+NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda               8:0    0  1.1T  0 disk
+├─sda1            8:1    0  200M  0 part /boot/efi
+├─sda2            8:2    0    1G  0 part /boot
+└─sda3            8:3    0  1.1T  0 part
+  ├─rootvg-root 253:1    0   50G  0 lvm  /
+  ├─rootvg-swap 253:4    0   16G  0 lvm  [SWAP]
+  ├─rootvg-opt  253:10   0  500G  0 lvm  /opt
+  ├─rootvg-var  253:12   0  100G  0 lvm  /var
+  └─rootvg-tmp  253:15   0    8G  0 lvm  /tmp
+nvme0n1         259:1    0  1.5T  0 disk
+nvme1n1         259:0    0  1.5T  0 disk
+[12:35:55 root@m1-db27-dr ~]#
+
+[12:37:15 root@m1-db27-dr ~]# parted -s -a optimal /dev/nvme1n1 mklabel GPT print mkpart primary xfs 0% 100% print
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 1600GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: NVMe Device (nvme)
+Disk /dev/nvme1n1: 1600GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      1049kB  1600GB  1600GB               primary
+
+[12:38:50 root@m1-db27-dr ~]#
+
+[12:38:50 root@m1-db27-dr ~]# lsblk
+NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda               8:0    0  1.1T  0 disk
+├─sda1            8:1    0  200M  0 part /boot/efi
+├─sda2            8:2    0    1G  0 part /boot
+└─sda3            8:3    0  1.1T  0 part
+  ├─rootvg-root 253:1    0   50G  0 lvm  /
+  ├─rootvg-swap 253:4    0   16G  0 lvm  [SWAP]
+  ├─rootvg-opt  253:10   0  500G  0 lvm  /opt
+  ├─rootvg-var  253:12   0  100G  0 lvm  /var
+  └─rootvg-tmp  253:15   0    8G  0 lvm  /tmp
+nvme0n1         259:1    0  1.5T  0 disk
+nvme1n1         259:0    0  1.5T  0 disk
+└─nvme1n1p1     259:2    0  1.5T  0 part
+[12:39:10 root@m1-db27-dr ~]#
+
+[12:40:42 root@m1-db27-dr ~]# mkfs.xfs -f /dev/nvme1n1p1
+meta-data=/dev/nvme1n1p1         isize=512    agcount=4, agsize=97675776 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=390703104, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=190773, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[12:41:11 root@m1-db27-dr ~]#
+
+................................................................................
+
+[12:40:42 root@m1-db27-dr ~]# mkfs.xfs -f /dev/nvme1n1p1
+meta-data=/dev/nvme1n1p1         isize=512    agcount=4, agsize=97675776 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=390703104, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=190773, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[12:41:11 root@m1-db27-dr ~]#
+
+[12:51:12 root@m1-db27-dr ~]# mkdir -p /oramnt/flash/temp
+[12:51:39 root@m1-db27-dr ~]# vim /etc/fstab
+...
+# SD3088645
+#/dev/flashvg/vol01 /oramnt/flash xfs defaults 0 0
+/dev/nvme1n1p1  /oramnt/flash/temp      xfs     defaults 0 0
+...
+
+[12:52:09 root@m1-db27-dr ~]# mount /oramnt/flash/temp
+[12:52:19 root@m1-db27-dr ~]# lsblk
+NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda               8:0    0  1.1T  0 disk
+├─sda1            8:1    0  200M  0 part /boot/efi
+├─sda2            8:2    0    1G  0 part /boot
+└─sda3            8:3    0  1.1T  0 part
+  ├─rootvg-root 253:1    0   50G  0 lvm  /
+  ├─rootvg-swap 253:4    0   16G  0 lvm  [SWAP]
+  ├─rootvg-opt  253:10   0  500G  0 lvm  /opt
+  ├─rootvg-var  253:12   0  100G  0 lvm  /var
+  └─rootvg-tmp  253:15   0    8G  0 lvm  /tmp
+nvme0n1         259:1    0  1.5T  0 disk
+nvme1n1         259:0    0  1.5T  0 disk
+└─nvme1n1p1     259:2    0  1.5T  0 part /oramnt/flash/temp
+[12:52:23 root@m1-db27-dr ~]#
+
+[13:01:29 root@m1-db27-dr ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE /dev/nvme0n1 /dev/nvme1n1
+NAME        TYPE MOUNTPOINT         FSTYPE  SIZE
+nvme0n1     disk                            1.5T
+nvme1n1     disk                            1.5T
+└─nvme1n1p1 part /oramnt/flash/temp xfs     1.5T
+[13:01:49 root@m1-db27-dr ~]#
+
+................................................................................
+
+
+
+
+................................................................................
+

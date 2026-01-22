@@ -1,0 +1,698 @@
+
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   675125
+Название    №675125
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  24.12.2015 11:33
+Дата регистрации    24.12.2015 11:33
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги,
+просьба настроить архивацию и бэкап логов на \\v6250-m1\processinglogs$\pg2\subscriptions<file:///\\v6250-m1\processinglogs$\p...> для системы подписок по аналогии с настроенным бэкапом для infogate.
+Логи нужно забирать с виртуалок
+
+· ds-pr-sub01
+
+· m1-pr-sub01
+Путь к логам: /opt/pg2/subscriptions/logs
+
+
+С уважением,
+
+Владимир Байшев
+Ведущий специалист
+
+................................................................................
+
+
+ИО  Байшев Владимир
+Соглашение  Базовое соглашение
+Сервис  Другое
+Контактное лицо Байшев Владимир
+Контактный e-mail   v.bayshev@tinkoff.ru
+Контактные телефоны 79265806245, 2177
+
+................................................................................
+
+Дата
+Комментарий Автор
+25.12.2015 11:51    Логи нужно раскладывать в папки, соответствующие именам хостов:
+
+ds-pr-sub01 -> \\v6250-m1\processinglogs$\pg2\subscriptions\ds-pr-sub01
+m1-pr-sub01 -> \\v6250-m1\processinglogs$\pg2\subscriptions\m1-pr-sub01 Байшев Владимир
+25.12.2015 11:51    В телефонном разговоре с Владимиром уточнилась информация о том по аналогии с чем сделать резервное копирование.
+Это SD#605700. И серверы ds-pr-ig01, m1-pr-ig01. Настраивал Шинкарев.   Белогруд Сергей В
+24.12.2015 15:59    там CentOS  Соломкин Антон
+
+................................................................................
+
+
+[root@ds-pr-ig01 ~]# cat /etc/crontab
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+HOME=/
+
+# For details see man 4 crontabs
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+0  4  *  *  * root      /opt/scripts/archive.sh > /opt/scripts/logs/$(date +\%Y-\%m-\%d).log
+
+[root@ds-pr-ig01 ~]#
+
+
+[root@ds-pr-ig01 ~]# grep nfs /etc/fstab
+v6250-m1.tcsbank.ru:/vol/primeshare/processinglogs/pg2/jetty/ds-pr-ig01/infogate        /mnt/processinglogs     nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+[root@ds-pr-ig01 ~]#
+
+
+[root@ds-pr-ig01 ~]# cat /opt/scripts/archive.sh
+#!/bin/bash
+
+#
+#   Archive and transfer Infogate logs
+#
+
+# Logs dir
+LOGS_DIR=/opt/pg2/infogate/logs/infogate
+
+# Archive dir
+ARCHIVE_DIR=/mnt/processinglogs
+
+# Yesterday date
+ARCHIVE_DATE=`date +%Y-%m-%d --date="1 day ago"`
+
+# File list
+ARCHIVE_FILES="gisgmp-smev-script-$ARCHIVE_DATE*.zip infows.$ARCHIVE_DATE*.zip notification-gisgmp-smev-script-$ARCHIVE_DATE* $ARCHIVE_DATE.zip rnip-smev-script-$ARCHIVE_DATE* cyber-script-$ARCHIVE_DATE* infogate.$ARCHIVE_DATE*.zip enrichment-$ARCHIVE_DATE*.zip"
+
+TARGET_FILES=()
+
+ZIP=`which zip`
+
+# Push matched files from ARCHIVE_FILES to array, there also will be non-matched files, we delete them later
+for file in $ARCHIVE_FILES
+do
+  TARGET_FILES+=($LOGS_DIR/$file)
+done
+
+# Join TARGET_FILES array with space and remove non-matching files (with * in filename)
+TARGET_FILES_LIST=$(printf "%s " "${TARGET_FILES[@]//*\*/}")
+
+echo "Target files:"
+echo $TARGET_FILES_LIST
+echo "--------------------"
+
+# Archive all matched files
+echo "Creating ZIP-archive $ARCHIVE_DIR/$ARCHIVE_DATE.zip..."
+$ZIP -r $ARCHIVE_DIR/$ARCHIVE_DATE.zip $TARGET_FILES_LIST --verbose
+echo "Done"
+
+# Delete all matched files
+echo "Removing files from original location"
+rm -f $TARGET_FILES_LIST
+echo "Done"
+
+[root@ds-pr-ig01 ~]#
+
+
+[root@ds-pr-ig01 ~]# ls -Alh /opt/pg2/infogate/logs/infogate | head
+total 12G
+-rw-r--r-- 1 root root 2.4G Oct  8 23:59 2015-10-08
+-rw-r--r-- 1 root root 7.3M Oct  9 00:09 2015-10-09
+-rw-r--r-- 1 root root    0 Oct  9 00:09 cyber-script.log
+-rw-r--r-- 1 root root  587 Dec  2 19:39 elecsnet-2015-12-01.0.zip
+-rw-r--r-- 1 root root  448 Dec  3 10:36 elecsnet-2015-12-02.0.zip
+-rw-r--r-- 1 root root  792 Dec  6 20:28 elecsnet-2015-12-03.0.zip
+-rw-r--r-- 1 root root  624 Dec  7 09:06 elecsnet-2015-12-06.0.zip
+-rw-r--r-- 1 root root 2.8K Dec  8 06:56 elecsnet-2015-12-07.0.zip
+-rw-r--r-- 1 root root 1.9K Dec  9 09:27 elecsnet-2015-12-08.0.zip
+[root@ds-pr-ig01 ~]#
+
+[root@ds-pr-ig01 ~]# ls -Alh /mnt/processinglogs | head
+total 446G
+-rwxrwxrwx  1 root root 1.7G Jun 24  2015 2015-06-23.zip
+-rwxrwxrwx  1 root root 1.8G Jun 25  2015 2015-06-24.zip
+-rwxrwxrwx  1 root root 1.3G Jun 26 04:01 2015-06-25.zip
+-rwxrwxrwx  1 root root 1.7G Jun 27 04:01 2015-06-26.zip
+-rwxrwxrwx  1 root root 1.6G Jun 28 04:01 2015-06-27.zip
+-rwxrwxrwx  1 root root 1.7G Jun 29 04:01 2015-06-28.zip
+-rwxrwxrwx  1 root root 1.5G Jun 30 04:02 2015-06-29.zip
+-rwxrwxrwx  1 root root 1.4G Jul  1 04:03 2015-06-30.zip
+-rwxrwxrwx  1 root root 1.2G Jul  2 04:03 2015-07-01.zip
+[root@ds-pr-ig01 ~]#
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+25.12.2015 15:41    Администраторам СХД
+
+Проверить и в случае отсутствия предоставить доступ
+для сервера
+ds-pr-sub01 (10.217.11.13)
+к nfs-ресурсу
+\\v6250-m1\processinglogs$\pg2\subscriptions\ds-pr-sub01
+
+для сервера
+m1-pr-sub01 (10.217.10.13)
+к nfs-ресурсу
+\\v6250-m1\processinglogs$\pg2\subscriptions\m1-pr-sub01
+
+согласно написанному в комментарии "25.12.2015 11:51".
+Возникнут вопросы - к автору комментария.
+
+После решения написать подробно путь к предоставленным для использования на linux серверах nfs-ресурсам (без '$' и т.п.)
+Белогруд Сергей В
+
+................................................................................
+................................................................................
+
+# SD#675125
+v6250-m1:/vol/primeshare/processinglogs/pg2/subscriptions/ds-pr-sub01           /mnt/processinglogs     nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+................................................................................
+
+[root@ds-pr-ig01 ~]# scp /opt/scripts/archive.sh bsv@ds-pr-sub01:/tmp/
+bsv@ds-pr-sub01's password:
+archive.sh                                                                                                                                                                                             100% 1218     1.2KB/s   00:00
+[root@ds-pr-ig01 ~]# scp /opt/scripts/archive.sh bsv@m1-pr-sub01:/tmp/
+The authenticity of host 'm1-pr-sub01 (10.217.10.13)' can't be established.
+RSA key fingerprint is 7b:42:e7:c8:e1:f6:ad:ce:f9:f7:39:70:54:76:de:18.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'm1-pr-sub01,10.217.10.13' (RSA) to the list of known hosts.
+bsv@m1-pr-sub01's password:
+archive.sh                                                                                                                                                                                             100% 1218     1.2KB/s   00:00
+[root@ds-pr-ig01 ~]#
+
+[root@ds-pr-ig01 ~]# ls -Alh /opt/scripts/archive.sh
+-rwx------ 1 ash ash 1.2K Nov 24 11:47 /opt/scripts/archive.sh
+[root@ds-pr-ig01 ~]#
+
+
+[root@ds-pr-sub01 ~]# mkdir -p /mnt/scripts
+[root@ds-pr-sub01 ~]# cp /tmp/archive.sh /mnt/scripts/
+[root@ds-pr-sub01 ~]# ls -Alh !$
+ls -Alh /mnt/scripts/
+total 4.0K
+-rwx------ 1 root root 1.2K Dec 25 17:28 archive.sh
+[root@ds-pr-sub01 ~]#
+
+[root@m1-pr-sub01 ~]# mkdir -p /mnt/scripts
+[root@m1-pr-sub01 ~]# cp /tmp/archive.sh /mnt/scripts/
+[root@m1-pr-sub01 ~]# ls -Alh !$
+ls -Alh /mnt/scripts/
+total 4.0K
+-rwx------ 1 root root 1.2K Dec 25 17:31 archive.sh
+[root@m1-pr-sub01 ~]#
+
+................................................................................
+
+[root@m1-pr-sub01 ~]# mount /mnt/processinglogs
+mount.nfs: rpc.statd is not running but is required for remote locking.
+mount.nfs: Either use '-o nolock' to keep locks local, or start statd.
+mount.nfs: an incorrect mount option was specified
+[root@m1-pr-sub01 ~]# cat /etc/redhat-release
+CentOS release 6.6 (Final)
+[root@m1-pr-sub01 ~]#
+[root@m1-pr-sub01 ~]# service rpcbind status
+rpcbind is stopped
+[root@m1-pr-sub01 ~]# service rpcbind start
+Starting rpcbind:                                          [  OK  ]
+[root@m1-pr-sub01 ~]# mount /mnt/processinglogs
+[root@m1-pr-sub01 ~]# chkconfig rpcbind on
+[root@m1-pr-sub01 ~]#
+
+
+[root@ds-pr-sub01 ~]# mount /mnt/processinglogs
+mount.nfs: rpc.statd is not running but is required for remote locking.
+mount.nfs: Either use '-o nolock' to keep locks local, or start statd.
+mount.nfs: an incorrect mount option was specified
+[root@ds-pr-sub01 ~]# chkcofnig --list | grep rpc
+-bash: chkcofnig: command not found
+[root@ds-pr-sub01 ~]# chkconfig --list | grep rpc
+rpcbind         0:off   1:off   2:on    3:on    4:on    5:on    6:off
+rpcgssd         0:off   1:off   2:off   3:on    4:on    5:on    6:off
+rpcsvcgssd      0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@ds-pr-sub01 ~]# service rpcbind status
+rpcbind is stopped
+[root@ds-pr-sub01 ~]# service rpcbind start
+Starting rpcbind:                                          [  OK  ]
+[root@ds-pr-sub01 ~]# mount /mnt/
+processinglogs/ scripts/
+[root@ds-pr-sub01 ~]# mount /mnt/processinglogs
+[root@ds-pr-sub01 ~]# chkconfig rpcbind on
+[root@ds-pr-sub01 ~]#
+
+................................................................................
+
+[root@ds-pr-sub01 ~]# findmnt -t nfs
+TARGET              SOURCE                                                                FSTYPE OPTIONS
+/mnt/processinglogs v6250-m1:/vol/primeshare/processinglogs/pg2/subscriptions/ds-pr-sub01 nfs    rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.67.8,mountvers=3,mount
+[root@ds-pr-sub01 ~]#
+
+[root@ds-pr-sub01 ~]# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+                       39G   32G  5.9G  85% /
+tmpfs                 3.9G     0  3.9G   0% /dev/shm
+/dev/sda1             240M   62M  166M  27% /boot
+v6250-m1:/vol/primeshare/processinglogs/pg2/subscriptions/ds-pr-sub01
+                      4.4T  3.8T  612G  87% /mnt/processinglogs
+[root@ds-pr-sub01 ~]#
+
+[root@ds-pr-sub01 ~]# tail -n 2 /etc/crontab
+0  4  *  *  * root      /opt/scripts/archive.sh > /opt/scripts/logs/$(date +\%Y-\%m-\%d).log
+
+[root@ds-pr-sub01 ~]#
+
+
+
+[root@m1-pr-sub01 ~]# findmnt -t nfs
+TARGET              SOURCE                                                                FSTYPE OPTIONS
+/mnt/processinglogs v6250-m1:/vol/primeshare/processinglogs/pg2/subscriptions/m1-pr-sub01 nfs    rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.67.8,mountvers=3,mount
+[root@m1-pr-sub01 ~]# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+                       39G  4.0G   34G  11% /
+tmpfs                 3.9G     0  3.9G   0% /dev/shm
+/dev/sda1             240M   62M  166M  27% /boot
+v6250-m1:/vol/primeshare/processinglogs/pg2/subscriptions/m1-pr-sub01
+                      4.4T  3.8T  612G  87% /mnt/processinglogs
+[root@m1-pr-sub01 ~]#
+
+[root@m1-pr-sub01 ~]# tail -n 2 /etc/crontab
+0  4  *  *  * root      /opt/scripts/archive.sh > /opt/scripts/logs/$(date +\%Y-\%m-\%d).log
+
+[root@m1-pr-sub01 ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-pr-sub01 ~]# ls -Alh /mnt/scripts/
+total 4.0K
+-rwx------ 1 root root 1.2K Dec 25 17:28 archive.sh
+[root@ds-pr-sub01 ~]# mkdir -p /opt/scripts
+[root@ds-pr-sub01 ~]# mv /mnt/scripts/archive.sh /opt/scripts/
+[root@ds-pr-sub01 ~]# rmdir /mnt/scripts
+[root@ds-pr-sub01 ~]#
+
+
+[root@m1-pr-sub01 ~]# mkdir -p /opt/scripts
+[root@m1-pr-sub01 ~]# mv /mnt/scripts/archive.sh !$/
+mv /mnt/scripts/archive.sh /opt/scripts/
+[root@m1-pr-sub01 ~]# rmdir /mnt/scripts/
+[root@m1-pr-sub01 ~]#
+
+................................................................................
+
+[root@ds-pr-sub01 ~]# /opt/scripts/archive.sh > /opt/scripts/logs/$(date +%Y-%m-%d).log
+-bash: /opt/scripts/logs/2015-12-25.log: No such file or directory
+[root@ds-pr-sub01 ~]# ls -Alh /opt/scripts/archive.sh
+-rwx------ 1 root root 1.2K Dec 25 17:28 /opt/scripts/archive.sh
+[root@ds-pr-sub01 ~]#
+
+[root@ds-pr-sub01 ~]# mkdir /opt/scripts/logs
+[root@ds-pr-sub01 ~]#
+
+[root@m1-pr-sub01 ~]# mkdir /opt/scripts/logs
+[root@m1-pr-sub01 ~]#
+
+................................................................................
+
+[root@ds-pr-sub01 ~]# /opt/scripts/archive.sh > /opt/scripts/logs/$(date +%Y-%m-%d).log
+which: no zip in (/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin)
+/opt/scripts/archive.sh: line 38: -r: command not found
+[root@ds-pr-sub01 ~]# yum -y install zip
+Loaded plugins: fastestmirror, security
+Setting up Install Process
+Loading mirror speeds from cached hostfile
+ * base: centos-mirror.rbc.ru
+ * extras: centos-mirror.rbc.ru
+ * updates: centos-mirror.rbc.ru
+Resolving Dependencies
+--> Running transaction check
+---> Package zip.x86_64 0:3.0-1.el6_7.1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=========================================================================================================================================================================================================================================
+ Package                                             Arch                                                   Version                                                        Repository                                               Size
+=========================================================================================================================================================================================================================================
+Installing:
+ zip                                                 x86_64                                                 3.0-1.el6_7.1                                                  updates                                                 259 k
+
+Transaction Summary
+=========================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 259 k
+Installed size: 804 k
+Downloading Packages:
+zip-3.0-1.el6_7.1.x86_64.rpm                                                                                                                                                                                      | 259 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : zip-3.0-1.el6_7.1.x86_64                                                                                                                                                                                              1/1
+  Verifying  : zip-3.0-1.el6_7.1.x86_64                                                                                                                                                                                              1/1
+
+Installed:
+  zip.x86_64 0:3.0-1.el6_7.1
+
+Complete!
+[root@ds-pr-sub01 ~]#
+[root@ds-pr-sub01 ~]#
+
+................................................................................
+
+[root@m1-pr-sub01 ~]# yum -y install zip
+Loaded plugins: fastestmirror, security
+Setting up Install Process
+Loading mirror speeds from cached hostfile
+ * base: centos-mirror.rbc.ru
+ * extras: centos-mirror.rbc.ru
+ * updates: centos-mirror.rbc.ru
+Resolving Dependencies
+--> Running transaction check
+---> Package zip.x86_64 0:3.0-1.el6_7.1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=========================================================================================================================================================================================================================================
+ Package                                             Arch                                                   Version                                                        Repository                                               Size
+=========================================================================================================================================================================================================================================
+Installing:
+ zip                                                 x86_64                                                 3.0-1.el6_7.1                                                  updates                                                 259 k
+
+Transaction Summary
+=========================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 259 k
+Installed size: 804 k
+Downloading Packages:
+zip-3.0-1.el6_7.1.x86_64.rpm                                                                                                                                                                                      | 259 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : zip-3.0-1.el6_7.1.x86_64                                                                                                                                                                                              1/1
+  Verifying  : zip-3.0-1.el6_7.1.x86_64                                                                                                                                                                                              1/1
+
+Installed:
+  zip.x86_64 0:3.0-1.el6_7.1
+
+Complete!
+[root@m1-pr-sub01 ~]#
+
+................................................................................
+
+[root@ds-pr-sub01 ~]# /opt/scripts/archive.sh > /opt/scripts/logs/$(date +%Y-%m-%d).log
+[root@ds-pr-sub01 ~]# cat /opt/scripts/logs/2015-12-25.log
+Target files:
+/opt/pg2/subscriptions/logs/gisgmp-smev-script-2015-12-24*.zip /opt/pg2/subscriptions/logs/infows.2015-12-24*.zip /opt/pg2/subscriptions/logs/2015-12-24.zip /opt/pg2/subscriptions/logs/infogate.2015-12-24*.zip /opt/pg2/subscriptions/logs/enrichment-2015-12-24*.zip
+--------------------
+Creating ZIP-archive /mnt/processinglogs/2015-12-24.zip...
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/gisgmp-smev-script-2015-12-24*.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/infows.2015-12-24*.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/2015-12-24.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/infogate.2015-12-24*.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/enrichment-2015-12-24*.zip
+
+zip error: Nothing to do! (try: zip -r --verbose /mnt/processinglogs/2015-12-24.zip . -i /opt/pg2/subscriptions/logs/gisgmp-smev-script-2015-12-24*.zip /opt/pg2/subscriptions/logs/infows.2015-12-24*.zip /opt/pg2/subscriptions/logs/2015-12-24.zip /opt/pg2/subscriptions/logs/infogate.2015-12-24*.zip /opt/pg2/subscriptions/logs/enrichment-2015-12-24*.zip)
+Done
+Removing files from original location
+Done
+[root@ds-pr-sub01 ~]#
+
+
+[root@m1-pr-sub01 ~]# /opt/scripts/archive.sh > /opt/scripts/logs/$(date +%Y-%m-%d).log
+[root@m1-pr-sub01 ~]# cat /opt/scripts/logs/2015-12-25.log
+Target files:
+/opt/pg2/subscriptions/logs/gisgmp-smev-script-2015-12-24*.zip /opt/pg2/subscriptions/logs/infows.2015-12-24*.zip /opt/pg2/subscriptions/logs/2015-12-24.zip /opt/pg2/subscriptions/logs/infogate.2015-12-24*.zip /opt/pg2/subscriptions/logs/enrichment-2015-12-24*.zip
+--------------------
+Creating ZIP-archive /mnt/processinglogs/2015-12-24.zip...
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/gisgmp-smev-script-2015-12-24*.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/infows.2015-12-24*.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/2015-12-24.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/infogate.2015-12-24*.zip
+        zip warning: name not matched: /opt/pg2/subscriptions/logs/enrichment-2015-12-24*.zip
+
+zip error: Nothing to do! (try: zip -r --verbose /mnt/processinglogs/2015-12-24.zip . -i /opt/pg2/subscriptions/logs/gisgmp-smev-script-2015-12-24*.zip /opt/pg2/subscriptions/logs/infows.2015-12-24*.zip /opt/pg2/subscriptions/logs/2015-12-24.zip /opt/pg2/subscriptions/logs/infogate.2015-12-24*.zip /opt/pg2/subscriptions/logs/enrichment-2015-12-24*.zip)
+Done
+Removing files from original location
+Done
+[root@m1-pr-sub01 ~]#
+
+
+................................................................................
+
+
+[root@ds-pr-sub01 ~]# ls -A1 /opt/pg2/subscriptions/logs/gisgmp-*
+ls: cannot access /opt/pg2/subscriptions/logs/gisgmp-*: No such file or directory
+[root@ds-pr-sub01 ~]#
+
+[root@m1-pr-sub01 ~]# ls -A1 /opt/pg2/subscriptions/logs/gisgmp-*
+ls: cannot access /opt/pg2/subscriptions/logs/gisgmp-*: No such file or directory
+[root@m1-pr-sub01 ~]#
+
+................................................................................
+
+[root@ds-pr-sub01 ~]# for var1 in /opt/pg2/subscriptions/logs/{gisgmp,infows,2015,infogate,enrichemnt} ; do echo ; ls -A1 ${var1}* | head -n 2 ; done
+
+ls: cannot access /opt/pg2/subscriptions/logs/gisgmp*: No such file or directory
+
+ls: cannot access /opt/pg2/subscriptions/logs/infows*: No such file or directory
+
+/opt/pg2/subscriptions/logs/2015_11_20.stderrout.log
+/opt/pg2/subscriptions/logs/2015_11_21.stderrout.log
+
+ls: cannot access /opt/pg2/subscriptions/logs/infogate*: No such file or directory
+
+ls: cannot access /opt/pg2/subscriptions/logs/enrichemnt*: No such file or directory
+[root@ds-pr-sub01 ~]#
+
+................................................................................
+................................................................................
+
+#   Mon Dec 28 14:37:20 MSK 2015
+
+[root@m1-pr-sub01 scripts]# cp archive.{,20151228.orig.}sh
+
+[root@m1-pr-sub01 scripts]# vim archive.sh
+...
+# Yesterday date
+ARCHIVE_DATE=`date +%Y-%m-%d --date="1 day ago"`
+# SD#675125
+ARCHIVE_DATE_WITH_UNDERLINE=`date +%Y_%m_%d --date="1 day ago"`
+
+# File list
+#ARCHIVE_FILES="gisgmp-smev-script-$ARCHIVE_DATE*.zip infows.$ARCHIVE_DATE*.zip notification-gisgmp-smev-script-$ARCHIVE_DATE* $ARCHIVE_DATE.zip rnip-smev-script-$ARCHIVE_DATE* cyber-script-$ARCHIVE_DATE* infogate.$ARCHIVE_DATE*.zip enrichment-$ARCHIVE_DATE*.zip"
+# SD#675125
+ARCHIVE_FILES="*$ARCHIVE_DATE* *$ARCHIVE_DATE_WITH_UNDERLINE*"
+...
+
+
+[root@m1-pr-sub01 scripts]# echo "$(date +%Y-%m-%d --date="1 day ago") and $(date +%Y_%m_%d --date="1 day ago")"
+2015-12-27 and 2015_12_27
+[root@m1-pr-sub01 scripts]# ls -A1 /opt/pg2/subscriptions/logs/*$(date +%Y-%m-%d --date="1 day ago")* ; ls -A1 /opt/pg2/subscriptions/logs/*$(date +%Y_%m_%d --date="1 day ago")*
+/opt/pg2/subscriptions/logs/hibernate-ws_2015-12-27.log
+/opt/pg2/subscriptions/logs/jetty_2015-12-27.log
+/opt/pg2/subscriptions/logs/subscriptions_2015-12-27.log
+/opt/pg2/subscriptions/logs/subscriptions-ws_2015-12-27.log
+/opt/pg2/subscriptions/logs/2015_12_27.stderrout.log
+[root@m1-pr-sub01 scripts]# ls -A1 /mnt/processinglogs
+.snapshot
+[root@m1-pr-sub01 scripts]# $(pwd)/archive.sh
+Target files:
+/opt/pg2/subscriptions/logs/hibernate-ws_2015-12-27.log /opt/pg2/subscriptions/logs/jetty_2015-12-27.log /opt/pg2/subscriptions/logs/subscriptions_2015-12-27.log /opt/pg2/subscriptions/logs/subscriptions-ws_2015-12-27.log /opt/pg2/subscriptions/logs/2015_12_27.stderrout.log
+--------------------
+Creating ZIP-archive /mnt/processinglogs/2015-12-27.zip...
+  adding: opt/pg2/subscriptions/logs/hibernate-ws_2015-12-27.log        (in=48064) (out=2759) (deflated 94%)
+  adding: opt/pg2/subscriptions/logs/jetty_2015-12-27.log       (in=7619137) (out=493291) (deflated 94%)
+  adding: opt/pg2/subscriptions/logs/subscriptions_2015-12-27.log       (in=3139723) (out=203790) (deflated 94%)
+  adding: opt/pg2/subscriptions/logs/subscriptions-ws_2015-12-27.log ...................................................        (in=541743014) (out=28786693) (deflated 95%)
+  adding: opt/pg2/subscriptions/logs/2015_12_27.stderrout.log ...............................................................................   (in=827678771) (out=16147622) (deflated 98%)
+total bytes=1380228709, compressed=45634155 -> 97% savings
+Done
+Removing files from original location
+Done
+[root@m1-pr-sub01 scripts]# ls -A1 /mnt/processinglogs/
+2015-12-27.zip
+.snapshot
+[root@m1-pr-sub01 scripts]#
+
+................................................................................
+................................................................................
+
+
+[root@m1-pr-sub01 scripts]# yum install unzip
+Loaded plugins: fastestmirror, security
+Setting up Install Process
+Loading mirror speeds from cached hostfile
+ * base: centos-mirror.rbc.ru
+ * extras: centos-mirror.rbc.ru
+ * updates: centos-mirror.rbc.ru
+base                                                                                                                                                                                                              | 3.7 kB     00:00
+extras                                                                                                                                                                                                            | 2.9 kB     00:00
+tcs-epel                                                                                                                                                                                                          | 3.0 kB     00:00
+tcs-epel/primary_db                                                                                                                                                                                               |  10 MB     00:01
+tcs-puppetlabs-deps                                                                                                                                                                                               | 2.9 kB     00:00
+tcs-puppetlabs-products                                                                                                                                                                                           | 2.9 kB     00:00
+updates                                                                                                                                                                                                           | 3.4 kB     00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package unzip.x86_64 0:6.0-2.el6_6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=========================================================================================================================================================================================================================================
+ Package                                                Arch                                                    Version                                                      Repository                                             Size
+=========================================================================================================================================================================================================================================
+Installing:
+ unzip                                                  x86_64                                                  6.0-2.el6_6                                                  base                                                  149 k
+
+Transaction Summary
+=========================================================================================================================================================================================================================================
+Install       1 Package(s)
+
+Total download size: 149 k
+Installed size: 313 k
+Is this ok [y/N]: y
+Downloading Packages:
+unzip-6.0-2.el6_6.x86_64.rpm                                                                                                                                                                                      | 149 kB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : unzip-6.0-2.el6_6.x86_64                                                                                                                                                                                              1/1
+  Verifying  : unzip-6.0-2.el6_6.x86_64                                                                                                                                                                                              1/1
+
+Installed:
+  unzip.x86_64 0:6.0-2.el6_6
+
+Complete!
+[root@m1-pr-sub01 scripts]# unzip -l /mnt/processinglogs/2015-12-27.zip
+Archive:  /mnt/processinglogs/2015-12-27.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+    48064  12-27-2015 23:55   opt/pg2/subscriptions/logs/hibernate-ws_2015-12-27.log
+  7619137  12-27-2015 23:59   opt/pg2/subscriptions/logs/jetty_2015-12-27.log
+  3139723  12-27-2015 23:58   opt/pg2/subscriptions/logs/subscriptions_2015-12-27.log
+541743014  12-27-2015 23:59   opt/pg2/subscriptions/logs/subscriptions-ws_2015-12-27.log
+827678771  12-28-2015 02:59   opt/pg2/subscriptions/logs/2015_12_27.stderrout.log
+---------                     -------
+1380228709                     5 files
+[root@m1-pr-sub01 scripts]#
+
+................................................................................
+................................................................................
+
+[root@ds-pr-sub01 ~]# cd /opt/scripts/
+[root@ds-pr-sub01 scripts]# ll
+total 8
+-rwx------ 1 root root 1214 Dec 25 17:59 archive.sh
+drwx------ 2 root root 4096 Dec 28 04:00 logs
+[root@ds-pr-sub01 scripts]# cp archive.{,20151228.orig.}sh
+[root@ds-pr-sub01 scripts]# vim archive.sh
+
+[root@ds-pr-sub01 scripts]# $(pwd)/archive.sh
+Target files:
+/opt/pg2/subscriptions/logs/gibdd_2015-12-27.log /opt/pg2/subscriptions/logs/hibernate-ws_2015-12-27.log /opt/pg2/subscriptions/logs/jetty_2015-12-27.log /opt/pg2/subscriptions/logs/subscriptions_2015-12-27.log /opt/pg2/subscriptions/logs/subscriptions-email_2015-12-27.log /opt/pg2/subscriptions/logs/subscriptions-ws_2015-12-27.log /opt/pg2/subscriptions/logs/2015_12_27.stderrout.log
+--------------------
+Creating ZIP-archive /mnt/processinglogs/2015-12-27.zip...
+  adding: opt/pg2/subscriptions/logs/gibdd_2015-12-27.log ..........................................................    (in=612041658) (out=124116605) (deflated 80%)
+  adding: opt/pg2/subscriptions/logs/hibernate-ws_2015-12-27.log        (in=36755) (out=2241) (deflated 94%)
+  adding: opt/pg2/subscriptions/logs/jetty_2015-12-27.log       (in=7743288) (out=513464) (deflated 93%)
+  adding: opt/pg2/subscriptions/logs/subscriptions_2015-12-27.log ......................................        (in=398181106) (out=38986923) (deflated 90%)
+  adding: opt/pg2/subscriptions/logs/subscriptions-email_2015-12-27.log         (in=4005918) (out=155684) (deflated 96%)
+  adding: opt/pg2/subscriptions/logs/subscriptions-ws_2015-12-27.log ...................................................        (in=541097189) (out=28960004) (deflated 95%)
+  adding: opt/pg2/subscriptions/logs/2015_12_27.stderrout.log .......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................w...............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................   (in=20138346513) (out=290910284) (deflated 99%)
+total bytes=21701452427, compressed=483645205 -> 98% savings
+Done
+Removing files from original location
+Done
+[root@ds-pr-sub01 scripts]#
+
+
+[root@ds-pr-sub01 scripts]# ls -A1 /mnt/processinglogs
+2015-12-27.zip
+.snapshot
+[root@ds-pr-sub01 scripts]# unzip -l /mnt/processinglogs/2015-12-27.zip
+Archive:  /mnt/processinglogs/2015-12-27.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+612041658  12-27-2015 23:59   opt/pg2/subscriptions/logs/gibdd_2015-12-27.log
+    36755  12-27-2015 23:55   opt/pg2/subscriptions/logs/hibernate-ws_2015-12-27.log
+  7743288  12-27-2015 23:59   opt/pg2/subscriptions/logs/jetty_2015-12-27.log
+398181106  12-27-2015 23:59   opt/pg2/subscriptions/logs/subscriptions_2015-12-27.log
+  4005918  12-27-2015 23:59   opt/pg2/subscriptions/logs/subscriptions-email_2015-12-27.log
+541097189  12-27-2015 23:59   opt/pg2/subscriptions/logs/subscriptions-ws_2015-12-27.log
+20138346513  12-28-2015 02:59   opt/pg2/subscriptions/logs/2015_12_27.stderrout.log
+---------                     -------
+21701452427                     7 files
+[root@ds-pr-sub01 scripts]#
+
+
+................................................................................
+................................................................................
+
+
+#   Tue Dec 29 11:42:22 MSK 2015
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@m1-pr-sub01
+gpg: Invalid passphrase; please try again ...
+Last login: Mon Dec 28 12:25:29 2015 from tcs4500.tcsbank.ru
+[bsv@m1-pr-sub01 ~]$ ls -Alh /mnt/processinglogs/
+ls: cannot open directory /mnt/processinglogs/: Permission denied
+[bsv@m1-pr-sub01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@m1-pr-sub01 ~]# ls -Alh /mnt/processinglogs/
+total 97M
+-rwxrwxrwx  1 root root  44M Dec 28 14:45 2015-12-27.zip
+-rwxrwxrwx  1 root root  53M Dec 29 04:00 2015-12-28.zip
+drwxrwxrwx 16 root root 4.0K Dec 29 06:00 .snapshot
+[root@m1-pr-sub01 ~]# logout
+[bsv@m1-pr-sub01 ~]$ logout
+Connection to m1-pr-sub01 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-pr-sub01
+Last login: Mon Dec 28 14:56:08 2015 from tcs4500.tcsbank.ru
+[bsv@ds-pr-sub01 ~]$ sudo -i
+[sudo] password for bsv:
+[root@ds-pr-sub01 ~]# ls -Alh /mnt/processinglogs/
+total 908M
+-rwxrwxrwx  1 root root 462M Dec 28 15:07 2015-12-27.zip
+-rwxrwxrwx  1 root root 443M Dec 29 04:08 2015-12-28.zip
+drwxrwxrwx  2 root root 8.0K Dec 29 10:44 manual
+drwxrwxrwx 16 root root 4.0K Dec 29 06:00 .snapshot
+[root@ds-pr-sub01 ~]# logout
+[bsv@ds-pr-sub01 ~]$ logout
+Connection to ds-pr-sub01 closed.
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+
+
+

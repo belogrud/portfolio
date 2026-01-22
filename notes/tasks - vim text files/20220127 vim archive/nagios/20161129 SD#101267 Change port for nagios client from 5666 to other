@@ -1,0 +1,90 @@
+
+
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# vim $(find . -iname vm-rta-itic02*)
+
+[root@vm-vol-nag4-tst objects]# cat $(find . -iname vm-rta-itic02*)
+define host{
+    use                             windows-server
+    host_name                       vm-rta-itic02
+    hostgroups                      windows-servers
+    address                         10.216.80.158
+    notes_url                       https://wiki.tcsbank.ru/display/sd/$HOSTNAME$
+    contact_groups                  +nice-admins,windows-admins-critical,ext-rta-admins,nice-rta-web-access
+}
+define service{
+    use                             generic-service-ping
+    host_name                       vm-rta-itic02
+    service_description             PING
+    check_command                   check_ping!100.0,20%!500.0,60%
+}
+define service{
+    use                             generic-service
+    host_name                       vm-rta-itic02
+    service_description             Uptime
+    check_command                   check_nt!UPTIME
+}
+define service{
+    use                             generic-service
+    host_name                       vm-rta-itic02
+    service_description             CPU Load
+    check_command                   check_nt!CPULOAD!-l 5,79,80
+}
+define service{
+    use                             generic-service
+    host_name                       vm-rta-itic02
+    service_description             Memory Usage
+    check_command                   check_nt!MEMUSE!-w 94 -c 95
+}
+define service{
+    use                             generic-service-drive-c-space
+    host_name                       vm-rta-itic02
+    service_description             Drive C: Space
+    check_command                   check_nt!USEDDISKSPACE!-l c -w 90 -c 95
+}
+define service{
+    use                             generic-service
+    host_name                       vm-rta-itic02
+    service_description             Drive D: Space
+    check_command                   check_nt!USEDDISKSPACE!-l d -w 90 -c 95
+}
+define service{
+    use                             generic-service-windows-time
+    host_name                       vm-rta-itic02
+    service_description             Windows Time
+    check_command                   check_nt!SERVICESTATE!-d SHOWALL -l W32Time
+}
+define service{
+    use                             generic-service
+    host_name                       vm-rta-itic02
+    service_description             Memory Pool Nonpaged Bytes
+    check_command                   check_nt_pool_paged_bytes!1073741824!1363148800
+    check_interval                  3
+    max_check_attempts              2
+}
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+
+# 'check_nt' command definition NEW-port-12469 after 06-06-2014
+define command{
+    command_name    check_nt
+    command_line    $USER1$/check_nt -H $HOSTADDRESS$ -p 12469 -v $ARG1$ $ARG2$
+    }
+
+define command{
+    command_name check_nt_pool_paged_bytes
+    command_line $USER1$/check_nt -H $HOSTADDRESS$ -p 12469 -v COUNTER -l "\\Memory\\Pool Nonpaged Bytes","Pool Nonpaged Bytes is %.f" -w $ARG1$ -c $ARG2$
+}
+
+
+
+
+

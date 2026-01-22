@@ -1,0 +1,211 @@
+
+................................................................................
+Параметры запроса
+[редактировать критичность]
+Номер   582665
+Название    №582665
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  06.10.2015 19:26
+Дата регистрации    06.10.2015 19:26
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день!
+
+Просьба настроить возможность отправки писем с указанной машины на dwh-adm, greenplum_admins d.nemchin@tinkoff.ru,d.s.pavlov@tinkoff.ru,d.ovchinnikov@tinkoff.ru,g.bezrukih@tinkoff.ru,sas-admins<mailto:d.nemchin@tinkoff.ru,d.s.pavlov@tinkoff.ru,d.ovchinnikov@tinkoff.ru,g.bezrukih@tinkoff.ru,sas-admins>.
+
+Возможность рассылки необходима для мониторинга загрузки данных.
+
+С уважением,
+
+Дмитрий Немчин
+Старший системный администратор
+
+................................................................................
+
+[support@centos00 ~]$ sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@vm-oggcdc01p
+Last login: Wed Jun  3 17:25:25 2015 from tcs4500.tcsbank.ru
+[bsv@vm-oggcdc01p ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-oggcdc01p ~]# rpm -qa | grep -i postf
+postfix-2.6.6-2.2.el6_1.x86_64
+[root@vm-oggcdc01p ~]# mailq
+mailq: warning: inet_protocols: IPv6 support is disabled: Address family not supported by protocol
+mailq: warning: inet_protocols: configuring for IPv4 support only
+postqueue: warning: inet_protocols: IPv6 support is disabled: Address family not supported by protocol
+postqueue: warning: inet_protocols: configuring for IPv4 support only
+-Queue ID- --Size-- ----Arrival Time---- -Sender/Recipient-------
+DB7501C0054      765 Tue Oct  6 19:18:13  dwhsys@vm-oggcdc01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+                                         greenplum_admins@tinkoff.ru
+
+-- 1 Kbytes in 1 Request.
+[root@vm-oggcdc01p ~]#
+
+[root@vm-oggcdc01p ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-oggcdc01p.tcsbank.ru
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@vm-oggcdc01p ~]#
+
+[root@vm-oggcdc01p ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@vm-oggcdc01p ~]# mailq
+-Queue ID- --Size-- ----Arrival Time---- -Sender/Recipient-------
+DB7501C0054      765 Tue Oct  6 19:18:13  dwhsys@vm-oggcdc01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+                                         greenplum_admins@tinkoff.ru
+
+-- 1 Kbytes in 1 Request.
+[root@vm-oggcdc01p ~]# hostname -i
+10.216.24.29
+[root@vm-oggcdc01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@vm-oggcdc01p ~]# tail /var/log/maillog
+Oct  7 11:36:43 vm-oggcdc01p postfix/pickup[26537]: 0EE991C005A: uid=0 from=<root>
+Oct  7 11:36:43 vm-oggcdc01p postfix/cleanup[27579]: 0EE991C005A: message-id=<20151007083643.0EE991C005A@vm-oggcdc01p.tcsbank.ru>
+Oct  7 11:36:43 vm-oggcdc01p postfix/qmgr[26538]: 0EE991C005A: from=<root@vm-oggcdc01p.tcsbank.ru>, size=556, nrcpt=1 (queue active)
+Oct  7 11:36:48 vm-oggcdc01p postfix/smtp[27581]: 0EE991C005A: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=5.1, delays=0.06/0.02/0.01/5, dsn=5.7.1, status=bounced (host smtp.tcsbank.ru[10.219.0.2] said: 530 5.7.1 Client was not authenticated (in reply to MAIL FROM command))
+Oct  7 11:36:48 vm-oggcdc01p postfix/cleanup[27579]: 1ED941C005B: message-id=<20151007083648.1ED941C005B@vm-oggcdc01p.tcsbank.ru>
+Oct  7 11:36:48 vm-oggcdc01p postfix/bounce[27582]: 0EE991C005A: sender non-delivery notification: 1ED941C005B
+Oct  7 11:36:48 vm-oggcdc01p postfix/qmgr[26538]: 1ED941C005B: from=<>, size=2526, nrcpt=1 (queue active)
+Oct  7 11:36:48 vm-oggcdc01p postfix/qmgr[26538]: 0EE991C005A: removed
+Oct  7 11:36:48 vm-oggcdc01p postfix/local[27583]: 1ED941C005B: to=<root@vm-oggcdc01p.tcsbank.ru>, relay=local, delay=0.06, delays=0/0.04/0/0.02, dsn=2.0.0, status=sent (delivered to mailbox)
+Oct  7 11:36:48 vm-oggcdc01p postfix/qmgr[26538]: 1ED941C005B: removed
+[root@vm-oggcdc01p ~]# mailq
+-Queue ID- --Size-- ----Arrival Time---- -Sender/Recipient-------
+DB7501C0054      765 Tue Oct  6 19:18:13  dwhsys@vm-oggcdc01p.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         d.nemchin@tinkoff.ru
+                                         greenplum_admins@tinkoff.ru
+
+-- 1 Kbytes in 1 Request.
+You have new mail in /var/spool/mail/root
+[root@vm-oggcdc01p ~]# host smtp.tcsbank.ru
+smtp.tcsbank.ru has address 10.219.0.2
+[root@vm-oggcdc01p ~]#
+................................................................................
+Дата
+Комментарий Автор
+07.10.2015 11:38    Администраторам ЛВС.
+
+Прошу предоставить серверу vm-oggcdc01p (10.216.24.29) возможность использовать релэй smtp.tcsbank.ru без авторизации.
+
+[root@vm-oggcdc01p ~]# tail /var/log/maillog
+Oct 7 11:36:43 vm-oggcdc01p postfix/pickup[26537]: 0EE991C005A: uid=0 from=<root>
+Oct 7 11:36:43 vm-oggcdc01p postfix/cleanup[27579]: 0EE991C005A: message-id=<20151007083643.0EE991C005A@vm-oggcdc01p.tcsbank.ru>
+Oct 7 11:36:43 vm-oggcdc01p postfix/qmgr[26538]: 0EE991C005A: from=<root@vm-oggcdc01p.tcsbank.ru>, size=556, nrcpt=1 (queue active)
+Oct 7 11:36:48 vm-oggcdc01p postfix/smtp[27581]: 0EE991C005A: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=5.1, delays=0.06/0.02/0.01/5, dsn=5.7.1, status=bounced (host smtp.tcsbank.ru[10.219.0.2] said: 530 5.7.1 Client was not authenticated (in reply to MAIL FROM command))
+Oct 7 11:36:48 vm-oggcdc01p postfix/cleanup[27579]: 1ED941C005B: message-id=<20151007083648.1ED941C005B@vm-oggcdc01p.tcsbank.ru>
+Oct 7 11:36:48 vm-oggcdc01p postfix/bounce[27582]: 0EE991C005A: sender non-delivery notification: 1ED941C005B
+Oct 7 11:36:48 vm-oggcdc01p postfix/qmgr[26538]: 1ED941C005B: from=<>, size=2526, nrcpt=1 (queue active)
+Oct 7 11:36:48 vm-oggcdc01p postfix/qmgr[26538]: 0EE991C005A: removed
+Oct 7 11:36:48 vm-oggcdc01p postfix/local[27583]: 1ED941C005B: to=<root@vm-oggcdc01p.tcsbank.ru>, relay=local, delay=0.06, delays=0/0.04/0/0.02, dsn=2.0.0, status=sent (delivered to mailbox)
+Oct 7 11:36:48 vm-oggcdc01p postfix/qmgr[26538]: 1ED941C005B: removed
+[root@vm-oggcdc01p ~]#  Белогруд Сергей В
+................................................................................
+
+[root@vm-oggcdc01p ~]# mailq
+Mail queue is empty
+[root@vm-oggcdc01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@vm-oggcdc01p ~]# mailq
+-Queue ID- --Size-- ----Arrival Time---- -Sender/Recipient-------
+935421C0056*     556 Wed Oct  7 13:00:14  root@vm-oggcdc01p.tcsbank.ru
+                                         s.belogrud@tcsbank.ru
+
+-- 0 Kbytes in 1 Request.
+[root@vm-oggcdc01p ~]# mailq
+Mail queue is empty
+[root@vm-oggcdc01p ~]# tail /var/log/maillog
+Oct  7 13:00:14 vm-oggcdc01p postfix/pickup[26537]: 935421C0056: uid=0 from=<root>
+Oct  7 13:00:14 vm-oggcdc01p postfix/cleanup[25384]: 935421C0056: message-id=<20151007100014.935421C0056@vm-oggcdc01p.tcsbank.ru>
+Oct  7 13:00:14 vm-oggcdc01p postfix/qmgr[26538]: 935421C0056: from=<root@vm-oggcdc01p.tcsbank.ru>, size=556, nrcpt=1 (queue active)
+Oct  7 13:00:19 vm-oggcdc01p postfix/smtp[25386]: 935421C0056: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=5.1, delays=0.05/0.01/0.01/5, dsn=5.7.1, status=bounced (host smtp.tcsbank.ru[10.219.0.2] said: 530 5.7.1 Client was not authenticated (in reply to MAIL FROM command))
+Oct  7 13:00:19 vm-oggcdc01p postfix/cleanup[25384]: A48261C0059: message-id=<20151007100019.A48261C0059@vm-oggcdc01p.tcsbank.ru>
+Oct  7 13:00:19 vm-oggcdc01p postfix/bounce[25630]: 935421C0056: sender non-delivery notification: A48261C0059
+Oct  7 13:00:19 vm-oggcdc01p postfix/qmgr[26538]: A48261C0059: from=<>, size=2526, nrcpt=1 (queue active)
+Oct  7 13:00:19 vm-oggcdc01p postfix/qmgr[26538]: 935421C0056: removed
+Oct  7 13:00:19 vm-oggcdc01p postfix/local[25631]: A48261C0059: to=<root@vm-oggcdc01p.tcsbank.ru>, relay=local, delay=0.03, delays=0.01/0.01/0/0.01, dsn=2.0.0, status=sent (delivered to mailbox)
+Oct  7 13:00:19 vm-oggcdc01p postfix/qmgr[26538]: A48261C0059: removed
+[root@vm-oggcdc01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+You have new mail in /var/spool/mail/root
+[root@vm-oggcdc01p ~]# tail -f /var/log/maillog
+Oct  7 13:01:31 vm-oggcdc01p postfix/pickup[26537]: 7972E1C0056: uid=0 from=<root>
+Oct  7 13:01:31 vm-oggcdc01p postfix/cleanup[25384]: 7972E1C0056: message-id=<20151007100131.7972E1C0056@vm-oggcdc01p.tcsbank.ru>
+Oct  7 13:01:31 vm-oggcdc01p postfix/qmgr[26538]: 7972E1C0056: from=<root@vm-oggcdc01p.tcsbank.ru>, size=556, nrcpt=1 (queue active)
+Oct  7 13:01:36 vm-oggcdc01p postfix/smtp[25386]: 7972E1C0056: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=5, delays=0.03/0/0.01/5, dsn=5.7.1, status=bounced (host smtp.tcsbank.ru[10.219.0.2] said: 530 5.7.1 Client was not authenticated (in reply to MAIL FROM command))
+Oct  7 13:01:36 vm-oggcdc01p postfix/cleanup[25384]: 81AA61C0059: message-id=<20151007100136.81AA61C0059@vm-oggcdc01p.tcsbank.ru>
+Oct  7 13:01:36 vm-oggcdc01p postfix/bounce[25630]: 7972E1C0056: sender non-delivery notification: 81AA61C0059
+Oct  7 13:01:36 vm-oggcdc01p postfix/qmgr[26538]: 81AA61C0059: from=<>, size=2526, nrcpt=1 (queue active)
+Oct  7 13:01:36 vm-oggcdc01p postfix/qmgr[26538]: 7972E1C0056: removed
+Oct  7 13:01:36 vm-oggcdc01p postfix/local[25631]: 81AA61C0059: to=<root@vm-oggcdc01p.tcsbank.ru>, relay=local, delay=0.01, delays=0/0/0/0, dsn=2.0.0, status=sent (delivered to mailbox)
+Oct  7 13:01:36 vm-oggcdc01p postfix/qmgr[26538]: 81AA61C0059: removed
+^C
+[root@vm-oggcdc01p ~]# ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    link/ether 00:50:56:93:45:c1 brd ff:ff:ff:ff:ff:ff
+    inet 10.216.24.29/24 brd 10.216.24.255 scope global eth0
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP qlen 1000
+    link/ether 00:50:56:93:24:53 brd ff:ff:ff:ff:ff:ff
+    inet 10.217.65.79/24 brd 10.217.65.255 scope global eth1
+[root@vm-oggcdc01p ~]# ip route
+10.217.65.0/24 dev eth1  proto kernel  scope link  src 10.217.65.79
+10.216.24.0/24 dev eth0  proto kernel  scope link  src 10.216.24.29
+169.254.0.0/16 dev eth0  scope link  metric 1002
+169.254.0.0/16 dev eth1  scope link  metric 1003
+default via 10.216.24.254 dev eth0
+[root@vm-oggcdc01p ~]# hostname -i
+10.216.24.29
+You have new mail in /var/spool/mail/root
+[root@vm-oggcdc01p ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.2...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 M1-MSK-MAIL20.tcsbank.ru Microsoft ESMTP MAIL Service ready at Wed, 7 Oct 2015 13:23:37 +0300
+helo
+250 M1-MSK-MAIL20.tcsbank.ru Hello [10.219.0.237]
+ehlo
+250-M1-MSK-MAIL20.tcsbank.ru Hello [10.219.0.237]
+250-SIZE 52428800
+250-PIPELINING
+250-DSN
+250-ENHANCEDSTATUSCODES
+250-AUTH NTLM LOGIN
+250-8BITMIME
+250-BINARYMIME
+250 CHUNKING
+helo vm-oggcdc01p
+250 M1-MSK-MAIL20.tcsbank.ru Hello [10.219.0.237]
+mail from:<root@vm-oggcdc01p.tcsbank.ru>
+530 5.7.1 Client was not authenticated
+Connection closed by foreign host.
+[root@vm-oggcdc01p ~]# host vm-oggcdc01p.tcsbank.ru
+vm-oggcdc01p.tcsbank.ru has address 10.216.24.29
+[root@vm-oggcdc01p ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+[root@vm-oggcdc01p ~]#
+[root@vm-oggcdc01p ~]# tail -f /var/log/maillog
+Oct  7 13:06:57 vm-oggcdc01p postfix/bounce[27919]: 669FF1C0056: sender non-delivery notification: 791331C0059
+Oct  7 13:06:57 vm-oggcdc01p postfix/qmgr[26538]: 791331C0059: from=<>, size=3072, nrcpt=1 (queue active)
+Oct  7 13:06:57 vm-oggcdc01p postfix/qmgr[26538]: 669FF1C0056: removed
+Oct  7 13:06:57 vm-oggcdc01p postfix/local[27920]: 791331C0059: to=<dwhsys@vm-oggcdc01p.tcsbank.ru>, relay=local, delay=0.03, delays=0/0.01/0/0.01, dsn=2.0.0, status=sent (delivered to mailbox)
+Oct  7 13:06:57 vm-oggcdc01p postfix/qmgr[26538]: 791331C0059: removed
+Oct  7 13:25:45 vm-oggcdc01p postfix/pickup[29067]: EAEF31C0056: uid=0 from=<root>
+Oct  7 13:25:45 vm-oggcdc01p postfix/cleanup[2289]: EAEF31C0056: message-id=<20151007102545.EAEF31C0056@vm-oggcdc01p.tcsbank.ru>
+Oct  7 13:25:45 vm-oggcdc01p postfix/qmgr[26538]: EAEF31C0056: from=<root@vm-oggcdc01p.tcsbank.ru>, size=556, nrcpt=1 (queue active)
+Oct  7 13:25:46 vm-oggcdc01p postfix/smtp[2291]: EAEF31C0056: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.54, delays=0.05/0.01/0.01/0.47, dsn=2.6.0, status=sent (250 2.6.0 <20151007102545.EAEF31C0056@vm-oggcdc01p.tcsbank.ru> [InternalId=42111752] Queued mail for delivery)
+Oct  7 13:25:46 vm-oggcdc01p postfix/qmgr[26538]: EAEF31C0056: removed
+^C
+[root@vm-oggcdc01p ~]#
+................................................................................
+
+

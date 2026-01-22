@@ -1,0 +1,157 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   702031
+Название    №702031
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  20.01.2016 18:58
+Дата регистрации    20.01.2016 18:58
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, привет!
+
+На серверах vm-esb-tst01, vm-esb-tst03 необходимо:
+1. Смонтировать следующие сетевые ресурсы:
+
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/In в точку /mnt/scandoc3/in
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out в точку /mnt/scandoc3/out
+
+2. Дать права (чтение/запись) пользователю wsphere на директории:
+/mnt/scandoc3/in
+/mnt/scandoc3/out
+
+Спасибо.
+С уважением, Сергей.
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Кирсанов Сергей
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Кирсанов Сергей
+Контактный e-mail   s.kirsanov@tinkoff.ru
+Контактные телефоны 79266716062, 2264
+
+................................................................................
+
+Дата
+Комментарий Автор
+21.01.2016 10:19    Создал exportы и прописал доступ запрашиваемым виртуалкам. Монтируй.    Жук Дмитрий А
+20.01.2016 19:40    Администраторам СХД.
+
+Проверить и в случае отсутствия предоставить доступ с перечисленных двух серверов к перечисленным двум nfs-ресурсам.
+Если путь к nfs-ресурсу окажется отличным от написанного в описании запроса, то вставить правильный в комментарий.
+
+Настроить разрешения доступа для локальной учётной записи:
+[root@vm-esb-tst01 ~]# id wsphere
+uid=527(wsphere) gid=527(wsphere) groups=527(wsphere),0(root)
+[root@vm-esb-tst01 ~]#
+Белогруд Сергей В
+
+................................................................................
+
+[root@vm-esb-tst01 ~]# mkdir -p /mnt/scandoc3/in
+[root@vm-esb-tst01 ~]# mkdir -p /mnt/scandoc3/out
+
+[root@vm-esb-tst01 ~]# ls -Alhd /mnt/scandoc3/
+drwx------. 4 root root 4.0K Jan 21 15:33 /mnt/scandoc3/
+[root@vm-esb-tst01 ~]# chmod 755 /mnt/scandoc3
+[root@vm-esb-tst01 ~]# ls -Alh /mnt/scandoc3/
+total 8.0K
+drwx------. 2 root root 4.0K Jan 21 15:33 in
+drwx------. 2 root root 4.0K Jan 21 15:33 out
+[root@vm-esb-tst01 ~]#
+
+
+...
+#SD#702031
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/In         /mnt/scandoc3/in        nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out        /mnt/scandoc3/out       nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+"/etc/fstab" 39L, 2879C written
+
+[root@vm-esb-tst01 ~]# mount /mnt/scandoc3/in
+[root@vm-esb-tst01 ~]# mount /mnt/scandoc3/out
+[root@vm-esb-tst01 ~]# df -h /mnt/scandoc3/in
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/In
+                       10T  5.6T  4.5T  56% /mnt/scandoc3/in
+[root@vm-esb-tst01 ~]# df -h /mnt/scandoc3/out
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out
+                       10T  5.6T  4.5T  56% /mnt/scandoc3/out
+[root@vm-esb-tst01 ~]#
+
+[root@vm-esb-tst01 ~]# ls -Alh /mnt/scandoc3/
+total 8.0K
+drwxrwxrwx. 2 root root 4.0K Jan 11 14:02 in
+drwxrwxrwx. 3 root root 4.0K Jan 12 15:17 out
+[root@vm-esb-tst01 ~]#
+
+[root@vm-esb-tst01 ~]# su - wsphere
+[03:41:41] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$ ls /mnt/scandoc3/
+in  out
+[03:41:51] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$ ls /mnt/scandoc3/in/
+ls: cannot open directory /mnt/scandoc3/in/: Permission denied
+[03:42:05] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$ ls /mnt/scandoc3/out
+ls: cannot open directory /mnt/scandoc3/out: Permission denied
+[03:42:13] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$
+
+[root@vm-esb-tst01 ~]# ls /mnt/scandoc3/in/
+1.jpg  2.jpg  3.jpg  4.jpg  5.jpg  Thumbs.db
+[root@vm-esb-tst01 ~]# ls /mnt/scandoc3/out/
+2016
+[root@vm-esb-tst01 ~]#
+
+[root@vm-esb-tst01 ~]# su - wsphere
+[03:52:51] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$ ls /mnt/scandoc3/in
+1.jpg  2.jpg  3.jpg  4.jpg  5.jpg  Thumbs.db
+[03:52:53] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$ ls /mnt/scandoc3/out
+2016
+[03:52:56] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$ echo "test1" > /mnt/scandoc3/in/test1.tmp
+[03:53:30] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$ rm !$
+rm /mnt/scandoc3/in/test1.tmp
+[03:53:35] wsphere@vm-esb-tst01:/opt/ibm/WebSphere/ESB751/profiles/node01/logs/default.AppTarget.vm-test-app13Node01.0$
+
+
+................................................................................
+
+[root@vm-esb-tst03 ~]# mkdir -p /mnt/scandoc3/in ; mkdir -p /mnt/scandoc3/out
+
+...
+#SD#702031
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/In         /mnt/scandoc3/in        nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out        /mnt/scandoc3/out       nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+"/etc/fstab" 39L, 2859C written
+[root@vm-esb-tst03 ~]#
+
+[root@vm-esb-tst03 ~]# chmod 755 /mnt/scandoc3
+[root@vm-esb-tst03 ~]#
+
+[root@vm-esb-tst03 ~]# mount /mnt/scandoc3/in ; mount /mnt/scandoc3/out
+
+[root@vm-esb-tst03 ~]# df -h /mnt/scandoc3/in /mnt/scandoc3/out
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/In
+                       10T  5.6T  4.5T  56% /mnt/scandoc3/in
+v6250-ds:/vol/atx_tif/atx_tif_test/Converter/Out
+                       10T  5.6T  4.5T  56% /mnt/scandoc3/out
+[root@vm-esb-tst03 ~]#
+
+[root@vm-esb-tst03 ~]# su - wsphere
+[03:54:20 wsphere@vm-esb-tst03]:/opt/ibm/WebSphere/ESB751/profiles/node02/logs/default.AppTarget.vm-test-app14Node01.0$ ls /mnt/scandoc3/in/
+1.jpg  2.jpg  3.jpg  4.jpg  5.jpg  Thumbs.db
+[03:54:28 wsphere@vm-esb-tst03]:/opt/ibm/WebSphere/ESB751/profiles/node02/logs/default.AppTarget.vm-test-app14Node01.0$ ls /mnt/scandoc3/out/
+2016
+[03:54:31 wsphere@vm-esb-tst03]:/opt/ibm/WebSphere/ESB751/profiles/node02/logs/default.AppTarget.vm-test-app14Node01.0$
+
+

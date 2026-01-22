@@ -1,0 +1,509 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   698731
+Название    №698731
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  18.01.2016 15:00
+Дата регистрации    18.01.2016 15:00
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Добрый день.
+Прошу подключить на номер моего мобильного телефона +7 919 9619777 рассылку алертов от Nagios из списка ниже (Online, Prime):
+Alert Name
+/
+Query/View
+
+ONLINE - ON-US Approved Auth Requests
+
+select * from tctdbs.tcs_monitor_00_rc
+
+
+ONLINE - ON-US Bad Responses
+
+select * from tctdbs.tcs_monitor_bad_rc
+
+ONLINE - MC NSPC
+
+select * from tcs_monitor_mc_nspc
+
+
+ONLINE - ON-US Auth Requests MC
+
+select * from tctdbs.tcs_monitor_auth_mc
+
+
+ONLINE - VISA NSPC
+
+select * from tcs_monitor_visa_nspc
+
+
+ONLINE - ON-US Auth Requests VISA
+
+select * from tctdbs.tcs_monitor_auth_visa
+
+ONLINE - ACQ VISA SMS C2C No Responses
+
+select * from tcs_mon_c2cnoresponses
+
+
+ONLINE - ACQ Auth Requests DHI
+
+select * from
+tctdbs.tcs_monitor_acquring
+
+
+ONLINE - ON-US Auth Requests DHI
+
+select * from
+tctdbs.tcs_monitor_auth_dhi
+
+
+ONLINE - ON-US YandexCard Requests
+
+select * from tcs_monitor_debit
+
+ONLINE - SMS Auth Queue
+
+SELECT * FROM tctdbs.tcs_monitor_sms_auth_queue
+
+
+ONLINE - QTBL_CAOVERRIDE_CHANGES queue
+
+select * from
+tctdbs.tcs11_monitor_QTBL_CAOVERRIDE
+
+
+ONLINE - IRIS Checks
+
+select * from TCS_IRIS_MONITOR_ONL
+
+ONLINE - ON-US ACQURING
+
+select * from TCTDBS.TCS_MONITOR_ONUS
+
+ONLINE - OFF-US VISA
+
+select * from TCTDBS.TCS_MONITOR_VISA
+
+ONLINE - OFF-US MC
+
+select * from TCTDBS.TCS_MONITOR_MC
+
+ONLINE - OFF-US NSPC VISA
+
+select * from TCTDBS.TCS_MONITOR_VISA_NSPC
+
+
+
+ONLINE - OFF-US NSPC MC
+
+select * from TCTDBS.TCS_MONITOR_MC_NSPC
+
+ONLINE - OFF-US ECOM
+
+select * from TCTDBS.TCS_MONITOR_ECOM_ACQURING
+
+ONLINE - OFF-US C2C
+
+select * from TCTDBS.TCS_MONITOR_C2C_ACQURING
+
+
+
+С уважением,
+Муханов Светослав
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Муханов Светослав
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Муханов Светослав
+Контактный e-mail   s.mukhanov@tinkoff.ru
+Контактные телефоны 79199619777, 2453
+
+................................................................................
+
+Дата
+Комментарий Автор
+19.01.2016 12:41    Прошу уточнить.
+Я правильно понял, что Вы имеете в виду следующие перечисленные проверки в nagios:
+
+1 ONLINE - ON-US Approved Auth Requests
+2 ONLINE - ON-US Bad Responses
+3 ONLINE - MC NSPC
+4 ONLINE - ON-US Auth Requests MC
+5 ONLINE - VISA NSPC
+6 ONLINE - ON-US Auth Requests VISA
+7 ONLINE - ACQ VISA SMS C2C No Responses
+8 ONLINE - ACQ Auth Requests DHI
+9 ONLINE - ON-US Auth Requests DHI
+10 ONLINE - ON-US YandexCard Requests
+11 ONLINE - SMS Auth Queue
+12 ONLINE - QTBL_CAOVERRIDE_CHANGES queue
+13 ONLINE - IRIS Checks
+14 ONLINE - ON-US ACQURING
+15 ONLINE - OFF-US VISA
+16 ONLINE - OFF-US MC
+17 ONLINE - OFF-US NSPC VISA
+18 ONLINE - OFF-US NSPC MC
+19 ONLINE - OFF-US ECOM
+20 ONLINE - OFF-US C2
+
+Белогруд Сергей В
+
+................................................................................
+
+
+[root@vm-vol-nag01t ~]# grep -irl "9199619777" /etc/nagios/objects/contacts/
+/etc/nagios/objects/contacts/s.mukhanov.cfg
+[root@vm-vol-nag01t ~]# cat /etc/nagios/objects/contacts/s.mukhanov.cfg
+define contact{
+        contact_name                    s.mukhanov_email
+        use                             generic-contact
+        alias                           Svyatoslav Mukhanov
+        email                           s.mukhanov@tinkoff.ru
+}
+
+define contact{
+        contact_name                    s.mukhanov_sms
+        use                             generic-contact-critical
+        alias                           Svyatoslav Mukhanov
+        email                           s.mukhanov@tinkoff.ru
+        address1                        79199619777
+}
+[root@vm-vol-nag01t ~]#
+
+
+[root@vm-vol-nag01t ~]# pynag list host_name service_description where object_type=service and service_description__contains="ONLINE - ON-US Approved Auth Requests"
+host_name            service_description
+--------------------------------------------------------------------------------
+vm-dbamon01          ONLINE - ON-US Approved Auth Requests
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t ~]# pynag list host_name service_description contacts where object_type=service and service_description__contains="ONLINE - ON-US Approved Auth Requests"
+host_name            service_description  contacts
+--------------------------------------------------------------------------------
+vm-dbamon01          ONLINE - ON-US Approved Auth Requests m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+[root@vm-vol-nag01t ~]# while read var1 ; do pynag list contacts where object_type=service and service_description="${var1}" --quiet ; done < <(cat)
+ONLINE - ON-US Approved Auth Requests
+ONLINE - ON-US Bad Responses
+ONLINE - MC NSPC
+ONLINE - ON-US Auth Requests MC
+ONLINE - VISA NSPC
+ONLINE - ON-US Auth Requests VISA
+ONLINE - ACQ VISA SMS C2C No Responses
+ONLINE - ACQ Auth Requests DHI
+ONLINE - ON-US Auth Requests DHI
+ONLINE - ON-US YandexCard Requests
+ONLINE - SMS Auth Queue
+ONLINE - QTBL_CAOVERRIDE_CHANGES queue
+ONLINE - IRIS Checks
+ONLINE - ON-US ACQUIRING
+ONLINE - OFF-US VISA
+ONLINE - OFF-US MC
+ONLINE - OFF-US NSPC VISA
+ONLINE - OFF-US NSPC MC
+ONLINE - OFF-US ECOM
+ONLINE - OFF-US C2C
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.pankevich_email,m.pankevich_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.ivonin_sms2
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email
+s.morozkin_email,s.morozkin_sms,cards_24x7_email,processing_duty_sms,s.b.antonov_email,s.b.antonov_sms,a.rodriges_email,a.rodriges_sms,s.mukhanov_email,s.mukhanov_sms,d.a.makeev_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+
+................................................................................
+
+[root@vm-vol-nag01t ~]# cat | tee | while read var1 ; do var2="$(pynag list contacts where object_type=service and service_description="${var1}" --quiet)" ; echo -e "${var1}\nBefore: ${var2}" ; pynag update set contacts="$(pynag list contacts where object_type=service and service_description="${var1}" --quiet),s.mukhanov_sms" where object_type=service and service_description="${var1}" --force ; var3="$(pynag list contacts where object_type=service and service_description="${var1}" --quiet)" ; echo -e "After : ${var3}" ; done
+ONLINE - ON-US Approved Auth Requests
+ONLINE - ON-US Approved Auth Requests
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ON-US Approved Auth Requests): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+[root@vm-vol-nag01t ~]# cat | tee | while read var1 ; do var2="$(pynag list contacts where object_type=service and service_description="${var1}" --quiet)" ; echo ; echo -e "${var1}\nBefore: ${var2}" ; pynag update set contacts="$(pynag list contacts where object_type=service and service_description="${var1}" --quiet),s.mukhanov_sms" where object_type=service and service_description="${var1}" --force ; var3="$(pynag list contacts where object_type=service and service_description="${var1}" --quiet)" ; echo -e "After : ${var3}" ; done
+ONLINE - ON-US Bad Responses
+ONLINE - MC NSPC
+ONLINE - ON-US Auth Requests MC
+ONLINE - VISA NSPC
+ONLINE - ON-US Auth Requests VISA
+ONLINE - ACQ VISA SMS C2C No Responses
+ONLINE - ACQ Auth Requests DHI
+ONLINE - ON-US Auth Requests DHI
+ONLINE - ON-US YandexCard Requests
+ONLINE - SMS Auth Queue
+ONLINE - QTBL_CAOVERRIDE_CHANGES queue
+ONLINE - IRIS Checks
+ONLINE - ON-US ACQUIRING
+ONLINE - OFF-US VISA
+ONLINE - OFF-US MC
+ONLINE - OFF-US NSPC VISA
+ONLINE - OFF-US NSPC MC
+ONLINE - OFF-US ECOM
+ONLINE - OFF-US C2C
+
+ONLINE - ON-US Bad Responses
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ON-US Bad Responses): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+
+ONLINE - MC NSPC
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - MC NSPC): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+
+ONLINE - ON-US Auth Requests MC
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ON-US Auth Requests MC): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+
+ONLINE - VISA NSPC
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - VISA NSPC): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+
+ONLINE - ON-US Auth Requests VISA
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ON-US Auth Requests VISA): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+
+ONLINE - ACQ VISA SMS C2C No Responses
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ACQ VISA SMS C2C No Responses): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+
+ONLINE - ACQ Auth Requests DHI
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.pankevich_email,m.pankevich_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ACQ Auth Requests DHI): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.pankevich_email,m.pankevich_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.pankevich_email,m.pankevich_sms,s.mukhanov_sms
+
+ONLINE - ON-US Auth Requests DHI
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ON-US Auth Requests DHI): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+
+ONLINE - ON-US YandexCard Requests
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.ivonin_sms2
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ON-US YandexCard Requests): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.ivonin_sms2,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.ivonin_sms2,s.mukhanov_sms
+
+ONLINE - SMS Auth Queue
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - SMS Auth Queue): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+
+ONLINE - QTBL_CAOVERRIDE_CHANGES queue
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - QTBL_CAOVERRIDE_CHANGES queue): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+
+ONLINE - IRIS Checks
+Before: s.morozkin_email,s.morozkin_sms,cards_24x7_email,processing_duty_sms,s.b.antonov_email,s.b.antonov_sms,a.rodriges_email,a.rodriges_sms,s.mukhanov_email,s.mukhanov_sms,d.a.makeev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - IRIS Checks): changed contacts to s.morozkin_email,s.morozkin_sms,cards_24x7_email,processing_duty_sms,s.b.antonov_email,s.b.antonov_sms,a.rodriges_email,a.rodriges_sms,s.mukhanov_email,s.mukhanov_sms,d.a.makeev_sms,s.mukhanov_sms
+Updated 1 objects
+After : s.morozkin_email,s.morozkin_sms,cards_24x7_email,processing_duty_sms,s.b.antonov_email,s.b.antonov_sms,a.rodriges_email,a.rodriges_sms,s.mukhanov_email,s.mukhanov_sms,d.a.makeev_sms,s.mukhanov_sms
+
+ONLINE - ON-US ACQUIRING
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - ON-US ACQUIRING): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+
+ONLINE - OFF-US VISA
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - OFF-US VISA): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+
+ONLINE - OFF-US MC
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - OFF-US MC): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+
+ONLINE - OFF-US NSPC VISA
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - OFF-US NSPC VISA): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+
+ONLINE - OFF-US NSPC MC
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - OFF-US NSPC MC): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+
+ONLINE - OFF-US ECOM
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - OFF-US ECOM): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+
+ONLINE - OFF-US C2C
+Before: m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms
+/etc/nagios/objects/servers/vmware/vm-dbamon01.cfg (vm-dbamon01/ONLINE - OFF-US C2C): changed contacts to m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+Updated 1 objects
+After : m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t nagios]# git commit -m "SD#698731. Add contact s.mukhanov_sms to twenty services with name like ONLINE..." objects/servers/vmware/vm-dbamon01.cfg
+[master a728c40] SD#698731. Add contact s.mukhanov_sms to twenty services with name like ONLINE...
+ 1 files changed, 20 insertions(+), 20 deletions(-)
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t ~]# cat | tee | while read var1 ; do pynag list service_description contacts where object_type=service and service_description="${var1}" ; done                                        ONLINE - ON-US Approved Auth Requests                                                                                                                                                                      ONLINE - ON-US Bad Responses
+ONLINE - MC NSPC
+ONLINE - ON-US Auth Requests MC
+ONLINE - VISA NSPC
+ONLINE - ON-US Auth Requests VISA
+ONLINE - ACQ VISA SMS C2C No Responses
+ONLINE - ACQ Auth Requests DHI
+ONLINE - ON-US Auth Requests DHI
+ONLINE - ON-US YandexCard Requests
+ONLINE - SMS Auth Queue
+ONLINE - QTBL_CAOVERRIDE_CHANGES queue
+ONLINE - IRIS Checks
+ONLINE - ON-US ACQUIRING
+ONLINE - OFF-US VISA
+ONLINE - OFF-US MC
+ONLINE - OFF-US NSPC VISA
+ONLINE - OFF-US NSPC MC
+ONLINE - OFF-US ECOM
+ONLINE - OFF-US C2C
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ON-US Approved Auth Requests m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ON-US Bad Responses m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - MC NSPC     m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ON-US Auth Requests MC m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - VISA NSPC   m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ON-US Auth Requests VISA m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ACQ VISA SMS C2C No Responses m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ACQ Auth Requests DHI m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.pankevich_email,m.pankevich_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ON-US Auth Requests DHI m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ON-US YandexCard Requests m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.ivonin_sms2,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - SMS Auth Queue m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - QTBL_CAOVERRIDE_CHANGES queue m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,m.palgova_email,m.palgova_sms,a.gladyshev_sms,a.gladyshev_email,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - IRIS Checks s.morozkin_email,s.morozkin_sms,cards_24x7_email,processing_duty_sms,s.b.antonov_email,s.b.antonov_sms,a.rodriges_email,a.rodriges_sms,s.mukhanov_email,s.mukhanov_sms,d.a.makeev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - ON-US ACQUIRING m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - OFF-US VISA m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - OFF-US MC   m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - OFF-US NSPC VISA m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - OFF-US NSPC MC m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - OFF-US ECOM m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+service_description  contacts
+--------------------------------------------------------------------------------
+ONLINE - OFF-US C2C  m.b.kuzmin_email,m.b.kuzmin_sms,a.belokopytov_email,a.belokopytov_sms,s.morozkin_email,s.morozkin_sms,cards_24x7_email,d.a.makeev_sms,processing_duty_sms,a.boldyrev_email,a.boldyrev_sms,s.mukhanov_sms
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+
+
+

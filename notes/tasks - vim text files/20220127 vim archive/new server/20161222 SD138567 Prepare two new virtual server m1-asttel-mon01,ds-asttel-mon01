@@ -1,0 +1,126 @@
+
+
+
+
+[root@ds-asttel-mon01 ~]# groupadd -g 569 a.y.ovchinnikov && useradd -u 569 -g a.y.ovchinnikov -c "Ovchinnikov Andrey" -G wheel -m -s /bin/bash a.y.ovchinnikov
+[root@centos00 ~]# pwgen -c -n -s -C 10 1
+eBKZ3yIIUT
+[root@centos00 ~]#
+[root@ds-asttel-mon01 ~]# passwd a.y.ovchinnikov
+Changing password for user a.y.ovchinnikov.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@ds-asttel-mon01 ~]#
+
+
+[root@ds-asttel-mon01 ~]# groupadd -g 618 vov && adduser -u 618 -g vov -c "Polikha Vladimir" -m -s /bin/bash -p '$6$$THSnVtZFqSaoJNsCH7OBTwRBea3dEfU9.XmvcyxxzFnKaf9VsJCUz7dUm9VD4/2ThC88MeQdjhPQhi5hmj6Rv.' vov
+[root@ds-asttel-mon01 ~]#
+[root@centos00 ~]# pwgen -c -n -s -C 10 1
+jm4UuvlGvF
+[root@centos00 ~]#
+[root@ds-asttel-mon01 ~]# passwd vov
+Changing password for user vov.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@ds-asttel-mon01 ~]#
+
+
+[root@ds-asttel-mon01 ~]# groupadd -g 665 v.sumin && useradd -u 665 -g v.sumin -c "Sumin Vladimir" -G wheel -m -s /bin/bash v.sumin
+[root@ds-asttel-mon01 ~]#
+[root@centos00 ~]# pwgen -c -n -s -C 10 1
+fL73r0fV4v
+[root@centos00 ~]#
+[root@ds-asttel-mon01 ~]# passwd v.sumin
+Changing password for user v.sumin.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@ds-asttel-mon01 ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-asttel-mon01 ~]# df -hP
+Filesystem                 Size  Used Avail Use% Mounted on
+/dev/mapper/vg_root-lvol0   20G  1.3G   19G   7% /
+devtmpfs                   3.9G     0  3.9G   0% /dev
+tmpfs                      3.9G     0  3.9G   0% /dev/shm
+tmpfs                      3.9G  8.5M  3.9G   1% /run
+tmpfs                      3.9G     0  3.9G   0% /sys/fs/cgroup
+/dev/sda1                  253M  114M  139M  46% /boot
+/dev/mapper/vg_opt-lvol0   300G   33M  300G   1% /opt
+tmpfs                      783M     0  783M   0% /run/user/0
+[root@ds-asttel-mon01 ~]#
+
+
+[root@vm-vol-nag4-tst objects]# su - bsv -c "cd ~/work/templates ; git pull "
+remote: Counting objects: 12, done.
+remote: Compressing objects: 100% (10/10), done.
+remote: Total 10 (delta 7), reused 0 (delta 0)
+Unpacking objects: 100% (10/10), done.
+From gitlab.tcsbank.ru:repositories/nagios-core/templates
+   f126c01..d6addc2  master     -> origin/master
+Updating f126c01..d6addc2
+Fast-forward
+ hw-lin-template.cfg |    2 +-
+ hw-win-template.cfg |    8 +++++++-
+ vm-lin-template.cfg |    2 +-
+ vm-win-template.cfg |    8 +++++++-
+ 4 files changed, 16 insertions(+), 4 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/vm-lin-template.cfg servers/vmware/m1-asttel-mon01.cfg
+[root@vm-vol-nag4-tst objects]# cp ~bsv/work/templates/vm-lin-template.cfg servers/vmware/ds-asttel-mon01.cfg
+
+[root@vm-vol-nag4-tst objects]# vim -o servers/vmware/{m1,ds}-asttel-mon01.cfg
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="a.y.ovchinnikov" or contact_name__contains="polikha" or contact_name__contains="sumin"
+contact_name         filename
+--------------------------------------------------------------------------------
+a.y.ovchinnikov_email /usr/local/nagios/etc/objects/contacts/a.y.ovchinnikov.cfg
+a.y.ovchinnikov_sms  /usr/local/nagios/etc/objects/contacts/a.y.ovchinnikov.cfg
+v.i.polikha_email    /usr/local/nagios/etc/objects/contacts/v.i.polikha.cfg
+v.i.polikha_sms      /usr/local/nagios/etc/objects/contacts/v.i.polikha.cfg
+v.sumin_email        /usr/local/nagios/etc/objects/contacts/v.sumin.cfg
+v.sumin_sms          /usr/local/nagios/etc/objects/contacts/v.sumin.cfg
+----------6 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git add servers/vmware/ds-asttel-mon01.cfg servers/vmware/m1-asttel-mon01.cfg
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#138567. Creat monitoring for two new servers." servers/vmware/m1-asttel-mon01.cfg servers/vmware/ds-asttel-mon01.cfg
+Running configuration check...
+ OK.
+[master fd411b5] SD#138567. Creat monitoring for two new servers.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 86 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/vmware/ds-asttel-mon01.cfg
+ create mode 100644 objects/servers/vmware/m1-asttel-mon01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 1007 bytes, done.
+Total 7 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   41700ab..fd411b5  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+

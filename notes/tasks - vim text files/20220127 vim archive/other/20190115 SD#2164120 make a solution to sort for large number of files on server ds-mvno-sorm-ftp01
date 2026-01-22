@@ -1,0 +1,782 @@
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/
+sorm_exchange
+[root@ds-mvno-sorm-ftp01 ~]# ls -Alh /var/spool/cron/
+total 4.0K
+-rw------- 1 root root 393 Aug 29 12:13 root
+[root@ds-mvno-sorm-ftp01 ~]# cat /var/spool/cron/root
+# Convert files and move them to upload
+* * * * *       /opt/sorm3/sorm3-converter_v2.sh
+
+# Send file to sorm3 ftp
+* * * * *       /opt/sorm3/sorm3-ftp_v3.sh
+
+# Compress sent files
+25 2 * * *      /opt/sorm3/sorm3-compress.sh
+
+# Rotate log
+#00 0 * * *  /sbin/logrotate /opt/ftp-sorm3
+00 0 * * *  /sbin/logrotate  /opt/sorm3/ftp-sorm3.logrotate
+10 0 * * *  /sbin/logrotate  /opt/sorm3/converter-sorm3.logrotate
+[root@ds-mvno-sorm-ftp01 ~]# vim /opt/sorm3/sorm3-ftp_v3.sh
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# cat /opt/sorm3/sorm3-ftp_v3.sh
+#!/bin/bash
+
+shopt -s extglob
+
+FTP_SRV='10.250.137.1'
+
+SRC_DIR=/mnt/sorm_exchange/upload/
+ARC_DIR=/mnt/sorm_exchange/archive/
+
+abon_user=abon
+abon_pass=CiRavRuQLGNmPYaz
+dict_user=dict
+dict_pass=d7w7yCObeHFJwQGf
+pay_user=pay
+pay_pass=mYkRa6dlIdepqBDZ
+cdr_user=cdr
+cdr_pass=IZvOVlfZexY2jnfO
+
+LOGFILE=/opt/sorm3-logs/ftp-sorm3.log
+
+abon_pattern='@(ABONENT_*.txt)'
+pay_pattern='@(BANK_TRANSFER_*.txt|EXPRESS_CARD_TRANSFER_*.txt|TERMINAL_CHARGES_*.txt|CUSTOMER_CENTER_PAYMENT_*.txt|WITHDRAWALS_OTHER_PAYMENT_*.txt|TELEPHONE_CARD_PAYMENT_*.txt|TRANSFER_REMOVAL_BANK_PAYMENT_*.txt|UNDEFINED_PAYMENT_*.txt|TRANSFER_REMOVAL_BANK_CARD_PAYMENT_*.txt|ACCOUNT_BANK_PAYMENT_*.txt)'
+dict_pattern='@(REGIONS_*.txt|ROAM_OPERATOR_*.txt|COMMUTATORS_*.txt|BUNCHES_*.txt|BUNCHES_MAP_*.txt|BASE_STATION_*.txt|BASE_STATION_ANTENNA_*.txt|BASE_STATION_WRL_*.txt|BASE_STATION_IP_*.txt|GATEWAYS_*.txt|IP_GATEWAY_*.txt|CONNECTION_TYPE_*.txt|SUPPLEMENTARY_SERVICE_*.txt|PAY_TYPE_*.txt|TERMINATION_TYPE_*.txt|IP_PLAN_*.txt|PHONE_PLAN_*.txt|DOC_TYPE_*.txt|IP_DATA_POINTS_*.txt|PHONE_SPECIAL_*.txt|MOBILE_PLAN_*.txt)'
+cdr_pattern='@(CONNECTION_PSTN_*.txt|CONNECTION_GSM_*.txt|CONNECTION_PAGER_*.txt|CONNECTION_CDMA_*.txt|CONNECTION_AAA_*.txt|CONNECTION_VOIP_*.txt|CONNECTION_VOIP_GATEWAYS_*.txt)'
+
+for RES in $(find $SRC_DIR -maxdepth 1 -type f ! -name '~*')
+do
+    FILENAME=$(basename $RES)
+    FILESIZE=$(du -k $RES | awk '{print $1}')
+    case $(basename $RES) in
+        $abon_pattern)       lftp -c "open -u $abon_user,$abon_pass $FTP_SRV; put -O / $RES" && mv $RES $ARC_DIR && echo $(/bin/date +%D\ %H:%M:%S) INFO File $FILENAME $FILESIZE has been sent successfully>> $LOGFILE || echo $(/bin/date +%D\ %H:%M:%S) ERROR File $FILENAME $FILESIZE has not been sent >> $LOGFILE;;
+        $cdr_pattern)        lftp -c "open -u $cdr_user,$cdr_pass $FTP_SRV; put -O / $RES" && mv $RES $ARC_DIR && echo $(/bin/date +%D\ %H:%M:%S) INFO File $FILENAME $FILESIZE has been sent successfully >> $LOGFILE || echo $(/bin/date +%D\ %H:%M:%S) ERROR File $FILENAME $FILESIZE has not been sent >> $LOGFILE;;
+        $pay_pattern)        lftp -c "open -u $pay_user,$pay_pass $FTP_SRV; put -O / $RES" && mv $RES $ARC_DIR && echo $(/bin/date +%D\ %H:%M:%S) INFO File $FILENAME $FILESIZE has been sent successfully >> $LOGFILE || echo $(/bin/date +%D\ %H:%M:%S) ERROR File $FILENAME $FILESIZE has not been sent >> $LOGFILE;;
+        $dict_pattern)       lftp -c "open -u $dict_user,$dict_pass $FTP_SRV; put -O / $RES" && mv $RES $ARC_DIR && echo $(/bin/date +%D\ %H:%M:%S) INFO File $FILENAME $FILESIZE has been sent successfully>> $LOGFILE || echo $(/bin/date +%D\ %H:%M:%S) ERROR File $FILENAME $FILESIZE has not been sent >> $LOGFILE;;
+        *)                   echo $(/bin/date +%D\ %H:%M:%S) WARN File $FILENAME $FILESIZE does not match any pattern! >> $LOGFILE;;
+    esac
+done
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# cat /opt/sorm3/sorm3-compress.sh
+for file in $(find /mnt/sorm_exchange/archive/ -type f -name '*.txt')
+do
+    gzip $file
+done
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# cat /opt/sorm3/ftp-sorm3.logrotate
+/opt/sorm3-logs/ftp-sorm3.log {
+  dateext
+  missingok
+  compress
+  daily
+  rotate 60
+  create 0664 root root
+}
+[root@ds-mvno-sorm-ftp01 ~]# cat /opt/sorm3/converter-sorm3.logrotate
+/opt/sorm3-logs/convert-sorm3.log {
+  dateext
+  missingok
+  compress
+  daily
+  rotate 60
+  create 0664 root root
+}
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# ls -alh /mnt/sorm_exchange/archive/ | tee -a /tmp/20190115-1635.ls.mnt.sorm_exchange.archive.txt
+
+[root@ds-mvno-sorm-ftp01 ~]# ls -Alh /tmp/20190115-1635.ls.mnt.sorm_exchange.archive.txt
+-rw-r--r-- 1 root root 13M Jan 15 17:09 /tmp/20190115-1635.ls.mnt.sorm_exchange.archive.txt
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+#
+#	Here I've edited script.
+#
+
+[root@ds-mvno-sorm-ftp01 ~]# EDITOR=vim crontab -e -u root
+crontab: installing new crontab
+[root@ds-mvno-sorm-ftp01 ~]# 
+
+[root@ds-mvno-sorm-ftp01 ~]# head /opt/sorm3/sorm3-ftp_v4.sh
+...
+ARC_DIR=/mnt/sorm_exchange/archive/$(/bin/date +%Y)/$(/bin/date +%m)/$(/bin/date +%d)
+/bin/mkdir -p $ARC_DIR || exit 1
+
+[root@ds-mvno-sorm-ftp01 ~]#
+
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/2019/01/
+ls: cannot access /mnt/sorm_exchange/archive/2019/01/: No such file or directory
+[root@ds-mvno-sorm-ftp01 ~]# tail -f /var/log/cron
+Jan 15 19:06:01 ds-mvno-sorm-ftp01 crontab[1840]: (root) BEGIN EDIT (root)
+Jan 15 19:06:02 ds-mvno-sorm-ftp01 CROND[1845]: (root) CMD (/opt/sorm3/sorm3-ftp_v3.sh)
+Jan 15 19:06:02 ds-mvno-sorm-ftp01 CROND[1846]: (root) CMD (/usr/lib64/sa/sa1 1 1)
+Jan 15 19:06:02 ds-mvno-sorm-ftp01 CROND[1847]: (root) CMD (/opt/sorm3/sorm3-converter_v2.sh)
+Jan 15 19:06:19 ds-mvno-sorm-ftp01 crontab[1840]: (root) REPLACE (root)
+Jan 15 19:06:19 ds-mvno-sorm-ftp01 crontab[1840]: (root) END EDIT (root)
+Jan 15 19:07:01 ds-mvno-sorm-ftp01 crond[1035]: (root) RELOAD (/var/spool/cron/root)
+Jan 15 19:07:01 ds-mvno-sorm-ftp01 CROND[1879]: (root) CMD (/opt/sorm3/sorm3-ftp_v4.sh)
+Jan 15 19:07:01 ds-mvno-sorm-ftp01 CROND[1880]: (root) CMD (/usr/lib64/sa/sa1 1 1)
+Jan 15 19:07:01 ds-mvno-sorm-ftp01 CROND[1881]: (root) CMD (/opt/sorm3/sorm3-converter_v2.sh)
+Jan 15 19:08:01 ds-mvno-sorm-ftp01 CROND[1925]: (root) CMD (/opt/sorm3/sorm3-converter_v2.sh)
+Jan 15 19:08:01 ds-mvno-sorm-ftp01 CROND[1924]: (root) CMD (/usr/lib64/sa/sa1 1 1)
+Jan 15 19:08:01 ds-mvno-sorm-ftp01 CROND[1927]: (root) CMD (/opt/sorm3/sorm3-ftp_v4.sh)
+q
+
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/2019/01/
+15
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/2019/01/15/
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# EDITOR=vim crontab -e -u root
+crontab: installing new crontab
+[root@ds-mvno-sorm-ftp01 ~]# grep -e "_20190115_" ~/work/20190115-1850/20190115-1635.ls.mnt.sorm_exchange.archive.txt
+-rw-r--r-- 1 root   root     88M Jan 15 06:20 ABONENT_20190115_0200.txt
+-rw-r--r-- 1 root   root     29M Jan 15 06:21 ABONENT_ADDR_20190115_0200.txt
+-rw-rw---- 1   1063 1002     46M Jan 15 06:19 ABONENT_ID_20190115_0200.txt
+-rw-r--r-- 1 splunk splunk  361M Jan 15 05:06 ABONENT_SRV_20190115_0200.txt
+-rw-r--r-- 1 root   root    164M Jan 15 05:08 BASE_STATION_20190115_0200.txt
+-rw-r--r-- 1 splunk splunk   14M Jan 15 05:07 BASE_STATION_ANTENNA_20190115_0200.txt
+-rw-r--r-- 1 root   root     10K Jan 15 05:07 COMMUTATORS_20190115_0200.txt
+-rw-r--r-- 1 splunk splunk  1.8M Jan 15 00:01 CONNECTION_AAA_20190115_0000.txt.gz
+-rw-r--r-- 1 splunk splunk  1.9M Jan 15 00:15 CONNECTION_AAA_20190115_0015.txt.gz
+-rw-r--r-- 1 splunk splunk  1.7M Jan 15 00:31 CONNECTION_AAA_20190115_0030.txt.gz
+-rw-r--r-- 1 splunk splunk  1.6M Jan 15 00:45 CONNECTION_AAA_20190115_0045.txt.gz
+-rw-r--r-- 1 splunk splunk  1.5M Jan 15 01:01 CONNECTION_AAA_20190115_0100.txt.gz
+-rw-r--r-- 1 splunk splunk  1.5M Jan 15 01:15 CONNECTION_AAA_20190115_0115.txt.gz
+-rw-r--r-- 1 splunk splunk  1.4M Jan 15 01:31 CONNECTION_AAA_20190115_0130.txt.gz
+-rw-r--r-- 1 splunk splunk  1.4M Jan 15 01:45 CONNECTION_AAA_20190115_0145.txt.gz
+-rw-r--r-- 1 splunk splunk  1.3M Jan 15 02:01 CONNECTION_AAA_20190115_0200.txt.gz
+-rw-r--r-- 1 splunk splunk  1.3M Jan 15 02:15 CONNECTION_AAA_20190115_0215.txt.gz
+-rw-r--r-- 1 splunk splunk  7.3M Jan 15 02:31 CONNECTION_AAA_20190115_0230.txt
+-rw-r--r-- 1 splunk splunk  7.7M Jan 15 02:45 CONNECTION_AAA_20190115_0245.txt
+-rw-r--r-- 1 splunk splunk  7.0M Jan 15 03:01 CONNECTION_AAA_20190115_0300.txt
+-rw-r--r-- 1 splunk splunk  7.0M Jan 15 03:15 CONNECTION_AAA_20190115_0315.txt
+-rw-r--r-- 1 splunk splunk  6.7M Jan 15 03:31 CONNECTION_AAA_20190115_0330.txt
+-rw-r--r-- 1 splunk splunk  6.6M Jan 15 03:45 CONNECTION_AAA_20190115_0345.txt
+-rw-r--r-- 1 splunk splunk  6.4M Jan 15 04:01 CONNECTION_AAA_20190115_0400.txt
+-rw-r--r-- 1 splunk splunk  6.9M Jan 15 04:15 CONNECTION_AAA_20190115_0415.txt
+-rw-r--r-- 1 splunk splunk  6.5M Jan 15 04:31 CONNECTION_AAA_20190115_0430.txt
+-rw-r--r-- 1 splunk splunk  6.5M Jan 15 04:45 CONNECTION_AAA_20190115_0445.txt
+-rw-r--r-- 1 splunk splunk  6.3M Jan 15 05:07 CONNECTION_AAA_20190115_0500.txt
+-rw-r--r-- 1 splunk splunk  6.4M Jan 15 05:15 CONNECTION_AAA_20190115_0515.txt
+-rw-r--r-- 1 splunk splunk  6.5M Jan 15 05:31 CONNECTION_AAA_20190115_0530.txt
+-rw-r--r-- 1 splunk splunk  6.4M Jan 15 05:45 CONNECTION_AAA_20190115_0545.txt
+-rw-r--r-- 1 splunk splunk  7.0M Jan 15 06:01 CONNECTION_AAA_20190115_0600.txt
+-rw-r--r-- 1 splunk splunk  7.4M Jan 15 06:15 CONNECTION_AAA_20190115_0615.txt
+-rw-r--r-- 1 splunk splunk  7.8M Jan 15 06:31 CONNECTION_AAA_20190115_0630.txt
+-rw-r--r-- 1 splunk splunk  8.2M Jan 15 06:45 CONNECTION_AAA_20190115_0645.txt
+-rw-r--r-- 1 splunk splunk  8.6M Jan 15 07:01 CONNECTION_AAA_20190115_0700.txt
+-rw-r--r-- 1 splunk splunk  9.9M Jan 15 07:15 CONNECTION_AAA_20190115_0715.txt
+-rw-r--r-- 1 splunk splunk   11M Jan 15 07:31 CONNECTION_AAA_20190115_0730.txt
+-rw-r--r-- 1 splunk splunk   12M Jan 15 07:45 CONNECTION_AAA_20190115_0745.txt
+-rw-r--r-- 1 splunk splunk   12M Jan 15 08:01 CONNECTION_AAA_20190115_0800.txt
+-rw-r--r-- 1 splunk splunk   14M Jan 15 08:15 CONNECTION_AAA_20190115_0815.txt
+-rw-r--r-- 1 splunk splunk   14M Jan 15 08:31 CONNECTION_AAA_20190115_0830.txt
+-rw-r--r-- 1 splunk splunk   15M Jan 15 08:45 CONNECTION_AAA_20190115_0845.txt
+-rw-r--r-- 1 splunk splunk   15M Jan 15 09:01 CONNECTION_AAA_20190115_0900.txt
+-rw-r--r-- 1 splunk splunk   15M Jan 15 09:15 CONNECTION_AAA_20190115_0915.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 09:31 CONNECTION_AAA_20190115_0930.txt
+-rw-r--r-- 1 splunk splunk   15M Jan 15 09:45 CONNECTION_AAA_20190115_0945.txt
+-rw-r--r-- 1 splunk splunk   15M Jan 15 10:01 CONNECTION_AAA_20190115_1000.txt
+-rw-r--r-- 1 splunk splunk   15M Jan 15 10:15 CONNECTION_AAA_20190115_1015.txt
+-rw-r--r-- 1 splunk splunk   15M Jan 15 10:31 CONNECTION_AAA_20190115_1030.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 10:45 CONNECTION_AAA_20190115_1045.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 11:01 CONNECTION_AAA_20190115_1100.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 11:15 CONNECTION_AAA_20190115_1115.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 11:31 CONNECTION_AAA_20190115_1130.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 11:45 CONNECTION_AAA_20190115_1145.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 12:01 CONNECTION_AAA_20190115_1200.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 12:15 CONNECTION_AAA_20190115_1215.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 12:31 CONNECTION_AAA_20190115_1230.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 12:45 CONNECTION_AAA_20190115_1245.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 13:01 CONNECTION_AAA_20190115_1300.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 13:16 CONNECTION_AAA_20190115_1315.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 13:31 CONNECTION_AAA_20190115_1330.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 13:45 CONNECTION_AAA_20190115_1345.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 14:01 CONNECTION_AAA_20190115_1400.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 14:15 CONNECTION_AAA_20190115_1415.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 14:31 CONNECTION_AAA_20190115_1430.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 14:45 CONNECTION_AAA_20190115_1445.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 15:01 CONNECTION_AAA_20190115_1500.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 15:15 CONNECTION_AAA_20190115_1515.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 15:31 CONNECTION_AAA_20190115_1530.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 15:45 CONNECTION_AAA_20190115_1545.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 16:01 CONNECTION_AAA_20190115_1600.txt
+-rw-r--r-- 1 splunk splunk   17M Jan 15 16:15 CONNECTION_AAA_20190115_1615.txt
+-rw-r--r-- 1 splunk splunk   16M Jan 15 16:31 CONNECTION_AAA_20190115_1630.txt
+-rw-r--r-- 1 splunk splunk   51K Jan 15 00:01 CONNECTION_GSM_20190115_0000.txt.gz
+-rw-r--r-- 1 splunk splunk   46K Jan 15 00:15 CONNECTION_GSM_20190115_0015.txt.gz
+-rw-r--r-- 1 splunk splunk   42K Jan 15 00:31 CONNECTION_GSM_20190115_0030.txt.gz
+-rw-r--r-- 1 splunk splunk   32K Jan 15 00:45 CONNECTION_GSM_20190115_0045.txt.gz
+-rw-r--r-- 1 splunk splunk   26K Jan 15 01:01 CONNECTION_GSM_20190115_0100.txt.gz
+-rw-r--r-- 1 splunk splunk   26K Jan 15 01:15 CONNECTION_GSM_20190115_0115.txt.gz
+-rw-r--r-- 1 splunk splunk   20K Jan 15 01:31 CONNECTION_GSM_20190115_0130.txt.gz
+-rw-r--r-- 1 splunk splunk   17K Jan 15 01:45 CONNECTION_GSM_20190115_0145.txt.gz
+-rw-r--r-- 1 splunk splunk   16K Jan 15 02:01 CONNECTION_GSM_20190115_0200.txt.gz
+-rw-r--r-- 1 splunk splunk   13K Jan 15 02:15 CONNECTION_GSM_20190115_0215.txt.gz
+-rw-r--r-- 1 splunk splunk   73K Jan 15 02:31 CONNECTION_GSM_20190115_0230.txt
+-rw-r--r-- 1 splunk splunk   62K Jan 15 02:45 CONNECTION_GSM_20190115_0245.txt
+-rw-r--r-- 1 splunk splunk   70K Jan 15 03:01 CONNECTION_GSM_20190115_0300.txt
+-rw-r--r-- 1 splunk splunk   61K Jan 15 03:15 CONNECTION_GSM_20190115_0315.txt
+-rw-r--r-- 1 splunk splunk   73K Jan 15 03:31 CONNECTION_GSM_20190115_0330.txt
+-rw-r--r-- 1 splunk splunk   60K Jan 15 03:45 CONNECTION_GSM_20190115_0345.txt
+-rw-r--r-- 1 splunk splunk   60K Jan 15 04:01 CONNECTION_GSM_20190115_0400.txt
+-rw-r--r-- 1 splunk splunk   62K Jan 15 04:15 CONNECTION_GSM_20190115_0415.txt
+-rw-r--r-- 1 splunk splunk   68K Jan 15 04:31 CONNECTION_GSM_20190115_0430.txt
+-rw-r--r-- 1 splunk splunk   74K Jan 15 04:45 CONNECTION_GSM_20190115_0445.txt
+-rw-r--r-- 1 splunk splunk   72K Jan 15 05:07 CONNECTION_GSM_20190115_0500.txt
+-rw-r--r-- 1 splunk splunk   86K Jan 15 05:15 CONNECTION_GSM_20190115_0515.txt
+-rw-r--r-- 1 splunk splunk   89K Jan 15 05:31 CONNECTION_GSM_20190115_0530.txt
+-rw-r--r-- 1 splunk splunk   79K Jan 15 05:45 CONNECTION_GSM_20190115_0545.txt
+-rw-r--r-- 1 splunk splunk  107K Jan 15 06:01 CONNECTION_GSM_20190115_0600.txt
+-rw-r--r-- 1 splunk splunk  151K Jan 15 06:15 CONNECTION_GSM_20190115_0615.txt
+-rw-r--r-- 1 splunk splunk  160K Jan 15 06:31 CONNECTION_GSM_20190115_0630.txt
+-rw-r--r-- 1 splunk splunk  193K Jan 15 06:45 CONNECTION_GSM_20190115_0645.txt
+-rw-r--r-- 1 splunk splunk  227K Jan 15 07:01 CONNECTION_GSM_20190115_0700.txt
+-rw-r--r-- 1 splunk splunk  302K Jan 15 07:15 CONNECTION_GSM_20190115_0715.txt
+-rw-r--r-- 1 splunk splunk  351K Jan 15 07:31 CONNECTION_GSM_20190115_0730.txt
+-rw-r--r-- 1 splunk splunk  420K Jan 15 07:45 CONNECTION_GSM_20190115_0745.txt
+-rw-r--r-- 1 splunk splunk  533K Jan 15 08:01 CONNECTION_GSM_20190115_0800.txt
+-rw-r--r-- 1 splunk splunk  679K Jan 15 08:15 CONNECTION_GSM_20190115_0815.txt
+-rw-r--r-- 1 splunk splunk  735K Jan 15 08:31 CONNECTION_GSM_20190115_0830.txt
+-rw-r--r-- 1 splunk splunk  758K Jan 15 08:45 CONNECTION_GSM_20190115_0845.txt
+-rw-r--r-- 1 splunk splunk  867K Jan 15 09:01 CONNECTION_GSM_20190115_0900.txt
+-rw-r--r-- 1 splunk splunk  1.1M Jan 15 09:15 CONNECTION_GSM_20190115_0915.txt
+-rw-r--r-- 1 splunk splunk  1.2M Jan 15 09:31 CONNECTION_GSM_20190115_0930.txt
+-rw-r--r-- 1 splunk splunk  1.3M Jan 15 09:45 CONNECTION_GSM_20190115_0945.txt
+-rw-r--r-- 1 splunk splunk  1.4M Jan 15 10:01 CONNECTION_GSM_20190115_1000.txt
+-rw-r--r-- 1 splunk splunk  1.6M Jan 15 10:15 CONNECTION_GSM_20190115_1015.txt
+-rw-r--r-- 1 splunk splunk  1.7M Jan 15 10:31 CONNECTION_GSM_20190115_1030.txt
+-rw-r--r-- 1 splunk splunk  1.7M Jan 15 10:45 CONNECTION_GSM_20190115_1045.txt
+-rw-r--r-- 1 splunk splunk  1.8M Jan 15 11:01 CONNECTION_GSM_20190115_1100.txt
+-rw-r--r-- 1 splunk splunk  1.9M Jan 15 11:15 CONNECTION_GSM_20190115_1115.txt
+-rw-r--r-- 1 splunk splunk  1.9M Jan 15 11:31 CONNECTION_GSM_20190115_1130.txt
+-rw-r--r-- 1 splunk splunk  1.9M Jan 15 11:45 CONNECTION_GSM_20190115_1145.txt
+-rw-r--r-- 1 splunk splunk  1.9M Jan 15 12:01 CONNECTION_GSM_20190115_1200.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 12:15 CONNECTION_GSM_20190115_1215.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 12:31 CONNECTION_GSM_20190115_1230.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 12:45 CONNECTION_GSM_20190115_1245.txt
+-rw-r--r-- 1 splunk splunk  1.9M Jan 15 13:01 CONNECTION_GSM_20190115_1300.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 13:15 CONNECTION_GSM_20190115_1315.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 13:31 CONNECTION_GSM_20190115_1330.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 13:45 CONNECTION_GSM_20190115_1345.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 14:01 CONNECTION_GSM_20190115_1400.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 14:15 CONNECTION_GSM_20190115_1415.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 14:31 CONNECTION_GSM_20190115_1430.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 14:45 CONNECTION_GSM_20190115_1445.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 15:01 CONNECTION_GSM_20190115_1500.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 15:15 CONNECTION_GSM_20190115_1515.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 15:31 CONNECTION_GSM_20190115_1530.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 15:45 CONNECTION_GSM_20190115_1545.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 16:01 CONNECTION_GSM_20190115_1600.txt
+-rw-r--r-- 1 splunk splunk  2.1M Jan 15 16:15 CONNECTION_GSM_20190115_1615.txt
+-rw-r--r-- 1 splunk splunk  2.0M Jan 15 16:31 CONNECTION_GSM_20190115_1630.txt
+-rw-r--r-- 1 splunk splunk   620 Jan 15 05:07 CONNECTION_TYPE_20190115_0200.txt
+-rw-r--r-- 1 root   root     113 Jan 15 05:08 DOC_TYPE_20190115_0200.txt
+-rw-r--r-- 1 root   root    6.9K Jan 15 05:08 GATEWAYS_20190115_0200.txt
+-rw-r--r-- 1 splunk splunk    99 Jan 15 05:07 IP_DATA_POINTS_20190115_0200.txt
+-rw-r--r-- 1 splunk splunk   795 Jan 15 05:07 IP_GATEWAY_20190115_0200.txt
+-rw-r--r-- 1 root   root     363 Jan 15 05:08 IP_PLAN_20190115_0200.txt
+-rw-r--r-- 1 root   root     12K Jan 15 05:08 MOBILE_PLAN_20190115_0200.txt
+-rw-r--r-- 1 root   root     19K Jan 15 05:08 PHONE_PLAN_20190115_0200.txt
+-rw-r--r-- 1 root   root     27K Jan 15 05:08 PHONE_SPECIAL_20190115_0200.txt
+-rw-r--r-- 1 root   root    7.9K Jan 15 05:08 SUPPLEMENTARY_SERVICE_20190115_0200.txt
+-rw-r--r-- 1 splunk splunk   877 Jan 15 00:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0000.txt.gz
+-rw-r--r-- 1 splunk splunk  1.2K Jan 15 00:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0015.txt.gz
+-rw-r--r-- 1 splunk splunk  1.1K Jan 15 00:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0030.txt.gz
+-rw-r--r-- 1 splunk splunk   800 Jan 15 00:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0045.txt.gz
+-rw-r--r-- 1 splunk splunk   703 Jan 15 01:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0100.txt.gz
+-rw-r--r-- 1 splunk splunk   665 Jan 15 01:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0115.txt.gz
+-rw-r--r-- 1 splunk splunk   389 Jan 15 01:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0130.txt.gz
+-rw-r--r-- 1 splunk splunk   441 Jan 15 01:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0145.txt.gz
+-rw-r--r-- 1 splunk splunk   508 Jan 15 02:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0200.txt.gz
+-rw-r--r-- 1 splunk splunk   467 Jan 15 02:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0215.txt.gz
+-rw-r--r-- 1 splunk splunk   454 Jan 15 02:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0230.txt.gz
+-rw-r--r-- 1 splunk splunk  1.1K Jan 15 02:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0245.txt
+-rw-r--r-- 1 splunk splunk   556 Jan 15 03:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0300.txt
+-rw-r--r-- 1 splunk splunk  2.0K Jan 15 03:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0315.txt
+-rw-r--r-- 1 splunk splunk   199 Jan 15 03:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0330.txt
+-rw-r--r-- 1 splunk splunk   781 Jan 15 03:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0345.txt
+-rw-r--r-- 1 splunk splunk   701 Jan 15 04:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0400.txt
+-rw-r--r-- 1 splunk splunk   572 Jan 15 04:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0415.txt
+-rw-r--r-- 1 splunk splunk   277 Jan 15 04:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0430.txt
+-rw-r--r-- 1 splunk splunk   346 Jan 15 04:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0445.txt
+-rw-r--r-- 1 splunk splunk  1.5K Jan 15 05:07 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0500.txt
+-rw-r--r-- 1 splunk splunk  1.2K Jan 15 05:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0515.txt
+-rw-r--r-- 1 splunk splunk  1.0K Jan 15 05:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0530.txt
+-rw-r--r-- 1 splunk splunk   636 Jan 15 05:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0545.txt
+-rw-r--r-- 1 splunk splunk   647 Jan 15 06:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0600.txt
+-rw-r--r-- 1 splunk splunk   931 Jan 15 06:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0615.txt
+-rw-r--r-- 1 splunk splunk  1.7K Jan 15 06:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0630.txt
+-rw-r--r-- 1 splunk splunk   788 Jan 15 06:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0645.txt
+-rw-r--r-- 1 splunk splunk  2.8K Jan 15 07:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0700.txt
+-rw-r--r-- 1 splunk splunk  2.1K Jan 15 07:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0715.txt
+-rw-r--r-- 1 splunk splunk  2.4K Jan 15 07:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0730.txt
+-rw-r--r-- 1 splunk splunk  1.9K Jan 15 07:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0745.txt
+-rw-r--r-- 1 splunk splunk  3.3K Jan 15 08:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0800.txt
+-rw-r--r-- 1 splunk splunk  4.1K Jan 15 08:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0815.txt
+-rw-r--r-- 1 splunk splunk  4.7K Jan 15 08:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0830.txt
+-rw-r--r-- 1 splunk splunk  3.8K Jan 15 08:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0845.txt
+-rw-r--r-- 1 splunk splunk  5.1K Jan 15 09:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0900.txt
+-rw-r--r-- 1 splunk splunk  6.6K Jan 15 09:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0915.txt
+-rw-r--r-- 1 splunk splunk  6.8K Jan 15 09:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0930.txt
+-rw-r--r-- 1 splunk splunk  5.5K Jan 15 09:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0945.txt
+-rw-r--r-- 1 splunk splunk  3.8K Jan 15 10:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1000.txt
+-rw-r--r-- 1 splunk splunk   12K Jan 15 10:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1015.txt
+-rw-r--r-- 1 splunk splunk   14K Jan 15 10:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1030.txt
+-rw-r--r-- 1 splunk splunk  8.1K Jan 15 10:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1045.txt
+-rw-r--r-- 1 splunk splunk  6.4K Jan 15 11:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1100.txt
+-rw-r--r-- 1 splunk splunk  5.5K Jan 15 11:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1115.txt
+-rw-r--r-- 1 splunk splunk  8.5K Jan 15 11:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1130.txt
+-rw-r--r-- 1 splunk splunk  6.6K Jan 15 11:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1145.txt
+-rw-r--r-- 1 splunk splunk  8.8K Jan 15 12:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1200.txt
+-rw-r--r-- 1 splunk splunk  8.2K Jan 15 12:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1215.txt
+-rw-r--r-- 1 splunk splunk  6.6K Jan 15 12:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1230.txt
+-rw-r--r-- 1 splunk splunk  7.8K Jan 15 12:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1245.txt
+-rw-r--r-- 1 splunk splunk  8.8K Jan 15 13:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1300.txt
+-rw-r--r-- 1 splunk splunk  7.0K Jan 15 13:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1315.txt
+-rw-r--r-- 1 splunk splunk  8.6K Jan 15 13:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1330.txt
+-rw-r--r-- 1 splunk splunk  7.9K Jan 15 13:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1345.txt
+-rw-r--r-- 1 splunk splunk  7.0K Jan 15 14:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1400.txt
+-rw-r--r-- 1 splunk splunk  6.9K Jan 15 14:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1415.txt
+-rw-r--r-- 1 splunk splunk  8.5K Jan 15 14:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1430.txt
+-rw-r--r-- 1 splunk splunk  6.0K Jan 15 14:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1445.txt
+-rw-r--r-- 1 splunk splunk  7.4K Jan 15 15:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1500.txt
+-rw-r--r-- 1 splunk splunk  6.4K Jan 15 15:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1515.txt
+-rw-r--r-- 1 splunk splunk  7.4K Jan 15 15:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1530.txt
+-rw-r--r-- 1 splunk splunk  7.2K Jan 15 15:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1545.txt
+-rw-r--r-- 1 splunk splunk  6.1K Jan 15 16:01 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1600.txt
+-rw-r--r-- 1 splunk splunk  5.3K Jan 15 16:15 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1615.txt
+-rw-r--r-- 1 splunk splunk  3.8K Jan 15 16:31 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1630.txt
+-rw-r--r-- 1 splunk splunk  6.3K Jan 15 16:45 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1645.txt
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/2019/01/15/
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/*_20190115_*
+/mnt/sorm_exchange/archive/ABONENT_20190115_0200.txt               /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1000.txt
+/mnt/sorm_exchange/archive/ABONENT_ADDR_20190115_0200.txt          /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1015.txt
+/mnt/sorm_exchange/archive/ABONENT_ID_20190115_0200.txt            /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1030.txt
+/mnt/sorm_exchange/archive/ABONENT_SRV_20190115_0200.txt           /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1045.txt
+/mnt/sorm_exchange/archive/BASE_STATION_20190115_0200.txt          /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1100.txt
+/mnt/sorm_exchange/archive/BASE_STATION_ANTENNA_20190115_0200.txt  /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1115.txt
+/mnt/sorm_exchange/archive/COMMUTATORS_20190115_0200.txt           /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1130.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0000.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1145.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0015.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0030.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1215.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0045.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1230.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0100.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1245.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0115.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1300.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0130.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1315.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0145.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1330.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0200.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1345.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0215.txt.gz     /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1400.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0230.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1415.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0245.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1430.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0300.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1445.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0315.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1500.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0330.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1515.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0345.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1530.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0400.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1545.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0415.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1600.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0430.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1615.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0445.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1630.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0500.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1645.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0515.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1700.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0530.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1715.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0545.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1730.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0600.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1745.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0615.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1800.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0630.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1815.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0645.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1830.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0700.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1845.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0715.txt        /mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_1900.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0730.txt        /mnt/sorm_exchange/archive/CONNECTION_TYPE_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0745.txt        /mnt/sorm_exchange/archive/DOC_TYPE_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0800.txt        /mnt/sorm_exchange/archive/GATEWAYS_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0815.txt        /mnt/sorm_exchange/archive/IP_DATA_POINTS_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0830.txt        /mnt/sorm_exchange/archive/IP_GATEWAY_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0845.txt        /mnt/sorm_exchange/archive/IP_PLAN_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0900.txt        /mnt/sorm_exchange/archive/MOBILE_PLAN_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0915.txt        /mnt/sorm_exchange/archive/PHONE_PLAN_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0930.txt        /mnt/sorm_exchange/archive/PHONE_SPECIAL_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_0945.txt        /mnt/sorm_exchange/archive/SUPPLEMENTARY_SERVICE_20190115_0200.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1000.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0000.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1015.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0015.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1030.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0030.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1045.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0045.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1100.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0100.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1115.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0115.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1130.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0130.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1145.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0145.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1200.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0200.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1215.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0215.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1230.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0230.txt.gz
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1245.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0245.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1300.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0300.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1315.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0315.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1330.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0330.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1345.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0345.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1400.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0400.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1415.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0415.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1430.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0430.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1445.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0445.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1500.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0500.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1515.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0515.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1530.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0530.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1545.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0545.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1600.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0600.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1615.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0615.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1630.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0630.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1645.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0645.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1700.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0700.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1715.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0715.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1730.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0730.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1745.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0745.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1800.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0800.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1815.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0815.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1830.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0830.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1845.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0845.txt
+/mnt/sorm_exchange/archive/CONNECTION_AAA_20190115_1900.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0900.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0000.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0915.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0015.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0930.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0030.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0945.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0045.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1000.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0100.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1015.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0115.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1030.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0130.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1045.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0145.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1100.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0200.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1115.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0215.txt.gz     /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1130.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0230.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1145.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0245.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1200.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0300.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1215.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0315.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1230.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0330.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1245.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0345.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1300.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0400.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1315.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0415.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1330.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0430.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1345.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0445.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1400.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0500.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1415.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0515.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1430.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0530.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1445.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0545.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1500.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0600.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1515.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0615.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1530.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0630.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1545.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0645.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1600.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0700.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1615.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0715.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1630.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0730.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1645.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0745.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1700.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0800.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1715.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0815.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1730.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0830.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1745.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0845.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1800.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0900.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1815.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0915.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1830.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0930.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1845.txt
+/mnt/sorm_exchange/archive/CONNECTION_GSM_20190115_0945.txt        /mnt/sorm_exchange/archive/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1900.txt
+[root@ds-mvno-sorm-ftp01 ~]#
+
+
+[root@ds-mvno-sorm-ftp01 ~]# mv /mnt/sorm_exchange/archive/*_20190115_* /mnt/sorm_exchange/archive/2019/01/15/
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/2019/01/15/
+ABONENT_20190115_0200.txt               CONNECTION_AAA_20190115_1415.txt     CONNECTION_GSM_20190115_1030.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0415.txt
+ABONENT_ADDR_20190115_0200.txt          CONNECTION_AAA_20190115_1430.txt     CONNECTION_GSM_20190115_1045.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0430.txt
+ABONENT_ID_20190115_0200.txt            CONNECTION_AAA_20190115_1445.txt     CONNECTION_GSM_20190115_1100.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0445.txt
+ABONENT_SRV_20190115_0200.txt           CONNECTION_AAA_20190115_1500.txt     CONNECTION_GSM_20190115_1115.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0500.txt
+BASE_STATION_20190115_0200.txt          CONNECTION_AAA_20190115_1515.txt     CONNECTION_GSM_20190115_1130.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0515.txt
+BASE_STATION_ANTENNA_20190115_0200.txt  CONNECTION_AAA_20190115_1530.txt     CONNECTION_GSM_20190115_1145.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0530.txt
+COMMUTATORS_20190115_0200.txt           CONNECTION_AAA_20190115_1545.txt     CONNECTION_GSM_20190115_1200.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0545.txt
+CONNECTION_AAA_20190115_0000.txt.gz     CONNECTION_AAA_20190115_1600.txt     CONNECTION_GSM_20190115_1215.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0600.txt
+CONNECTION_AAA_20190115_0015.txt.gz     CONNECTION_AAA_20190115_1615.txt     CONNECTION_GSM_20190115_1230.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0615.txt
+CONNECTION_AAA_20190115_0030.txt.gz     CONNECTION_AAA_20190115_1630.txt     CONNECTION_GSM_20190115_1245.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0630.txt
+CONNECTION_AAA_20190115_0045.txt.gz     CONNECTION_AAA_20190115_1645.txt     CONNECTION_GSM_20190115_1300.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0645.txt
+CONNECTION_AAA_20190115_0100.txt.gz     CONNECTION_AAA_20190115_1700.txt     CONNECTION_GSM_20190115_1315.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0700.txt
+CONNECTION_AAA_20190115_0115.txt.gz     CONNECTION_AAA_20190115_1715.txt     CONNECTION_GSM_20190115_1330.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0715.txt
+CONNECTION_AAA_20190115_0130.txt.gz     CONNECTION_AAA_20190115_1730.txt     CONNECTION_GSM_20190115_1345.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0730.txt
+CONNECTION_AAA_20190115_0145.txt.gz     CONNECTION_AAA_20190115_1745.txt     CONNECTION_GSM_20190115_1400.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0745.txt
+CONNECTION_AAA_20190115_0200.txt.gz     CONNECTION_AAA_20190115_1800.txt     CONNECTION_GSM_20190115_1415.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0800.txt
+CONNECTION_AAA_20190115_0215.txt.gz     CONNECTION_AAA_20190115_1815.txt     CONNECTION_GSM_20190115_1430.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0815.txt
+CONNECTION_AAA_20190115_0230.txt        CONNECTION_AAA_20190115_1830.txt     CONNECTION_GSM_20190115_1445.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0830.txt
+CONNECTION_AAA_20190115_0245.txt        CONNECTION_AAA_20190115_1845.txt     CONNECTION_GSM_20190115_1500.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0845.txt
+CONNECTION_AAA_20190115_0300.txt        CONNECTION_AAA_20190115_1900.txt     CONNECTION_GSM_20190115_1515.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0900.txt
+CONNECTION_AAA_20190115_0315.txt        CONNECTION_AAA_20190115_1915.txt     CONNECTION_GSM_20190115_1530.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0915.txt
+CONNECTION_AAA_20190115_0330.txt        CONNECTION_AAA_20190115_1930.txt     CONNECTION_GSM_20190115_1545.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0930.txt
+CONNECTION_AAA_20190115_0345.txt        CONNECTION_GSM_20190115_0000.txt.gz  CONNECTION_GSM_20190115_1600.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0945.txt
+CONNECTION_AAA_20190115_0400.txt        CONNECTION_GSM_20190115_0015.txt.gz  CONNECTION_GSM_20190115_1615.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1000.txt
+CONNECTION_AAA_20190115_0415.txt        CONNECTION_GSM_20190115_0030.txt.gz  CONNECTION_GSM_20190115_1630.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1015.txt
+CONNECTION_AAA_20190115_0430.txt        CONNECTION_GSM_20190115_0045.txt.gz  CONNECTION_GSM_20190115_1645.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1030.txt
+CONNECTION_AAA_20190115_0445.txt        CONNECTION_GSM_20190115_0100.txt.gz  CONNECTION_GSM_20190115_1700.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1045.txt
+CONNECTION_AAA_20190115_0500.txt        CONNECTION_GSM_20190115_0115.txt.gz  CONNECTION_GSM_20190115_1715.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1100.txt
+CONNECTION_AAA_20190115_0515.txt        CONNECTION_GSM_20190115_0130.txt.gz  CONNECTION_GSM_20190115_1730.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1115.txt
+CONNECTION_AAA_20190115_0530.txt        CONNECTION_GSM_20190115_0145.txt.gz  CONNECTION_GSM_20190115_1745.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1130.txt
+CONNECTION_AAA_20190115_0545.txt        CONNECTION_GSM_20190115_0200.txt.gz  CONNECTION_GSM_20190115_1800.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1145.txt
+CONNECTION_AAA_20190115_0600.txt        CONNECTION_GSM_20190115_0215.txt.gz  CONNECTION_GSM_20190115_1815.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1200.txt
+CONNECTION_AAA_20190115_0615.txt        CONNECTION_GSM_20190115_0230.txt     CONNECTION_GSM_20190115_1830.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1215.txt
+CONNECTION_AAA_20190115_0630.txt        CONNECTION_GSM_20190115_0245.txt     CONNECTION_GSM_20190115_1845.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1230.txt
+CONNECTION_AAA_20190115_0645.txt        CONNECTION_GSM_20190115_0300.txt     CONNECTION_GSM_20190115_1900.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1245.txt
+CONNECTION_AAA_20190115_0700.txt        CONNECTION_GSM_20190115_0315.txt     CONNECTION_GSM_20190115_1915.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1300.txt
+CONNECTION_AAA_20190115_0715.txt        CONNECTION_GSM_20190115_0330.txt     CONNECTION_GSM_20190115_1930.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1315.txt
+CONNECTION_AAA_20190115_0730.txt        CONNECTION_GSM_20190115_0345.txt     CONNECTION_TYPE_20190115_0200.txt                   TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1330.txt
+CONNECTION_AAA_20190115_0745.txt        CONNECTION_GSM_20190115_0400.txt     DOC_TYPE_20190115_0200.txt                          TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1345.txt
+CONNECTION_AAA_20190115_0800.txt        CONNECTION_GSM_20190115_0415.txt     GATEWAYS_20190115_0200.txt                          TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1400.txt
+CONNECTION_AAA_20190115_0815.txt        CONNECTION_GSM_20190115_0430.txt     IP_DATA_POINTS_20190115_0200.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1415.txt
+CONNECTION_AAA_20190115_0830.txt        CONNECTION_GSM_20190115_0445.txt     IP_GATEWAY_20190115_0200.txt                        TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1430.txt
+CONNECTION_AAA_20190115_0845.txt        CONNECTION_GSM_20190115_0500.txt     IP_PLAN_20190115_0200.txt                           TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1445.txt
+CONNECTION_AAA_20190115_0900.txt        CONNECTION_GSM_20190115_0515.txt     MOBILE_PLAN_20190115_0200.txt                       TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1500.txt
+CONNECTION_AAA_20190115_0915.txt        CONNECTION_GSM_20190115_0530.txt     PHONE_PLAN_20190115_0200.txt                        TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1515.txt
+CONNECTION_AAA_20190115_0930.txt        CONNECTION_GSM_20190115_0545.txt     PHONE_SPECIAL_20190115_0200.txt                     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1530.txt
+CONNECTION_AAA_20190115_0945.txt        CONNECTION_GSM_20190115_0600.txt     SUPPLEMENTARY_SERVICE_20190115_0200.txt             TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1545.txt
+CONNECTION_AAA_20190115_1000.txt        CONNECTION_GSM_20190115_0615.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0000.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1600.txt
+CONNECTION_AAA_20190115_1015.txt        CONNECTION_GSM_20190115_0630.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0015.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1615.txt
+CONNECTION_AAA_20190115_1030.txt        CONNECTION_GSM_20190115_0645.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0030.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1630.txt
+CONNECTION_AAA_20190115_1045.txt        CONNECTION_GSM_20190115_0700.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0045.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1645.txt
+CONNECTION_AAA_20190115_1100.txt        CONNECTION_GSM_20190115_0715.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0100.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1700.txt
+CONNECTION_AAA_20190115_1115.txt        CONNECTION_GSM_20190115_0730.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0115.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1715.txt
+CONNECTION_AAA_20190115_1130.txt        CONNECTION_GSM_20190115_0745.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0130.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1730.txt
+CONNECTION_AAA_20190115_1145.txt        CONNECTION_GSM_20190115_0800.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0145.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1745.txt
+CONNECTION_AAA_20190115_1200.txt        CONNECTION_GSM_20190115_0815.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0200.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1800.txt
+CONNECTION_AAA_20190115_1215.txt        CONNECTION_GSM_20190115_0830.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0215.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1815.txt
+CONNECTION_AAA_20190115_1230.txt        CONNECTION_GSM_20190115_0845.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0230.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1830.txt
+CONNECTION_AAA_20190115_1245.txt        CONNECTION_GSM_20190115_0900.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0245.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1845.txt
+CONNECTION_AAA_20190115_1300.txt        CONNECTION_GSM_20190115_0915.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0300.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1900.txt
+CONNECTION_AAA_20190115_1315.txt        CONNECTION_GSM_20190115_0930.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0315.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1915.txt
+CONNECTION_AAA_20190115_1330.txt        CONNECTION_GSM_20190115_0945.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0330.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1930.txt
+CONNECTION_AAA_20190115_1345.txt        CONNECTION_GSM_20190115_1000.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0345.txt
+CONNECTION_AAA_20190115_1400.txt        CONNECTION_GSM_20190115_1015.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0400.txt
+[root@ds-mvno-sorm-ftp01 ~]#
+
+[root@ds-mvno-sorm-ftp01 ~]# ls -A1 /mnt/sorm_exchange/archive/2019/01/15/ | wc -l
+254
+[root@ds-mvno-sorm-ftp01 ~]#
+
+[root@ds-mvno-sorm-ftp01 ~]# ls -A1 /mnt/sorm_exchange/archive/2019/01/15/ | wc -l
+254
+[root@ds-mvno-sorm-ftp01 ~]# ls -A1 /mnt/sorm_exchange/archive/2019/01/15/*_19*.*
+/mnt/sorm_exchange/archive/2019/01/15/CONNECTION_AAA_20190115_1900.txt
+/mnt/sorm_exchange/archive/2019/01/15/CONNECTION_AAA_20190115_1915.txt
+/mnt/sorm_exchange/archive/2019/01/15/CONNECTION_AAA_20190115_1930.txt
+/mnt/sorm_exchange/archive/2019/01/15/CONNECTION_GSM_20190115_1900.txt
+/mnt/sorm_exchange/archive/2019/01/15/CONNECTION_GSM_20190115_1915.txt
+/mnt/sorm_exchange/archive/2019/01/15/CONNECTION_GSM_20190115_1930.txt
+/mnt/sorm_exchange/archive/2019/01/15/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1900.txt
+/mnt/sorm_exchange/archive/2019/01/15/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1915.txt
+/mnt/sorm_exchange/archive/2019/01/15/TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1930.txt
+[root@ds-mvno-sorm-ftp01 ~]# ls -A1 /mnt/sorm_exchange/archive/2019/01/15/ | wc -l
+257
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# ls -A1 /mnt/sorm_exchange/archive/2019/01/15/ | wc -l
+306
+[root@ds-mvno-sorm-ftp01 ~]# ls -A1 /mnt/sorm_exchange/archive/2019/01/16/ | wc -l
+153
+[root@ds-mvno-sorm-ftp01 ~]#
+
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/2019/01/15/
+ABONENT_20190115_0200.txt.gz               CONNECTION_AAA_20190115_1730.txt.gz  CONNECTION_GSM_20190115_1245.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0530.txt.gz
+ABONENT_ADDR_20190115_0200.txt.gz          CONNECTION_AAA_20190115_1745.txt.gz  CONNECTION_GSM_20190115_1300.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0545.txt.gz
+ABONENT_ID_20190115_0200.txt.gz            CONNECTION_AAA_20190115_1800.txt.gz  CONNECTION_GSM_20190115_1315.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0600.txt.gz
+ABONENT_SRV_20190115_0200.txt.gz           CONNECTION_AAA_20190115_1815.txt.gz  CONNECTION_GSM_20190115_1330.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0615.txt.gz
+BASE_STATION_20190115_0200.txt.gz          CONNECTION_AAA_20190115_1830.txt.gz  CONNECTION_GSM_20190115_1345.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0630.txt.gz
+BASE_STATION_ANTENNA_20190115_0200.txt.gz  CONNECTION_AAA_20190115_1845.txt.gz  CONNECTION_GSM_20190115_1400.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0645.txt.gz
+COMMUTATORS_20190115_0200.txt.gz           CONNECTION_AAA_20190115_1900.txt.gz  CONNECTION_GSM_20190115_1415.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0700.txt.gz
+CONNECTION_AAA_20190115_0000.txt.gz        CONNECTION_AAA_20190115_1915.txt.gz  CONNECTION_GSM_20190115_1430.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0715.txt.gz
+CONNECTION_AAA_20190115_0015.txt.gz        CONNECTION_AAA_20190115_1930.txt.gz  CONNECTION_GSM_20190115_1445.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0730.txt.gz
+CONNECTION_AAA_20190115_0030.txt.gz        CONNECTION_AAA_20190115_1945.txt.gz  CONNECTION_GSM_20190115_1500.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0745.txt.gz
+CONNECTION_AAA_20190115_0045.txt.gz        CONNECTION_AAA_20190115_2000.txt.gz  CONNECTION_GSM_20190115_1515.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0800.txt.gz
+CONNECTION_AAA_20190115_0100.txt.gz        CONNECTION_AAA_20190115_2015.txt.gz  CONNECTION_GSM_20190115_1530.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0815.txt.gz
+CONNECTION_AAA_20190115_0115.txt.gz        CONNECTION_AAA_20190115_2030.txt.gz  CONNECTION_GSM_20190115_1545.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0830.txt.gz
+CONNECTION_AAA_20190115_0130.txt.gz        CONNECTION_AAA_20190115_2045.txt.gz  CONNECTION_GSM_20190115_1600.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0845.txt.gz
+CONNECTION_AAA_20190115_0145.txt.gz        CONNECTION_AAA_20190115_2100.txt.gz  CONNECTION_GSM_20190115_1615.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0900.txt.gz
+CONNECTION_AAA_20190115_0200.txt.gz        CONNECTION_AAA_20190115_2115.txt.gz  CONNECTION_GSM_20190115_1630.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0915.txt.gz
+CONNECTION_AAA_20190115_0215.txt.gz        CONNECTION_AAA_20190115_2130.txt.gz  CONNECTION_GSM_20190115_1645.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0930.txt.gz
+CONNECTION_AAA_20190115_0230.txt.gz        CONNECTION_AAA_20190115_2145.txt.gz  CONNECTION_GSM_20190115_1700.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0945.txt.gz
+CONNECTION_AAA_20190115_0245.txt.gz        CONNECTION_AAA_20190115_2200.txt.gz  CONNECTION_GSM_20190115_1715.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1000.txt.gz
+CONNECTION_AAA_20190115_0300.txt.gz        CONNECTION_AAA_20190115_2215.txt.gz  CONNECTION_GSM_20190115_1730.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1015.txt.gz
+CONNECTION_AAA_20190115_0315.txt.gz        CONNECTION_AAA_20190115_2230.txt.gz  CONNECTION_GSM_20190115_1745.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1030.txt.gz
+CONNECTION_AAA_20190115_0330.txt.gz        CONNECTION_AAA_20190115_2245.txt.gz  CONNECTION_GSM_20190115_1800.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1045.txt.gz
+CONNECTION_AAA_20190115_0345.txt.gz        CONNECTION_AAA_20190115_2300.txt.gz  CONNECTION_GSM_20190115_1815.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1100.txt.gz
+CONNECTION_AAA_20190115_0400.txt.gz        CONNECTION_AAA_20190115_2315.txt.gz  CONNECTION_GSM_20190115_1830.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1115.txt.gz
+CONNECTION_AAA_20190115_0415.txt.gz        CONNECTION_AAA_20190115_2330.txt.gz  CONNECTION_GSM_20190115_1845.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1130.txt.gz
+CONNECTION_AAA_20190115_0430.txt.gz        CONNECTION_AAA_20190115_2345.txt.gz  CONNECTION_GSM_20190115_1900.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1145.txt.gz
+CONNECTION_AAA_20190115_0445.txt.gz        CONNECTION_GSM_20190115_0000.txt.gz  CONNECTION_GSM_20190115_1915.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1200.txt.gz
+CONNECTION_AAA_20190115_0500.txt.gz        CONNECTION_GSM_20190115_0015.txt.gz  CONNECTION_GSM_20190115_1930.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1215.txt.gz
+CONNECTION_AAA_20190115_0515.txt.gz        CONNECTION_GSM_20190115_0030.txt.gz  CONNECTION_GSM_20190115_1945.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1230.txt.gz
+CONNECTION_AAA_20190115_0530.txt.gz        CONNECTION_GSM_20190115_0045.txt.gz  CONNECTION_GSM_20190115_2000.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1245.txt.gz
+CONNECTION_AAA_20190115_0545.txt.gz        CONNECTION_GSM_20190115_0100.txt.gz  CONNECTION_GSM_20190115_2015.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1300.txt.gz
+CONNECTION_AAA_20190115_0600.txt.gz        CONNECTION_GSM_20190115_0115.txt.gz  CONNECTION_GSM_20190115_2030.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1315.txt.gz
+CONNECTION_AAA_20190115_0615.txt.gz        CONNECTION_GSM_20190115_0130.txt.gz  CONNECTION_GSM_20190115_2045.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1330.txt.gz
+CONNECTION_AAA_20190115_0630.txt.gz        CONNECTION_GSM_20190115_0145.txt.gz  CONNECTION_GSM_20190115_2100.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1345.txt.gz
+CONNECTION_AAA_20190115_0645.txt.gz        CONNECTION_GSM_20190115_0200.txt.gz  CONNECTION_GSM_20190115_2115.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1400.txt.gz
+CONNECTION_AAA_20190115_0700.txt.gz        CONNECTION_GSM_20190115_0215.txt.gz  CONNECTION_GSM_20190115_2130.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1415.txt.gz
+CONNECTION_AAA_20190115_0715.txt.gz        CONNECTION_GSM_20190115_0230.txt.gz  CONNECTION_GSM_20190115_2145.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1430.txt.gz
+CONNECTION_AAA_20190115_0730.txt.gz        CONNECTION_GSM_20190115_0245.txt.gz  CONNECTION_GSM_20190115_2200.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1445.txt.gz
+CONNECTION_AAA_20190115_0745.txt.gz        CONNECTION_GSM_20190115_0300.txt.gz  CONNECTION_GSM_20190115_2215.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1500.txt.gz
+CONNECTION_AAA_20190115_0800.txt.gz        CONNECTION_GSM_20190115_0315.txt.gz  CONNECTION_GSM_20190115_2230.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1515.txt.gz
+CONNECTION_AAA_20190115_0815.txt.gz        CONNECTION_GSM_20190115_0330.txt.gz  CONNECTION_GSM_20190115_2245.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1530.txt.gz
+CONNECTION_AAA_20190115_0830.txt.gz        CONNECTION_GSM_20190115_0345.txt.gz  CONNECTION_GSM_20190115_2300.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1545.txt.gz
+CONNECTION_AAA_20190115_0845.txt.gz        CONNECTION_GSM_20190115_0400.txt.gz  CONNECTION_GSM_20190115_2315.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1600.txt.gz
+CONNECTION_AAA_20190115_0900.txt.gz        CONNECTION_GSM_20190115_0415.txt.gz  CONNECTION_GSM_20190115_2330.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1615.txt.gz
+CONNECTION_AAA_20190115_0915.txt.gz        CONNECTION_GSM_20190115_0430.txt.gz  CONNECTION_GSM_20190115_2345.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1630.txt.gz
+CONNECTION_AAA_20190115_0930.txt.gz        CONNECTION_GSM_20190115_0445.txt.gz  CONNECTION_TYPE_20190115_0200.txt.gz                TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1645.txt.gz
+CONNECTION_AAA_20190115_0945.txt.gz        CONNECTION_GSM_20190115_0500.txt.gz  DOC_TYPE_20190115_0200.txt.gz                       TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1700.txt.gz
+CONNECTION_AAA_20190115_1000.txt.gz        CONNECTION_GSM_20190115_0515.txt.gz  GATEWAYS_20190115_0200.txt.gz                       TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1715.txt.gz
+CONNECTION_AAA_20190115_1015.txt.gz        CONNECTION_GSM_20190115_0530.txt.gz  IP_DATA_POINTS_20190115_0200.txt.gz                 TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1730.txt.gz
+CONNECTION_AAA_20190115_1030.txt.gz        CONNECTION_GSM_20190115_0545.txt.gz  IP_GATEWAY_20190115_0200.txt.gz                     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1745.txt.gz
+CONNECTION_AAA_20190115_1045.txt.gz        CONNECTION_GSM_20190115_0600.txt.gz  IP_PLAN_20190115_0200.txt.gz                        TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1800.txt.gz
+CONNECTION_AAA_20190115_1100.txt.gz        CONNECTION_GSM_20190115_0615.txt.gz  MOBILE_PLAN_20190115_0200.txt.gz                    TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1815.txt.gz
+CONNECTION_AAA_20190115_1115.txt.gz        CONNECTION_GSM_20190115_0630.txt.gz  PHONE_PLAN_20190115_0200.txt.gz                     TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1830.txt.gz
+CONNECTION_AAA_20190115_1130.txt.gz        CONNECTION_GSM_20190115_0645.txt.gz  PHONE_SPECIAL_20190115_0200.txt.gz                  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1845.txt.gz
+CONNECTION_AAA_20190115_1145.txt.gz        CONNECTION_GSM_20190115_0700.txt.gz  SUPPLEMENTARY_SERVICE_20190115_0200.txt.gz          TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1900.txt.gz
+CONNECTION_AAA_20190115_1200.txt.gz        CONNECTION_GSM_20190115_0715.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0000.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1915.txt.gz
+CONNECTION_AAA_20190115_1215.txt.gz        CONNECTION_GSM_20190115_0730.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0015.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1930.txt.gz
+CONNECTION_AAA_20190115_1230.txt.gz        CONNECTION_GSM_20190115_0745.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0030.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_1945.txt.gz
+CONNECTION_AAA_20190115_1245.txt.gz        CONNECTION_GSM_20190115_0800.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0045.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2000.txt.gz
+CONNECTION_AAA_20190115_1300.txt.gz        CONNECTION_GSM_20190115_0815.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0100.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2015.txt.gz
+CONNECTION_AAA_20190115_1315.txt.gz        CONNECTION_GSM_20190115_0830.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0115.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2030.txt.gz
+CONNECTION_AAA_20190115_1330.txt.gz        CONNECTION_GSM_20190115_0845.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0130.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2045.txt.gz
+CONNECTION_AAA_20190115_1345.txt.gz        CONNECTION_GSM_20190115_0900.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0145.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2100.txt.gz
+CONNECTION_AAA_20190115_1400.txt.gz        CONNECTION_GSM_20190115_0915.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0200.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2115.txt.gz
+CONNECTION_AAA_20190115_1415.txt.gz        CONNECTION_GSM_20190115_0930.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0215.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2130.txt.gz
+CONNECTION_AAA_20190115_1430.txt.gz        CONNECTION_GSM_20190115_0945.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0230.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2145.txt.gz
+CONNECTION_AAA_20190115_1445.txt.gz        CONNECTION_GSM_20190115_1000.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0245.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2200.txt.gz
+CONNECTION_AAA_20190115_1500.txt.gz        CONNECTION_GSM_20190115_1015.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0300.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2215.txt.gz
+CONNECTION_AAA_20190115_1515.txt.gz        CONNECTION_GSM_20190115_1030.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0315.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2230.txt.gz
+CONNECTION_AAA_20190115_1530.txt.gz        CONNECTION_GSM_20190115_1045.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0330.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2245.txt.gz
+CONNECTION_AAA_20190115_1545.txt.gz        CONNECTION_GSM_20190115_1100.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0345.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2300.txt.gz
+CONNECTION_AAA_20190115_1600.txt.gz        CONNECTION_GSM_20190115_1115.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0400.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2315.txt.gz
+CONNECTION_AAA_20190115_1615.txt.gz        CONNECTION_GSM_20190115_1130.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0415.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2330.txt.gz
+CONNECTION_AAA_20190115_1630.txt.gz        CONNECTION_GSM_20190115_1145.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0430.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_2345.txt.gz
+CONNECTION_AAA_20190115_1645.txt.gz        CONNECTION_GSM_20190115_1200.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0445.txt.gz
+CONNECTION_AAA_20190115_1700.txt.gz        CONNECTION_GSM_20190115_1215.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0500.txt.gz
+CONNECTION_AAA_20190115_1715.txt.gz        CONNECTION_GSM_20190115_1230.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190115_0515.txt.gz
+[root@ds-mvno-sorm-ftp01 ~]#
+
+
+[root@ds-mvno-sorm-ftp01 ~]# ls /mnt/sorm_exchange/archive/2019/01/16/
+ABONENT_20190116_0200.txt               CONNECTION_AAA_20190116_0800.txt     CONNECTION_GSM_20190116_0615.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0200.txt.gz
+ABONENT_ADDR_20190116_0200.txt          CONNECTION_AAA_20190116_0815.txt     CONNECTION_GSM_20190116_0630.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0215.txt.gz
+ABONENT_ID_20190116_0200.txt            CONNECTION_AAA_20190116_0830.txt     CONNECTION_GSM_20190116_0645.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0230.txt.gz
+ABONENT_SRV_20190116_0200.txt           CONNECTION_AAA_20190116_0845.txt     CONNECTION_GSM_20190116_0700.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0245.txt
+BASE_STATION_20190116_0200.txt          CONNECTION_AAA_20190116_0900.txt     CONNECTION_GSM_20190116_0715.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0300.txt
+BASE_STATION_ANTENNA_20190116_0200.txt  CONNECTION_AAA_20190116_0915.txt     CONNECTION_GSM_20190116_0730.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0315.txt
+COMMUTATORS_20190116_0200.txt           CONNECTION_AAA_20190116_0930.txt     CONNECTION_GSM_20190116_0745.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0330.txt
+CONNECTION_AAA_20190116_0000.txt.gz     CONNECTION_AAA_20190116_0945.txt     CONNECTION_GSM_20190116_0800.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0345.txt
+CONNECTION_AAA_20190116_0015.txt.gz     CONNECTION_AAA_20190116_1000.txt     CONNECTION_GSM_20190116_0815.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0400.txt
+CONNECTION_AAA_20190116_0030.txt.gz     CONNECTION_AAA_20190116_1015.txt     CONNECTION_GSM_20190116_0830.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0415.txt
+CONNECTION_AAA_20190116_0045.txt.gz     CONNECTION_AAA_20190116_1030.txt     CONNECTION_GSM_20190116_0845.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0430.txt
+CONNECTION_AAA_20190116_0100.txt.gz     CONNECTION_AAA_20190116_1045.txt     CONNECTION_GSM_20190116_0900.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0445.txt
+CONNECTION_AAA_20190116_0115.txt.gz     CONNECTION_AAA_20190116_1100.txt     CONNECTION_GSM_20190116_0915.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0500.txt
+CONNECTION_AAA_20190116_0130.txt.gz     CONNECTION_AAA_20190116_1115.txt     CONNECTION_GSM_20190116_0930.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0515.txt
+CONNECTION_AAA_20190116_0145.txt.gz     CONNECTION_GSM_20190116_0000.txt.gz  CONNECTION_GSM_20190116_0945.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0530.txt
+CONNECTION_AAA_20190116_0200.txt.gz     CONNECTION_GSM_20190116_0015.txt.gz  CONNECTION_GSM_20190116_1000.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0545.txt
+CONNECTION_AAA_20190116_0215.txt.gz     CONNECTION_GSM_20190116_0030.txt.gz  CONNECTION_GSM_20190116_1015.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0600.txt
+CONNECTION_AAA_20190116_0230.txt.gz     CONNECTION_GSM_20190116_0045.txt.gz  CONNECTION_GSM_20190116_1030.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0615.txt
+CONNECTION_AAA_20190116_0245.txt        CONNECTION_GSM_20190116_0100.txt.gz  CONNECTION_GSM_20190116_1045.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0630.txt
+CONNECTION_AAA_20190116_0300.txt        CONNECTION_GSM_20190116_0115.txt.gz  CONNECTION_GSM_20190116_1100.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0645.txt
+CONNECTION_AAA_20190116_0315.txt        CONNECTION_GSM_20190116_0130.txt.gz  CONNECTION_GSM_20190116_1115.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0700.txt
+CONNECTION_AAA_20190116_0330.txt        CONNECTION_GSM_20190116_0145.txt.gz  CONNECTION_TYPE_20190116_0200.txt                   TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0715.txt
+CONNECTION_AAA_20190116_0345.txt        CONNECTION_GSM_20190116_0200.txt.gz  DOC_TYPE_20190116_0200.txt                          TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0730.txt
+CONNECTION_AAA_20190116_0400.txt        CONNECTION_GSM_20190116_0215.txt.gz  GATEWAYS_20190116_0200.txt                          TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0745.txt
+CONNECTION_AAA_20190116_0415.txt        CONNECTION_GSM_20190116_0230.txt.gz  IP_DATA_POINTS_20190116_0200.txt                    TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0800.txt
+CONNECTION_AAA_20190116_0430.txt        CONNECTION_GSM_20190116_0245.txt     IP_GATEWAY_20190116_0200.txt                        TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0815.txt
+CONNECTION_AAA_20190116_0445.txt        CONNECTION_GSM_20190116_0300.txt     IP_PLAN_20190116_0200.txt                           TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0830.txt
+CONNECTION_AAA_20190116_0500.txt        CONNECTION_GSM_20190116_0315.txt     MOBILE_PLAN_20190116_0200.txt                       TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0845.txt
+CONNECTION_AAA_20190116_0515.txt        CONNECTION_GSM_20190116_0330.txt     PHONE_PLAN_20190116_0200.txt                        TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0900.txt
+CONNECTION_AAA_20190116_0530.txt        CONNECTION_GSM_20190116_0345.txt     PHONE_SPECIAL_20190116_0200.txt                     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0915.txt
+CONNECTION_AAA_20190116_0545.txt        CONNECTION_GSM_20190116_0400.txt     SUPPLEMENTARY_SERVICE_20190116_0200.txt             TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0930.txt
+CONNECTION_AAA_20190116_0600.txt        CONNECTION_GSM_20190116_0415.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0000.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0945.txt
+CONNECTION_AAA_20190116_0615.txt        CONNECTION_GSM_20190116_0430.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0015.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190116_1000.txt
+CONNECTION_AAA_20190116_0630.txt        CONNECTION_GSM_20190116_0445.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0030.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190116_1015.txt
+CONNECTION_AAA_20190116_0645.txt        CONNECTION_GSM_20190116_0500.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0045.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190116_1030.txt
+CONNECTION_AAA_20190116_0700.txt        CONNECTION_GSM_20190116_0515.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0100.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190116_1045.txt
+CONNECTION_AAA_20190116_0715.txt        CONNECTION_GSM_20190116_0530.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0115.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190116_1100.txt
+CONNECTION_AAA_20190116_0730.txt        CONNECTION_GSM_20190116_0545.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0130.txt.gz  TRANSFER_REMOVAL_BANK_PAYMENT_20190116_1115.txt
+CONNECTION_AAA_20190116_0745.txt        CONNECTION_GSM_20190116_0600.txt     TRANSFER_REMOVAL_BANK_PAYMENT_20190116_0145.txt.gz
+[root@ds-mvno-sorm-ftp01 ~]#
+
+................................................................................
+
+[root@ds-mvno-sorm-ftp01 ~]# cat /opt/sorm3/move_bulk_of_files_to_subdirs_structure.sh
+#!/bin/bash
+
+target_archive_directory="/mnt/sorm_exchange/archive"
+a_file_with_list_of_files="/root/work/20190115-1850/20190115-1635.ls.mnt.sorm_exchange.archive.txt"
+
+start_date="20170906"
+end_date="20190114"
+
+year_to_search="$(date +%Y -d "${start_date}")"
+month_to_search="$(date +%m -d "${start_date}")"
+day_to_search="$(date +%d -d "${start_date}")"
+
+date_to_search="${year_to_search}${month_to_search}${day_to_search}"
+
+until [ ${date_to_search} = "$(date +%Y%m%d -d "${end_date} + 1 day")" ] ;
+    do
+        pattern_for_search="_${date_to_search}_"
+        found_files="$(/bin/egrep -e "${pattern_for_search}" ${a_file_with_list_of_files} | /bin/awk '{printf $NF " "}')"
+
+        if [ -n "${found_files}" ] ;
+            then
+                mkdir -p ${target_archive_directory}/${year_to_search}/${month_to_search}/${day_to_search}
+                for var1 in ${found_files} ;
+                    do
+                       mv ${target_archive_directory}/${var1} ${target_archive_directory}/${year_to_search}/${month_to_search}/${day_to_search}/ 2>/dev/nul
+                    done
+            fi
+
+        date_to_search="$(date +%Y%m%d -d "${date_to_search} + 1 day")"
+
+        year_to_search="$(date +%Y -d "${date_to_search}")"
+        month_to_search="$(date +%m -d "${date_to_search}")"
+        day_to_search="$(date +%d -d "${date_to_search}")"
+    done
+
+[root@ds-mvno-sorm-ftp01 ~]#
+
+
+[root@ds-mvno-sorm-ftp01 ~]# head /root/work/20190115-1850/20190115-1635.ls.mnt.sorm_exchange.archive.txt
+total 47G
+drwxr-xr-x 2 root   root     16M Jan 15 16:34 .
+drwxrwxrwx 5 root   root    280K Jan 15 16:32 ..
+-rw-r--r-- 1 root   root     550 Sep 18  2017 ABONENT_20170906_0200.txt.gz
+-rw-rw---- 1   1063 1002     587 Sep 28  2017 ABONENT_20170928_0200.txt.gz
+-rw-rw---- 1   1063 1002     586 Sep 29  2017 ABONENT_20170929_0200.txt.gz
+-rw-rw---- 1   1063 1002     654 Sep 30  2017 ABONENT_20170930_0200.txt.gz
+-rw-rw---- 1   1063 1002     658 Oct  1  2017 ABONENT_20171001_0200.txt.gz
+-rw-rw---- 1   1063 1002     653 Oct  2  2017 ABONENT_20171002_0200.txt.gz
+-rw-rw---- 1   1063 1002     788 Oct  3  2017 ABONENT_20171003_0200.txt.gz
+[root@ds-mvno-sorm-ftp01 ~]#
+
+
+................................................................................
+
+
+
+

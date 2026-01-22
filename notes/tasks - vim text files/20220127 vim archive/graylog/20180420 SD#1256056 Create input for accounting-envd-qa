@@ -1,0 +1,138 @@
+
+................................................................................
+
+[root@ds-graylog-lb01 ~]# ls -1 /etc/keepalived/conf.d/ | sort -t "-" -k 2 -n | tail -n 10
+udp-12459-input.conf
+udp-12460-input.conf
+udp-12461-input.conf
+udp-12462-input.conf
+tcp-12544-input.conf
+tcp-12545-input.conf
+tcp-12546-input.conf
+tcp-12547-input.conf
+tcp-12548-input.conf
+tcp-12900-graylog-rest.conf
+[root@ds-graylog-lb01 ~]# cp /etc/keepalived/conf.d/tcp-{12548,12549}-input.conf
+[root@ds-graylog-lb01 ~]# vim /etc/keepalived/conf.d/tcp-12549-input.conf
+:%s/12548/12549/gc
+
+[root@ds-graylog-lb01 ~]#
+
+[root@ds-graylog-lb01 ~]# /etc/init.d/keepalived restart
+Stopping keepalived:                                       [  OK  ]
+Starting keepalived:                                       [  OK  ]
+[root@ds-graylog-lb01 ~]# ipvsadm -L -n | grep 12549
+TCP  10.216.40.170:12549 rr
+  -> 10.217.26.7:12549            Masq    1      0          0
+  -> 10.217.26.8:12549            Masq    1      0          0
+[root@ds-graylog-lb01 ~]# scp /etc/keepalived/conf.d/tcp-12549-input.conf m1-graylog-lb01:/etc/keepalived/conf.d/
+tcp-12549-input.conf                                                 100%  610     0.6KB/s   00:00
+[root@ds-graylog-lb01 ~]#
+
+[root@ds-graylog-lb01 ~]# ssh m1-graylog-lb01
+Last login: Tue Apr  3 18:21:59 2018 from 172.16.28.176
+[root@m1-graylog-lb01 ~]# /etc/init.d/keepalived restart
+Stopping keepalived:                                       [  OK  ]
+Starting keepalived:                                       [  OK  ]
+[root@m1-graylog-lb01 ~]# ipvsadm -L -n | grep 12549
+TCP  10.216.40.170:12549 rr
+  -> 10.217.26.7:12549            Masq    1      0          0
+  -> 10.217.26.8:12549            Masq    1      0          0
+[root@m1-graylog-lb01 ~]# logout
+Connection to m1-graylog-lb01 closed.
+[root@ds-graylog-lb01 ~]#
+
+................................................................................
+
+gl2_source_input:5adf330132f0676a03776fd5
+
+................................................................................
+
+[root@ds-graylog-lb01 ~]# telnet ha-graylog.tcsbank.ru 12549
+Trying 10.216.40.170...
+Connected to ha-graylog.tcsbank.ru.
+Escape character is '^]'.
+^]
+
+telnet> quit
+Connection closed.
+[root@ds-graylog-lb01 ~]#
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@ost-ibul-qa3-acct-envd-1.ibul.m1.tinkoff.cloud
+Warning: Permanently added 'ost-ibul-qa3-acct-envd-1.ibul.m1.tinkoff.cloud' (ECDSA) to the list of known hosts.
+Welcome to Ubuntu 16.04.3 LTS (GNU/Linux 4.4.0-112-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+60 packages can be updated.
+22 updates are security updates.
+
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+This system is managed by
+ .|'''.|        '||  .
+ ||..  '  ....   ||.||.
+  ''|||. '' .||  || ||
+.     '||.|' ||  || ||
+|'....|' '|..'|'.||.'|.'
+
+Welcome to ost-ibul-qa3-acct-envd-1.ibul.m1.tinkoff.cloud:
+ - Server type........: kvm
+ - Architecture.......: x86_64
+ - CPU................: Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz
+ - CPU Cores..........: 2
+ - Memory.............: 3951 Mb
+ - OS.................: Ubuntu
+ - Release............: 16.04
+ - Kernel.............: 4.4.0-112-generic
+ - Addresses..........: ['10.219.177.12', '127.0.0.1']
+ - Uptime.............: 18:06:18 up 0 min,  1 user,  load average: 2.22, 0.64, 0.22
+ - Last highstate.....: Wed Mar  7 18:06:18 MSK 2018
+ - Server Roles.......: ['core']
+ - Server Apps.......: ['docker']
+
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+
+bsv@ost-ibul-qa3-acct-envd-1:~$ sudo -i
+[sudo] password for bsv:
+root@ost-ibul-qa3-acct-envd-1:~#
+root@ost-ibul-qa3-acct-envd-1:~#
+root@ost-ibul-qa3-acct-envd-1:~# telnet ha-graylog.tcsbank.ru 12549
+Trying 10.216.40.170...
+Connected to ha-graylog.tcsbank.ru.
+Escape character is '^]'.
+^]
+
+telnet> quit
+Connection closed.
+root@ost-ibul-qa3-acct-envd-1:~#
+
+................................................................................
+
+root@ost-ibul-qa3-acct-envd-1:~# echo -e '{"version": "1.1","host":"example.org","short_message":"Short message","full_message":"Backtrace here\n\nmore stuff","level":1,"_user_id":9001,"_some_info":"foo","_some_env_var":"bar"}\0' | nc -w 1 ha-graylog.tcsbank.ru 12549
+root@ost-ibul-qa3-acct-envd-1:~#
+
+................................................................................
+
+
+
+
+
+
+

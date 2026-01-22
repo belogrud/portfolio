@@ -1,0 +1,117 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   985327
+Название    №985327
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  30.08.2016 13:47
+Дата регистрации    30.08.2016 13:47
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги,
+просьба добавить проверку Server Health на сервера:
+[ds,m1]-sblshr0[1,2]
+
+
+Семен Барков
+Главный системный администратор серверных платформ
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Барков Семен В
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Барков Семен В
+Контактный e-mail   s.barkov@tinkoff.ru
+Контактные телефоны 79169598099, 2080
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# find . \( -name m1-sblshr01* -o -name ds-sblshr01* -o -name m1-sblshr02* -o -name ds-sblshr02* \)
+./servers/dc-ds/windows/ds-sblshr01.cfg
+./servers/dc-ds/windows/ds-sblshr02.cfg
+./servers/dc-m1/windows/m1-sblshr02.cfg
+./servers/dc-m1/windows/m1-sblshr01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# grep -ire "Server Health" ./servers/dc-m1/windows/
+./servers/dc-m1/windows/m1-aic-voice13.cfg:    service_description             Server Health
+./servers/dc-m1/windows/sbl/m1-sblapp06p.cfg:    service_description      Server Health
+./servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg:        service_description      Server Health
+./servers/dc-m1/windows/exchange/m1-msk-mail01.ti.local.cfg:        service_description      Server Health
+./servers/dc-m1/windows/m1-nice-strg01.cfg:    service_description             Server Health
+./servers/dc-m1/windows/m1-aic-voice14.cfg:    service_description             Server Health
+./servers/dc-m1/windows/m1-nice-strg02.cfg:    service_description             Server Health
+[root@vm-vol-nag4-tst objects]#
+
+define service{
+        use                     hp-health-service
+        host_name               m1-sblshr01
+        service_description     Server Health
+        check_command           check_dell
+}
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   servers/dc-ds/windows/ds-sblshr01.cfg
+#       modified:   servers/dc-ds/windows/ds-sblshr02.cfg
+#       modified:   servers/dc-m1/windows/m1-sblshr01.cfg
+#       modified:   servers/dc-m1/windows/m1-sblshr02.cfg
+#       modified:   servers/vmware/vm-ds-repo01.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       servers/vmware/mg-pg.cfg
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#985327. Added \"Server Health\" check to three servers." servers/dc-m1/windows/m1-sblshr01.cfg servers/dc-ds/windows/ds-sblshr01.cfg servers/dc-ds/windows/ds-sblshr02.cfg
+[master 0873c0a] SD#985327. Added "Server Health" check to three servers.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 18 insertions(+), 3 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull
+Already up-to-date.
+[root@vm-vol-nag4-tst objects]# git push
+Counting objects: 21, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (11/11), done.
+Writing objects: 100% (11/11), 1001 bytes, done.
+Total 11 (delta 10), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   6af6524..0873c0a  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+
+

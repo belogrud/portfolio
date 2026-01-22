@@ -1,0 +1,167 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   917292
+Название    №917292
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  27.06.2016 10:30
+Дата регистрации    27.06.2016 10:30
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день!
+
+В ночь с субботы на воскресенье у нас наблюдались неполадки с DNS. В течение минуты (4:43 утра) не резолвились адреса мастеров СУБД Greenplum - ds-gp-prd-ext и m1-gp-tst-ext.
+Просьба помочь выяснить причину.
+
+
+--
+Дмитрий Немчин
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Немчин Дмитрий
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Немчин Дмитрий
+Контактный e-mail   d.nemchin@tinkoff.ru
+Контактные телефоны 79264249974, 2758
+
+................................................................................
+
+[support@centos00 ~]$ host ds-gp-prd-ext
+ds-gp-prd-ext.tcsbank.ru has address 10.216.28.10
+[support@centos00 ~]$ host m1-gp-tst-ext
+m1-gp-tst-ext.tcsbank.ru has address 10.216.27.30
+[support@centos00 ~]$
+
+................................................................................
+
+#
+#   See, that ip address 10.216.28.10 belongs server ds-gp-prd-mdw.
+#
+[root@ds-gp-prd-mdw ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+8: eth6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.2.111/24 brd 10.216.2.255 scope global eth6
+9: eth7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    inet 10.216.3.111/24 brd 10.216.3.255 scope global eth7
+11: bond0.1628@bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.28.8/24 brd 10.216.28.255 scope global bond0.1628
+    inet 10.216.28.10/24 brd 10.216.28.255 scope global secondary bond0.1628:0
+[root@ds-gp-prd-mdw ~]#
+
+[root@ds-gp-prd-mdw ~]# ip link show bond0.1628
+11: bond0.1628@bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    link/ether 2c:27:d7:53:b7:20 brd ff:ff:ff:ff:ff:ff
+[root@ds-gp-prd-mdw ~]#
+
+#
+#   See nothing.
+#
+[root@ds-gp-prd-mdw ~]# grep -e "^Jun 26 04" -A 1 -B 1 /var/log/messages
+Jun 26 03:57:40 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:05:24 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:05:24 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:05:24 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:05:24 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:10:40 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:10:40 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:10:41 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:10:41 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:15:40 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:15:40 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:15:40 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:15:40 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:19:32 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:19:32 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:19:32 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:19:32 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:22:30 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:22:30 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:22:30 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:22:30 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:26:38 ds-gp-prd-mdw puppet-agent[14371]: Finished catalog run in 0.46 seconds
+Jun 26 04:27:20 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:27:20 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:27:20 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:27:20 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:30:18 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:30:18 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:30:18 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:30:18 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:37:08 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:37:08 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:37:08 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:37:08 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:42:15 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:42:15 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:42:15 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:42:15 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:46:50 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:46:50 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:46:50 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:46:50 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:52:46 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:52:46 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:52:46 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:52:46 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+Jun 26 04:56:38 ds-gp-prd-mdw puppet-agent[6128]: Finished catalog run in 0.52 seconds
+Jun 26 05:00:16 ds-gp-prd-mdw snmpd[2723]: truncating integer value > 32 bits
+[root@ds-gp-prd-mdw ~]#
+
+................................................................................
+
+
+[root@m1-gp-tst-mdw ~]# ip -f inet addr show bond0.1627
+11: bond0.1627@bond0: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.216.27.31/24 brd 10.216.27.255 scope global bond0.1627
+    inet 10.216.27.30/24 brd 10.216.27.255 scope global secondary bond0.1627:0
+[root@m1-gp-tst-mdw ~]#
+
+[root@m1-gp-tst-mdw ~]# grep -e "^Jun 26 04" -A 1 -B 1 /var/log/messages
+Jun 26 03:55:38 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:00:35 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:00:35 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:09:14 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:09:15 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:14:04 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:14:04 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:15:24 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:15:24 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:18:54 m1-gp-tst-mdw puppet-agent[19108]: Finished catalog run in 0.81 seconds
+Jun 26 04:23:50 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:23:51 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:27:58 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:27:59 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:32:02 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:32:02 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:37:40 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:37:40 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:40:16 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:40:16 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:46:42 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:46:42 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:48:54 m1-gp-tst-mdw puppet-agent[24323]: Finished catalog run in 0.83 seconds
+Jun 26 04:50:21 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:50:21 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:59:19 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 04:59:19 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+Jun 26 05:03:32 m1-gp-tst-mdw snmpd[2701]: truncating integer value > 32 bits
+[root@m1-gp-tst-mdw ~]#
+
+
+
+
+
+
+

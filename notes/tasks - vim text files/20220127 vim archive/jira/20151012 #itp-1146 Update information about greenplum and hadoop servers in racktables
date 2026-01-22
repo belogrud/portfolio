@@ -1,0 +1,643 @@
+
+
+................................................................................
+https://jira.tcsbank.ru/browse/ITP-1146
+
+проверка, актуализация всех контуров ГП и хадуп в racktables и wiki
+
+в первую очередь - racktables, проверить и актуализировать
+Common name
+FQDN
+ilo-ip
+проверить актуальность записей в ДНС для ilo (сервера перевозились+новые dell) .
+повесить нужные теги (greenplum, hadoop) на соответсвующее сетевое оборудование - m1-gp1 m1-gp1-test m1-gp2-test m1-hadoop1 m1-hadoop2 m1-mgmt08 ds-gp1 ds-gp1-test ds-gp2-test ds-hadoop1 ds-hadoop2 ds-mgmt07
+Статью на wiki, с информацией о ГП - пометить как неактуальную, и чтобы не писать руками, наладить выгрузку свежей информации из racktables (думаю, по тегам greenplum, hadoop) , желательно перед этим иметь побольше информации в таблице, минимум - FQDN, ilo-ip, sn (Аркадий или Саша помогут).
+
+................................................................................
+
+mysql -u root -h localhost -pEij8oot8aiphimaquohz
+
+[support@centos00 ~]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -h 10.216.40.11 -P 33060 -e "use racktablesdb ; SELECT * FROM ( select name, asset_no from racktablesdb.Object) as rows where name regexp '.*m1-gp-prd.*';"
++-----------------+------------+
+| name            | asset_no   |
++-----------------+------------+
+| m1-gp-prd-sdw8  | CZ23290BN7 |
+| m1-gp-prd-sdw18 | CZ23290BN6 |
+| m1-gp-prd-sdw13 | CZ23290BNC |
+| m1-gp-prd-sdw9  | CZ23290BNH |
+| m1-gp-prd-sdw16 | CZ23290BNN |
+| m1-gp-prd-sdw12 | CZ23290BMY |
+| m1-gp-prd-sdw11 | CZ23290BN1 |
+| m1-gp-prd-sdw15 | CZ23290BNP |
+| m1-gp-prd-sdw19 | CZ23290BN4 |
+| m1-gp-prd-sdw20 | CZ23290BNJ |
+| m1-gp-prd-sdw14 | CZ23290BN8 |
+| m1-gp-prd-sdw17 | CZ23290BNK |
+| m1-gp-prd-sdw10 | CZ23290BNL |
+| m1-gp-prd-mdw   | CZ314824F5 |
+| m1-gp-prd-smdw  | CZ314824F9 |
+| m1-gp-prd-sdw7  | CZ23290BNF |
+| m1-gp-prd-sdw6  | CZ23290BNM |
+| m1-gp-prd-sdw5  | CZ23290BND |
+| m1-gp-prd-sdw4  | CZ23290BN5 |
+| m1-gp-prd-sdw3  | CZ23290BNB |
+| m1-gp-prd-sdw2  | CZ23290BN3 |
+| m1-gp-prd-sdw1  | CZ23290BMZ |
+| m1-gp-prd-sdw24 | CZ23290BN2 |
+| m1-gp-prd-sdw23 | CZ23290BN9 |
+| m1-gp-prd-sdw22 | CZ23290BN0 |
+| m1-gp-prd-sdw21 | CZ23290BNG |
++-----------------+------------+
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -h 10.216.40.11 -P 33060 -e "use racktablesdb ; SELECT * FROM ( select name, asset_no from racktablesdb.Object) as rows where name regexp '.*m1-gp-tst.*';"
++--------------------+------------+
+| name               | asset_no   |
++--------------------+------------+
+| m1-gp-tst-ext-mdw  | CZ3236VST4 |
+| m1-gp-tst-sdw15    | CZ3236VT8C |
+| m1-gp-tst-sdw13    | CZ3236VT8H |
+| m1-gp-tst-sdw11    | CZ3236VT8M |
+| m1-gp-tst-sdw14    | CZ3236VT95 |
+| m1-gp-tst-ext-smdw | CZ314824F3 |
+| m1-gp-tst-sdw5     | CZ31450H63 |
+| m1-gp-tst-sdw6     | CZ31450H6M |
+| m1-gp-tst-sdw7     | CZ31450H6B |
+| m1-gp-tst-sdw8     | CZ31450H5Y |
+| m1-gp-tst-sdw9     | CZ31450H6V |
+| m1-gp-tst-sdw10    | CZ31450H67 |
+| m1-gp-tst-sdw12    | CZ31450H6J |
+| m1-gp-tst-sdw16    | CZ31450H6D |
+| m1-gp-tst-sdw1     | CZ31450H69 |
+| m1-gp-tst-sdw2     | CZ31450H61 |
+| m1-gp-tst-sdw3     | CZ31450H6F |
+| m1-gp-tst-sdw4     | CZ31450H65 |
++--------------------+------------+
+[support@centos00 ~]$
+
+................................................................................
+[support@centos00 ~]$ for var1 in $(cat) ;  do host ${var1}.mgmt.tcsbank.ru ; done | awk '{print $1 "\t" $4}' | sed -e 's/.mgmt.tcsbank.ru//'
+
+[root@ds-gp-dev-smdw ~]# for var2 in mdw smdw sdw{1..8} ; do ssh ${var2} '( var3="$(hostname)" ; var1="$(mktemp)" ; var4="$(hponcfg -w ${var1} 1>/dev/null ; grep -i addr ${var1} | grep -w -e "IP_ADDRESS VALUE" | sed -e "s/.*\"\\(.*\\)\".*/\1/" )" ; echo "${var3} ${var4}" )' ; done
+
+[root@m1-hadoop-cs01t ~]# for var2 in cs01t wk0{3..6}t ; do ssh m1-hadoop-${var2} '( var3="$(hostname)" ; var1="$(mktemp)" ; var4="$(hponcfg -w ${var1} 1>/dev/null ; grep -i addr ${var1} | grep -w -e "IP_ADDRESS VALUE" | sed -e "s/.*\"\\(.*\\)\".*/\1/" )" ; echo "${var3} ${var4}" )' ; done
+
+[root@m1-hadoop-cs01t ~]# for var2 in wk0{1..2}t wk0{7..9}t wk10t ; do ssh m1-hadoop-${var2} '( var3="$(hostname)" ; var4="$(racadm getniccfg | grep -w -e "^IP Address *=" | sed -e "s/.*= \\(.*\\)/\1/" )" ; echo "${var3} ${var4}" )' ; done
+
+
+[root@ds-hadoop-cs01p ~]# for var2 in cs01p wk0{1..8}p ; do ssh ds-hadoop-${var2} '( var3="$(hostname)" ; var1="$(mktemp)" ; var4="$(hponcfg -w ${var1} 1>/dev/null ; grep -i addr ${var1} | grep -w -e "IP_ADDRESS VALUE" | sed -e "s/.*\"\\(.*\\)\".*/\1/" )" ; echo "${var3} ${var4}" )' ; done
+
+
+[root@ds-hadoop-cs01p ~]# for var2 in cs02p wk09p wk{10..20}p ; do ssh ds-hadoop-${var2} '( var3="$(hostname)" ; var4="$(racadm getniccfg | grep -w -e "^IP Address *=" | sed -e "s/.*= \\(.*\\)/\1/" )" ; echo "${var3} ${var4}" )' ; done
+
+racadm getniccfg | grep -w -e "^IP Address *=" | sed -e "s/.*= \(.*\)/\1/"
+
+................................................................................
+
+
+ds-gp-prd-mdw  'CZ3236VST9'   10.219.10.102
+ds-gp-prd-sdw1  '2DBV762'     10.219.11.74
+ds-gp-prd-sdw10 '7DBV762'     10.219.11.83
+ds-gp-prd-sdw11 '9KCV762'     10.219.11.84
+ds-gp-prd-sdw12 'BLCV762'     10.219.11.85
+ds-gp-prd-sdw13 'GJCV762'     10.219.11.86
+ds-gp-prd-sdw14 '2MCV762'     10.219.11.87
+ds-gp-prd-sdw15 '8FBV762'     10.219.11.88
+ds-gp-prd-sdw16 '2FBV762'     10.219.11.89
+ds-gp-prd-sdw17 'FCBV762'     10.219.11.90
+ds-gp-prd-sdw18 '488V762'     10.219.11.91
+ds-gp-prd-sdw19 '6LCV762'     10.219.11.92
+ds-gp-prd-sdw2  '668V762'     10.219.11.75
+ds-gp-prd-sdw20 '778V762'     10.219.11.93
+ds-gp-prd-sdw21 'JBBV762'     10.219.11.94
+ds-gp-prd-sdw22 'B58V762'     10.219.11.95
+ds-gp-prd-sdw23 'F68V762'     10.219.11.96
+ds-gp-prd-sdw24 'HKCV762'     10.219.11.97
+ds-gp-prd-sdw3  '498V762'     10.219.11.76
+ds-gp-prd-sdw4  '4FBV762'     10.219.11.77
+ds-gp-prd-sdw5  'BJCV762'     10.219.11.78
+ds-gp-prd-sdw6  '3KCV762'     10.219.11.79
+ds-gp-prd-sdw7  '1CBV762'     10.219.11.80
+ds-gp-prd-sdw8  'FDBV762'     10.219.11.81
+ds-gp-prd-sdw9  '7BBV762'     10.219.11.82
+ds-gp-prd-smdw  'CZ314824F7   10.219.10.218
+
+................................................................................
+
+m1-hadoop-cs01t 'CZJ33001ND' 10.219.8.218   m1-hadoop-cs01t.tcsbank.ru 10.219.8.218
+m1-hadoop-wk01t '1J7V762'    10.219.9.57    m1-hadoop-wk01t.tcsbank.ru 10.219.9.57
+m1-hadoop-wk02t '6M7V762'    10.219.9.58    m1-hadoop-wk02t.tcsbank.ru 10.219.9.58
+m1-hadoop-wk03t 'CZJ42800XZ' 10.219.9.29 -> (not opens) ; 10.219.10.205 -> (ds-hadoop-wk07p)    m1-hadoop-wk03t.tcsbank.ru 10.219.8.219
+m1-hadoop-wk04t 'CZJ42800Y0' 10.219.9.30 -> (not opens) ; 10.219.10.206 -> (ds-hadoop-wk08p)    m1-hadoop-wk04t.tcsbank.ru 10.219.8.220
+m1-hadoop-wk05t 'CZJ42800Y1' 10.219.8.223   m1-hadoop-wk05t 10.219.8.223
+m1-hadoop-wk06t 'CZJ42800Y2' 10.219.8.224   m1-hadoop-wk06t 10.219.8.224
+m1-hadoop-wk07t '4Q7V762'    10.219.9.59    m1-hadoop-wk07t.tcsbank.ru 10.219.9.59
+m1-hadoop-wk08t '4P7V762'    10.219.9.60    m1-hadoop-wk08t.tcsbank.ru 10.219.9.60
+m1-hadoop-wk09t 'GK7V762'    10.219.9.61    m1-hadoop-wk09t.tcsbank.ru 10.219.9.61
+m1-hadoop-wk10t '5K7V762'    10.219.9.62    m1-hadoop-wk10t.tcsbank.ru 10.219.9.62
+
+ds-hadoop-cs01p 'CZJ33001NC'  10.219.10.163 ds-hadoop-cs01p.tcsbank.ru 10.219.10.163
+ds-hadoop-cs02p '2N9V762'     10.219.11.73  ds-hadoop-cs02p 10.219.11.73
+ds-hadoop-wk01p 'CZJ330025B'  10.219.10.164 ds-hadoop-wk01p.tcsbank.ru 10.219.10.164
+ds-hadoop-wk02p 'CZJ330025F'  10.219.10.165 ds-hadoop-wk02p.tcsbank.ru 10.219.10.165
+ds-hadoop-wk03p 'CZJ3300257'  10.219.10.166 ds-hadoop-wk03p.tcsbank.ru 10.219.10.166
+ds-hadoop-wk04p 'CZJ3300258'  10.219.10.167 ds-hadoop-wk04p.tcsbank.ru 10.219.10.167
+ds-hadoop-wk05p 'CZJ330025G'  10.219.8.219  ds-hadoop-wk05p 10.219.10.207              !
+ds-hadoop-wk06p 'CZJ330025D'  10.219.8.220  ds-hadoop-wk06p 10.219.10.208              !
+ds-hadoop-wk07p 'CZJ3300259'  10.219.8.221  ds-hadoop-wk07p 10.219.10.205              !
+ds-hadoop-wk08p 'CZJ330025C'  10.219.8.222  ds-hadoop-wk08p.tcsbank.ru 10.219.10.206   !
+ds-hadoop-wk09p 'DQ9V762'     10.219.11.61  ds-hadoop-wk09p 10.219.11.61
+ds-hadoop-wk10p '2S6V762'     10.219.11.62  ds-hadoop-wk10p 10.219.11.62
+ds-hadoop-wk11p '2Q9V762'     10.219.11.63  ds-hadoop-wk11p 10.219.11.63
+ds-hadoop-wk12p '6P9V762'     10.219.11.64  ds-hadoop-wk12p 10.219.11.64
+ds-hadoop-wk13p 'JT6V762'     10.219.11.65  ds-hadoop-wk13p 10.219.11.65
+ds-hadoop-wk14p 'HS6V762'     10.219.11.66  ds-hadoop-wk14p 10.219.11.66
+ds-hadoop-wk15p '9R9V762'     10.219.11.67  ds-hadoop-wk15p 10.219.11.67
+ds-hadoop-wk16p '3S9V762'     10.219.11.68  ds-hadoop-wk16p 10.219.11.68
+ds-hadoop-wk17p 'FX6V762'     10.219.11.69  ds-hadoop-wk17p 10.219.11.69
+ds-hadoop-wk18p '4Q6V762'     10.219.11.70  ds-hadoop-wk18p 10.219.11.70
+ds-hadoop-wk19p '7R6V762'     10.219.11.71  ds-hadoop-wk19p 10.219.11.71
+ds-hadoop-wk20p '3R9V762'     10.219.11.72  ds-hadoop-wk20p 10.219.11.72
+
+................................................................................
+
+| Taken from nagios BPI    | Taken from dns | Taken from hponcfg |
+ds-gp-dev-mdw  'CZ3236VSSY' 10.219.10.100 ds-gp-dev-mdw 10.219.10.100
+ds-gp-dev-sdw1 'CZ3236VT8Y' 10.219.10.103 ds-gp-dev-sdw1 10.219.10.103
+ds-gp-dev-sdw2 'CZ3236VT91' 10.219.10.104 ds-gp-dev-sdw2 10.219.10.104
+ds-gp-dev-sdw3 'CZ3236VT8P' 10.219.10.106 ds-gp-dev-sdw3 10.219.10.106
+ds-gp-dev-sdw4 'CZ3236VT8K' 10.219.10.107 ds-gp-dev-sdw4 10.219.10.107
+ds-gp-dev-sdw5 'CZ3236VT93' 10.219.10.110 ds-gp-dev-sdw5 10.219.10.110
+ds-gp-dev-sdw6 'CZ3236VT8E' 10.219.10.111 ds-gp-dev-sdw6 10.219.10.111
+ds-gp-dev-sdw7 'CZ3236VT8T' 10.219.10.114 ds-gp-dev-sdw7 10.219.10.114
+ds-gp-dev-sdw8 'CZ3236VT8W' 10.219.10.115 ds-gp-dev-sdw8 10.219.10.115
+ds-gp-dev-smdw 'CZ3236VSSS' 10.219.10.113 ds-gp-dev-smdw 10.219.10.113
+
+
+| Taken from nagios BPI     | Taken from dns | Taken from hponcfg |
+m1-gp-tst-mdw   'CZ3236VST4' 10.219.8.76  10.219.8.76
+m1-gp-tst-smdw  'CZ314824F3' 10.219.8.216 10.219.8.216
+m1-gp-tst-sdw1  'CZ31450H69' 10.219.8.211 10.219.8.211
+m1-gp-tst-sdw2  'CZ31450H61' 10.219.8.212 10.219.8.212
+m1-gp-tst-sdw3  'CZ31450H6F' 10.219.8.213 10.219.8.213
+m1-gp-tst-sdw4  'CZ31450H65' 10.219.8.214 10.219.8.214
+m1-gp-tst-sdw5  'CZ31450H63' 10.219.8.100 10.219.8.100
+m1-gp-tst-sdw6  'CZ31450H6M' 10.219.8.147 10.219.8.147
+m1-gp-tst-sdw7  'CZ31450H6B' 10.219.8.148 10.219.8.148
+m1-gp-tst-sdw8  'CZ31450H5Y' 10.219.8.149 10.219.8.149
+m1-gp-tst-sdw9  'CZ31450H6V' 10.219.8.150 10.219.8.150
+m1-gp-tst-sdw10 'CZ31450H67' 10.219.8.151 10.219.8.151
+m1-gp-tst-sdw11 'CZ3236VT8M' 10.219.8.77  10.219.8.77
+m1-gp-tst-sdw12 'CZ31450H6J' 10.219.8.152 10.219.8.152
+m1-gp-tst-sdw13 'CZ3236VT8H' 10.219.8.122 10.219.8.122
+m1-gp-tst-sdw14 'CZ3236VT95' 10.219.8.114 (Confirmed -> web interface available and works) -> ERROR: Unable to communicate with the Management Processor.
+m1-gp-tst-sdw15 'CZ3236VT8C' 10.219.8.116 10.219.8.116
+m1-gp-tst-sdw16 'CZ31450H6D' 10.219.8.153 10.219.8.153
+
+| Taken from nagios BPI     | Taken from dns           | Taken from hponcfg         |
+m1-gp-prd-mdw   'CZ314824F5' 10.219.8.155               m1-gp-prd-mdw   10.219.8.155
+m1-gp-prd-smdw  'CZ314824F9' 10.219.8.154               m1-gp-prd-smdw  10.219.8.154
+m1-gp-prd-sdw1  'CZ23290BMZ' 10.219.8.210               m1-gp-prd-sdw1  10.219.8.210
+m1-gp-prd-sdw2  'CZ23290BN3' 10.219.8.209               m1-gp-prd-sdw2  10.219.8.209
+m1-gp-prd-sdw3  'CZ23290BNB' 10.219.8.208               m1-gp-prd-sdw3  10.219.8.208
+m1-gp-prd-sdw4  'CZ23290BN5' 10.219.8.207               m1-gp-prd-sdw4  10.219.8.207
+m1-gp-prd-sdw5  'CZ23290BND' 10.219.8.206               m1-gp-prd-sdw5  10.219.8.206
+m1-gp-prd-sdw6  'CZ23290BNM' 10.219.8.205               m1-gp-prd-sdw6  10.219.8.205
+m1-gp-prd-sdw7  'CZ23290BNF' 10.219.8.198               m1-gp-prd-sdw7  10.219.8.198
+m1-gp-prd-sdw8  'CZ23290BN7' 10.219.8.197               m1-gp-prd-sdw8  10.219.8.197
+m1-gp-prd-sdw9  'CZ23290BNH' 10.219.9.74 10.219.10.140  m1-gp-prd-sdw9  10.219.9.74
+m1-gp-prd-sdw10 'CZ23290BNL' 10.219.9.72 10.219.10.150  m1-gp-prd-sdw10 10.219.9.72
+m1-gp-prd-sdw11 'CZ23290BN1' 10.219.9.71 10.219.10.144  m1-gp-prd-sdw11 10.219.9.71
+m1-gp-prd-sdw12 'CZ23290BMY' 10.219.9.70 10.219.10.143  m1-gp-prd-sdw12 10.219.9.70
+m1-gp-prd-sdw13 'CZ23290BNC' 10.219.9.73 10.219.10.139  m1-gp-prd-sdw13 10.219.9.73
+m1-gp-prd-sdw14 'CZ23290BN8' 10.219.9.77 10.219.10.148  m1-gp-prd-sdw14 10.219.9.77
+m1-gp-prd-sdw15 'CZ23290BNP' 10.219.9.76 10.219.10.145  m1-gp-prd-sdw15 10.219.9.76
+m1-gp-prd-sdw16 'CZ23290BNN' 10.219.9.75 10.219.10.142  m1-gp-prd-sdw16 10.219.9.75
+m1-gp-prd-sdw17 'CZ23290BNK' 10.219.9.81 10.219.10.149  m1-gp-prd-sdw17 10.219.9.81
+m1-gp-prd-sdw18 'CZ23290BN6' 10.219.9.80 10.219.10.141  m1-gp-prd-sdw18 10.219.9.80
+m1-gp-prd-sdw19 'CZ23290BN4' 10.219.9.79 10.219.10.146  m1-gp-prd-sdw19 10.219.9.79
+m1-gp-prd-sdw20 'CZ23290BNJ' 10.219.9.78 10.219.10.147  m1-gp-prd-sdw20 10.219.9.78
+m1-gp-prd-sdw21 'CZ23290BNG' 10.219.8.204               m1-gp-prd-sdw21 10.219.8.204
+m1-gp-prd-sdw22 'CZ23290BN0' 10.219.8.203               m1-gp-prd-sdw22 10.219.8.203
+m1-gp-prd-sdw23 'CZ23290BN9' 10.219.8.202               m1-gp-prd-sdw23 10.219.8.202
+m1-gp-prd-sdw24 'CZ23290BN2' 10.219.8.201               m1-gp-prd-sdw24 10.219.8.201
+
+
+................................................................................
+
+select attr_id, string_value, object_id
+    from AttributeValue
+    where object_id in
+        ( select id from
+            ( select id, name from Object) as rows where name regexp '.*ds-gp-dev-.*' ) ;
+
+
+SELECT * FROM ( select id, name, asset_no from racktablesdb.Object) as rows where name regexp '.*ds-gp-dev-.*';
+
+................................................................................
+
+
+select o.id ,o.asset_no , a1.string_value as 'S/N', a3.string_value as 'FQDN', a10003.string_value as 'P/N'
+from Object  o
+left join AttributeValue  a1 on o.id=a1.object_id and a1.attr_id=1
+left join AttributeValue  a3 on o.id=a3.object_id and a3.attr_id=3
+left join AttributeValue  a10003 on o.id=a10003.object_id and a10003.attr_id=10003 where o.name like '%ds-gp-dev%';
+
+
+#   Same as above, but looks more understandable.
+select
+ syntetic.id,
+ syntetic.name,
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no,
+ syntetic_attr_1.string_value as 'S/N',
+ syntetic_attr_10003.string_value as 'P/N'
+from Object  syntetic
+left join AttributeValue  syntetic_attr_1 on syntetic.id=syntetic_attr_1.object_id and syntetic_attr_1.attr_id=1
+left join AttributeValue  syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue  syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+where syntetic.name
+like '%ds-gp-dev%';
+
+
+#   Next improved previous one.
+select
+ syntetic.id,
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_1.string_value as 'OEM S/N 1',
+ syntetic_attr_10003.string_value as 'HW Part Number'
+from Object  syntetic
+left join AttributeValue  syntetic_attr_1 on syntetic.id=syntetic_attr_1.object_id and syntetic_attr_1.attr_id=1
+left join AttributeValue  syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue  syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+where syntetic.name
+like '%ds-gp-dev%';
+
+................................................................................
+
+#   Here is how to get column from another table, that have object_id same as id in main table.
+#   Mon Oct 19 11:20:35 MSK 2015
+
+select
+ syntetic.id,
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_1.string_value as 'OEM S/N 1',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ syntetic_ip.ip
+from Object syntetic
+left join AttributeValue syntetic_attr_1 on syntetic.id=syntetic_attr_1.object_id and syntetic_attr_1.attr_id=1
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id
+where syntetic.name
+like '%ds-gp-dev%';
+
+................................................................................
+................................................................................
+
+#   Thu Nov  5 16:17:01 MSK 2015
+
+[support@centos00 en]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -h 10.216.40.11 -P 33060 -e "use racktablesdb ; $(cat) "
+select
+ syntetic.id,
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_1.string_value as 'OEM S/N 1',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_1 on syntetic.id=syntetic_attr_1.object_id and syntetic_attr_1.attr_id=1
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id
+where syntetic.name
+like '%ds-gp-dev%';
++-----+----------------+---------------------------+------------+------------+----------------+---------------+
+| id  | Common name    | FQDN                      | Asset tag  | OEM S/N 1  | HW Part Number | Management IP |
++-----+----------------+---------------------------+------------+------------+----------------+---------------+
+| 847 | ds-gp-dev-mdw  | ds-gp-dev-mdw.tcsbank.ru  | CZ3236VSSY | CZ3236VSSY | 583914-B21     | 10.219.10.100 |
+| 849 | ds-gp-dev-sdw6 | ds-gp-dev-sdw6.tcsbank.ru | CZ3236VT8E | CZ3236VT8E | 583914-B21     | 10.219.10.111 |
+| 850 | ds-gp-dev-sdw3 | ds-gp-dev-sdw3.tcsbank.ru | CZ3236VT8P | CZ3236VT8P | 583914-B21     | 10.219.10.106 |
+| 851 | ds-gp-dev-sdw2 | ds-gp-dev-sdw2.tcsbank.ru | CZ3236VT91 | CZ3236VT91 | 583914-B21     | 10.219.10.104 |
+| 852 | ds-gp-dev-sdw5 | ds-gp-dev-sdw5.tcsbank.ru | CZ3236VT93 | CZ3236VT93 | 583914-B21     | 10.219.10.110 |
+| 853 | ds-gp-dev-sdw7 | ds-gp-dev-sdw7.tcsbank.ru | CZ3236VT8T | CZ3236VT8T | 583914-B21     | 10.219.10.114 |
+| 854 | ds-gp-dev-sdw8 | ds-gp-dev-sdw8.tcsbank.ru | CZ3236VT8W | CZ3236VT8W | 583914-B21     | 10.219.10.115 |
+| 856 | ds-gp-dev-sdw1 | ds-gp-dev-sdw1.tcsbank.ru | CZ3236VT8Y | CZ3236VT8Y | 583914-B21     | 10.219.10.103 |
+| 857 | ds-gp-dev-smdw | ds-gp-dev-smdw.tcsbank.ru | CZ3236VSSS | CZ3236VSSS | 583914-B21     | 10.219.10.113 |
+| 861 | ds-gp-dev-sdw4 | ds-gp-dev-sdw4.tcsbank.ru | CZ3236VT8K | CZ3236VT8K | 583914-B21     | 10.219.10.107 |
++-----+----------------+---------------------------+------------+------------+----------------+---------------+
+[support@centos00 en]$
+
+
+#   Here I add special order sort and remove not interesting columns.
+
+[support@centos00 en]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -h 10.216.40.11 -P 33060 -e "use racktablesdb ; $(cat) "
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id
+where syntetic.name
+like '%ds-gp-dev%'
+order by syntetic.name ;
++----------------+---------------------------+------------+----------------+---------------+
+| Common name    | FQDN                      | Asset tag  | HW Part Number | Management IP |
++----------------+---------------------------+------------+----------------+---------------+
+| ds-gp-dev-mdw  | ds-gp-dev-mdw.tcsbank.ru  | CZ3236VSSY | 583914-B21     | 10.219.10.100 |
+| ds-gp-dev-sdw1 | ds-gp-dev-sdw1.tcsbank.ru | CZ3236VT8Y | 583914-B21     | 10.219.10.103 |
+| ds-gp-dev-sdw2 | ds-gp-dev-sdw2.tcsbank.ru | CZ3236VT91 | 583914-B21     | 10.219.10.104 |
+| ds-gp-dev-sdw3 | ds-gp-dev-sdw3.tcsbank.ru | CZ3236VT8P | 583914-B21     | 10.219.10.106 |
+| ds-gp-dev-sdw4 | ds-gp-dev-sdw4.tcsbank.ru | CZ3236VT8K | 583914-B21     | 10.219.10.107 |
+| ds-gp-dev-sdw5 | ds-gp-dev-sdw5.tcsbank.ru | CZ3236VT93 | 583914-B21     | 10.219.10.110 |
+| ds-gp-dev-sdw6 | ds-gp-dev-sdw6.tcsbank.ru | CZ3236VT8E | 583914-B21     | 10.219.10.111 |
+| ds-gp-dev-sdw7 | ds-gp-dev-sdw7.tcsbank.ru | CZ3236VT8T | 583914-B21     | 10.219.10.114 |
+| ds-gp-dev-sdw8 | ds-gp-dev-sdw8.tcsbank.ru | CZ3236VT8W | 583914-B21     | 10.219.10.115 |
+| ds-gp-dev-smdw | ds-gp-dev-smdw.tcsbank.ru | CZ3236VSSS | 583914-B21     | 10.219.10.113 |
++----------------+---------------------------+------------+----------------+---------------+
+[support@centos00 en]$
+
+
+................................................................................
+
+[support@centos00 en]$ host 10.216.40.11
+11.40.216.10.in-addr.arpa domain name pointer vm-racktables01.tcsbank.ru.
+11.40.216.10.in-addr.arpa domain name pointer vm-rackspace01.tcsbank.ru.
+[support@centos00 en]$
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@vm-racktables01
+Last login: Mon Oct 12 16:59:50 2015 from tcs4500.tcsbank.ru
+[bsv@vm-racktables01 ~]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -e " $(cat) "
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id
+where syntetic.name
+like '%ds-gp-dev%'
+order by syntetic.name ;
++----------------+---------------------------+------------+----------------+---------------+
+| Common name    | FQDN                      | Asset tag  | HW Part Number | Management IP |
++----------------+---------------------------+------------+----------------+---------------+
+| ds-gp-dev-mdw  | ds-gp-dev-mdw.tcsbank.ru  | CZ3236VSSY | 583914-B21     | 10.219.10.100 |
+| ds-gp-dev-sdw1 | ds-gp-dev-sdw1.tcsbank.ru | CZ3236VT8Y | 583914-B21     | 10.219.10.103 |
+| ds-gp-dev-sdw2 | ds-gp-dev-sdw2.tcsbank.ru | CZ3236VT91 | 583914-B21     | 10.219.10.104 |
+| ds-gp-dev-sdw3 | ds-gp-dev-sdw3.tcsbank.ru | CZ3236VT8P | 583914-B21     | 10.219.10.106 |
+| ds-gp-dev-sdw4 | ds-gp-dev-sdw4.tcsbank.ru | CZ3236VT8K | 583914-B21     | 10.219.10.107 |
+| ds-gp-dev-sdw5 | ds-gp-dev-sdw5.tcsbank.ru | CZ3236VT93 | 583914-B21     | 10.219.10.110 |
+| ds-gp-dev-sdw6 | ds-gp-dev-sdw6.tcsbank.ru | CZ3236VT8E | 583914-B21     | 10.219.10.111 |
+| ds-gp-dev-sdw7 | ds-gp-dev-sdw7.tcsbank.ru | CZ3236VT8T | 583914-B21     | 10.219.10.114 |
+| ds-gp-dev-sdw8 | ds-gp-dev-sdw8.tcsbank.ru | CZ3236VT8W | 583914-B21     | 10.219.10.115 |
+| ds-gp-dev-smdw | ds-gp-dev-smdw.tcsbank.ru | CZ3236VSSS | 583914-B21     | 10.219.10.113 |
++----------------+---------------------------+------------+----------------+---------------+
+[bsv@vm-racktables01 ~]$
+
+
+................................................................................
+................................................................................
+
+#   This way we can get all ip-addresses, that linked with server object in racktable.
+#
+[support@centos00 en]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -h 10.216.40.11 -P 33060 -e "use racktablesdb ; $(cat) "
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id
+where syntetic.name
+like '%m1-gp-tst%'
+order by syntetic.name ;
++--------------------+------------------------------+------------+----------------+---------------+
+| Common name        | FQDN                         | Asset tag  | HW Part Number | Management IP |
++--------------------+------------------------------+------------+----------------+---------------+
+| m1-gp-tst-ext-mdw  | m1-gp-tst-ext-mdw.tcsbank.ru | CZ3236VST4 | 583914-B21     | 10.216.0.65   |
+| m1-gp-tst-ext-mdw  | m1-gp-tst-ext-mdw.tcsbank.ru | CZ3236VST4 | 583914-B21     | 10.216.1.65   |
+| m1-gp-tst-ext-mdw  | m1-gp-tst-ext-mdw.tcsbank.ru | CZ3236VST4 | 583914-B21     | 10.216.27.30  |
+| m1-gp-tst-ext-mdw  | m1-gp-tst-ext-mdw.tcsbank.ru | CZ3236VST4 | 583914-B21     | 10.216.27.31  |
+| m1-gp-tst-ext-mdw  | m1-gp-tst-ext-mdw.tcsbank.ru | CZ3236VST4 | 583914-B21     | 10.219.8.76   |
+| m1-gp-tst-ext-smdw | m1-gp-tst-smdw.tcsbank.ru    | CZ314824F3 | 583914-B21     | 10.216.0.66   |
+| m1-gp-tst-ext-smdw | m1-gp-tst-smdw.tcsbank.ru    | CZ314824F3 | 583914-B21     | 10.216.1.66   |
+| m1-gp-tst-ext-smdw | m1-gp-tst-smdw.tcsbank.ru    | CZ314824F3 | 583914-B21     | 10.216.27.32  |
+| m1-gp-tst-ext-smdw | m1-gp-tst-smdw.tcsbank.ru    | CZ314824F3 | 583914-B21     | 10.219.8.216  |
+| m1-gp-tst-sdw1     | m1-gp-tst-sdw1.tcsbank.ru    | CZ31450H69 | 583914-B21     | 10.216.0.1    |
+| m1-gp-tst-sdw1     | m1-gp-tst-sdw1.tcsbank.ru    | CZ31450H69 | 583914-B21     | 10.216.1.1    |
+| m1-gp-tst-sdw1     | m1-gp-tst-sdw1.tcsbank.ru    | CZ31450H69 | 583914-B21     | 10.219.8.211  |
+| m1-gp-tst-sdw10    | m1-gp-tst-sdw10.tcsbank.ru   | CZ31450H67 | 583914-B21     | 10.216.0.10   |
+| m1-gp-tst-sdw10    | m1-gp-tst-sdw10.tcsbank.ru   | CZ31450H67 | 583914-B21     | 10.216.1.10   |
+| m1-gp-tst-sdw10    | m1-gp-tst-sdw10.tcsbank.ru   | CZ31450H67 | 583914-B21     | 10.219.8.151  |
+| m1-gp-tst-sdw11    | m1-gp-tst-sdw11.tcsbank.ru   | CZ3236VT8M | 583914-B21     | 10.216.0.11   |
+| m1-gp-tst-sdw11    | m1-gp-tst-sdw11.tcsbank.ru   | CZ3236VT8M | 583914-B21     | 10.216.1.11   |
+| m1-gp-tst-sdw11    | m1-gp-tst-sdw11.tcsbank.ru   | CZ3236VT8M | 583914-B21     | 10.219.8.77   |
+| m1-gp-tst-sdw12    | m1-gp-tst-sdw12.tcsbank.ru   | CZ31450H6J | 583914-B21     | 10.216.0.12   |
+| m1-gp-tst-sdw12    | m1-gp-tst-sdw12.tcsbank.ru   | CZ31450H6J | 583914-B21     | 10.216.1.12   |
+| m1-gp-tst-sdw12    | m1-gp-tst-sdw12.tcsbank.ru   | CZ31450H6J | 583914-B21     | 10.219.8.152  |
+| m1-gp-tst-sdw13    | m1-gp-tst-sdw13.tcsbank.ru   | CZ3236VT8H | 583914-B21     | 10.216.0.13   |
+| m1-gp-tst-sdw13    | m1-gp-tst-sdw13.tcsbank.ru   | CZ3236VT8H | 583914-B21     | 10.216.1.13   |
+| m1-gp-tst-sdw13    | m1-gp-tst-sdw13.tcsbank.ru   | CZ3236VT8H | 583914-B21     | 10.219.8.122  |
+| m1-gp-tst-sdw14    | m1-gp-tst-sdw14.tcsbank.ru   | CZ3236VT95 | 583914-B21     | 10.216.0.14   |
+| m1-gp-tst-sdw14    | m1-gp-tst-sdw14.tcsbank.ru   | CZ3236VT95 | 583914-B21     | 10.216.1.14   |
+| m1-gp-tst-sdw14    | m1-gp-tst-sdw14.tcsbank.ru   | CZ3236VT95 | 583914-B21     | 10.219.8.114  |
+| m1-gp-tst-sdw15    | m1-gp-tst-sdw15.tcsbank.ru   | CZ3236VT8C | 583914-B21     | 10.216.0.15   |
+| m1-gp-tst-sdw15    | m1-gp-tst-sdw15.tcsbank.ru   | CZ3236VT8C | 583914-B21     | 10.216.1.15   |
+| m1-gp-tst-sdw15    | m1-gp-tst-sdw15.tcsbank.ru   | CZ3236VT8C | 583914-B21     | 10.219.8.116  |
+| m1-gp-tst-sdw16    | m1-gp-tst-sdw16.tcsbank.ru   | CZ31450H6D | 583914-B21     | 10.216.0.16   |
+| m1-gp-tst-sdw16    | m1-gp-tst-sdw16.tcsbank.ru   | CZ31450H6D | 583914-B21     | 10.216.1.16   |
+| m1-gp-tst-sdw16    | m1-gp-tst-sdw16.tcsbank.ru   | CZ31450H6D | 583914-B21     | 10.219.8.153  |
+| m1-gp-tst-sdw2     | m1-gp-tst-sdw2.tcsbank.ru    | CZ31450H61 | 583914-B21     | 10.216.0.2    |
+| m1-gp-tst-sdw2     | m1-gp-tst-sdw2.tcsbank.ru    | CZ31450H61 | 583914-B21     | 10.216.1.2    |
+| m1-gp-tst-sdw2     | m1-gp-tst-sdw2.tcsbank.ru    | CZ31450H61 | 583914-B21     | 10.219.8.212  |
+| m1-gp-tst-sdw3     | m1-gp-tst-sdw3.tcsbank.ru    | CZ31450H6F | 583914-B21     | 10.216.0.3    |
+| m1-gp-tst-sdw3     | m1-gp-tst-sdw3.tcsbank.ru    | CZ31450H6F | 583914-B21     | 10.216.1.3    |
+| m1-gp-tst-sdw3     | m1-gp-tst-sdw3.tcsbank.ru    | CZ31450H6F | 583914-B21     | 10.219.8.213  |
+| m1-gp-tst-sdw4     | m1-gp-tst-sdw4.tcsbank.ru    | CZ31450H65 | 583914-B21     | 10.216.0.4    |
+| m1-gp-tst-sdw4     | m1-gp-tst-sdw4.tcsbank.ru    | CZ31450H65 | 583914-B21     | 10.216.1.4    |
+| m1-gp-tst-sdw4     | m1-gp-tst-sdw4.tcsbank.ru    | CZ31450H65 | 583914-B21     | 10.219.8.214  |
+| m1-gp-tst-sdw5     | m1-gp-tst-sdw5.tcsbank.ru    | CZ31450H63 | 583914-B21     | 10.216.0.5    |
+| m1-gp-tst-sdw5     | m1-gp-tst-sdw5.tcsbank.ru    | CZ31450H63 | 583914-B21     | 10.216.1.5    |
+| m1-gp-tst-sdw5     | m1-gp-tst-sdw5.tcsbank.ru    | CZ31450H63 | 583914-B21     | 10.219.8.100  |
+| m1-gp-tst-sdw6     | m1-gp-tst-sdw6.tcsbank.ru    | CZ31450H6M | 583914-B21     | 10.216.0.6    |
+| m1-gp-tst-sdw6     | m1-gp-tst-sdw6.tcsbank.ru    | CZ31450H6M | 583914-B21     | 10.216.1.6    |
+| m1-gp-tst-sdw6     | m1-gp-tst-sdw6.tcsbank.ru    | CZ31450H6M | 583914-B21     | 10.219.8.147  |
+| m1-gp-tst-sdw7     | m1-gp-tst-sdw7.tcsbank.ru    | CZ31450H6B | 583914-B21     | 10.216.0.7    |
+| m1-gp-tst-sdw7     | m1-gp-tst-sdw7.tcsbank.ru    | CZ31450H6B | 583914-B21     | 10.216.1.7    |
+| m1-gp-tst-sdw7     | m1-gp-tst-sdw7.tcsbank.ru    | CZ31450H6B | 583914-B21     | 10.219.8.148  |
+| m1-gp-tst-sdw8     | m1-gp-tst-sdw8.tcsbank.ru    | CZ31450H5Y | 583914-B21     | 10.216.0.8    |
+| m1-gp-tst-sdw8     | m1-gp-tst-sdw8.tcsbank.ru    | CZ31450H5Y | 583914-B21     | 10.216.1.8    |
+| m1-gp-tst-sdw8     | m1-gp-tst-sdw8.tcsbank.ru    | CZ31450H5Y | 583914-B21     | 10.219.8.149  |
+| m1-gp-tst-sdw9     | m1-gp-tst-sdw9.tcsbank.ru    | CZ31450H6V | 583914-B21     | 10.216.0.9    |
+| m1-gp-tst-sdw9     | m1-gp-tst-sdw9.tcsbank.ru    | CZ31450H6V | 583914-B21     | 10.216.1.9    |
+| m1-gp-tst-sdw9     | m1-gp-tst-sdw9.tcsbank.ru    | CZ31450H6V | 583914-B21     | 10.219.8.150  |
++--------------------+------------------------------+------------+----------------+---------------+
+[support@centos00 en]$
+
+#   This way I can get only management ip-addresses (ilo or idrac)
+#
+[support@centos00 en]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -h 10.216.40.11 -P 33060 -e "use racktablesdb ; $(cat) "
+select
+ syntetic.id,
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_1.string_value as 'OEM S/N 1',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_1 on syntetic.id=syntetic_attr_1.object_id and syntetic_attr_1.attr_id=1
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id and ( syntetic_ip.name="ilo" or syntetic_ip.name="idrac" )
+where syntetic.name
+like '%m1-gp-tst%'
+order by syntetic.name ;
++------+--------------------+------------------------------+------------+------------+----------------+---------------+
+| id   | Common name        | FQDN                         | Asset tag  | OEM S/N 1  | HW Part Number | Management IP |
++------+--------------------+------------------------------+------------+------------+----------------+---------------+
+|  858 | m1-gp-tst-ext-mdw  | m1-gp-tst-ext-mdw.tcsbank.ru | CZ3236VST4 | CZ3236VST4 | 583914-B21     | 10.219.8.76   |
+|  875 | m1-gp-tst-ext-smdw | m1-gp-tst-smdw.tcsbank.ru    | CZ314824F3 | CZ314824F3 | 583914-B21     | 10.219.8.216  |
+| 1090 | m1-gp-tst-sdw1     | m1-gp-tst-sdw1.tcsbank.ru    | CZ31450H69 | CZ31450H69 | 583914-B21     | 10.219.8.211  |
+| 1062 | m1-gp-tst-sdw10    | m1-gp-tst-sdw10.tcsbank.ru   | CZ31450H67 | CZ31450H67 | 583914-B21     | 10.219.8.151  |
+|  862 | m1-gp-tst-sdw11    | m1-gp-tst-sdw11.tcsbank.ru   | CZ3236VT8M | CZ3236VT8M | 583914-B21     | 10.219.8.77   |
+| 1063 | m1-gp-tst-sdw12    | m1-gp-tst-sdw12.tcsbank.ru   | CZ31450H6J | CZ31450H6J | 583914-B21     | 10.219.8.152  |
+|  860 | m1-gp-tst-sdw13    | m1-gp-tst-sdw13.tcsbank.ru   | CZ3236VT8H | CZ3236VT8H | 583914-B21     | 10.219.8.122  |
+|  866 | m1-gp-tst-sdw14    | m1-gp-tst-sdw14.tcsbank.ru   | CZ3236VT95 | CZ3236VT95 | 583914-B21     | 10.219.8.114  |
+|  859 | m1-gp-tst-sdw15    | m1-gp-tst-sdw15.tcsbank.ru   | CZ3236VT8C | CZ3236VT8C | 583914-B21     | 10.219.8.116  |
+| 1064 | m1-gp-tst-sdw16    | m1-gp-tst-sdw16.tcsbank.ru   | CZ31450H6D | CZ31450H6D | 583914-B21     | 10.219.8.153  |
+| 1092 | m1-gp-tst-sdw2     | m1-gp-tst-sdw2.tcsbank.ru    | CZ31450H61 | CZ31450H61 | 583914-B21     | 10.219.8.212  |
+| 1093 | m1-gp-tst-sdw3     | m1-gp-tst-sdw3.tcsbank.ru    | CZ31450H6F | CZ31450H6F | 583914-B21     | 10.219.8.213  |
+| 1094 | m1-gp-tst-sdw4     | m1-gp-tst-sdw4.tcsbank.ru    | CZ31450H65 | CZ31450H65 | 583914-B21     | 10.219.8.214  |
+| 1057 | m1-gp-tst-sdw5     | m1-gp-tst-sdw5.tcsbank.ru    | CZ31450H63 | CZ31450H63 | 583914-B21     | 10.219.8.100  |
+| 1058 | m1-gp-tst-sdw6     | m1-gp-tst-sdw6.tcsbank.ru    | CZ31450H6M | CZ31450H6M | 583914-B21     | 10.219.8.147  |
+| 1059 | m1-gp-tst-sdw7     | m1-gp-tst-sdw7.tcsbank.ru    | CZ31450H6B | CZ31450H6B | 583914-B21     | 10.219.8.148  |
+| 1060 | m1-gp-tst-sdw8     | m1-gp-tst-sdw8.tcsbank.ru    | CZ31450H5Y | CZ31450H5Y | 583914-B21     | 10.219.8.149  |
+| 1061 | m1-gp-tst-sdw9     | m1-gp-tst-sdw9.tcsbank.ru    | CZ31450H6V | CZ31450H6V | 583914-B21     | 10.219.8.150  |
++------+--------------------+------------------------------+------------+------------+----------------+---------------+
+[support@centos00 en]$
+
+#   Here I have added order sort and have removed unnecessary columns.
+#
+[support@centos00 en]$ mysql -u racktablesuser -pwieZahX8fee5eethof4u -D racktablesdb -h 10.216.40.11 -P 33060 -e "use racktablesdb ; $(cat) "
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id and ( syntetic_ip.name="ilo" or syntetic_ip.name="idrac" )
+where syntetic.name
+like '%m1-gp-tst%'
+order by syntetic.name;
++--------------------+------------------------------+------------+----------------+---------------+
+| Common name        | FQDN                         | Asset tag  | HW Part Number | Management IP |
++--------------------+------------------------------+------------+----------------+---------------+
+| m1-gp-tst-ext-mdw  | m1-gp-tst-ext-mdw.tcsbank.ru | CZ3236VST4 | 583914-B21     | 10.219.8.76   |
+| m1-gp-tst-ext-smdw | m1-gp-tst-smdw.tcsbank.ru    | CZ314824F3 | 583914-B21     | 10.219.8.216  |
+| m1-gp-tst-sdw1     | m1-gp-tst-sdw1.tcsbank.ru    | CZ31450H69 | 583914-B21     | 10.219.8.211  |
+| m1-gp-tst-sdw10    | m1-gp-tst-sdw10.tcsbank.ru   | CZ31450H67 | 583914-B21     | 10.219.8.151  |
+| m1-gp-tst-sdw11    | m1-gp-tst-sdw11.tcsbank.ru   | CZ3236VT8M | 583914-B21     | 10.219.8.77   |
+| m1-gp-tst-sdw12    | m1-gp-tst-sdw12.tcsbank.ru   | CZ31450H6J | 583914-B21     | 10.219.8.152  |
+| m1-gp-tst-sdw13    | m1-gp-tst-sdw13.tcsbank.ru   | CZ3236VT8H | 583914-B21     | 10.219.8.122  |
+| m1-gp-tst-sdw14    | m1-gp-tst-sdw14.tcsbank.ru   | CZ3236VT95 | 583914-B21     | 10.219.8.114  |
+| m1-gp-tst-sdw15    | m1-gp-tst-sdw15.tcsbank.ru   | CZ3236VT8C | 583914-B21     | 10.219.8.116  |
+| m1-gp-tst-sdw16    | m1-gp-tst-sdw16.tcsbank.ru   | CZ31450H6D | 583914-B21     | 10.219.8.153  |
+| m1-gp-tst-sdw2     | m1-gp-tst-sdw2.tcsbank.ru    | CZ31450H61 | 583914-B21     | 10.219.8.212  |
+| m1-gp-tst-sdw3     | m1-gp-tst-sdw3.tcsbank.ru    | CZ31450H6F | 583914-B21     | 10.219.8.213  |
+| m1-gp-tst-sdw4     | m1-gp-tst-sdw4.tcsbank.ru    | CZ31450H65 | 583914-B21     | 10.219.8.214  |
+| m1-gp-tst-sdw5     | m1-gp-tst-sdw5.tcsbank.ru    | CZ31450H63 | 583914-B21     | 10.219.8.100  |
+| m1-gp-tst-sdw6     | m1-gp-tst-sdw6.tcsbank.ru    | CZ31450H6M | 583914-B21     | 10.219.8.147  |
+| m1-gp-tst-sdw7     | m1-gp-tst-sdw7.tcsbank.ru    | CZ31450H6B | 583914-B21     | 10.219.8.148  |
+| m1-gp-tst-sdw8     | m1-gp-tst-sdw8.tcsbank.ru    | CZ31450H5Y | 583914-B21     | 10.219.8.149  |
+| m1-gp-tst-sdw9     | m1-gp-tst-sdw9.tcsbank.ru    | CZ31450H6V | 583914-B21     | 10.219.8.150  |
++--------------------+------------------------------+------------+----------------+---------------+
+[support@centos00 en]$
+
+................................................................................
+
+#   There are four requests to get info about four GreenPlum contours.
+#
+
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id and ( syntetic_ip.name="ilo" or syntetic_ip.name="idrac" )
+where syntetic.name
+like '%m1-gp-tst%'
+order by syntetic.name;
+
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id and ( syntetic_ip.name="ilo" or syntetic_ip.name="idrac" )
+where syntetic.name
+like '%m1-gp-prd%'
+order by syntetic.name;
+
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id and ( syntetic_ip.name="ilo" or syntetic_ip.name="idrac" )
+where syntetic.name
+like '%ds-gp-dev%'
+order by syntetic.name;
+
+select
+ syntetic.name as 'Common name',
+ syntetic_attr_3.string_value as 'FQDN',
+ syntetic.asset_no as 'Asset tag',
+ syntetic_attr_10003.string_value as 'HW Part Number',
+ inet_ntoa(syntetic_ip.ip) as 'Management IP'
+from Object syntetic
+left join AttributeValue syntetic_attr_3 on syntetic.id=syntetic_attr_3.object_id and syntetic_attr_3.attr_id=3
+left join AttributeValue syntetic_attr_10003 on syntetic.id=syntetic_attr_10003.object_id and syntetic_attr_10003.attr_id=10003
+left join IPv4Allocation syntetic_ip on syntetic.id=syntetic_ip.object_id and ( syntetic_ip.name="ilo" or syntetic_ip.name="idrac" )
+where syntetic.name
+like '%ds-gp-prd%'
+order by syntetic.name;
+
+
+
+
+
+

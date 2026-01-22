@@ -1,0 +1,105 @@
+
+................................................................................
+
+mysql> select * from accounts where username="inspase" ;
++-----+----------+----------+
+| id  | username | password |
++-----+----------+----------+
+| 208 | inspase  | Aephok4U |
++-----+----------+----------+
+1 row in set (0.00 sec)
+
+mysql>
+
+................................................................................
+
+[s.belogrud@TCS4357]# pwgen -c -n -s -C 10 1
+6JUVKmyxY9
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+mysql> INSERT INTO accounts (username,password) VALUES ('inspase_read','6JUVKmyxY9') ;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> exit
+Bye
+[root@vm-var-ftp02 ~]#
+................................................................................
+
+
+[root@vm-var-ftp02 ~]# mkdir /home/ftpsite_new/ftpsite3/inspase_read
+[root@vm-var-ftp02 ~]# chown virtual:virtual /home/ftpsite_new/ftpsite3/inspase_read
+[root@vm-var-ftp02 ~]# cp /etc/vsftpd_user_conf/inspase{,_read}
+[root@vm-var-ftp02 ~]# vim -o /etc/vsftpd_user_conf/inspase{,_read}
+2 files to edit
+[root@vm-var-ftp02 ~]# cat /etc/vsftpd_user_conf/inspase_read
+local_root=/home/ftpsite_new/ftpsite3/inspase_read/
+write_enable=NO
+guest_enable=YES
+guest_username=virtual
+[root@vm-var-ftp02 ~]#
+
+[root@vm-var-ftp02 ~]# service vsftpd restart
+Shutting down vsftpd:                                      [  OK  ]
+Starting vsftpd for vsftpd:                                [  OK  ]
+Starting vsftpd for vsftpd-secure:                         [  OK  ]
+[root@vm-var-ftp02 ~]#
+
+[root@vm-var-ftp02 ~]# mkdir /home/ftpsite_new/ftpsite3/inspase_read/inspase
+[root@vm-var-ftp02 ~]# chown virtual:virtual /home/ftpsite_new/ftpsite3/inspase_read/inspase
+[root@vm-var-ftp02 ~]#
+
+[root@vm-var-ftp02 ~]# vim /etc/fstab
+[root@vm-var-ftp02 ~]# tail -n 3 /etc/fstab
+# SD#1455609
+/home/ftpsite_new/ftpsite3/inspase              /home/ftpsite_new/ftpsite3/inspase_read/inspase         none    rw,bind 0       0
+
+[root@vm-var-ftp02 ~]#
+
+
+[root@vm-var-ftp02 ~]# mount /home/ftpsite_new/ftpsite3/inspase_read/inspase
+[root@vm-var-ftp02 ~]# ls -Alh /home/ftpsite_new/ftpsite3/inspase_read/inspase | head
+total 29M
+-rw------- 1 virtual virtual  34K Apr 28 17:29 lair-tcs-stat.2018-04-27.csv
+-rw------- 1 virtual virtual 377K Apr 29 00:05 lair-tcs-stat.2018-04-28.csv
+-rw------- 1 virtual virtual 285K Apr 30 00:05 lair-tcs-stat.2018-04-29.csv
+-rw------- 1 virtual virtual 360K May  1 00:05 lair-tcs-stat.2018-04-30.csv
+-rw------- 1 virtual virtual 376K May  3 00:05 lair-tcs-stat.2018-05-02.csv
+-rw------- 1 virtual virtual 373K May  4 00:05 lair-tcs-stat.2018-05-03.csv
+-rw------- 1 virtual virtual 270K May  6 00:05 lair-tcs-stat.2018-05-05.csv
+-rw------- 1 virtual virtual 269K May  7 00:05 lair-tcs-stat.2018-05-06.csv
+-rw------- 1 virtual virtual 275K May  8 11:30 lair-tcs-stat.2018-05-07.csv
+[root@vm-var-ftp02 ~]#
+
+................................................................................
+
+
+[s.belogrud@TCS4357]# lftp -e "ls ; bye" -u "inspase_read",'6JUVKmyxY9' ftp02.tcsbank.ru -p 21
+drwxr-xr-x    2 503      503         12288 Jul 10 00:05 inspase
+[s.belogrud@TCS4357]# lftp -e "cd inspase ; ls ; bye" -u "inspase_read",'6JUVKmyxY9' ftp02.tcsbank.ru
+-p 21 | head
+cd ok, cwd=/inspase
+-rw-------    1 503      503         33866 Apr 28 17:29 lair-tcs-stat.2018-04-27.csv
+-rw-------    1 503      503        385549 Apr 29 00:05 lair-tcs-stat.2018-04-28.csv
+-rw-------    1 503      503        291207 Apr 30 00:05 lair-tcs-stat.2018-04-29.csv
+-rw-------    1 503      503        367892 May 01 00:05 lair-tcs-stat.2018-04-30.csv
+-rw-------    1 503      503        384811 May 03 00:05 lair-tcs-stat.2018-05-02.csv
+-rw-------    1 503      503        381875 May 04 00:05 lair-tcs-stat.2018-05-03.csv
+-rw-------    1 503      503        276076 May 06 00:05 lair-tcs-stat.2018-05-05.csv
+-rw-------    1 503      503        275259 May 07 00:05 lair-tcs-stat.2018-05-06.csv
+-rw-------    1 503      503        281519 May 08 11:30 lair-tcs-stat.2018-05-07.csv
+-rw-------    1 503      503        280253 May 09 00:05 lair-tcs-stat.2018-05-08.csv
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1610 @@
+
+http://servicedesk/fx/sd/ru.naumen.sd.published_jsp?uuid=svcall1bc2gv00000l9n7dq33p0qc618
+
+................................................................................
+................................................................................
+
+
+M1
+v323-8
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2327
+CV27RG2
+idrac: 10.219.9.156
+10.216.41.73
+m1-splunk-nidx01
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2329
+CV77RG2
+idrac: 10.219.9.158
+10.216.41.74
+m1-splunk-nidx02
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2326
+CVC5RG2
+idrac: 10.219.9.155
+10.216.41.75
+m1-splunk-nidx03
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2328
+CVCBRG2
+idrac: 10.219.9.157
+10.216.41.76
+m1-splunk-nidx04
+
+
+DS
+E02
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2310
+CV39RG2
+idrac: 10.219.11.135
+10.216.42.73
+ds-splunk-nidx01
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2309
+CV48RG2
+idrac: 10.219.11.136
+10.216.42.74
+ds-splunk-nidx02
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2312
+CV89RG2
+idrac: 10.219.11.133
+10.216.42.75
+ds-splunk-nidx03
+
+https://racktables.tcsbank.ru/index.php?page=object&object_id=2311
+CVB6RG2
+idrac: 10.219.11.134
+10.216.42.76
+ds-splunk-nidx04
+
+................................................................................
+................................................................................
+
+#   1. Create access from Dell OME server to these servers (tuffin and network admis).
+#   2. In Dell OME find and discovery servers.
+#   2.1. Update firmware on servers.
+#   2.2. Apply common configuration for iDRAC (access via domain authorization).
+#   2.3. Change root password for iDRAC.
+#   2.4. Create raid array configuration.
+#   3. Find free ip-addresses via vm-pinger and fix it for defined serves.
+#   3.1.    Create task to write DNS names for A and PTR zones for choosen ip-addresses.
+#   4. Create Service Desk task for network admins to configure switch for appropriate ports and give vlan's.
+#   5. Run deployment tool "F10" and start manual installation.
+#   6. Login on installed server with its console as root and test and add network configs.
+#   7. Login on serves via ssh and disable firewald.
+#   8. Add repositories. Configure it to work.
+#   9. Install puppet.
+#   10. Add servers into puppet. Apply manifests.
+#   11. Create users, that will use this server (lzn and other).
+#   12. Install software for monitoring (idrac and so on).
+#   13. Nagios monitoring configure.
+#   14. Update information in racktables about servers.
+
+................................................................................
+................................................................................
+
+#   2.3. Change root password for iDRAC.
+
+[support@centos00 ~]$ while read -p "Enter service tag: " var1_servicetag ; do var2_username="$( SSHPASS="$(pass common/windows-current)" sshpass -e ssh -t -oStrictHostKeyChecking=no tcsbank.ru\\s.belogrud@${var1_servicetag}.mgmt.tcsbank.ru racadm get idrac.users.2.username | grep UserName | cut -d "=" -f2 | tr -d '\r' )" ; if [ "${var2_username}" = "root" ] ; then echo -e "Service tag: ${var1_servicetag}\nServer: ${var1_servicetag}.mgmt.tcsbank.ru\nUser: ${var2_username}" ; var3_newpassword="$(pwgen -c -n -s -C 10 1)" ; echo "Password: ${var3_newpassword}" ; SSHPASS="$(pass common/windows-current)" sshpass -e ssh -t -oStrictHostKeyChecking=no tcsbank.ru\\s.belogrud@${var1_servicetag}.mgmt.tcsbank.ru racadm set idrac.users.2.password "${var3_newpassword}" | tee -a ./$(date +%Y%m%d-%H%M).racadm.set.${var1_servicetag}.txt ; else echo "No, we mightn't change pasword for user: ${var2_username}." ; fi ; done
+Enter service tag: CV27RG2
+Warning: Permanently added 'cv27rg2.mgmt.tcsbank.ru,10.219.9.156' (RSA) to the list of known hosts.
+Connection to CV27RG2.mgmt.tcsbank.ru closed.
+Service tag: CV27RG2
+Server: CV27RG2.mgmt.tcsbank.ru
+User: root
+Password: pdpUWo8jzV
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CV27RG2.mgmt.tcsbank.ru closed.
+Enter service tag: CV77RG2
+Warning: Permanently added 'cv77rg2.mgmt.tcsbank.ru,10.219.9.158' (RSA) to the list of known hosts.
+Connection to CV77RG2.mgmt.tcsbank.ru closed.
+Service tag: CV77RG2
+Server: CV77RG2.mgmt.tcsbank.ru
+User: root
+Password: RtBzLH2OGX
+WARNING: Default password is configured. Dell highly recommends changing user root's password immediately
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CV77RG2.mgmt.tcsbank.ru closed.
+Enter service tag: CVC5RG2
+Warning: Permanently added 'cvc5rg2.mgmt.tcsbank.ru,10.219.9.155' (RSA) to the list of known hosts.
+Connection to CVC5RG2.mgmt.tcsbank.ru closed.
+Service tag: CVC5RG2
+Server: CVC5RG2.mgmt.tcsbank.ru
+User: root
+Password: uikXnpds1G
+WARNING: Default password is configured. Dell highly recommends changing user root's password immediately
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CVC5RG2.mgmt.tcsbank.ru closed.
+Enter service tag: CVCBRG2
+Warning: Permanently added 'cvcbrg2.mgmt.tcsbank.ru,10.219.9.157' (RSA) to the list of known hosts.
+Connection to CVCBRG2.mgmt.tcsbank.ru closed.
+Service tag: CVCBRG2
+Server: CVCBRG2.mgmt.tcsbank.ru
+User: root
+Password: 4Xe5aApADK
+WARNING: Default password is configured. Dell highly recommends changing user root's password immediately
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CVCBRG2.mgmt.tcsbank.ru closed.
+Enter service tag: CV39RG2
+Warning: Permanently added 'cv39rg2.mgmt.tcsbank.ru,10.219.11.135' (RSA) to the list of known hosts.
+Connection to CV39RG2.mgmt.tcsbank.ru closed.
+Service tag: CV39RG2
+Server: CV39RG2.mgmt.tcsbank.ru
+User: root
+Password: vjWe4arlQR
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CV39RG2.mgmt.tcsbank.ru closed.
+Enter service tag: CV48RG2
+Warning: Permanently added 'cv48rg2.mgmt.tcsbank.ru,10.219.11.136' (RSA) to the list of known hosts.
+Connection to CV48RG2.mgmt.tcsbank.ru closed.
+Service tag: CV48RG2
+Server: CV48RG2.mgmt.tcsbank.ru
+User: root
+Password: qiuTtEZsW0
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CV48RG2.mgmt.tcsbank.ru closed.
+Enter service tag: CV89RG2
+Warning: Permanently added 'cv89rg2.mgmt.tcsbank.ru,10.219.11.133' (RSA) to the list of known hosts.
+Connection to CV89RG2.mgmt.tcsbank.ru closed.
+Service tag: CV89RG2
+Server: CV89RG2.mgmt.tcsbank.ru
+User: root
+Password: M1S5jV7kyd
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CV89RG2.mgmt.tcsbank.ru closed.
+Enter service tag: CVB6RG2
+Warning: Permanently added 'cvb6rg2.mgmt.tcsbank.ru,10.219.11.134' (RSA) to the list of known hosts.
+Connection to CVB6RG2.mgmt.tcsbank.ru closed.
+Service tag: CVB6RG2
+Server: CVB6RG2.mgmt.tcsbank.ru
+User: root
+Password: 0xGIBylDtH
+[Key=idrac.Embedded.1#Users.2]
+Object value modified successfully
+Connection to CVB6RG2.mgmt.tcsbank.ru closed.
+Enter service tag: ^C
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+#   2.4. Create raid array configuration.
+
+................................................................................
+................................................................................
+
+#   6. Login on installed server with its console as root and test and add network configs.
+#   Was added this string into file /etc/sysconfig/network-script/ifcfg-Team_connection_1
+TEAM_CONFIG='{"runner":{"name":"activebackup"},"link_watch":{"name":"ethtool"}}'
+
+cat /etc/sysconfig/network-scripts/ifcfg-team0_slave_1
+...
+TEAM_PORT_CONFIG='{"prio":100}'
+
+cat /etc/sysconfig/network-scripts/ifcfg-team0_slave_2
+...
+TEAM_PORT_CONFIG='{"prio":200}'
+
+
+#   If default route is absent (we have it).
+#   There is next one file should be created.
+cat /etc/sysconfig/network-scripts/route-team0.1642
+ADDRESS0=0.0.0.0
+NETMASK0=0.0.0.0
+GATEWAY0=10.216.42.254
+METRIC0=0
+
+#   Test, that all serves are available from lan.
+
+................................................................................
+................................................................................
+
+#   7. Stop and Disable firewalld on servers.
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( hostname ; )' ; done
+m1-splunk-nidx01.tcsbank.ru
+Connection to m1-splunk-nidx01 closed.
+m1-splunk-nidx02.tcsbank.ru
+Connection to m1-splunk-nidx02 closed.
+m1-splunk-nidx03.tcsbank.ru
+Connection to m1-splunk-nidx03 closed.
+m1-splunk-nidx04.tcsbank.ru
+Connection to m1-splunk-nidx04 closed.
+ds-splunk-nidx01.tcsbank.ru
+Connection to ds-splunk-nidx01 closed.
+ds-splunk-nidx02.tcsbank.ru
+Connection to ds-splunk-nidx02 closed.
+ds-splunk-nidx03.tcsbank.ru
+Connection to ds-splunk-nidx03 closed.
+ds-splunk-nidx04.tcsbank.ru
+Connection to ds-splunk-nidx04 closed.
+[support@centos00 ~]$
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} "( echo ; hostname ; systemctl disable firewalld )" ; done
+
+................................................................................
+
+[root@ds-splunk-nidx01 ~]# tail -n 1 /etc/yum.conf
+proxy=http://repo-linux.tcsbank.ru:80
+[root@ds-splunk-nidx01 ~]#
+
+[root@ds-splunk-nidx01 ~]# rpm -iv http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+Retrieving http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+warning: /var/tmp/rpm-tmp.7S7WSp: Header V4 RSA/SHA512 Signature, key ID 4bd6ec30: NOKEY
+Preparing packages...
+puppetlabs-release-22.0-2.noarch
+[root@ds-splunk-nidx01 ~]# yum repolist
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+puppetlabs-deps                                                                                                                                                               | 2.5 kB  00:00:00
+puppetlabs-products                                                                                                                                                           | 2.5 kB  00:00:00
+(1/2): puppetlabs-products/x86_64/primary_db                                                                                                                                  |  69 kB  00:00:00
+(2/2): puppetlabs-deps/x86_64/primary_db                                                                                                                                      | 8.4 kB  00:00:01
+repo id                                                                                  repo name                                                                                             status
+puppetlabs-deps/x86_64                                                                   Puppet Labs Dependencies El 7 - x86_64                                                                 17
+puppetlabs-products/x86_64                                                               Puppet Labs Products El 7 - x86_64                                                                    225
+repolist: 242
+[root@ds-splunk-nidx01 ~]#
+
+
+[root@ds-splunk-nidx01 ~]# read -s -p "Enter Proxy Password: " PROXY_PASSWORD ; echo ; read -s -p "Enter RHN Password: " RHN_PASSWORD ; subscription-manager register --proxy=mwg.gtm.tcsbank.ru:8080 --proxyuser=rhsm_user --proxypass=$PROXY_PASSWORD --username=tcsbank17012012 --password=$RHN_PASSWORD --auto-attach
+Enter Proxy Password:
+Enter RHN Password: Registering to: subscription.rhn.redhat.com:443/subscription
+The system has been registered with ID: 7ebd6c9e-1813-467a-9a03-a0b39b43e93c
+
+Installed Product Current Status:
+Product Name: Red Hat Enterprise Linux Server
+Status:       Subscribed
+
+[root@ds-splunk-nidx01 ~]#
+
+[root@ds-splunk-nidx01 ~]# vim /etc/rhsm/rhsm.conf
+...
+# an http proxy server to use
+proxy_hostname = mwg.gtm.tcsbank.ru
+
+# port for http proxy server
+proxy_port = 8080
+
+# user name for authenticating to an http proxy, if needed
+proxy_user = rhsm_user
+
+# password for basic http proxy auth, if needed
+proxy_password = 6eKoEvNHFS5IycxhqH5W
+...
+
+
+[root@ds-splunk-nidx01 ~]# yum repolist
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+rhel-7-server-rpms                                                                                                                                                            | 3.5 kB  00:00:00
+(1/3): rhel-7-server-rpms/7Server/x86_64/group                                                                                                                                | 701 kB  00:00:01
+(2/3): rhel-7-server-rpms/7Server/x86_64/updateinfo                                                                                                                           | 1.8 MB  00:00:02
+(3/3): rhel-7-server-rpms/7Server/x86_64/primary_db                                                                                                                           |  32 MB  00:00:19
+repo id                                                                                     repo name                                                                                          status
+puppetlabs-deps/x86_64                                                                      Puppet Labs Dependencies El 7 - x86_64                                                                 17
+puppetlabs-products/x86_64                                                                  Puppet Labs Products El 7 - x86_64                                                                    225
+rhel-7-server-rpms/7Server/x86_64                                                           Red Hat Enterprise Linux 7 Server (RPMs)                                                           13,573
+repolist: 13,815
+[root@ds-splunk-nidx01 ~]#
+
+
+[root@ds-splunk-nidx01 ~]# puppet agent -t
+Info: Creating a new SSL key for ds-splunk-nidx01.tcsbank.ru
+Info: Caching certificate for ca
+Info: csr_attributes file loading from /etc/puppet/csr_attributes.yaml
+Info: Creating a new SSL certificate request for ds-splunk-nidx01.tcsbank.ru
+Info: Certificate Request fingerprint (SHA256): E3:77:9A:BB:87:AB:BD:9B:06:24:27:4D:25:FA:A1:72:07:53:E6:6D:F8:16:1F:81:94:91:26:F3:37:FB:7A:56
+Info: Caching certificate for ca
+Exiting; no certificate found and waitforcert is disabled
+[root@ds-splunk-nidx01 ~]#
+
+[root@ds-splunk-nidx01 ~]# yum install net-snmp net-snmp-utils
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+Resolving Dependencies
+--> Running transaction check
+---> Package net-snmp.x86_64 1:5.7.2-24.el7_2.1 will be installed
+--> Processing Dependency: net-snmp-agent-libs = 1:5.7.2-24.el7_2.1 for package: 1:net-snmp-5.7.2-24.el7_2.1.x86_64
+--> Processing Dependency: net-snmp-libs = 1:5.7.2-24.el7_2.1 for package: 1:net-snmp-5.7.2-24.el7_2.1.x86_64
+--> Processing Dependency: libnetsnmp.so.31()(64bit) for package: 1:net-snmp-5.7.2-24.el7_2.1.x86_64
+--> Processing Dependency: libnetsnmpagent.so.31()(64bit) for package: 1:net-snmp-5.7.2-24.el7_2.1.x86_64
+--> Processing Dependency: libnetsnmpmibs.so.31()(64bit) for package: 1:net-snmp-5.7.2-24.el7_2.1.x86_64
+--> Processing Dependency: libnetsnmptrapd.so.31()(64bit) for package: 1:net-snmp-5.7.2-24.el7_2.1.x86_64
+---> Package net-snmp-utils.x86_64 1:5.7.2-24.el7_2.1 will be installed
+--> Running transaction check
+---> Package net-snmp-agent-libs.x86_64 1:5.7.2-24.el7_2.1 will be installed
+---> Package net-snmp-libs.x86_64 1:5.7.2-24.el7_2.1 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                            Arch                                  Version                                            Repository                                         Size
+=====================================================================================================================================================================================================
+Installing:
+ net-snmp                                           x86_64                                1:5.7.2-24.el7_2.1                                 rhel-7-server-rpms                                321 k
+ net-snmp-utils                                     x86_64                                1:5.7.2-24.el7_2.1                                 rhel-7-server-rpms                                197 k
+Installing for dependencies:
+ net-snmp-agent-libs                                x86_64                                1:5.7.2-24.el7_2.1                                 rhel-7-server-rpms                                702 k
+ net-snmp-libs                                      x86_64                                1:5.7.2-24.el7_2.1                                 rhel-7-server-rpms                                747 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  2 Packages (+2 Dependent packages)
+
+Total download size: 1.9 M
+Installed size: 6.2 M
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/4): net-snmp-5.7.2-24.el7_2.1.x86_64.rpm                                                                                                                                   | 321 kB  00:00:01
+(2/4): net-snmp-agent-libs-5.7.2-24.el7_2.1.x86_64.rpm                                                                                                                        | 702 kB  00:00:01
+(3/4): net-snmp-utils-5.7.2-24.el7_2.1.x86_64.rpm                                                                                                                             | 197 kB  00:00:00
+(4/4): net-snmp-libs-5.7.2-24.el7_2.1.x86_64.rpm                                                                                                                              | 747 kB  00:00:01
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                684 kB/s | 1.9 MB  00:00:02
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : 1:net-snmp-libs-5.7.2-24.el7_2.1.x86_64                                                                                                                                           1/4
+  Installing : 1:net-snmp-agent-libs-5.7.2-24.el7_2.1.x86_64                                                                                                                                     2/4
+  Installing : 1:net-snmp-5.7.2-24.el7_2.1.x86_64                                                                                                                                                3/4
+  Installing : 1:net-snmp-utils-5.7.2-24.el7_2.1.x86_64                                                                                                                                          4/4
+  Verifying  : 1:net-snmp-agent-libs-5.7.2-24.el7_2.1.x86_64                                                                                                                                     1/4
+  Verifying  : 1:net-snmp-5.7.2-24.el7_2.1.x86_64                                                                                                                                                2/4
+  Verifying  : 1:net-snmp-utils-5.7.2-24.el7_2.1.x86_64                                                                                                                                          3/4
+  Verifying  : 1:net-snmp-libs-5.7.2-24.el7_2.1.x86_64                                                                                                                                           4/4
+
+Installed:
+  net-snmp.x86_64 1:5.7.2-24.el7_2.1                                                             net-snmp-utils.x86_64 1:5.7.2-24.el7_2.1
+
+Dependency Installed:
+  net-snmp-agent-libs.x86_64 1:5.7.2-24.el7_2.1                                                        net-snmp-libs.x86_64 1:5.7.2-24.el7_2.1
+
+Complete!
+[root@ds-splunk-nidx01 ~]#
+
+
+................................................................................
+................................................................................
+
+[root@ds-splunk-nidx01 ~]# curl repo-linux/rhel7.repo
+[rhel-7-server-rpms]
+baseurl = http://repo-linux/rhel/$releasever/$basearch
+name = Red Hat Enterprise Linux 7 Server (RPMs)
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+gpgcheck = 0
+
+[root@ds-splunk-nidx01 ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-splunk-nidx01 ~]# curl repo-linux/tcs-dell-dsu.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   157  100   157    0     0  11953      0 --:--:-- --:--:-- --:--:-- 13083
+[root@ds-splunk-nidx01 ~]#
+
+
+[root@ds-splunk-nidx01 ~]# yum install srvadmin-idracadm7 srvadmin-idracadm dcism
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+No package dcism available.
+Resolving Dependencies
+--> Running transaction check
+---> Package srvadmin-idracadm.x86_64 0:8.1.0-4.4.12.sles11 will be installed
+--> Processing Dependency: srvadmin-omilcore for package: srvadmin-idracadm-8.1.0-4.4.12.sles11.x86_64
+--> Processing Dependency: libargtable2.so.0()(64bit) for package: srvadmin-idracadm-8.1.0-4.4.12.sles11.x86_64
+---> Package srvadmin-idracadm7.x86_64 0:8.1.0-4.69.7.sles12 will be installed
+--> Running transaction check
+---> Package srvadmin-argtable2.x86_64 0:8.1.0-4.5.8.sles11 will be installed
+---> Package srvadmin-omilcore.x86_64 0:8.1.0-4.85.1.sles12 will be installed
+--> Processing Dependency: smbios-utils-bin for package: srvadmin-omilcore-8.1.0-4.85.1.sles12.x86_64
+--> Running transaction check
+---> Package smbios-utils-bin.x86_64 0:2.2.27-4.4.83.sles11 will be installed
+--> Processing Dependency: libsmbios2 for package: smbios-utils-bin-2.2.27-4.4.83.sles11.x86_64
+--> Running transaction check
+---> Package libsmbios2.x86_64 0:2.2.27-4.4.83.sles11 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                            Arch                                   Version                                                Repository                                    Size
+=====================================================================================================================================================================================================
+Installing:
+ srvadmin-idracadm                                  x86_64                                 8.1.0-4.4.12.sles11                                    tcs-dell-dsu                                 500 k
+ srvadmin-idracadm7                                 x86_64                                 8.1.0-4.69.7.sles12                                    tcs-dell-dsu                                 522 k
+Installing for dependencies:
+ libsmbios2                                         x86_64                                 2.2.27-4.4.83.sles11                                   tcs-dell-dsu                                 257 k
+ smbios-utils-bin                                   x86_64                                 2.2.27-4.4.83.sles11                                   tcs-dell-dsu                                  94 k
+ srvadmin-argtable2                                 x86_64                                 8.1.0-4.5.8.sles11                                     tcs-dell-dsu                                  36 k
+ srvadmin-omilcore                                  x86_64                                 8.1.0-4.85.1.sles12                                    tcs-dell-dsu                                  28 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  2 Packages (+4 Dependent packages)
+
+Total download size: 1.4 M
+Installed size: 5.5 M
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/6): smbios-utils-bin-2.2.27-4.4.83.sles11.x86_64.rpm                                                                                                                       |  94 kB  00:00:00
+(2/6): libsmbios2-2.2.27-4.4.83.sles11.x86_64.rpm                                                                                                                             | 257 kB  00:00:00
+(3/6): srvadmin-argtable2-8.1.0-4.5.8.sles11.x86_64.rpm                                                                                                                       |  36 kB  00:00:00
+(4/6): srvadmin-idracadm-8.1.0-4.4.12.sles11.x86_64.rpm                                                                                                                       | 500 kB  00:00:00
+(5/6): srvadmin-idracadm7-8.1.0-4.69.7.sles12.x86_64.rpm                                                                                                                      | 522 kB  00:00:00
+(6/6): srvadmin-omilcore-8.1.0-4.85.1.sles12.x86_64.rpm                                                                                                                       |  28 kB  00:00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                6.4 MB/s | 1.4 MB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : srvadmin-argtable2-8.1.0-4.5.8.sles11.x86_64                                                                                                                                      1/6
+  Installing : libsmbios2-2.2.27-4.4.83.sles11.x86_64                                                                                                                                            2/6
+  Installing : smbios-utils-bin-2.2.27-4.4.83.sles11.x86_64                                                                                                                                      3/6
+  Installing : srvadmin-omilcore-8.1.0-4.85.1.sles12.x86_64                                                                                                                                      4/6
+     **********************************************************
+     After the install process completes, you may need
+     to log out and then log in again to reset the PATH
+     variable to access the Server Administrator CLI utilities
+
+     **********************************************************
+  Installing : srvadmin-idracadm7-8.1.0-4.69.7.sles12.x86_64                                                                                                                                     5/6
+  Installing : srvadmin-idracadm-8.1.0-4.4.12.sles11.x86_64                                                                                                                                      6/6
+  Verifying  : libsmbios2-2.2.27-4.4.83.sles11.x86_64                                                                                                                                            1/6
+  Verifying  : srvadmin-argtable2-8.1.0-4.5.8.sles11.x86_64                                                                                                                                      2/6
+  Verifying  : srvadmin-omilcore-8.1.0-4.85.1.sles12.x86_64                                                                                                                                      3/6
+  Verifying  : smbios-utils-bin-2.2.27-4.4.83.sles11.x86_64                                                                                                                                      4/6
+  Verifying  : srvadmin-idracadm7-8.1.0-4.69.7.sles12.x86_64                                                                                                                                     5/6
+  Verifying  : srvadmin-idracadm-8.1.0-4.4.12.sles11.x86_64                                                                                                                                      6/6
+
+Installed:
+  srvadmin-idracadm.x86_64 0:8.1.0-4.4.12.sles11                                                   srvadmin-idracadm7.x86_64 0:8.1.0-4.69.7.sles12
+
+Dependency Installed:
+  libsmbios2.x86_64 0:2.2.27-4.4.83.sles11    smbios-utils-bin.x86_64 0:2.2.27-4.4.83.sles11    srvadmin-argtable2.x86_64 0:8.1.0-4.5.8.sles11    srvadmin-omilcore.x86_64 0:8.1.0-4.85.1.sles12
+
+Complete!
+[root@ds-splunk-nidx01 ~]#
+
+
+[root@ds-splunk-nidx01 ~]# curl repo-linux/tcs-dell.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   172  100   172    0     0  26151      0 --:--:-- --:--:-- --:--:-- 28666
+[root@ds-splunk-nidx01 ~]#
+
+[root@ds-splunk-nidx01 ~]# sed -i 's/$releasever/6/' /etc/yum.repos.d/tcs-dell.repo
+
+#   This line is not working - error in dependencies.
+#   [root@ds-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+
+
+[root@ds-splunk-nidx01 ~]# yum install srvadmin-idracadm
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+Package srvadmin-idracadm-8.1.0-4.4.12.sles11.x86_64 already installed and latest version
+Nothing to do
+[root@ds-splunk-nidx01 ~]# yum install dcism
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+Resolving Dependencies
+--> Running transaction check
+---> Package dcism.x86_64 0:2.1.0-4.110.1.el6 will be installed
+--> Processing Dependency: OpenIPMI for package: dcism-2.1.0-4.110.1.el6.x86_64
+--> Running transaction check
+---> Package OpenIPMI.x86_64 0:2.0.19-15.el7 will be installed
+--> Processing Dependency: OpenIPMI-libs = 2.0.19-15.el7 for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Processing Dependency: libIPMIlanserv.so.0()(64bit) for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Processing Dependency: libOpenIPMI.so.0()(64bit) for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Processing Dependency: libOpenIPMIcmdlang.so.0()(64bit) for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Processing Dependency: libOpenIPMIglib.so.0()(64bit) for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Processing Dependency: libOpenIPMIposix.so.0()(64bit) for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Processing Dependency: libOpenIPMIui.so.1()(64bit) for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Processing Dependency: libOpenIPMIutils.so.0()(64bit) for package: OpenIPMI-2.0.19-15.el7.x86_64
+--> Running transaction check
+---> Package OpenIPMI-libs.x86_64 0:2.0.19-15.el7 will be installed
+--> Processing Dependency: OpenIPMI-modalias = 2.0.19-15.el7 for package: OpenIPMI-libs-2.0.19-15.el7.x86_64
+--> Running transaction check
+---> Package OpenIPMI-modalias.x86_64 0:2.0.19-15.el7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                           Arch                                   Version                                           Repository                                          Size
+=====================================================================================================================================================================================================
+Installing:
+ dcism                                             x86_64                                 2.1.0-4.110.1.el6                                 tcs-dell                                           469 k
+Installing for dependencies:
+ OpenIPMI                                          x86_64                                 2.0.19-15.el7                                     rhel-7-server-rpms                                 173 k
+ OpenIPMI-libs                                     x86_64                                 2.0.19-15.el7                                     rhel-7-server-rpms                                 502 k
+ OpenIPMI-modalias                                 x86_64                                 2.0.19-15.el7                                     rhel-7-server-rpms                                  15 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package (+3 Dependent packages)
+
+Total download size: 1.1 M
+Installed size: 3.3 M
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/4): OpenIPMI-libs-2.0.19-15.el7.x86_64.rpm                                                                                                                                 | 502 kB  00:00:01
+(2/4): dcism-2.1.0-4.110.1.el6.x86_64.rpm                                                                                                                                     | 469 kB  00:00:00
+(3/4): OpenIPMI-2.0.19-15.el7.x86_64.rpm                                                                                                                                      | 173 kB  00:00:01
+(4/4): OpenIPMI-modalias-2.0.19-15.el7.x86_64.rpm                                                                                                                             |  15 kB  00:00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                641 kB/s | 1.1 MB  00:00:01
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : OpenIPMI-modalias-2.0.19-15.el7.x86_64                                                                                                                                            1/4
+  Installing : OpenIPMI-libs-2.0.19-15.el7.x86_64                                                                                                                                                2/4
+  Installing : OpenIPMI-2.0.19-15.el7.x86_64                                                                                                                                                     3/4
+  Installing : dcism-2.1.0-4.110.1.el6.x86_64                                                                                                                                                    4/4
+  Verifying  : OpenIPMI-modalias-2.0.19-15.el7.x86_64                                                                                                                                            1/4
+  Verifying  : dcism-2.1.0-4.110.1.el6.x86_64                                                                                                                                                    2/4
+  Verifying  : OpenIPMI-libs-2.0.19-15.el7.x86_64                                                                                                                                                3/4
+  Verifying  : OpenIPMI-2.0.19-15.el7.x86_64                                                                                                                                                     4/4
+
+Installed:
+  dcism.x86_64 0:2.1.0-4.110.1.el6
+
+Dependency Installed:
+  OpenIPMI.x86_64 0:2.0.19-15.el7                             OpenIPMI-libs.x86_64 0:2.0.19-15.el7                             OpenIPMI-modalias.x86_64 0:2.0.19-15.el7
+
+Complete!
+[root@ds-splunk-nidx01 ~]#
+
+................................................................................
+................................................................................
+
+
+[root@ds-splunk-nidx01 ~]# subscription-manager status
++-------------------------------------------+
+   System Status Details
++-------------------------------------------+
+Overall Status: Current
+
+[root@ds-splunk-nidx01 ~]# subscription-manager unregister
+System has been unregistered.
+[root@ds-splunk-nidx01 ~]#
+
+................................................................................
+................................................................................
+
+[root@puppet ~]# puppet cert list | grep ds-splunk
+  "ds-splunk-nidx01.tcsbank.ru" (SHA256) E3:77:9A:BB:87:AB:BD:9B:06:24:27:4D:25:FA:A1:72:07:53:E6:6D:F8:16:1F:81:94:91:26:F3:37:FB:7A:56
+[root@puppet ~]# puppet cert sign ds-splunk-nidx01.tcsbank.ru
+Notice: Signed certificate request for ds-splunk-nidx01.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest ds-splunk-nidx01.tcsbank.ru at '/var/lib/puppet/ssl/ca/requests/ds-splunk-nidx01.tcsbank.ru.pem'
+[root@puppet ~]#
+
+[root@ds-splunk-nidx01 ~]# puppet agent -t
+
+[root@ds-splunk-nidx01 ~]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for ds-splunk-nidx01.tcsbank.ru
+Info: Applying configuration version '1482154810'
+Notice: Finished catalog run in 0.03 seconds
+[root@ds-splunk-nidx01 ~]#
+
+[root@ds-splunk-nidx01 ~]# systemctl enable puppet
+[root@ds-splunk-nidx01 ~]# systemctl status puppet
+● puppet.service - Puppet agent
+   Loaded: loaded (/usr/lib/systemd/system/puppet.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2016-12-19 17:50:09 MSK; 1min 43s ago
+ Main PID: 194146 (puppet)
+   CGroup: /system.slice/puppet.service
+           └─194146 /usr/bin/ruby /usr/bin/puppet agent --no-daemonize
+
+Dec 19 17:50:09 ds-splunk-nidx01.tcsbank.ru systemd[1]: Started Puppet agent.
+Dec 19 17:50:09 ds-splunk-nidx01.tcsbank.ru systemd[1]: Starting Puppet agent...
+Dec 19 17:50:10 ds-splunk-nidx01.tcsbank.ru puppet-agent[194146]: Starting Puppet client version 3.8.7
+Dec 19 17:50:10 ds-splunk-nidx01.tcsbank.ru puppet-agent[194146]: Run of Puppet configuration client already in progress; skipping  (/var/lib/puppet/state/agent_catalog_run.lock exists)
+[root@ds-splunk-nidx01 ~]#
+
+[root@ds-splunk-nidx01 ~]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for ds-splunk-nidx01.tcsbank.ru
+Info: Applying configuration version '1482152890'
+Error: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: Error: No matching Packages to list
+Error: /Stage[main]/Ntp::Install/Package[ntp]/ensure: change from absent to present failed: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: Error: No matching Packages to list
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp::Service/Service[ntp]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Service/Service[ntp]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp/Anchor[ntp::end]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp/Anchor[ntp::end]: Skipping because of failed dependencies
+Notice: Finished catalog run in 0.41 seconds
+[root@ds-splunk-nidx01 ~]#
+
+#   Removed all added data.
+[root@ds-splunk-nidx01 ~]# vim /etc/rhsm/rhsm.conf
+
+
+[root@ds-splunk-nidx01 ~]# groupadd -g 571 ema && adduser -u 571 -g ema -c "Efremov Mikhail" -G wheel -m -s /bin/bash -p '$6$.GL0BSb/$db9ENx54QeyH/cVAHbcVeThes6A80KJaJ/vcdKY7HM9m6Emo4kMutY1BSLPs9IWhMxbB8wGYd0CWiPeY/yyw60' ema ; groupadd -g 504 lzn && adduser -u 504 -g lzn -c "Makhnev Nikita" -G wheel -m -s /bin/bash -p '$6$dJfNiGSD$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/' lzn ; groupadd -g 557 tms && adduser -u 557 -g tms -c "Aboltin Nikita" -G wheel -m -s /bin/bash -p '$6$SALTsalt$7MlFAUjjMU5aUZauiOeqIu9XY.M1AfJ.Mhy.o2dvXFoq44HdsPdKuGGA9mA1up1dXhThpPect8CC0YWFGI8Gz1' tms ; id ema ; id lzn ; id tms
+uid=571(ema) gid=571(ema) groups=571(ema),10(wheel)
+uid=504(lzn) gid=504(lzn) groups=504(lzn),10(wheel)
+uid=557(tms) gid=557(tms) groups=557(tms),10(wheel)
+[root@ds-splunk-nidx01 ~]#
+
+................................................................................
+................................................................................
+................................................................................
+................................................................................
+
+[root@m1-splunk-nidx01 ~]# curl repo-linux.tcsbank.ru/rhel7.repo > /etc/yum.repos.d/tcs-rhel7.repo
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   198  100   198    0     0  21235      0 --:--:-- --:--:-- --:--:-- 22000
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# yum repolist
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+rhel-7-server-rpms                                                                                                                                                            | 3.0 kB  00:00:00
+rhel-7-server-rpms/7Server/x86_64/primary_db                                                                                                                                  |  21 MB  00:00:00
+repo id                                                                                     repo name                                                                                          status
+rhel-7-server-rpms/7Server/x86_64                                                           Red Hat Enterprise Linux 7 Server (RPMs)                                                           11,057
+repolist: 11,057
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# yum install http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+puppetlabs-release-el-7.noarch.rpm                                                                                                                                            |  14 kB  00:00:00
+Examining /var/tmp/yum-root-9Q4SHs/puppetlabs-release-el-7.noarch.rpm: puppetlabs-release-22.0-2.noarch
+Marking /var/tmp/yum-root-9Q4SHs/puppetlabs-release-el-7.noarch.rpm to be installed
+Resolving Dependencies
+--> Running transaction check
+---> Package puppetlabs-release.noarch 0:22.0-2 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                           Arch                                  Version                                Repository                                                      Size
+=====================================================================================================================================================================================================
+Installing:
+ puppetlabs-release                                noarch                                22.0-2                                 /puppetlabs-release-el-7.noarch                                 13 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package
+
+Total size: 13 k
+Installed size: 13 k
+Is this ok [y/d/N]: y
+Downloading packages:
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : puppetlabs-release-22.0-2.noarch                                                                                                                                                  1/1
+  Verifying  : puppetlabs-release-22.0-2.noarch                                                                                                                                                  1/1
+
+Installed:
+  puppetlabs-release.noarch 0:22.0-2
+
+Complete!
+[root@m1-splunk-nidx01 ~]#
+
+
+#   Not working....
+#   Needs RHN registration...
+[root@m1-splunk-nidx01 ~]# yum install puppet
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+Trying other mirror.
+
+
+ One of the configured repositories failed (Puppet Labs Dependencies El 7 - x86_64),
+ and yum doesn't have enough cached data to continue. At this point the only
+ safe thing yum can do is fail. There are a few ways to work "fix" this:
+
+     1. Contact the upstream for the repository and get them to fix the problem.
+
+     2. Reconfigure the baseurl/etc. for the repository, to point to a working
+        upstream. This is most often useful if you are using a newer
+        distribution release than is supported by the repository (and the
+        packages for the previous distribution release still work).
+
+     3. Disable the repository, so yum won't use it by default. Yum will then
+        just ignore the repository until you permanently enable it again or use
+        --enablerepo for temporary usage:
+
+            yum-config-manager --disable puppetlabs-deps
+
+     4. Configure the failing repository to be skipped, if it is unavailable.
+        Note that yum will try to contact the repo. when it runs most commands,
+        so will have to try and fail each time (and thus. yum will be be much
+        slower). If it is a very temporary problem though, this is often a nice
+        compromise:
+
+            yum-config-manager --save --setopt=puppetlabs-deps.skip_if_unavailable=true
+
+failure: repodata/repomd.xml from puppetlabs-deps: [Errno 256] No more mirrors to try.
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+http://yum.puppetlabs.com/el/7/dependencies/x86_64/repodata/repomd.xml: [Errno 14] curl#7 - "Failed to connect to 2600:3c03::f03c:91ff:fedb:6b1d: Network is unreachable"
+[root@m1-splunk-nidx01 ~]#
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# echo "proxy=http://repo-linux.tcsbank.ru:80" >> /etc/yum.conf
+
+[root@m1-splunk-nidx01 ~]# read -s -p "Enter Proxy Password: " PROXY_PASSWORD ; echo ; read -s -p "Enter RHN Password: " RHN_PASSWORD ; subscription-manager register --proxy=mwg.gtm.tcsbank.ru:8080 --proxyuser=rhsm_user --proxypass=$PROXY_PASSWORD --username=tcsbank17012012 --password=$RHN_PASSWORD --auto-attach
+Enter Proxy Password:
+Enter RHN Password: Registering to: subscription.rhn.redhat.com:443/subscription
+The system has been registered with ID: 37ce7e8e-e987-4095-9a6f-61307a7d23d9
+
+Installed Product Current Status:
+Product Name: Red Hat Enterprise Linux Server
+Status:       Subscribed
+
+[root@m1-splunk-nidx01 ~]#
+
+
+[root@m1-splunk-nidx01 ~]# sed -i.backup 's/proxy_hostname =/proxy_hostname = mwg.gtm.tcsbank.ru/;s/proxy_port =/proxy_port = 8080/;s/proxy_user =/proxy_user = rhsm_user/;s/proxy_password =/proxy_password = 6eKoEvNHFS5IycxhqH5W/' /etc/rhsm/rhsm.conf
+[root@m1-splunk-nidx01 ~]#
+
+
+[root@m1-splunk-nidx01 ~]# yum repolist
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+Repository rhel-7-server-rpms is listed more than once in the configuration
+puppetlabs-deps                                                                                                                                                               | 2.5 kB  00:00:00
+puppetlabs-products                                                                                                                                                           | 2.5 kB  00:00:00
+rhel-7-server-rpms                                                                                                                                                            | 3.5 kB  00:00:00
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Sat Dec 17 11:15:41 2016
+  Downloaded: Thu Dec 15 01:33:24 2016
+(1/2): puppetlabs-deps/x86_64/primary_db                                                                                                                                      | 8.4 kB  00:00:00
+(2/2): puppetlabs-products/x86_64/primary_db                                                                                                                                  |  69 kB  00:00:00
+repo id                                                                                     repo name                                                                                          status
+puppetlabs-deps/x86_64                                                                      Puppet Labs Dependencies El 7 - x86_64                                                                 17
+puppetlabs-products/x86_64                                                                  Puppet Labs Products El 7 - x86_64                                                                    225
+rhel-7-server-rpms/7Server/x86_64                                                           Red Hat Enterprise Linux 7 Server (RPMs)                                                           11,057
+repolist: 11,299
+[root@m1-splunk-nidx01 ~]#
+
+
+[root@m1-splunk-nidx01 ~]# puppet agent -t
+Info: Creating a new SSL key for m1-splunk-nidx01.tcsbank.ru
+Info: Caching certificate for ca
+Info: csr_attributes file loading from /etc/puppet/csr_attributes.yaml
+Info: Creating a new SSL certificate request for m1-splunk-nidx01.tcsbank.ru
+Info: Certificate Request fingerprint (SHA256): 3B:FF:FE:EC:8D:66:DF:25:23:C1:25:B3:54:C6:9B:6D:EB:B2:32:77:B4:E7:B7:8E:E6:BE:1D:93:21:90:2E:7E
+Info: Caching certificate for ca
+Exiting; no certificate found and waitforcert is disabled
+[root@m1-splunk-nidx01 ~]#
+
+
+[root@puppet ~]# puppet cert list | awk "/-splunk-/{print}"
+  "m1-splunk-nidx01.tcsbank.ru" (SHA256) 3B:FF:FE:EC:8D:66:DF:25:23:C1:25:B3:54:C6:9B:6D:EB:B2:32:77:B4:E7:B7:8E:E6:BE:1D:93:21:90:2E:7E
+[root@puppet ~]#
+
+#[root@puppet ~]# puppet cert sign $(puppet cert list | awk "/-splunk-/{print \$1}" | sed 's/"//g')
+Notice: Signed certificate request for m1-splunk-nidx01.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest m1-splunk-nidx01.tcsbank.ru at '/var/lib/puppet/ssl/ca/requests/m1-splunk-nidx01.tcsbank.ru.pem'
+[root@puppet ~]#
+
+[root@m1-splunk-nidx01 ~]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for m1-splunk-nidx01.tcsbank.ru
+Info: Applying configuration version '1482154270'
+Notice: Finished catalog run in 0.15 seconds
+[root@m1-splunk-nidx01 ~]#
+
+
+[root@m1-splunk-nidx01 ~]# groupadd -g 571 ema && adduser -u 571 -g ema -c "Efremov Mikhail" -G wheel -m -s /bin/bash -p '$6$.GL0BSb/$db9ENx54QeyH/cVAHbcVeThes6A80KJaJ/vcdKY7HM9m6Emo4kMutY1BSLPs9IWhMxbB8wGYd0CWiPeY/yyw60' ema ; groupadd -g 504 lzn && adduser -u 504 -g lzn -c "Makhnev Nikita" -G wheel -m -s /bin/bash -p '$6$dJfNiGSD$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/' lzn ; groupadd -g 557 tms && adduser -u 557 -g tms -c "Aboltin Nikita" -G wheel -m -s /bin/bash -p '$6$SALTsalt$7MlFAUjjMU5aUZauiOeqIu9XY.M1AfJ.Mhy.o2dvXFoq44HdsPdKuGGA9mA1up1dXhThpPect8CC0YWFGI8Gz1' tms ; id ema ; id lzn ; id tms
+uid=571(ema) gid=571(ema) groups=571(ema),10(wheel)
+uid=504(lzn) gid=504(lzn) groups=504(lzn),10(wheel)
+uid=557(tms) gid=557(tms) groups=557(tms),10(wheel)
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# curl repo-linux/tcs-dell-dsu.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   157  100   157    0     0  20336      0 --:--:-- --:--:-- --:--:-- 22428
+[root@m1-splunk-nidx01 ~]#
+
+
+[root@m1-splunk-nidx01 ~]# yum install srvadmin-idracadm7 srvadmin-idracadm dcism
+
+[root@m1-splunk-nidx01 ~]# curl repo-linux/tcs-dell.repo.sh | sh
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   172  100   172    0     0  26514      0 --:--:-- --:--:-- --:--:-- 28666
+[root@m1-splunk-nidx01 ~]# sed -i 's/$releasever/6/' /etc/yum.repos.d/tcs-dell.repo
+
+[root@m1-splunk-nidx01 ~]# subscription-manager status
++-------------------------------------------+
+   System Status Details
++-------------------------------------------+
+Overall Status: Current
+
+[root@m1-splunk-nidx01 ~]# subscription-manager unregister
+System has been unregistered.
+[root@m1-splunk-nidx01 ~]# subscription-manager status
++-------------------------------------------+
+   System Status Details
++-------------------------------------------+
+Overall Status: Unknown
+
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# mv /etc/rhsm/rhsm.conf{.backup,}
+mv: overwrite ‘/etc/rhsm/rhsm.conf’? y
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# systemctl enable puppet
+
+................................................................................
+................................................................................
+
+[root@m1-splunk-nidx02 ~]# echo "proxy=http://repo-linux.tcsbank.ru:80" >> /etc/yum.conf
+[root@m1-splunk-nidx02 ~]# curl repo-linux.tcsbank.ru/rhel7.repo > /etc/yum.repos.d/tcs-rhel7.repo
+[root@m1-splunk-nidx02 ~]# yum -y install http://repo-linux.tcsbank.ru/puppetlabs/yum/puppetlabs-release-el-7.noarch.rpm
+
+[root@m1-splunk-nidx02 ~]# read -s -p "Enter Proxy Password: " PROXY_PASSWORD ; echo ; read -s -p "Enter RHN Password: " RHN_PASSWORD ; subscription-manager register --proxy=mwg.gtm.tcsbank.ru:8080 --proxyuser=rhsm_user --proxypass=$PROXY_PASSWORD --username=tcsbank17012012 --password=$RHN_PASSWORD --auto-attach
+
+[root@m1-splunk-nidx02 ~]# sed -i.backup 's/proxy_hostname =/proxy_hostname = mwg.gtm.tcsbank.ru/;s/proxy_port =/proxy_port = 8080/;s/proxy_user =/proxy_user = rhsm_user/;s/proxy_password =/proxy_password = 6eKoEvNHFS5IycxhqH5W/' /etc/rhsm/rhsm.conf
+
+[root@m1-splunk-nidx02 ~]# yum repolist
+
+[root@m1-splunk-nidx02 ~]# yum -y install puppet
+[root@m1-splunk-nidx02 ~]# puppet agent -t
+[root@puppet ~]# puppet cert list | awk "/-splunk-/{print}"
+  "m1-splunk-nidx02.tcsbank.ru" (SHA256) D3:4D:77:86:CD:61:1D:87:F4:EE:DE:8D:6A:C8:4B:4A:1C:68:C0:A3:39:FC:21:EB:6B:E4:30:EF:0A:85:06:37
+#[root@puppet ~]# puppet cert sign $(puppet cert list | awk "/-splunk-/{print \$1}" | sed 's/"//g')
+[root@m1-splunk-nidx02 ~]# puppet agent -t
+[root@m1-splunk-nidx02 ~]# puppet agent -t
+[root@m1-splunk-nidx02 ~]# systemctl status puppet
+[root@m1-splunk-nidx02 ~]# curl repo-linux/tcs-dell-dsu.repo.sh | sh
+[root@m1-splunk-nidx02 ~]# yum -y install srvadmin-idracadm7 srvadmin-idracadm dcism
+
+[root@m1-splunk-nidx02 ~]# curl repo-linux/tcs-dell.repo.sh | sh
+[root@m1-splunk-nidx02 ~]# sed -i 's/$releasever/6/' /etc/yum.repos.d/tcs-dell.repo
+[root@m1-splunk-nidx02 ~]# subscription-manager unregister
+[root@m1-splunk-nidx02 ~]# mv /etc/rhsm/rhsm.conf{.backup,}
+
+#   Create users ema, lzn, tms.
+
+................................................................................
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; systemctl enable puppet )' ; done
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; systemctl status puppet )' ; done
+
+................................................................................
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; ls -A1 /etc/sysctl.d/ )' ; done
+
+m1-splunk-nidx01.tcsbank.ru
+99-sysctl.conf
+Connection to m1-splunk-nidx01 closed.
+
+m1-splunk-nidx02.tcsbank.ru
+99-sysctl.conf
+Connection to m1-splunk-nidx02 closed.
+
+m1-splunk-nidx03.tcsbank.ru
+99-sysctl.conf
+Connection to m1-splunk-nidx03 closed.
+
+m1-splunk-nidx04.tcsbank.ru
+99-sysctl.conf
+Connection to m1-splunk-nidx04 closed.
+
+ds-splunk-nidx01.tcsbank.ru
+99-sysctl.conf
+Connection to ds-splunk-nidx01 closed.
+
+ds-splunk-nidx02.tcsbank.ru
+99-sysctl.conf
+Connection to ds-splunk-nidx02 closed.
+
+ds-splunk-nidx03.tcsbank.ru
+99-sysctl.conf
+Connection to ds-splunk-nidx03 closed.
+
+ds-splunk-nidx04.tcsbank.ru
+99-sysctl.conf
+Connection to ds-splunk-nidx04 closed.
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; echo -n "# To disable for all interfaces\nnet.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/ipv6.conf )' ; done
+
+m1-splunk-nidx01.tcsbank.ru
+Connection to m1-splunk-nidx01 closed.
+
+m1-splunk-nidx02.tcsbank.ru
+Connection to m1-splunk-nidx02 closed.
+
+m1-splunk-nidx03.tcsbank.ru
+Connection to m1-splunk-nidx03 closed.
+
+m1-splunk-nidx04.tcsbank.ru
+Connection to m1-splunk-nidx04 closed.
+
+ds-splunk-nidx01.tcsbank.ru
+Connection to ds-splunk-nidx01 closed.
+
+ds-splunk-nidx02.tcsbank.ru
+Connection to ds-splunk-nidx02 closed.
+
+ds-splunk-nidx03.tcsbank.ru
+Connection to ds-splunk-nidx03 closed.
+
+ds-splunk-nidx04.tcsbank.ru
+Connection to ds-splunk-nidx04 closed.
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; sysctl -p /etc/sysctl.d/ipv6.conf )' ; done
+
+m1-splunk-nidx01.tcsbank.ru
+Connection to m1-splunk-nidx01 closed.
+
+m1-splunk-nidx02.tcsbank.ru
+Connection to m1-splunk-nidx02 closed.
+
+m1-splunk-nidx03.tcsbank.ru
+Connection to m1-splunk-nidx03 closed.
+
+m1-splunk-nidx04.tcsbank.ru
+Connection to m1-splunk-nidx04 closed.
+
+ds-splunk-nidx01.tcsbank.ru
+Connection to ds-splunk-nidx01 closed.
+
+ds-splunk-nidx02.tcsbank.ru
+Connection to ds-splunk-nidx02 closed.
+
+ds-splunk-nidx03.tcsbank.ru
+Connection to ds-splunk-nidx03 closed.
+
+ds-splunk-nidx04.tcsbank.ru
+Connection to ds-splunk-nidx04 closed.
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; yum -y install net-snmp net-snmp-utils )' ; done
+
+#   In puppet add two manifests: etckeepre, nrpe.
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; puppet agent -t )' ; done
+
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; systemctl start snmpd.service ; systemctl status snmpd.service ; systemctl enable snmpd.service )' ; done
+
+
+................................................................................
+................................................................................
+
+[root@m1-splunk-nidx01 ~]# getenforce
+Enforcing
+[root@m1-splunk-nidx01 ~]#
+
+................................................................................
+
+
+[root@m1-splunk-nidx01 ~]# yum list installed srvadmin-idracadm7 srvadmin-idracadm dcism
+Loaded plugins: etckeeper, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Installed Packages
+srvadmin-idracadm.x86_64                                                                       8.1.0-4.4.12.sles11                                                                      @tcs-dell-dsu
+srvadmin-idracadm7.x86_64                                                                      8.1.0-4.69.7.sles12                                                                      @tcs-dell-dsu
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu dcism
+
+[root@m1-splunk-nidx01 ~]# yum list installed srvadmin-idracadm7 srvadmin-idracadm dcism
+Loaded plugins: etckeeper, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Installed Packages
+dcism.x86_64                                                                                   2.1.0-4.110.1.el6                                                                        @tcs-dell
+srvadmin-idracadm.x86_64                                                                       8.1.0-4.4.12.sles11                                                                      @tcs-dell-dsu
+srvadmin-idracadm7.x86_64                                                                      8.1.0-4.69.7.sles12                                                                      @tcs-dell-dsu
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu srvadmin-deng-snmp
+
+[root@m1-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu srvadmin-idrac-snmp
+
+[root@m1-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu srvadmin-isvc-snmp
+
+[root@m1-splunk-nidx01 ~]# yum list --showduplicates --disablerepo tcs-dell-dsu srvadmin-server-snmp
+Loaded plugins: etckeeper, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Available Packages
+srvadmin-server-snmp.x86_64                                                                       8.1.0-4.3.1.el6                                                                            tcs-dell
+srvadmin-server-snmp.x86_64                                                                       8.1.0-4.3.1.el6                                                                            tcs-dell
+srvadmin-server-snmp.x86_64                                                                       8.4.0-2193.9883.el6                                                                        tcs-dell
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu srvadmin-server-snmp-8.1.0-4.3.1.el6
+Loaded plugins: etckeeper, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Resolving Dependencies
+--> Running transaction check
+---> Package srvadmin-server-snmp.x86_64 0:8.1.0-4.3.1.el6 will be installed
+--> Processing Dependency: srvadmin-ominst = 8.1.0 for package: srvadmin-server-snmp-8.1.0-4.3.1.el6.x86_64
+--> Processing Dependency: srvadmin-base = 8.1.0 for package: srvadmin-server-snmp-8.1.0-4.3.1.el6.x86_64
+--> Running transaction check
+---> Package srvadmin-base.x86_64 0:8.1.0-4.3.1.el6 will be installed
+--> Processing Dependency: srvadmin-smcommon = 8.1.0 for package: srvadmin-base-8.1.0-4.3.1.el6.x86_64
+--> Processing Dependency: srvadmin-omacs = 8.1.0 for package: srvadmin-base-8.1.0-4.3.1.el6.x86_64
+--> Processing Dependency: srvadmin-cm = 8.1.0 for package: srvadmin-base-8.1.0-4.3.1.el6.x86_64
+---> Package srvadmin-ominst.x86_64 0:8.1.0-4.94.3.el6 will be installed
+--> Running transaction check
+---> Package srvadmin-cm.x86_64 0:8.1.0-4.1.249.el6 will be installed
+---> Package srvadmin-omacs.x86_64 0:8.1.0-4.92.1.el6 will be installed
+---> Package srvadmin-smcommon.x86_64 0:8.1.0-4.138.2.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                               Arch                                    Version                                               Repository                                 Size
+=====================================================================================================================================================================================================
+Installing:
+ srvadmin-server-snmp                                  x86_64                                  8.1.0-4.3.1.el6                                       tcs-dell                                  2.4 k
+Installing for dependencies:
+ srvadmin-base                                         x86_64                                  8.1.0-4.3.1.el6                                       tcs-dell                                  2.4 k
+ srvadmin-cm                                           x86_64                                  8.1.0-4.1.249.el6                                     tcs-dell                                   70 M
+ srvadmin-omacs                                        x86_64                                  8.1.0-4.92.1.el6                                      tcs-dell                                  2.8 M
+ srvadmin-ominst                                       x86_64                                  8.1.0-4.94.3.el6                                      tcs-dell                                  1.5 M
+ srvadmin-smcommon                                     x86_64                                  8.1.0-4.138.2.el6                                     tcs-dell                                  837 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package (+5 Dependent packages)
+
+Total download size: 76 M
+Installed size: 93 M
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/6): srvadmin-base-8.1.0-4.3.1.el6.x86_64.rpm                                                                                                                               | 2.4 kB  00:00:00
+(2/6): srvadmin-omacs-8.1.0-4.92.1.el6.x86_64.rpm                                                                                                                             | 2.8 MB  00:00:00
+(3/6): srvadmin-ominst-8.1.0-4.94.3.el6.x86_64.rpm                                                                                                                            | 1.5 MB  00:00:00
+(4/6): srvadmin-server-snmp-8.1.0-4.3.1.el6.x86_64.rpm                                                                                                                        | 2.4 kB  00:00:00
+(5/6): srvadmin-smcommon-8.1.0-4.138.2.el6.x86_64.rpm                                                                                                                         | 837 kB  00:00:00
+(6/6): srvadmin-cm-8.1.0-4.1.249.el6.x86_64.rpm                                                                                                                               |  70 MB  00:00:01
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                 69 MB/s |  76 MB  00:00:01
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+etckeeper: pre transaction commit
+  Installing : srvadmin-omacs-8.1.0-4.92.1.el6.x86_64                                                                                                                                            1/6
+  Installing : srvadmin-ominst-8.1.0-4.94.3.el6.x86_64                                                                                                                                           2/6
+  Installing : srvadmin-cm-8.1.0-4.1.249.el6.x86_64                                                                                                                                              3/6
+  Installing : srvadmin-smcommon-8.1.0-4.138.2.el6.x86_64                                                                                                                                        4/6
+  Installing : srvadmin-base-8.1.0-4.3.1.el6.x86_64                                                                                                                                              5/6
+  Installing : srvadmin-server-snmp-8.1.0-4.3.1.el6.x86_64                                                                                                                                       6/6
+etckeeper: post transaction commit
+  Verifying  : srvadmin-omacs-8.1.0-4.92.1.el6.x86_64                                                                                                                                            1/6
+  Verifying  : srvadmin-ominst-8.1.0-4.94.3.el6.x86_64                                                                                                                                           2/6
+  Verifying  : srvadmin-base-8.1.0-4.3.1.el6.x86_64                                                                                                                                              3/6
+  Verifying  : srvadmin-smcommon-8.1.0-4.138.2.el6.x86_64                                                                                                                                        4/6
+  Verifying  : srvadmin-server-snmp-8.1.0-4.3.1.el6.x86_64                                                                                                                                       5/6
+  Verifying  : srvadmin-cm-8.1.0-4.1.249.el6.x86_64                                                                                                                                              6/6
+
+Installed:
+  srvadmin-server-snmp.x86_64 0:8.1.0-4.3.1.el6
+
+Dependency Installed:
+  srvadmin-base.x86_64 0:8.1.0-4.3.1.el6              srvadmin-cm.x86_64 0:8.1.0-4.1.249.el6        srvadmin-omacs.x86_64 0:8.1.0-4.92.1.el6        srvadmin-ominst.x86_64 0:8.1.0-4.94.3.el6
+  srvadmin-smcommon.x86_64 0:8.1.0-4.138.2.el6
+
+Complete!
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu srvadmin-storage-snmp
+
+[root@m1-splunk-nidx01 ~]# yum list --showduplicates --disablerepo tcs-dell-dsu srvadmin-storageservices-snmp
+Loaded plugins: etckeeper, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Available Packages
+srvadmin-storageservices-snmp.x86_64                                                                   8.1.0-4.3.1.el6                                                                       tcs-dell
+srvadmin-storageservices-snmp.x86_64                                                                   8.1.0-4.3.1.el6                                                                       tcs-dell
+srvadmin-storageservices-snmp.x86_64                                                                   8.4.0-2193.9883.el6                                                                   tcs-dell
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# yum install --disablerepo tcs-dell-dsu srvadmin-storageservices-snmp-8.1.0-4.3.1.el6
+Loaded plugins: etckeeper, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Resolving Dependencies
+--> Running transaction check
+---> Package srvadmin-storageservices-snmp.x86_64 0:8.1.0-4.3.1.el6 will be installed
+--> Processing Dependency: srvadmin-sysfsutils = 8.1.0 for package: srvadmin-storageservices-snmp-8.1.0-4.3.1.el6.x86_64
+--> Running transaction check
+---> Package srvadmin-sysfsutils.x86_64 0:8.1.0-4.1.1.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================================================================================================
+ Package                                                       Arch                                   Version                                         Repository                                Size
+=====================================================================================================================================================================================================
+Installing:
+ srvadmin-storageservices-snmp                                 x86_64                                 8.1.0-4.3.1.el6                                 tcs-dell                                 2.6 k
+Installing for dependencies:
+ srvadmin-sysfsutils                                           x86_64                                 8.1.0-4.1.1.el6                                 tcs-dell                                  53 k
+
+Transaction Summary
+=====================================================================================================================================================================================================
+Install  1 Package (+1 Dependent package)
+
+Total download size: 56 k
+Installed size: 143 k
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/2): srvadmin-storageservices-snmp-8.1.0-4.3.1.el6.x86_64.rpm                                                                                                               | 2.6 kB  00:00:00
+(2/2): srvadmin-sysfsutils-8.1.0-4.1.1.el6.x86_64.rpm                                                                                                                         |  53 kB  00:00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                708 kB/s |  56 kB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+etckeeper: pre transaction commit
+  Installing : srvadmin-sysfsutils-8.1.0-4.1.1.el6.x86_64                                                                                                                                        1/2
+  Installing : srvadmin-storageservices-snmp-8.1.0-4.3.1.el6.x86_64                                                                                                                              2/2
+etckeeper: post transaction commit
+  Verifying  : srvadmin-storageservices-snmp-8.1.0-4.3.1.el6.x86_64                                                                                                                              1/2
+  Verifying  : srvadmin-sysfsutils-8.1.0-4.1.1.el6.x86_64                                                                                                                                        2/2
+
+Installed:
+  srvadmin-storageservices-snmp.x86_64 0:8.1.0-4.3.1.el6
+
+Dependency Installed:
+  srvadmin-sysfsutils.x86_64 0:8.1.0-4.1.1.el6
+
+Complete!
+[root@m1-splunk-nidx01 ~]#
+
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; yum -y install --disablerepo tcs-dell-dsu dcism srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp-8.1.0-4.3.1.el6 srvadmin-storage-snmp srvadmin-storageservices-snmp-8.1.0-4.3.1.el6  )' ; done
+
+................................................................................
+................................................................................
+
+
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; shutdown -r now )' ; done
+m1-splunk-nidx01.tcsbank.ru
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to m1-splunk-nidx01 closed by remote host.
+Connection to m1-splunk-nidx01 closed.
+
+m1-splunk-nidx02.tcsbank.ru
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to m1-splunk-nidx02 closed by remote host.
+Connection to m1-splunk-nidx02 closed.
+
+m1-splunk-nidx03.tcsbank.ru
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to m1-splunk-nidx03 closed by remote host.
+Connection to m1-splunk-nidx03 closed.
+
+m1-splunk-nidx04.tcsbank.ru
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to m1-splunk-nidx04 closed by remote host.
+Connection to m1-splunk-nidx04 closed.
+
+ds-splunk-nidx01.tcsbank.ru
+Connection to ds-splunk-nidx01 closed by remote host.
+Connection to ds-splunk-nidx01 closed.
+
+ds-splunk-nidx02.tcsbank.ru
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to ds-splunk-nidx02 closed by remote host.
+Connection to ds-splunk-nidx02 closed.
+
+ds-splunk-nidx03.tcsbank.ru
+Connection to ds-splunk-nidx03 closed by remote host.
+Connection to ds-splunk-nidx03 closed.
+
+ds-splunk-nidx04.tcsbank.ru
+PolicyKit daemon disconnected from the bus.
+We are no longer a registered authentication agent.
+Connection to ds-splunk-nidx04 closed by remote host.
+Connection to ds-splunk-nidx04 closed.
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do ping -c 1 ${var1_hostname} ; done
+PING m1-splunk-nidx01.tcsbank.ru (10.216.41.73) 56(84) bytes of data.
+64 bytes from m1-splunk-nidx01.tcsbank.ru (10.216.41.73): icmp_seq=1 ttl=58 time=2.40 ms
+
+--- m1-splunk-nidx01.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 3ms
+rtt min/avg/max/mdev = 2.405/2.405/2.405/0.000 ms
+PING m1-splunk-nidx02.tcsbank.ru (10.216.41.74) 56(84) bytes of data.
+64 bytes from m1-splunk-nidx02.tcsbank.ru (10.216.41.74): icmp_seq=1 ttl=58 time=2.17 ms
+
+--- m1-splunk-nidx02.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 4ms
+rtt min/avg/max/mdev = 2.174/2.174/2.174/0.000 ms
+PING m1-splunk-nidx03.tcsbank.ru (10.216.41.75) 56(84) bytes of data.
+64 bytes from m1-splunk-nidx03.tcsbank.ru (10.216.41.75): icmp_seq=1 ttl=58 time=1.94 ms
+
+--- m1-splunk-nidx03.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 3ms
+rtt min/avg/max/mdev = 1.944/1.944/1.944/0.000 ms
+PING m1-splunk-nidx04.tcsbank.ru (10.216.41.76) 56(84) bytes of data.
+64 bytes from m1-splunk-nidx04.tcsbank.ru (10.216.41.76): icmp_seq=1 ttl=58 time=3.09 ms
+
+--- m1-splunk-nidx04.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 4ms
+rtt min/avg/max/mdev = 3.097/3.097/3.097/0.000 ms
+PING ds-splunk-nidx01.tcsbank.ru (10.216.42.73) 56(84) bytes of data.
+64 bytes from ds-splunk-nidx01.tcsbank.ru (10.216.42.73): icmp_seq=1 ttl=58 time=2.31 ms
+
+--- ds-splunk-nidx01.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 3ms
+rtt min/avg/max/mdev = 2.310/2.310/2.310/0.000 ms
+PING ds-splunk-nidx02.tcsbank.ru (10.216.42.74) 56(84) bytes of data.
+64 bytes from ds-splunk-nidx02.tcsbank.ru (10.216.42.74): icmp_seq=1 ttl=58 time=3.69 ms
+
+--- ds-splunk-nidx02.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 4ms
+rtt min/avg/max/mdev = 3.692/3.692/3.692/0.000 ms
+PING ds-splunk-nidx03.tcsbank.ru (10.216.42.75) 56(84) bytes of data.
+64 bytes from ds-splunk-nidx03.tcsbank.ru (10.216.42.75): icmp_seq=1 ttl=58 time=1.84 ms
+
+--- ds-splunk-nidx03.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 2ms
+rtt min/avg/max/mdev = 1.841/1.841/1.841/0.000 ms
+PING ds-splunk-nidx04.tcsbank.ru (10.216.42.76) 56(84) bytes of data.
+64 bytes from ds-splunk-nidx04.tcsbank.ru (10.216.42.76): icmp_seq=1 ttl=58 time=2.20 ms
+
+--- ds-splunk-nidx04.tcsbank.ru ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 9ms
+rtt min/avg/max/mdev = 2.205/2.205/2.205/0.000 ms
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ for var1_hostname in m1-splunk-nidx0{1..4} ds-splunk-nidx0{1..4} ; do export SSHPASS="$(pass common/linux-default)" ; sshpass -e ssh -t -oStrictHostKeyChecking=no -oPubkeyAuthentication=no root@${var1_hostname} '( echo ; hostname ; racadm getniccfg | head )' ; done
+
+m1-splunk-nidx01.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.9.156
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.9.254
+
+IPv6 settings:
+Connection to m1-splunk-nidx01 closed.
+
+m1-splunk-nidx02.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.9.158
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.9.254
+
+IPv6 settings:
+Connection to m1-splunk-nidx02 closed.
+
+m1-splunk-nidx03.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.9.155
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.9.254
+
+IPv6 settings:
+Connection to m1-splunk-nidx03 closed.
+
+m1-splunk-nidx04.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.9.157
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.9.254
+
+IPv6 settings:
+Connection to m1-splunk-nidx04 closed.
+
+ds-splunk-nidx01.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.135
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+Connection to ds-splunk-nidx01 closed.
+
+ds-splunk-nidx02.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.136
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+Connection to ds-splunk-nidx02 closed.
+
+ds-splunk-nidx03.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.133
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+Connection to ds-splunk-nidx03 closed.
+
+ds-splunk-nidx04.tcsbank.ru
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.11.134
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.11.254
+
+IPv6 settings:
+Connection to ds-splunk-nidx04 closed.
+[support@centos00 ~]$
+
+
+................................................................................
+................................................................................
+
+#   *. Creation nagios monitoring.
+#
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-ms-mongo01t.cfg
+
+[root@vm-vol-nag4-tst objects]# mkdir ~/work/20161220-1215
+[root@vm-vol-nag4-tst objects]# cp /usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-ms-mongo01t.cfg !$/m1-splunk-nidx01.cfg
+cp /usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-ms-mongo01t.cfg ~/work/20161220-1215/m1-splunk-nidx01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name filename where object_type=host and host_name="m1-splunk-idx01"
+host_name            filename
+--------------------------------------------------------------------------------
+m1-splunk-idx01      /usr/local/nagios/etc/objects/servers/dc-m1/linux/splunk/m1-splunk-idx01.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+...
+define host{
+    use                     linux-server
+    host_name               m1-splunk-idx01
+    address                 10.216.41.130
+    contact_groups          splunk-admins, linux-admins-critical
+}
+
+define service{
+    use                           generic-service-ping
+    host_name               m1-splunk-idx01
+    service_description     PING
+    service_groups          Ping - Service Group
+    check_command           check_ping!100.0,20%!500.0,60%
+    contact_groups          splunk-admins, linux-admins-critical
+}
+...
+
+
+[root@vm-vol-nag4-tst 20161220-1215]# pynag list members filename where contactgroup_name="linux-admins"
+members              filename
+--------------------------------------------------------------------------------
+a.terentyev_sms, a.terentyev_email, a.kuritcyn_email, a.kuritcyn_sms, Naumen_nag_request_email, a.aleksandrov_email, a.aleksandrov_sms, n.makhnev_email, n.makhnev_sms, s.belogrud_email, s.belogrud_sms, e.zbiranik_email, e.zbiranik_sms, a.chernyh_email, a.chernyh_sms, a.leonov_sms, a.leonov_email, servicedesk_duty_khutor_sms_critical, servicedesk_duty_sms_critical /usr/local/nagios/etc/objects/groups/contact-group/linux-admins.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst 20161220-1215]# pynag list members filename where contactgroup_name="linux-admins-critical"
+members              filename
+--------------------------------------------------------------------------------
+a.terentyev_sms, a.kuritcyn_sms, Naumen_nag_request_email, a.aleksandrov_sms, n.makhnev_sms, s.belogrud_sms, e.zbiranik_sms, a.chernyh_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical /usr/local/nagios/etc/objects/groups/contact-group/linux-admins-critical.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst 20161220-1215]#
+
+
+[root@vm-vol-nag4-tst 20161220-1215]# cp m1-splunk-nidx01.cfg /usr/local/nagios/etc/objects/servers/dc-m1/linux/
+[root@vm-vol-nag4-tst 20161220-1215]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst 20161220-1215]# for var1 in {2..4} ; do cp m1-splunk-nidx01.cfg m1-splunk-nidx0${var1}.cfg ; done
+[root@vm-vol-nag4-tst 20161220-1215]# vim -o m1-splunk-nidx0{2..4}.cfg
+[root@vm-vol-nag4-tst 20161220-1215]# cp m1-splunk-nidx0{2..4}.cfg /usr/local/nagios/etc/objects/servers/dc-m1/linux/
+
+
+
+[root@m1-splunk-nidx01 ~]# systemctl stop snmpd
+
+[root@m1-splunk-nidx01 ~]# mv /etc/snmp/snmpd.conf{,.backup}
+[root@m1-splunk-nidx01 ~]# cat > /etc/snmp/snmpd.conf
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser  default       tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+[root@m1-splunk-nidx01 ~]#
+
+[root@m1-splunk-nidx01 ~]# systemctl start snmpd
+[root@m1-splunk-nidx01 ~]# snmpwalk -v 2c -c tcspub localhost  1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-splunk-nidx01.tcsbank.ru 3.10.0-327.el7.x86_64 #1 SMP Thu Oct 29 17:29:29 EDT 2015 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (433) 0:00:04.33
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-splunk-nidx01.tcsbank.ru
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (2) 0:00:00.02
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@m1-splunk-nidx01 ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git add servers/dc-ds/linux/ds-splunk-nidx0{1..4}.cfg servers/dc-m1/linux/m1-splunk-nidx0{1..4}.cfg
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#876878. Create monitoring for eight new splunk servers." servers/dc-ds/linux/ds-splunk-nidx0{1..4}.cfg servers/dc-m1/linux/m1-splunk-nidx0{1..4}.cfg
+Running configuration check...
+ OK.
+[master 441d004] SD#876878. Create monitoring for eight new splunk servers.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 8 files changed, 392 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-ds/linux/ds-splunk-nidx01.cfg
+ create mode 100644 objects/servers/dc-ds/linux/ds-splunk-nidx02.cfg
+ create mode 100644 objects/servers/dc-ds/linux/ds-splunk-nidx03.cfg
+ create mode 100644 objects/servers/dc-ds/linux/ds-splunk-nidx04.cfg
+ create mode 100644 objects/servers/dc-m1/linux/m1-splunk-nidx01.cfg
+ create mode 100644 objects/servers/dc-m1/linux/m1-splunk-nidx02.cfg
+ create mode 100644 objects/servers/dc-m1/linux/m1-splunk-nidx03.cfg
+ create mode 100644 objects/servers/dc-m1/linux/m1-splunk-nidx04.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 23, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (16/16), done.
+Writing objects: 100% (16/16), 1.86 KiB, done.
+Total 16 (delta 14), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   505c1db..441d004  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list members filename where contactgroup_name="splunk-admins"
+members              filename
+--------------------------------------------------------------------------------
+n.makhnev_email, n.makhnev_sms,                                 n.aboltin_email, n.aboltin_sms,                                 a.terentyev_email, a.terentyev_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical /usr/local/nagios/etc/objects/groups/contact-group/splunk-admins.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# cat /usr/local/nagios/etc/objects/groups/contact-group/splunk-admins.cfg
+define contactgroup{
+        contactgroup_name       splunk-admins
+        alias                   Splunk administrators
+        members                 n.makhnev_email, n.makhnev_sms, \
+                                n.aboltin_email, n.aboltin_sms, \
+                                a.terentyev_email, a.terentyev_sms, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical
+}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+#   20170130
+
+
+ilo_splunk_admins
+TCSBANK.RU
+
+
+CV27RG2
+CV77RG2
+CVC5RG2
+CVCBRG2
+
+CV39RG2
+CV48RG2
+CV89RG2
+CV89RG2
+
+................................................................................
+
+
+
+

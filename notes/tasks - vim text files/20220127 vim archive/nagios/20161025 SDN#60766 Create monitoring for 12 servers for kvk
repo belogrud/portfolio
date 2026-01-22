@@ -1,0 +1,1032 @@
+
+................................................................................
+................................................................................
+
+Тема
+
+Настроить алерты/мониторинг системных параметров
+Номер
+
+60766
+Описание
+Для продуктовых машин КВК настроить алерты по основные системным параметрам: диск, память, процессор:
+Первый алерт письмо на kvk-dev@tinkoff.ru. Повторный в течение 10 минут – SMS мне (+79067064365), инцидент в SD.
+
+Актуальный список машин КВК в талбице: https://wiki.tcsbank.ru/pages/viewpage.action?pageId=15479402 (назначение - продуктовый).
+Задача на мониторинг RabbitMQ из этого списка в отдельном запросе SD60650
+
+С уважением, Алексей Калинин.
+
+................................................................................
+................................................................................
+
+
+m1-kvk-prod-be01    10.218.2.70 M1  Продуктовый Продуктовый API (временно выведен из эксплуатации)
+ds-kvk-prod-be01    10.218.7.70 DS  Продуктовый Продуктовый API (временно выведен из эксплуатации)
+m1-kvk-prod-be02    10.218.2.71 M1  Продуктовый Продуктовый API
+ds-kvk-prod-be02    10.218.7.71 DS  Продуктовый Продуктовый API
+m1-kvk-dmz-fe01     10.218.6.20 M1  Продуктовый Продуктовые Сайт, Кабинет, Витрина
+ds-kvk-dmz-fe01     10.218.11.20    DS  Продуктовый Продуктовые Сайт, Кабинет, Витрина
+m1-kvk-dmz-nfe01    10.218.13.43    M1  Продуктовый Продуктовая Форма 2.0
+ds-kvk-dmz-nfe01    10.218.11.22    DS  Продуктовый Продуктовая Форма 2.0
+vm-kvk-prod-stat01  10.218.1.22 VM  Продуктовый Статистика
+vm-kvk-prod-mysql   10.218.1.20 VM  Продуктовый MySQL-база для модуля InSales
+m1-kvk-prod-rabbit01    10.218.2.62 M1  Продуктовый Продуктовый RabbitMQ
+ds-kvk-prod-rabbit01    10.218.7.62 DS  Продуктовый Продуктовый RabbitMQ
+m1-kvk-prod-mc01    10.218.2.54 M1  Продуктовый Memcached
+ds-kvk-prod-mc01    10.218.7.54 DS  Продуктовый Memcached
+
+
+#
+#   These server are need change their nagios configuration.
+#
+m1-kvk-prod-be01
+ds-kvk-prod-be01
+m1-kvk-prod-be02
+ds-kvk-prod-be02
+m1-kvk-dmz-fe01
+ds-kvk-dmz-fe01
+m1-kvk-dmz-nfe01
+ds-kvk-dmz-nfe01
+vm-kvk-prod-stat01
+vm-kvk-prod-mysql
+m1-kvk-prod-mc01
+ds-kvk-prod-mc01
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# while read var1_hostname ; do pynag list filename where object_type=host and host_name__contains="${var1_hostname}" --quiet ; done
+#>m1-kvk-prod-be01
+#>ds-kvk-prod-be01
+#>m1-kvk-prod-be02
+#>ds-kvk-prod-be02
+#>m1-kvk-dmz-fe01
+#>ds-kvk-dmz-fe01
+#>m1-kvk-dmz-nfe01
+#>ds-kvk-dmz-nfe01
+#>vm-kvk-prod-stat01
+#>vm-kvk-prod-mysql
+    #m1-kvk-prod-rabbit01
+    #ds-kvk-prod-rabbit01
+#>m1-kvk-prod-mc01
+#>ds-kvk-prod-mc01
+/usr/local/nagios/etc/objects/servers/dc-m1/linux/kvk/m1-kvk-prod-be01.cfg
+/usr/local/nagios/etc/objects/servers/dc-ds/linux/kvk/ds-kvk-prod-be01.cfg
+/usr/local/nagios/etc/objects/servers/vmware/m1-kvk-prod-be02.cfg
+/usr/local/nagios/etc/objects/servers/vmware/ds-kvk-prod-be02.cfg
+/usr/local/nagios/etc/objects/servers/dc-m1/linux/kvk/m1-kvk-dmz-fe01.cfg
+/usr/local/nagios/etc/objects/servers/dc-ds/linux/kvk/ds-kvk-dmz-fe01.cfg
+/usr/local/nagios/etc/objects/servers/vmware/vm-kvk-prod-stat01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="kalinin"
+contact_name         filename
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]# addcontact --help
+Adding new contact to Nagios
+Full name: a.a.kalinin
+Email: a.a.kalinin@tinkoff.ru
+Mobile (10 numbers): 9067064365
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="kalinin"
+contact_name         filename
+--------------------------------------------------------------------------------
+a.a.kalinin_email    /usr/local/nagios/etc/objects/contacts/a.a.kalinin.cfg
+a.a.kalinin_sms      /usr/local/nagios/etc/objects/contacts/a.a.kalinin.cfg
+----------2 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="kvk-dev"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+kvk-dev_email        kvk-dev@tinkoff.ru   /usr/local/nagios/etc/objects/contacts/kvk-dev.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name filename where contact_name__contains="Naumen"
+contact_name         filename
+--------------------------------------------------------------------------------
+Naumen_nag_request_email /usr/local/nagios/etc/objects/contacts/Naumen_nag_request.cfg
+Naumen_nag_request_email-warning /usr/local/nagios/etc/objects/contacts/Naumen_nag_request.cfg
+Naumen_request_email /usr/local/nagios/etc/objects/contacts/Naumen_request.cfg
+Naumen_request_email-warning /usr/local/nagios/etc/objects/contacts/Naumen_request.cfg
+----------4 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+
+[support@centos00 ~]$ first_notification=2 ; notification_interval=10 ; check_interval=6 ; max_check_attempts=3 ; retry_interval=2 ; if [[ $notification_interval -ge $check_interval ]] ; then expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $notification_interval / $check_interval) \* $check_interval) \* $(expr $first_notification - 1) ) ; else expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $(expr $notification_interval / $check_interval) + 1) \* $check_interval) \* $(expr $first_notification - 1) ) ; fi
+10
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager diff /usr/local/nagios/etc/objects/servers/vmware/m1-kvk-prod-be02.cfg
+diff --git a/objects/servers/vmware/m1-kvk-prod-be02.cfg b/objects/servers/vmware/m1-kvk-prod-be02.cfg
+index a76b7d5..4e62e49 100644
+--- a/objects/servers/vmware/m1-kvk-prod-be02.cfg
++++ b/objects/servers/vmware/m1-kvk-prod-be02.cfg
+@@ -15,14 +15,31 @@ define service{
+     max_check_attempts             1
+     check_command                   check_ping!100.0,20%!500.0,60%
+ }
++
+ define service{
+        use                           generic-service-partition-root
+-    host_name                       m1-kvk-prod-be02
++    host_name                     m1-kvk-prod-be02
+        service_description           Partition ROOT
+-    contacts                       d.buynov_email, d.buynov_sms
+-    contact_groups                 linux-admins, kupivkredit-development
+-    check_command                   check_nrpe!check_root_fs
++    contacts                     kvk-dev_email
++    contact_groups               linux-admins, kupivkredit-development
++    check_command                 check_nrpe!check_root_fs
++    max_check_attempts            3
++    retry_interval                2
++    check_interval                6
++    notification_interval         10
++}
++define serviceescalation{
++    host_name                     m1-kvk-prod-be02
++       service_description           Partition ROOT
++    contacts                     a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
++    contact_groups               linux-admins, kupivkredit-development
++    first_notification            2
++    last_notification             0
++    notification_interval         60
++    escalation_period             24x7
++    escalation_options            c
+ }
++
+ define service{
+        use                           generic-service-current-load
+     host_name                       m1-kvk-prod-be02
+[root@vm-vol-nag4-tst objects]#
+
+define service{
+    use                           generic-service-partition-root
+    host_name                     m1-kvk-prod-be02
+    service_description           Partition ROOT
+    contacts                      kvk-dev_email
+    contact_groups                linux-admins, kupivkredit-development
+    check_command                 check_nrpe!check_root_fs
+    max_check_attempts            3
+    retry_interval                2
+    check_interval                6
+    notification_interval         10
+}
+define serviceescalation{
+    host_name                     m1-kvk-prod-be02
+    service_description           Partition ROOT
+    contacts                      a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
+    contact_groups                linux-admins, kupivkredit-development
+    first_notification            2
+    last_notification             0
+    notification_interval         60
+    escalation_period             24x7
+    escalation_options            c
+}
+
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# for var1_servername in m1-kvk-prod-be01 ds-kvk-prod-be01 m1-kvk-prod-be02 ds-kvk-prod-be02 m1-kvk-dmz-fe01 ds-kvk-dmz-fe01 vm-kvk-prod-stat01 ; do server_name="${var1_servername}" ; pynag list host_name service_description contact_groups contacts where host_name="${server_name}" ; done
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+m1-kvk-prod-be01     null                 kupivkredit-development null
+m1-kvk-prod-be01     HTTP                 kupivkredit-development d.buynov_email, d.buynov_sms
+m1-kvk-prod-be01     PING                 kupivkredit-development d.buynov_email, d.buynov_sms
+m1-kvk-prod-be01     Partition ROOT       linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+m1-kvk-prod-be01     Partition VAR        linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+----------5 objects matches search condition------------------------------------
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+ds-kvk-prod-be01     null                 portal-admins        null
+ds-kvk-prod-be01     HTTP                 kupivkredit-development d.buynov_email, d.buynov_sms
+ds-kvk-prod-be01     PING                 portal-admins, linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+ds-kvk-prod-be01     Partition ROOT       linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+ds-kvk-prod-be01     Partition VAR        linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+----------5 objects matches search condition------------------------------------
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+m1-kvk-prod-be02     null                 kupivkredit-development null
+m1-kvk-prod-be02     Check Zombie procs   null                 d.buynov_email
+m1-kvk-prod-be02     Current Load         null                 d.buynov_email
+m1-kvk-prod-be02     Current Memory Load  null                 d.buynov_email
+m1-kvk-prod-be02     PING                 kupivkredit-development d.buynov_email, d.buynov_sms
+m1-kvk-prod-be02     Partition ROOT       linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+----------6 objects matches search condition------------------------------------
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+ds-kvk-prod-be02     null                 portal-admins        null
+ds-kvk-prod-be02     Check Zombie procs   null                 d.buynov_email
+ds-kvk-prod-be02     Current Load         null                 d.buynov_email
+ds-kvk-prod-be02     Current Memory Load  null                 d.buynov_email
+ds-kvk-prod-be02     PING                 portal-admins, linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+ds-kvk-prod-be02     Partition ROOT       linux-admins, kupivkredit-development d.buynov_email, d.buynov_sms
+----------6 objects matches search condition------------------------------------
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+m1-kvk-dmz-fe01      null                 kupivkredit-development, linux-admins-critical null
+m1-kvk-dmz-fe01      PING                 kupivkredit-development, linux-admins-critical d.buynov_email, d.buynov_sms, v.homich_email, v.homich_sms, a.gromova_email
+m1-kvk-dmz-fe01      Partition BOOT       kupivkredit-development, linux-admins-critical null
+m1-kvk-dmz-fe01      Partition ROOT       kupivkredit-development, linux-admins-critical d.buynov_email, d.buynov_sms
+m1-kvk-dmz-fe01      Partition VAR        kupivkredit-development, linux-admins-critical d.buynov_email, d.buynov_sms
+----------5 objects matches search condition------------------------------------
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+ds-kvk-dmz-fe01      null                 portal-admins        null
+ds-kvk-dmz-fe01      PING                 portal-admins, kupivkredit-development d.buynov_email, d.buynov_sms, v.homich_email, v.homich_sms, a.gromova_email
+ds-kvk-dmz-fe01      Partition BOOT       kupivkredit-development, linux-admins-critical null
+ds-kvk-dmz-fe01      Partition ROOT       kupivkredit-development, linux-admins-critical d.buynov_email, d.buynov_sms
+ds-kvk-dmz-fe01      Partition VAR        kupivkredit-development, linux-admins-critical d.buynov_email, d.buynov_sms
+----------5 objects matches search condition------------------------------------
+host_name            service_description  contact_groups       contacts
+--------------------------------------------------------------------------------
+vm-kvk-prod-stat01   null                 empty-group          v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   Check Zombie procs   linux-admins         d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   Current Load         linux-admins         d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   Current Memory Load  linux-admins         d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   HTTP                 empty-group          d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   PING                 empty-group          d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   Partition BOOT       linux-admins         d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   Partition ROOT       linux-admins         d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+vm-kvk-prod-stat01   Partition VAR        linux-admins         d.buynov_email, d.buynov_sms, v.kovalenko_email, v.kovalenko_sms, a.rozenvasser_email, a.rozenvasser_sms, v.uspenskiy_email, v.uspenskiy_sms, n.aboltin_email, n.aboltin_sms,servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,kvk-dev_email
+----------9 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim /usr/local/nagios/etc/objects/servers/vmware/m1-kvk-prod-be02.cfg
+
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#60766. At this time I'm testing configuration to send notification properly before escalation and after." servers/vmware/m1-kvk-prod-be02.cfg
+Running configuration check...
+ OK.
+[master 9a437c8] SDN#60766. At this time I'm testing configuration to send notification properly before escalation and after.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 24 insertions(+), 6 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 842 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   40757fa..9a437c8  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@m1-kvk-prod-be02 ~]# grep check_root_fs /etc/nrpe.d/*
+/etc/nrpe.d/check_disks.cfg:command[check_root_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -u MB -w 100 -c 50 -p /
+[root@m1-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# /usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -u MB -w 100 -c 50000 -p /
+DISK CRITICAL - free space: / 26614 MB (70% inode=88%);| /=11283MB;39833;-10067;0;39933
+[root@m1-kvk-prod-be02 ~]#
+
+
+[root@m1-kvk-prod-be02 ~]# vim /etc/nrpe.d/check_disks.cfg
+
+[root@m1-kvk-prod-be02 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@m1-kvk-prod-be02 ~]#
+
+
+
+................................................................................
+
+[support@centos00 ~]$ first_notification=2 ; notification_interval=6 ; check_interval=2 ; max_check_attempts=3 ; retry_interval=2 ; if [[ $notification_interval -ge $check_interval ]] ; then expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $notification_interval / $check_interval) \* $check_interval) \* $(expr $first_notification - 1) ) ; else expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $(expr $notification_interval / $check_interval) + 1) \* $check_interval) \* $(expr $first_notification - 1) ) ; fi
+10
+[support@centos00 ~]$
+
+[support@centos00 ~]$ first_notification=2 ; notification_interval=6 ; check_interval=3 ; max_check_attempts=3 ; retry_interval=2 ; if [[ $notification_interval -ge $check_interval ]] ; then expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $notification_interval / $check_interval) \* $check_interval) \* $(expr $first_notification - 1) ) ; else expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $(expr $notification_interval / $check_interval) + 1) \* $check_interval) \* $(expr $first_notification - 1) ) ; fi
+10
+[support@centos00 ~]$
+
+[support@centos00 ~]$ first_notification=2 ; notification_interval=10 ; check_interval=10 ; max_check_attempts=3 ; retry_interval=2 ; if [[ $notification_interval -ge $check_interval ]] ; then expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $notification_interval / $check_interval) \* $check_interval) \* $(expr $first_notification - 1) ) ; else expr $(expr $(expr $(expr $max_check_attempts - 1) \* $retry_interval) + $(expr $(expr $(expr $notification_interval / $check_interval) + 1) \* $check_interval) \* $(expr $first_notification - 1) ) ; fi
+14
+[support@centos00 ~]$
+
+
+................................................................................
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="tcb_tech_team@tinkoff.ru"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# vim -o /usr/local/nagios/etc/objects/contacts/kvk-dev.cfg /usr/local/nagios/etc/objects/contacts/tcb_tech_team.cfg
+
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   servers/dc-ds/windows/ds-sccm.cfg
+#       modified:   servers/vmware/m1-kvk-prod-be02.cfg
+#       modified:   servers/vmware/vm-ossec01t.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       1q
+#       contacts/a.a.kalinin.cfg
+#       contacts/tcb-tech-team.cfg
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# git add contacts/a.a.kalinin.cfg
+[root@vm-vol-nag4-tst objects]# git add contacts/tcb-tech-team.cfg
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="tcb_tech_team@tinkoff.ru"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+tcb-tech-team_email  tcb_tech_team@tinkoff.ru /usr/local/nagios/etc/objects/contacts/tcb-tech-team.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+
+define service{
+    use                           generic-service-partition-root
+    host_name                     m1-kvk-prod-be02
+    service_description           Partition ROOT
+    contacts                      kvk-dev_email,tcb-tech-team_email
+    contact_groups                linux-admins
+    check_command                 check_nrpe!check_root_fs
+    max_check_attempts            3
+    retry_interval                2
+    check_interval                10
+    notification_interval         10
+}
+define serviceescalation{
+    host_name                     m1-kvk-prod-be02
+    service_description           Partition ROOT
+    contacts                      a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
+    contact_groups                linux-admins
+    first_notification            2
+    last_notification             0
+    notification_interval         60
+    escalation_period             24x7
+    escalation_options            c
+}
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#60766. Chanded configuration for host - now is used servcieescalation." servers/vmware/m1-kvk-prod-be02.cfg
+Running configuration check...
+ OK.
+[master 1e1f8fc] SDN#60766. Chanded configuration for host - now is used servcieescalation.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 81 insertions(+), 26 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 821 bytes, done.
+Total 6 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   addf4a9..1e1f8fc  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# cat /usr/local/nagios/etc/objects/servers/vmware/m1-kvk-prod-be02.cfg                                                                                                define host{
+    use                             linux-server
+    host_name                       m1-kvk-prod-be02
+    address                         10.218.2.71
+    hostgroups                      kvk-servers
+}
+
+define service{
+        use                           generic-service-ping
+    host_name                     m1-kvk-prod-be02
+    service_description           PING
+    contacts                      kvk-dev_email,tcb-tech-team_email
+    contact_groups                linux-admins
+    check_command                 check_ping!100.0,20%!500.0,60%
+    max_check_attempts            1
+    check_interval                5
+    notification_interval         30
+}
+define serviceescalation{
+    host_name                     m1-kvk-prod-be02
+    service_description           PING
+    contacts                      a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
+    contact_groups                linux-admins
+    first_notification            2
+    last_notification             0
+    notification_interval         60
+    escalation_period             24x7
+    escalation_options            c
+}
+
+define service{
+    use                           generic-service-partition-root
+    host_name                     m1-kvk-prod-be02
+    service_description           Partition ROOT
+    contacts                      kvk-dev_email,tcb-tech-team_email
+    check_command                 check_nrpe!check_root_fs
+    max_check_attempts            3
+    retry_interval                2
+    check_interval                10
+    notification_interval         10
+}
+define serviceescalation{
+    host_name                     m1-kvk-prod-be02
+    service_description           Partition ROOT
+    contacts                      a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
+    contact_groups                linux-admins
+    first_notification            2
+    last_notification             0
+    notification_interval         60
+    escalation_period             24x7
+    escalation_options            c
+}
+
+define service{
+        use                           generic-service-current-load
+    host_name                     m1-kvk-prod-be02
+    service_description           Current Load
+    contacts                      kvk-dev_email,tcb-tech-team_email
+    check_command                 check_nrpe!check_load
+    max_check_attempts            3
+    retry_interval                2
+    check_interval                10
+    notification_interval         10
+}
+define serviceescalation{
+    host_name                     m1-kvk-prod-be02
+    service_description           Current Load
+    contacts                      a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
+    first_notification            2
+    last_notification             0
+    notification_interval         60
+    escalation_period             24x7
+    escalation_options            c
+}
+
+define service{
+        use                           generic-service-current-memory-load
+    host_name                     m1-kvk-prod-be02
+    service_description           Current Memory Load
+    contacts                      kvk-dev_email,tcb-tech-team_email
+    check_command                 check_nrpe!check_memory_load_linux
+    max_check_attempts            3
+    retry_interval                2
+    check_interval                10
+    notification_interval         10
+}
+define serviceescalation{
+    host_name                     m1-kvk-prod-be02
+    service_description           Current Memory Load
+    contacts                      a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
+    first_notification            2
+    last_notification             0
+    notification_interval         60
+    escalation_period             24x7
+    escalation_options            c
+}
+
+define service{
+        use                           generic-service-check-zombie-procs
+    host_name                     m1-kvk-prod-be02
+    service_description           Check Zombie procs
+    contacts                      kvk-dev_email,tcb-tech-team_email
+    check_command                 check_nrpe!check_zombie_procs
+    max_check_attempts            3
+    retry_interval                2
+    check_interval                10
+    notification_interval         10
+}
+define serviceescalation{
+    host_name                     m1-kvk-prod-be02
+    service_description           Check Zombie procs
+    contacts                      a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email
+    first_notification            2
+    last_notification             0
+    notification_interval         60
+    escalation_period             24x7
+    escalation_options            c
+}
+
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list service_description contact_groups contacts notification_interval where object_type="service" and host_name="m1-kvk-prod-be02"                            service_description  contact_groups       contacts             notification_interval
+--------------------------------------------------------------------------------
+Check Zombie procs   null                 kvk-dev_email,tcb-tech-team_email 10
+Current Load         null                 kvk-dev_email,tcb-tech-team_email 10
+Current Memory Load  null                 kvk-dev_email,tcb-tech-team_email 10
+PING                 linux-admins         kvk-dev_email,tcb-tech-team_email 10
+Partition ROOT       null                 kvk-dev_email,tcb-tech-team_email 10
+----------5 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# pynag list service_description contact_groups contacts notification_interval where object_type="serviceescalation" and host_name="m1-kvk-prod-be02"
+service_description  contact_groups       contacts             notification_interval
+--------------------------------------------------------------------------------
+PING                 linux-admins         a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Partition ROOT       linux-admins         a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Current Load         null                 a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Check Zombie procs   null                 a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Current Memory Load  null                 a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+----------5 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   servers/dc-ds/windows/ds-sccm.cfg
+#       modified:   servers/vmware/ds-kvk-prod-be02.cfg
+#       modified:   servers/vmware/vm-ossec01t.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       1q
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#60766. Reconfigured contacts and escalation." servers/vmware/ds-kvk-prod-be02.cfg
+Running configuration check...
+ OK.
+[master 4a14efd] SDN#60766. Reconfigured contacts and escalation.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 92 insertions(+), 21 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 1.01 KiB, done.
+Total 6 (delta 4), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   e333cbe..4a14efd  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# pynag list service_description contact_groups contacts notification_interval where object_type="service" and host_name="ds-kvk-prod-be02"
+service_description  contact_groups       contacts             notification_interval
+--------------------------------------------------------------------------------
+Check Zombie procs   null                 kvk-dev_email,tcb-tech-team_email 10
+Current Load         null                 kvk-dev_email,tcb-tech-team_email 10
+Current Memory Load  null                 kvk-dev_email,tcb-tech-team_email 10
+PING                 linux-admins         kvk-dev_email,tcb-tech-team_email 10
+Partition ROOT       null                 kvk-dev_email,tcb-tech-team_email 10
+----------5 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+[root@vm-vol-nag4-tst objects]# pynag list service_description contact_groups contacts notification_interval where object_type="serviceescalation" and host_name="ds-kvk-prod-be02"
+service_description  contact_groups       contacts             notification_interval
+--------------------------------------------------------------------------------
+PING                 linux-admins         a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Partition ROOT       linux-admins         a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Current Memory Load  null                 a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Check Zombie procs   null                 a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+Current Load         null                 a.a.kalinin_email,a.a.kalinin_sms,Naumen_nag_request_email 60
+----------5 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#f60766. Reconfigured contacts and escalation." servers/vmware/vm-kvk-prod-stat01.cfg
+Running configuration check...
+ OK.
+[master 7cd3e2e] SDN#f60766. Reconfigured contacts and escalation.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 192 insertions(+), 73 deletions(-)
+ rewrite objects/servers/vmware/vm-kvk-prod-stat01.cfg (81%)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 11, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 1.09 KiB, done.
+Total 6 (delta 4), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   b5f33ff..7cd3e2e  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list host_name where address="10.218.6.22"
+host_name
+--------------------------------------------------------------------------------
+----------0 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# cp /usr/local/nagios/etc/objects/servers/vmware/{vm-kvk-prod-stat01,m1-kvk-dmz-nfe01}.cfg
+[root@vm-vol-nag4-tst objects]# cp /usr/local/nagios/etc/objects/servers/vmware/{vm-kvk-prod-stat01,ds-kvk-dmz-nfe01}.cfg
+
+[root@vm-vol-nag4-tst objects]# cp /usr/local/nagios/etc/objects/servers/vmware/{m1-kvk-dmz-nfe01,m1-kvk-prod-mc01}.cfg                                                                              [root@vm-vol-nag4-tst objects]# cp /usr/local/nagios/etc/objects/servers/vmware/{ds-kvk-dmz-nfe01,ds-kvk-prod-mc01}.cfg
+
+[root@puppet ~]# puppet cert list --all | grep -i ds-kvk-prod-mc01
++ "ds-kvk-prod-mc01.tcsbank.ru"           (SHA256) 3E:38:EC:8E:25:D3:BA:E8:BE:CB:48:3E:10:AF:E0:DD:50:B5:E9:66:C8:7A:81:B9:74:AE:6D:7E:0D:E2:82:33
+[root@puppet ~]# puppet cert list --all | grep -i m1-kvk-prod-mc01
++ "m1-kvk-prod-mc01.tcsbank.ru"           (SHA256) F3:A5:D1:9D:8C:03:45:7D:3B:25:5A:91:18:38:69:39:E1:56:3B:BE:85:36:52:0A:1C:58:D6:CE:B1:38:2C:49
+[root@puppet ~]#
+
+[root@m1-kvk-prod-mc01 ~]# cp /etc/nagios/nrpe.cfg{,.backup.20161031-1524}
+[root@m1-kvk-prod-mc01 ~]# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for m1-kvk-prod-mc01.tcsbank.ru
+Info: Applying configuration version '1477913709'
+Notice: /Stage[main]/Nrpe/Package[nagios-plugins-ntp]/ensure: created
+Notice: /Stage[main]/Nrpe/File[nrpe.cfg]/content:
+--- /etc/nagios/nrpe.cfg        2013-09-21 03:38:27.687592486 +0400
++++ /tmp/puppet-file20161031-31820-1vs4p6e-0    2016-10-31 15:25:08.800371930 +0300
+@@ -1,7 +1,7 @@
+ #############################################################################
+-# Sample NRPE Config File
++# Sample NRPE Config File
+ # Written by: Ethan Galstad (nagios@nagios.org)
+-#
++#
+ # Last Modified: 11-23-2007
+ #
+ # NOTES:
+@@ -10,14 +10,11 @@
+ # from which the check_nrpe client is being executed.
+ #############################################################################
+
+-
+ # LOG FACILITY
+ # The syslog facility that should be used for logging purposes.
+
+ log_facility=daemon
+
+-
+-
+ # PID FILE
+ # The name of the file in which the NRPE daemon should write it's process ID
+ # number.  The file is only written if the NRPE daemon is started by the root
+@@ -25,8 +22,6 @@
+
+ pid_file=/var/run/nrpe/nrpe.pid
+
+-
+-
+ # PORT NUMBER
+ # Port number we should wait for connections on.
+ # NOTE: This must be a non-priviledged port (i.e. > 1024).
+@@ -34,8 +29,6 @@
+
+ server_port=5666
+
+-
+-
+ # SERVER ADDRESS
+ # Address that nrpe should bind to in case there are more than one interface
+ # and you do not want nrpe to bind on all interfaces.
+@@ -43,31 +36,27 @@
+
+ #server_address=127.0.0.1
+
+-
+-
+ # NRPE USER
+-# This determines the effective user that the NRPE daemon should run as.
++# This determines the effective user that the NRPE daemon should run as.
+ # You can either supply a username or a UID.
+-#
++#
+ # NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+ nrpe_user=nrpe
+
+-
+-
+ # NRPE GROUP
+-# This determines the effective group that the NRPE daemon should run as.
++# This determines the effective group that the NRPE daemon should run as.
+ # You can either supply a group name or a GID.
+-#
++#
+ # NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+ nrpe_group=nrpe
+
+-
+-
+ # ALLOWED HOST ADDRESSES
+-# This is an optional comma-delimited list of IP address or hostnames
+-# that are allowed to talk to the NRPE daemon.
++# This is an optional comma-delimited list of IP address or hostnames
++# that are allowed to talk to the NRPE daemon. Network addresses with a bit mask
++# (i.e. 192.168.1.0/24) are also supported. Hostname wildcards are not currently
++# supported.
+ #
+ # Note: The daemon only does rudimentary checking of the client's IP
+ # address.  I would highly recommend adding entries in your /etc/hosts.allow
+@@ -76,25 +65,38 @@
+ #
+ # NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+-allowed_hosts=localhost,nag2,monitoring2,monitoring3,monitoring4,monitoring5
+-
+-
++#allowed_hosts=127.0.0.1,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6
++allowed_hosts=127.0.0.1,172.16.1.11,172.16.1.115,172.16.1.117,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6,mon1.tcsbank.ru,mon2.tcsbank.ru,mon3.tcsbank.ru,mon4.tcsbank.ru,mon5.tcsbank.ru,mon6.tcsbank.ru,mon7.tcsbank.ru
+
+ # COMMAND ARGUMENT PROCESSING
+ # This option determines whether or not the NRPE daemon will allow clients
+ # to specify arguments to commands that are executed.  This option only works
+ # if the daemon was configured with the --enable-command-args configure script
+-# option.
++# option.
+ #
+-# *** ENABLING THIS OPTION IS A SECURITY RISK! ***
++# *** ENABLING THIS OPTION IS A SECURITY RISK! ***
+ # Read the SECURITY file for information on some of the security implications
+ # of enabling this variable.
+ #
+ # Values: 0=do not allow arguments, 1=allow command arguments
+
+-dont_blame_nrpe=0
++dont_blame_nrpe=1
+
++# BASH COMMAND SUBTITUTION
++# This option determines whether or not the NRPE daemon will allow clients
++# to specify arguments that contain bash command substitutions of the form
++# $(...).  This option only works if the daemon was configured with both
++# the --enable-command-args and --enable-bash-command-substitution configure
++# script options.
++#
++# *** ENABLING THIS OPTION IS A HIGH SECURITY RISK! ***
++# Read the SECURITY file for information on some of the security implications
++# of enabling this variable.
++#
++# Values: 0=do not allow bash command substitutions,
++#         1=allow bash command substitutions
+
++#allow_bash_command_substitution=0
+
+ # COMMAND PREFIX
+ # This option allows you to prefix all commands with a user-defined string.
+@@ -102,9 +104,9 @@
+ # command line from the command definition.
+ #
+ # *** THIS EXAMPLE MAY POSE A POTENTIAL SECURITY RISK, SO USE WITH CAUTION! ***
+-# Usage scenario:
++# Usage scenario:
+ # Execute restricted commmands using sudo.  For this to work, you need to add
+-# the nagios user to your /etc/sudoers.  An example entry for alllowing
++# the nagios user to your /etc/sudoers.  An example entry for alllowing
+ # execution of the plugins from might be:
+ #
+ # nagios          ALL=(ALL) NOPASSWD: /usr/lib/nagios/plugins/
+@@ -113,7 +115,7 @@
+ # without asking for a password.  If you do this, make sure you don't give
+ # random users write access to that directory or its contents!
+
+-# command_prefix=/usr/bin/sudo
++# command_prefix=/usr/bin/sudo
+
+
+
+@@ -124,15 +126,11 @@
+
+ debug=0
+
+-
+-
+ # COMMAND TIMEOUT
+ # This specifies the maximum number of seconds that the NRPE daemon will
+ # allow plugins to finish executing before killing them off.
+
+-command_timeout=60
+-
+-
++command_timeout=300
+
+ # CONNECTION TIMEOUT
+ # This specifies the maximum number of seconds that the NRPE daemon will
+@@ -143,8 +141,6 @@
+
+ connection_timeout=300
+
+-
+-
+ # WEEK RANDOM SEED OPTION
+ # This directive allows you to use SSL even if your system does not have
+ # a /dev/random or /dev/urandom (on purpose or because the necessary patches
+@@ -157,7 +153,6 @@
+ #allow_weak_random_seed=1
+
+
+-
+ # INCLUDE CONFIG FILE
+ # This directive allows you to include definitions from an external config file.
+
+@@ -169,9 +164,10 @@
+ # This directive allows you to include definitions from config files (with a
+ # .cfg extension) in one or more directories (with recursion).
+
+-include_dir=/etc/nrpe.d/
+-
++#include_dir=<somedirectory>
++#include_dir=<someotherdirectory>
+
++include_dir=/etc/nrpe.d/
+
+ # COMMAND DEFINITIONS
+ # Command definitions that this daemon will run.  Definitions
+@@ -195,19 +191,23 @@
+
+ # The following examples use hardcoded command arguments...
+
+-#command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+-#command[check_load]=/usr/lib/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+-#command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+-#command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 150 -c 200
+-#command[check_memory_load_linux]=/usr/lib/nagios/plugins/check_mem_linux.pl -f -w 0.1 -c 0.01
++# command[check_users]=/usr/lib64/nagios/plugins/check_users -w 5 -c 10
++# command[check_load]=/usr/lib64/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
++# command[check_hda1]=/usr/lib64/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
++# command[check_zombie_procs]=/usr/lib64/nagios/plugins/check_procs -w 5 -c 10 -s Z
++# command[check_total_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
++
+
+ # The following examples allow user-supplied arguments and can
+-# only be used if the NRPE daemon was compiled with support for
++# only be used if the NRPE daemon was compiled with support for
+ # command arguments *AND* the dont_blame_nrpe directive in this
+ # config file is set to '1'.  This poses a potential security risk, so
+ # make sure you read the SECURITY file before doing this.
+
+-#command[check_users]=/usr/lib64/nagios/plugins/check_users -w $ARG1$ -c $ARG2$
+-#command[check_load]=/usr/lib64/nagios/plugins/check_load -w $ARG1$ -c $ARG2$
+-#command[check_disk]=/usr/lib64/nagios/plugins/check_disk -w $ARG1$ -c $ARG2$ -p $ARG3$
+-#command[check_procs]=/usr/lib64/nagios/plugins/check_procs -w $ARG1$ -c $ARG2$ -s $ARG3$
++##command[check_users]=/usr/lib64/nagios/plugins/check_users $ARG1$
++#command[check_disk]=/usr/lib64/nagios/plugins/check_disk $ARG1$
++#command[check_procs]=/usr/lib64/nagios/plugins/check_procs $ARG1$
++#command[check_load]=/usr/lib64/nagios/plugins/check_load $ARG1$
++#command[check_swap]=/usr/lib64/nagios/plugins/check_swap $ARG1$
++#
++# custom commands
+
+Info: Computing checksum on file /etc/nagios/nrpe.cfg
+Info: /Stage[main]/Nrpe/File[nrpe.cfg]: Filebucketed /etc/nagios/nrpe.cfg to main with sum 853388262b4d523cfbcb147d826eaccc
+Notice: /Stage[main]/Nrpe/File[nrpe.cfg]/content: content changed '{md5}853388262b4d523cfbcb147d826eaccc' to '{md5}4d69f2651237cb406fbb212fe28ee283'
+Info: /Stage[main]/Nrpe/File[nrpe.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/File[allowed.cfg]/ensure: defined content as '{md5}02a3f47f044a2f37370996decc55818e'
+Info: /Stage[main]/Nrpe/File[allowed.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/Package[nagios-plugins-nrpe]/ensure: created
+Notice: /Stage[main]/Nrpe/File[check_procs.cfg]/ensure: defined content as '{md5}3014c69f76f71e5b79d4ba3e70b7f39d'
+Info: /Stage[main]/Nrpe/File[check_procs.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/File[check_memory.cfg]/ensure: defined content as '{md5}6709e302fd4a82b4cbaae7173927a452'
+Info: /Stage[main]/Nrpe/File[check_memory.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/File[check_disks.cfg]/ensure: defined content as '{md5}4bfeb4d234aa1a264d6e3aa2e44bff31'
+Info: /Stage[main]/Nrpe/File[check_disks.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/Package[nagios-plugins-swap]/ensure: created
+Notice: /Stage[main]/Nrpe/File[check_load.cfg]/ensure: defined content as '{md5}c4c18aa97609123c8be650f0299179a2'
+Info: /Stage[main]/Nrpe/File[check_load.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/File[check_passwords.cfg]/ensure: defined content as '{md5}fa37818efce47bb3a9cf72c4cbeb776c'
+Info: /Stage[main]/Nrpe/File[check_passwords.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/File[check_ntp.cfg]/ensure: defined content as '{md5}c75affac481dcd8b44c7e0c34a005c3d'
+Info: /Stage[main]/Nrpe/File[check_ntp.cfg]: Scheduling refresh of Service[nrpe]
+Notice: /Stage[main]/Nrpe/Service[nrpe]: Triggered 'refresh' from 8 events
+Notice: Finished catalog run in 32.86 seconds
+[root@m1-kvk-prod-mc01 ~]# service nrpe restart
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+[root@m1-kvk-prod-mc01 ~]#
+
+[root@ds-kvk-prod-mc01 ~]# du -shx /opt/docker_data/
+4.4G    /opt/docker_data/
+[root@ds-kvk-prod-mc01 ~]#
+[root@ds-kvk-prod-mc01 ~]# du -shx /var/log/docker.docker
+621M    /var/log/docker.docker
+[root@ds-kvk-prod-mc01 ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-kvk-prod-mc01 ~]# shopt | grep extglob
+extglob         off
+[root@ds-kvk-prod-mc01 ~]#
+
+[root@ds-kvk-prod-mc01 ~]# shopt -s extglob ; shopt | grep extglob
+extglob         on
+[root@ds-kvk-prod-mc01 ~]#
+
+[root@ds-kvk-prod-mc01 ~]# ls -A1d /!(tmp|var|boot|opt)
+/bin
+/cgroup
+/dev
+/etc
+/home
+/lib
+/lib64
+/lost+found
+/media
+/mnt
+/proc
+/root
+/run
+/sbin
+/selinux
+/srv
+/swapfile
+/sys
+/usr
+[root@ds-kvk-prod-mc01 ~]#
+
+[root@ds-kvk-prod-mc01 ~]# du -shx /!(var|boot|proc|sys)
+6.1M    /bin
+4.0K    /cgroup
+168K    /dev
+48M     /etc
+258M    /home
+387M    /lib
+22M     /lib64
+16K     /lost+found
+4.0K    /media
+1.1G    /mnt
+5.0G    /opt
+377M    /root
+4.0K    /run
+11M     /sbin
+4.0K    /selinux
+4.0K    /srv
+2.1G    /swapfile
+43M     /tmp
+927M    /usr
+[root@ds-kvk-prod-mc01 ~]#
+
+[root@ds-kvk-prod-mc01 ~]# du -shx /!(var|boot|proc|sys) | sort -h
+4.0K    /cgroup
+4.0K    /media
+4.0K    /run
+4.0K    /selinux
+4.0K    /srv
+16K     /lost+found
+168K    /dev
+6.1M    /bin
+11M     /sbin
+22M     /lib64
+43M     /tmp
+48M     /etc
+258M    /home
+377M    /root
+387M    /lib
+927M    /usr
+1.1G    /mnt
+2.1G    /swapfile
+5.0G    /opt
+[root@ds-kvk-prod-mc01 ~]#
+
+[root@ds-kvk-prod-mc01 ~]# shopt -u extglob ; shopt | grep extglob
+extglob         off
+[root@ds-kvk-prod-mc01 ~]#
+
+
+
+
+
+

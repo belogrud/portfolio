@@ -1,0 +1,190 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   721397
+Название    №721397
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  04.02.2016 13:46
+Дата регистрации    04.02.2016 13:46
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги,
+
+для мониторинга работы робота по откупу валюты прошу Вас настроить следующие правила в Nagios:
+
+
+1. Каждую минуту необходимо селектить из вью прайма tcs_rate_daytime_mon и в зависимости от значения единственного поля "alert", принимать решение об уведомлении. Если значение равно "0", то все хорошо, в противном случае необходимо рассылать полученный текст в качестве уведомления.
+
+2. Каждую минуту необходимо селектить из вью прайма tcs_rate_orders_status_mon и в зависимости от значения единственного поля "alert", принимать решение об уведомлении. Если значение равно "0", то все хорошо, в противном случае необходимо рассылать полученный текст в качестве уведомления.
+
+3. Каждую минуту необходимо селектить из вью прайма tcs_rate_operation_E_mon и в зависимости от значения единственного поля "alert", принимать решение об уведомлении. Если значение равно "0", то все хорошо, в противном случае необходимо рассылать полученный текст в качестве уведомления.
+
+4. Каждую минуту необходимо селектить из вью прайма tcs_rate_operation_NT_mon и в зависимости от значения единственного поля "alert", принимать решение об уведомлении. Если значение равно "0", то все хорошо, в противном случае необходимо рассылать полученный текст в качестве уведомления.
+
+В случае получения неуспешного ответа необходимо отправлять уведомление. После этого опрос продолжается. Если последующие запросы возвращают также ошибки, то уведомление нужно рассылать с отстрочкой.
+Пример: мониторинг 1. Отстрочка 30 минут. Селект вернул не 0. Отправляются уведомления. Далее через минуту селект опять возвращает не 0. Уведомление не отправляется. На все повторные неуспешные ответы из селекта рассылка не нужна. Если через 30 минут(время отсрочки) не был получен 0, то отправить повторное уведомление.
+
+Необходимые отсрочки:
+Мониторинг 1 - 30 минут
+Мониторинг 2 - 10 минут
+Мониторинг 3 - 10 минут
+Мониторинг 4 - 30 минут
+
+Уведомления необходимо рассылать:
+
+- по email: srv_dev@tinkoff.ru
+
+- по sms: +79267086436, +79036763679, +79032354400
+
+В качестве ServiceName прошу установить <Rate_Monitoring>.
+
+
+С уважением,
+
+Павел Силаев
+Специалист
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Силаев Павел
+Соглашение  Базовое соглашение
+Сервис  Программное обеспечение
+Контактное лицо Силаев Павел
+Контактный e-mail   p.silaev@tinkoff.ru
+Контактные телефоны 2329
+
+................................................................................
+
+Дата
+Комментарий Автор
+05.02.2016 16:40    После проверки на тесте включаем с 08.02.2016 на продуктиве.
+Включаем с
+SELECT * FROM tctdbs.tcs_rate_daytime_mon;
+SELECT * FROM tctdbs.tcs_rate_orders_status_mon;
+SELECT * FROM tctdbs.tcs_rate_operation_E_mon;
+SELECT * FROM tctdbs.tcs_rate_operation_NT_mon;
+
+База данных продуктив PRIME4;
+User: TCS_MONITOR;
+
+Все мониторинги в PRIME4 настраиваются из-под этого пользователя.
+Пример существующего мониторинга: select * from tcs_rate_rls_monitoring;    Силаев Павел
+05.02.2016 12:17    От Вас необходимы следующие данные.
+
+1. Для реализации перечисленного пожалуйста пришлите код select'ов по каждому запросу.
+Тела этих запросов будут помещены в отдельные файлы. Содержимое этих файлов будет использовать скрипт и утилита sqlplus в нём.
+Например, как это выглядит для одной из проверок:
+
+[root@vm-dbamon01 acq]# cat iris.sql
+set pagesize 0
+set feedback off
+set timing off
+set heading off
+set trimspool on
+
+SELECT * FROM tcsapi.alert_to_iris_errors;
+[root@vm-dbamon01 acq]#
+
+2. Для корректного выполнения запроса необходимы соответствующие права доступа.
+Мне необходимо получить от Вас следующие данные:
+2.1. DNS имя хоста к которому делать sql запрос (где расположена Ваша база данных);
+2.2. Имя базы данных.
+2.3. Логин у которого есть разрешение для выполнения этого select'а.
+2.4. Пароль к этой учётной записи.
+
+Например:
+SQL_QUERY_HOST='db-acq-prod'
+SQL_QUERY_PORT='1522'
+SQL_QUERY_BASE='ACQ'
+SQL_QUERY_USER='TCS_MONITOR'
+SQL_QUERY_PASSWORD='******'
+
+Белогруд Сергей В
+
+................................................................................
+
+[root@vm-dbamon01 plugins]# cd /opt/TCS/scripts/nagios/plugins/prime4/
+
+[root@vm-dbamon01 plugins]# find . -name "*rls*"
+./prime4/prime4-check_tcs_monitoring_rate_rls.sh
+./prime4/prime4-check_tcs_monitoring_rate_rls.sql
+[root@vm-dbamon01 plugins]#
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_monitoring_rate_rls.sh prime4-check_tcs_rate_daytime_mon.sh
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_monitoring_rate_rls.sql prime4-check_tcs_rate_daytime_mon.sql
+
+
+[root@vm-dbamon01 prime4]# ./prime4-check_tcs_rate_daytime_mon.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_daytime_mon.sql prime4-check_tcs_rate_orders_status_mon.sql
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_daytime_mon.sh prime4-check_tcs_rate_orders_status_mon.sh
+
+[root@vm-dbamon01 prime4]# ./prime4-check_tcs_rate_orders_status_mon.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_daytime_mon.sql prime4-check_tcs_rate_operation_E_mon.sql
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_daytime_mon.sh prime4-check_tcs_rate_operation_e_mon.sh
+[root@vm-dbamon01 prime4]# mv prime4-check_tcs_rate_operation_{E,e}_mon.sql
+
+[root@vm-dbamon01 prime4]# ./prime4-check_tcs_rate_operation_e_mon.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_daytime_mon.sql prime4-check_tcs_rate_operation_nt_mon.sql
+[root@vm-dbamon01 prime4]# cp prime4-check_tcs_rate_daytime_mon.sh prime4-check_tcs_rate_operation_nt_mon.sh
+
+[root@vm-dbamon01 prime4]# ./prime4-check_tcs_rate_operation_nt_mon.sh
+OK. Result=0 | result=0
+[root@vm-dbamon01 prime4]#
+
+
+[root@vm-dbamon01 prime4]# vim /etc/nrpe.d/check_db_prime4.cfg
+...
+command[check_tcs_rate_daytime_mon]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_rate_daytime_mon.sh
+command[check_tcs_rate_orders_status_mon]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_rate_orders_status_mon.sh
+command[check_tcs_rate_operation_e_mon]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_rate_operation_e_mon.sh
+command[check_tcs_rate_operation_nt_mon]=/opt/TCS/scripts/nagios/plugins/prime4/prime4-check_tcs_rate_operation_nt_mon.sh
+...
+
+[root@vm-dbamon01 prime4]# service nrpe restart
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+[root@vm-dbamon01 prime4]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# vim ./objects/servers/vmware/vm-dbamon01.cfg
+
+
+[root@vm-vol-nag01t nagios]# pynag list contact_name email filename where contact_name__contains="srv_dev"
+contact_name         email                filename
+--------------------------------------------------------------------------------
+srv_dev_email        srv_dev@tinkoff.ru   /etc/nagios/objects/contacts/processing_duty.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# pynag list contact_name email address1 filename where address1__contains="79267086436" or address1__contains="79036763679" or address1__contains="79032354400"
+contact_name         email                address1             filename
+--------------------------------------------------------------------------------
+d.glukhov_sms        d.glukhov@tcsbank.ru 79036763679          /etc/nagios/objects/contacts/d.glukhov.cfg
+n.yatsishena_sms     n.yatsishena@tcsbank.ru 79032354400          /etc/nagios/objects/contacts/n.yatsishena.cfg
+p.silaev_sms         p.silaev@tinkoff.ru  779267086436         /etc/nagios/objects/contacts/p.silaev.cfg
+----------3 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+

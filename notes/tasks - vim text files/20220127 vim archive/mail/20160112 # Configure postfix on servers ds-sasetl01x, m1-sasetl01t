@@ -1,0 +1,216 @@
+
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   690537
+Название    №690537
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  12.01.2016 14:38
+Дата регистрации    12.01.2016 14:38
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Просьба настроить на серверах ds-sasetl01x и m1-sasetl01t утилиту sendmail. Сейчас отправка не работает (письмо не приходит, при аналогичной отправки с других серверов письмо приходит):
+
+
+[root@ds-sasetl01x sas-admin]# cat /tmp/work_mon.html
+From: root@tcsbank.ru
+To: d.s.pavlov@tcsbank.ru;
+Subject: Big works detected on Dev ETL
+MIME-Version: 1.0
+Content-Type: text/html
+<html>
+<head>
+<title>Big works</title>
+</head>
+<table>
+<tr>
+<td><b>Name</b></td>
+<td><b>Size (kb)</b></td>
+<td><b>PID</b></td>
+<td><b>User</b></td>
+<td><b>CMD</b></td>
+</tr>
+<tr>
+...
+
+[root@ds-sasetl01x sas-admin]# cat /tmp/work_mon.html | /usr/sbin/sendmail -t
+
+
+С уважением,
+Дмитрий Павлов
+Руководитель группы администрирования DWH
+
+
+
+................................................................................
+
+
+From: Pavlov Dmitriy Stanislavovich
+Sent: Tuesday, January 12, 2016 2:38 PM
+To: helpdesk_in; Belogrud Sergey Vladimirovich
+Subject: Настроить sendmail
+
+Просьба настроить на серверах ds-sasetl01x и m1-sasetl01t утилиту sendmail. Сейчас отправка не работает (письмо не приходит, при аналогичной отправки с других серверов письмо приходит):
+
+
+[root@ds-sasetl01x sas-admin]# cat /tmp/work_mon.html
+From: root@tcsbank.ru
+To: d.s.pavlov@tcsbank.ru;
+Subject: Big works detected on Dev ETL
+MIME-Version: 1.0
+Content-Type: text/html
+<html>
+<head>
+<title>Big works</title>
+</head>
+<table>
+    <tr>
+        <td><b>Name</b></td>
+        <td><b>Size (kb)</b></td>
+        <td><b>PID</b></td>
+        <td><b>User</b></td>
+        <td><b>CMD</b></td>
+    </tr>
+<tr>
+…
+
+[root@ds-sasetl01x sas-admin]# cat /tmp/work_mon.html | /usr/sbin/sendmail -t
+
+
+С уважением,
+Дмитрий Павлов
+Руководитель группы администрирования DWH
+
+................................................................................
+
+[root@ds-sasetl01x ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+inet_protocols = ipv4
+relayhost = [mail59.tcsbank.ru]
+[root@ds-sasetl01x ~]#
+
+#   After editing.
+#
+[root@ds-sasetl01x ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = ds-sasetl01x
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@ds-sasetl01x ~]#
+
+[root@ds-sasetl01x ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@ds-sasetl01x ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@ds-sasetl01x ~]#
+
+[root@ds-sasetl01x ~]# tail /var/log/maillog
+Jan 12 14:58:27 ds-sasetl01x postfix/postfix-script[10338]: stopping the Postfix mail system
+Jan 12 14:58:27 ds-sasetl01x postfix/postfix-script[10346]: waiting for the Postfix mail system to terminate
+Jan 12 14:58:27 ds-sasetl01x postfix/master[4968]: terminating on signal 15
+Jan 12 14:58:29 ds-sasetl01x postfix/postfix-script[11023]: starting the Postfix mail system
+Jan 12 14:58:29 ds-sasetl01x postfix/master[11025]: daemon started -- version 2.6.6, configuration /etc/postfix
+Jan 12 14:58:56 ds-sasetl01x postfix/pickup[11039]: D2E9160B7D: uid=0 from=<root>
+Jan 12 14:58:56 ds-sasetl01x postfix/cleanup[27316]: D2E9160B7D: message-id=<20160112115856.D2E9160B7D@ds-sasetl01x>
+Jan 12 14:58:56 ds-sasetl01x postfix/qmgr[11040]: D2E9160B7D: from=<root@ds-sasetl01x.tcsbank.ru>, size=521, nrcpt=1 (queue active)
+Jan 12 14:58:57 ds-sasetl01x postfix/smtp[27338]: D2E9160B7D: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.34, delays=0.02/0.01/0.01/0.31, dsn=2.6.0, status=sent (250 2.6.0 <20160112115856.D2E9160B7D@ds-sasetl01x> [InternalId=52902792] Queued mail for delivery)
+Jan 12 14:58:57 ds-sasetl01x postfix/qmgr[11040]: D2E9160B7D: removed
+[root@ds-sasetl01x ~]#
+
+................................................................................
+
+[root@m1-sasetl01t ~]# tail /var/log/maillog
+Jan 12 15:00:01 m1-sasetl01t postfix/pickup[74597]: 8DFA2106D: uid=1063 from=<root>
+Jan 12 15:00:01 m1-sasetl01t postfix/cleanup[74598]: 8DFA2106D: message-id=<20160112120001.8DFA2106D@m1-sasetl01t.tcsbank.ru>
+Jan 12 15:00:01 m1-sasetl01t postfix/qmgr[9835]: 8DFA2106D: from=<root@m1-sasetl01t.tcsbank.ru>, size=995, nrcpt=1 (queue active)
+Jan 12 15:00:01 m1-sasetl01t postfix/local[74600]: 8DFA2106D: to=<dwhsys@m1-sasetl01t.tcsbank.ru>, orig_to=<dwhsys>, relay=local, delay=0.16, delays=0.14/0.01/0/0.01, dsn=5.2.2, status=bounced (cannot update mailbox /var/mail/dwhsys for user dwhsys. error writing message: File too large)
+Jan 12 15:00:01 m1-sasetl01t postfix/cleanup[74598]: 96BB1106E: message-id=<20160112120001.96BB1106E@m1-sasetl01t.tcsbank.ru>
+Jan 12 15:00:01 m1-sasetl01t postfix/bounce[74601]: 8DFA2106D: sender non-delivery notification: 96BB1106E
+Jan 12 15:00:01 m1-sasetl01t postfix/qmgr[9835]: 96BB1106E: from=<>, size=2965, nrcpt=1 (queue active)
+Jan 12 15:00:01 m1-sasetl01t postfix/qmgr[9835]: 8DFA2106D: removed
+Jan 12 15:00:01 m1-sasetl01t postfix/local[74600]: 96BB1106E: to=<root@m1-sasetl01t.tcsbank.ru>, relay=local, delay=0.02, delays=0/0/0/0.02, dsn=5.2.2, status=bounced (cannot update mailbox /var/mail/root for user root. error writing message: File too large)
+Jan 12 15:00:01 m1-sasetl01t postfix/qmgr[9835]: 96BB1106E: removed
+[root@m1-sasetl01t ~]#
+
+[root@m1-sasetl01t ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+inet_protocols = ipv4
+relayhost = [mail59.tcsbank.ru]
+You have new mail in /var/spool/mail/root
+[root@m1-sasetl01t ~]#
+
+[root@m1-sasetl01t ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = m1-sasetl01t
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@m1-sasetl01t ~]#
+
+[root@m1-sasetl01t ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@m1-sasetl01t ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tcsbank.ru
+[root@m1-sasetl01t ~]# tail /var/log/maillog
+Jan 12 15:04:51 m1-sasetl01t postfix/postfix-script[49877]: stopping the Postfix mail system
+Jan 12 15:04:51 m1-sasetl01t postfix/postfix-script[49882]: waiting for the Postfix mail system to terminate
+Jan 12 15:04:51 m1-sasetl01t postfix/master[9828]: terminating on signal 15
+Jan 12 15:04:52 m1-sasetl01t postfix/postfix-script[50078]: starting the Postfix mail system
+Jan 12 15:04:52 m1-sasetl01t postfix/master[50079]: daemon started -- version 2.6.6, configuration /etc/postfix
+Jan 12 15:05:04 m1-sasetl01t postfix/pickup[50082]: 1B5E2106F: uid=0 from=<root>
+Jan 12 15:05:04 m1-sasetl01t postfix/cleanup[51804]: 1B5E2106F: message-id=<20160112120504.1B5E2106F@m1-sasetl01t>
+Jan 12 15:05:04 m1-sasetl01t postfix/qmgr[50083]: 1B5E2106F: from=<root@m1-sasetl01t.tcsbank.ru>, size=530, nrcpt=1 (queue active)
+Jan 12 15:05:04 m1-sasetl01t postfix/smtp[51806]: 1B5E2106F: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.31, delays=0.02/0.01/0.01/0.28, dsn=2.6.0, status=sent (250 2.6.0 <20160112120504.1B5E2106F@m1-sasetl01t> [InternalId=52903397] Queued mail for delivery)
+Jan 12 15:05:04 m1-sasetl01t postfix/qmgr[50083]: 1B5E2106F: removed
+[root@m1-sasetl01t ~]#
+
+................................................................................
+
+Дата
+Комментарий Автор
+12.01.2016 15:09    From: Belogrud Sergey Vladimirovich
+Sent: Tuesday, January 12, 2016 3:08 PM
+To: Pavlov Dmitriy Stanislavovich
+Cc: Belogrud Sergey Vladimirovich
+Subject: RE: Настроить sendmail
+
+Почту починил.
+
+Конфигурация postfix была не верная (давно устаревшая).
+
+[root@m1-sasetl01t ~]# tail /var/log/maillog
+Jan 12 15:04:51 m1-sasetl01t postfix/postfix-script[49877]: stopping the Postfix mail system
+Jan 12 15:04:51 m1-sasetl01t postfix/postfix-script[49882]: waiting for the Postfix mail system to terminate
+Jan 12 15:04:51 m1-sasetl01t postfix/master[9828]: terminating on signal 15
+Jan 12 15:04:52 m1-sasetl01t postfix/postfix-script[50078]: starting the Postfix mail system
+Jan 12 15:04:52 m1-sasetl01t postfix/master[50079]: daemon started -- version 2.6.6, configuration /etc/postfix
+Jan 12 15:05:04 m1-sasetl01t postfix/pickup[50082]: 1B5E2106F: uid=0 from=<root>
+Jan 12 15:05:04 m1-sasetl01t postfix/cleanup[51804]: 1B5E2106F: message-id=<20160112120504.1B5E2106F@m1-sasetl01t>
+Jan 12 15:05:04 m1-sasetl01t postfix/qmgr[50083]: 1B5E2106F: from=<root@m1-sasetl01t.tcsbank.ru>, size=530, nrcpt=1 (queue active)
+Jan 12 15:05:04 m1-sasetl01t postfix/smtp[51806]: 1B5E2106F: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.31, delays=0.02/0.01/0.01/0.28, dsn=2.6.0, status=sent (250 2.6.0 <20160112120504.1B5E2106F@m1-sasetl01t> [InternalId=52903397] Queued mail for delivery)
+Jan 12 15:05:04 m1-sasetl01t postfix/qmgr[50083]: 1B5E2106F: removed
+[root@m1-sasetl01t ~]#
+
+[root@ds-sasetl01x ~]# tail /var/log/maillog
+Jan 12 14:58:27 ds-sasetl01x postfix/postfix-script[10338]: stopping the Postfix mail system
+Jan 12 14:58:27 ds-sasetl01x postfix/postfix-script[10346]: waiting for the Postfix mail system to terminate
+Jan 12 14:58:27 ds-sasetl01x postfix/master[4968]: terminating on signal 15
+Jan 12 14:58:29 ds-sasetl01x postfix/postfix-script[11023]: starting the Postfix mail system
+Jan 12 14:58:29 ds-sasetl01x postfix/master[11025]: daemon started -- version 2.6.6, configuration /etc/postfix
+Jan 12 14:58:56 ds-sasetl01x postfix/pickup[11039]: D2E9160B7D: uid=0 from=<root>
+Jan 12 14:58:56 ds-sasetl01x postfix/cleanup[27316]: D2E9160B7D: message-id=<20160112115856.D2E9160B7D@ds-sasetl01x>
+Jan 12 14:58:56 ds-sasetl01x postfix/qmgr[11040]: D2E9160B7D: from=<root@ds-sasetl01x.tcsbank.ru>, size=521, nrcpt=1 (queue active)
+Jan 12 14:58:57 ds-sasetl01x postfix/smtp[27338]: D2E9160B7D: to=<s.belogrud@tcsbank.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=0.34, delays=0.02/0.01/0.01/0.31, dsn=2.6.0, status=sent (250 2.6.0 <20160112115856.D2E9160B7D@ds-sasetl01x> [InternalId=52902792] Queued mail for delivery)
+Jan 12 14:58:57 ds-sasetl01x postfix/qmgr[11040]: D2E9160B7D: removed
+[root@ds-sasetl01x ~]#
+Белогруд Сергей В
+12.01.2016 14:40    Задачу на unix-admins.  Павлов Дмитрий
+
+................................................................................
+
+

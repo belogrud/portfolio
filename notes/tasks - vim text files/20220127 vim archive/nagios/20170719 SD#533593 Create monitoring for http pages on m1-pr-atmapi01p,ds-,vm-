@@ -1,0 +1,155 @@
+
+
+...........................................................................
+
+[root@vm-vol-nag4-tst objects]# host m1-pr-atmapi01p
+m1-pr-atmapi01p.tcsbank.ru has address 10.217.10.33
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.217.10.33 -p 18080 -e "200 OK" -v -u "http://m1-pr-atmapi01p:18080/health"
+GET http://m1-pr-atmapi01p:18080/health HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: 10.217.10.33:18080
+
+
+http://10.217.10.33:18080http://m1-pr-atmapi01p:18080/health is 343 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Date: Wed, 19 Jul 2017 08:16:47 GMT
+X-Application-Context: atm-api:node,log:18080
+Set-Cookie: JSESSIONID=4u5sqybi6zgu1v271eksb9ljf;Path=/
+Expires: Thu, 01 Jan 1970 00:00:00 GMT
+Content-Type: application/json;charset=UTF-8
+Vary: Accept-Encoding, User-Agent
+Connection: close
+**** CONTENT ****
+{"status":"UP","appStatus":{"status":"UP"}}
+Status line output matched "200 OK" -
+HTTP OK: Status line output matched "200 OK" - 343 bytes in 0.027 second response time |time=0.026578s;;;0.000000 size=343B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+...........................................................................
+
+[root@vm-vol-nag4-tst objects]# host ds-pr-atmapi01p
+ds-pr-atmapi01p.tcsbank.ru has address 10.217.11.33
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.217.11.33 -p 18080 -e "200 OK" -v -u "http://ds-pr-atmapi01p:18080/health"
+GET http://ds-pr-atmapi01p:18080/health HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: 10.217.11.33:18080
+
+
+http://10.217.11.33:18080http://ds-pr-atmapi01p:18080/health is 725 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Date: Wed, 19 Jul 2017 08:21:58 GMT
+X-Application-Context: atm-api:node,log:18080
+Set-Cookie: JSESSIONID=9r2vo213dzeuq0gmyo5rz5c9;Path=/
+Expires: Thu, 01 Jan 1970 00:00:00 GMT
+Content-Type: application/json;charset=UTF-8
+Vary: Accept-Encoding, User-Agent
+Connection: close
+**** CONTENT ****
+{"status":"UP","appStatus":{"status":"UP"},"diskSpace":{"status":"UP","total":85616230400,"free":79425986560,"threshold":10485760},"db":{"status":"UP","dataSource":{"status":"UP","database":"Oracle","hello":"Hello"},"akmDataSource":{"status":"UP","database":"Oracle","hello":"Hello"},"primeDataSource":{"status":"UP","database":"Oracle","hello":"Hello"},"portalDataSource":{"status":"UP","database":"Oracle","hello":"Hello"}}}
+Status line output matched "200 OK" -
+HTTP OK: Status line output matched "200 OK" - 725 bytes in 0.333 second response time |time=0.332819s;;;0.000000 size=725B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+
+...........................................................................
+
+[root@vm-vol-nag4-tst objects]# host vm-pr-cp-atmapi01p
+vm-pr-cp-atmapi01p.tcsbank.ru has address 10.217.12.78
+[root@vm-vol-nag4-tst objects]# check_http -H 10.217.12.78 -p 8081 -e "200 OK" -v -u "http://vm-pr-cp-atmapi01p:8081/health"
+GET http://vm-pr-cp-atmapi01p:8081/health HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: 10.217.12.78:8081
+
+
+http://10.217.12.78:8081http://vm-pr-cp-atmapi01p:8081/health is 248 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Date: Wed, 19 Jul 2017 08:32:02 GMT
+X-Application-Context: cp-atm-api:cp,log:8081
+Content-Type: application/json;charset=UTF-8
+Vary: Accept-Encoding, User-Agent
+Connection: close
+**** CONTENT ****
+{"status":"UP","application":{"status":"UP"}}
+Status line output matched "200 OK" -
+HTTP OK: Status line output matched "200 OK" - 248 bytes in 0.007 second response time |time=0.007409s;;;0.000000 size=248B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+...........................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=m1-pr-atm --quiet
+/usr/local/nagios/etc/objects/servers/vmware/m1-pr-atmapi01p.cfg
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=ds-pr-atm --quiet
+/usr/local/nagios/etc/objects/servers/vmware/ds-pr-atmapi01p.cfg
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains=vm-pr-cp-atm --quiet
+/usr/local/nagios/etc/objects/servers/vmware/vm-pr-cp-atmapi01p.cfg
+[root@vm-vol-nag4-tst objects]#
+
+...........................................................................
+...........................................................................
+
+define service{
+        use                         generic-service
+        host_name                   m1-pr-atmapi01p
+        service_description         Check http://m1-pr-atmapi01p:18080/health
+        #check_command               check_http! -H m1-tcb-prod-app01 -p 8080 -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+        check_command               check_http! -H m1-pr-atmapi01p -p 18080 -e "200 OK" -u "http://m1-pr-atmapi01p:18080/health"
+        contacts                    n.garger_sms, v.n.gusev_sms, a.v.rumyantsev_sms, a.shchetinin_sms
+        contact_groups              empty-group
+        check_interval              1
+}
+
+
+#	define service{
+#	        use                         generic-service
+#	        host_name                   m1-tcb-prod-app01
+#	        service_description         Check http://m1-tcb-prod-app01:8080/api/v1/version
+#	        check_command               check_http! -H m1-tcb-prod-app01 -p 8080 -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+#	        contacts                    l.byakov_email,l.byakov_sms,s.sveshnikov_email,s.sveshnikov_sms,a.golovko1_email,a.golovko1_sms
+#	        contact_groups              empty-group
+#	        check_interval              1
+#	}
+
+...........................................................................
+...........................................................................
+
+[root@vm-vol-nag4-tst objects]# check_http -H m1-pr-atmapi01p -p 18080 -e "200 OK" -r "\{.*\"status\":\"UP\"\}" -u "http://m1-pr-atmapi01p:18080/health"
+HTTP OK: Status line output matched "200 OK" - 343 bytes in 0.010 second response time |time=0.010240s;;;0.000000 size=343B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+#
+#	Here is a test. I've changed searched pattern to "UZ".
+[root@vm-vol-nag4-tst objects]# check_http -H m1-pr-atmapi01p -p 18080 -e "200 OK" -r "\{.*\"status\":\"UZ\"\}" -u "http://m1-pr-atmapi01p:18080/health"
+HTTP CRITICAL: Status line output matched "200 OK" - pattern not found - 343 bytes in 0.011 second response time |time=0.011386s;;;0.000000 size=343B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+
+...........................................................................
+
+
+[root@vm-vol-nag4-tst objects]# vim -o /usr/local/nagios/etc/objects/servers/vmware/m1-pr-atmapi01p.cfg /usr/local/nagios/etc/objects/servers/vmware/ds-pr-atmapi01p.cfg /usr/local/nagios/etc/objects/servers/vmware/vm-pr-cp-atmapi01p.cfg servers/vmware/m1-tcb-prod-app01.cfg
+
+...........................................................................
+
+
+[root@vm-vol-nag4-tst objects]# pynag list contact_name email filename where email__contains="ssn"                                                                                                           contact_name         email                filename
+--------------------------------------------------------------------------------
+ssn_support_email    ssn_support@tinkoff.ru /usr/local/nagios/etc/objects/contacts/processing_duty.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#533593. Add http checks into monitoring of three hosts." servers/vmware/ds-pr-atmapi01p.cfg servers/vmware/m1-pr-atmapi01p.cfg servers/vmware/vm-pr-cp-atmapi01p.cfg
+[master 369cd11] SD#533593. Add http checks into monitoring of three hosts.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 3 files changed, 27 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+
+

@@ -1,0 +1,744 @@
+
+Параметры запроса
+[редактировать критичность]
+Номер	496342
+Название	№496342
+Приоритет	Средний
+Класс обслуживания	9x5
+Дата и время обращения	18.06.2015 15:46
+Дата регистрации	18.06.2015 15:46
+Тип запроса	Запрос на обслуживание
+Категория	
+Критичность	1 - 1-10 клиентов
+Срочность	Низкая
+Описание запроса
+Добрый день. 
+Задачу на unix-admins. 
+Коллеги, просьба помочь в решении проблемы. Три сервера-сегмента на тестовом контуре Greenplum показывают очень низкую производительность дисковой подсистемы: 
+
+/data1: 
+disk write min bandwidth (MB/s): 107.07 [sdw2] 
+disk write max bandwidth (MB/s): 485.08 [sdw5] 
+-- per host bandwidth -- 
+disk write bandwidth (MB/s): 129.46 [sdw4] 
+disk write bandwidth (MB/s): 485.08 [sdw5] 
+disk write bandwidth (MB/s): 456.94 [sdw6] 
+disk write bandwidth (MB/s): 480.75 [sdw7] 
+disk write bandwidth (MB/s): 435.19 [sdw1] 
+disk write bandwidth (MB/s): 107.07 [sdw2] 
+disk write bandwidth (MB/s): 125.40 [sdw3] 
+disk write bandwidth (MB/s): 329.15 [ mdw] 
+disk write bandwidth (MB/s): 351.29 [smdw] 
+disk write bandwidth (MB/s): 474.51 [sdw8] 
+
+/data2: 
+disk write min bandwidth (MB/s): 113.88 [sdw3] 
+disk write max bandwidth (MB/s): 476.06 [sdw5] 
+-- per host bandwidth -- 
+disk write bandwidth (MB/s): 117.97 [sdw4] 
+disk write bandwidth (MB/s): 476.06 [sdw5] 
+disk write bandwidth (MB/s): 475.84 [sdw6] 
+disk write bandwidth (MB/s): 472.54 [sdw7] 
+disk write bandwidth (MB/s): 418.47 [sdw1] 
+disk write bandwidth (MB/s): 122.66 [sdw2] 
+disk write bandwidth (MB/s): 113.88 [sdw3] 
+disk write bandwidth (MB/s): 353.35 [ mdw] 
+disk write bandwidth (MB/s): 353.84 [smdw] 
+disk write bandwidth (MB/s): 461.89 [sdw8] 
+
+Как видно, оба раздела на этих серверах имеет троекратный провал по скорости записи. 
+- Приведение опций монтирования к одному виду ситуацию не улучшило. 
+- Параметры ядра критических расхождений не выявили 
+- Опции создания xfs расходятся следующими параметрами: 
+=> xfs_info /data1 |grep 'agcount\|swidth' 
+[sdw4] meta-data=/dev/sda2 isize=256 agcount=4, agsize=227840000 blks 
+[sdw4] = sunit=0 swidth=0 blks 
+[sdw5] meta-data=/dev/sda4 isize=256 agcount=32, agsize=29166528 blks 
+[sdw5] = sunit=64 swidth=448 blks 
+[sdw6] meta-data=/dev/sda4 isize=256 agcount=32, agsize=29166528 blks 
+[sdw6] = sunit=64 swidth=448 blks 
+[sdw7] meta-data=/dev/sda4 isize=256 agcount=32, agsize=29166528 blks 
+[sdw7] = sunit=64 swidth=448 blks 
+[sdw1] meta-data=/dev/sda2 isize=256 agcount=4, agsize=227840000 blks 
+[sdw1] = sunit=0 swidth=0 blks 
+[sdw2] meta-data=/dev/sda2 isize=256 agcount=4, agsize=227840000 blks 
+[sdw2] = sunit=0 swidth=0 blks 
+[sdw3] meta-data=/dev/sda2 isize=256 agcount=4, agsize=227840000 blks 
+[sdw3] = sunit=0 swidth=0 blks 
+[smdw] meta-data=/dev/sda5 isize=256 agcount=4, agsize=88449984 blks 
+[smdw] = sunit=0 swidth=0 blks 
+[sdw8] meta-data=/dev/sda4 isize=256 agcount=32, agsize=29166528 blks 
+[sdw8] = sunit=64 swidth=448 blks 
+[ mdw] meta-data=/dev/sda5 isize=256 agcount=4, agsize=88449984 blks 
+[ mdw] = sunit=0 swidth=0 blks 
+
+Просьба помочь найти причину низкой производительности. Возможно, причина в железе. 
+
+
+С уважением, 
+Дмитрий Павлов 
+Администратор DWH
+
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО	Павлов Дмитрий
+Соглашение	Базовое соглашение
+Сервис	Программное обеспечение
+Контактное лицо	Павлов Дмитрий
+Контактный e-mail	d.s.pavlov@tinkoff.ru
+Контактные телефоны	79169038738, 2404
+
+
+................................................................................
+................................................................................
+
+#	Repair working conrep utility.
+
+[root@hq-msk-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; modprobe ipmi_devintf && modprobe ipmi_watchdog )" ; done
+mdw
+Connection to mdw closed.
+smdw
+Connection to smdw closed.
+sdw1
+Connection to sdw1 closed.
+sdw2
+Connection to sdw2 closed.
+sdw3
+Connection to sdw3 closed.
+sdw4
+Connection to sdw4 closed.
+sdw5
+Connection to sdw5 closed.
+sdw6
+Connection to sdw6 closed.
+sdw7
+Connection to sdw7 closed.
+sdw8
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw ~]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; cat /var/log/ossec/conrep.s.log )" > ~/work/20150619-1234/conrep.s.log.${var1} ; done
+Connection to mdw closed.
+Connection to smdw closed.
+Connection to sdw1 closed.
+Connection to sdw2 closed.
+Connection to sdw3 closed.
+Connection to sdw4 closed.
+Connection to sdw5 closed.
+Connection to sdw6 closed.
+Connection to sdw7 closed.
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# ll
+total 224
+-rw-r--r-- 1 root root 16594 Jun 19 12:41 conrep.s.log.mdw
+-rw-r--r-- 1 root root 16516 Jun 19 12:41 conrep.s.log.sdw1
+-rw-r--r-- 1 root root 16254 Jun 19 12:41 conrep.s.log.sdw2
+-rw-r--r-- 1 root root 16707 Jun 19 12:41 conrep.s.log.sdw3
+-rw-r--r-- 1 root root 16516 Jun 19 12:41 conrep.s.log.sdw4
+-rw-r--r-- 1 root root 26810 Jun 19 12:41 conrep.s.log.sdw5
+-rw-r--r-- 1 root root 26570 Jun 19 12:41 conrep.s.log.sdw6
+-rw-r--r-- 1 root root 26570 Jun 19 12:41 conrep.s.log.sdw7
+-rw-r--r-- 1 root root 26570 Jun 19 12:41 conrep.s.log.sdw8
+-rw-r--r-- 1 root root 16302 Jun 19 12:41 conrep.s.log.smdw
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; dmidecode -t system | grep -e Product\ Name )" ; done
+mdw
+        Product Name: ProLiant DL380 G7
+Connection to mdw closed.
+smdw
+        Product Name: ProLiant DL380 G7
+Connection to smdw closed.
+sdw1
+        Product Name: ProLiant DL380 G7
+Connection to sdw1 closed.
+sdw2
+        Product Name: ProLiant DL380 G7
+Connection to sdw2 closed.
+sdw3
+        Product Name: ProLiant DL380 G7
+Connection to sdw3 closed.
+sdw4
+        Product Name: ProLiant DL380 G7
+Connection to sdw4 closed.
+sdw5
+        Product Name: ProLiant DL380p Gen8
+Connection to sdw5 closed.
+sdw6
+        Product Name: ProLiant DL380p Gen8
+Connection to sdw6 closed.
+sdw7
+        Product Name: ProLiant DL380p Gen8
+Connection to sdw7 closed.
+sdw8
+        Product Name: ProLiant DL380p Gen8
+Connection to sdw8 closed.
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw1 conrep.s.log.sdw2
+--- conrep.s.log.sdw1   2015-06-19 12:41:23.235213434 +0300
++++ conrep.s.log.sdw2   2015-06-19 12:41:23.388213560 +0300
+@@ -1,2 +1,2 @@
+-sdw1
++sdw2
+ <?xml version="1.0" encoding="UTF-8"?>
+@@ -4,4 +4,4 @@
+ <Conrep version="4.0.0.0" originating_platform="ProLiant DL380 G7" originating_family="P67" originating_romdate="07/02/2013" originating_processor_manufacturer="Intel">
+-  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>sdw1</Line0></Section>
+-  <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>02</Index1><Index2>01</Index2><Index3>03</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
++  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>hq-msk-gp-tst-</Line0><Line1>sdw2</Line1></Section>
++  <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>01</Index1><Index2>03</Index2><Index3>02</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
+   <Section name="IPL_Order_Size" helptext="Current Initial ProgramLoad device boot order size."><Size0>05</Size0></Section>
+@@ -27,3 +27,3 @@
+   <Section name="POST_F1_Prompt" helptext="Controls display of the F1 POST prompt.">Delayed</Section>
+-  <Section name="Hyperthreading" helptext="Toggles hyperthreading on systems that support it.  This setting is supported on G5 and earlier systems.  For newer systems, use the Intel_Hyperthreading setting.">Enabled</Section>
++  <Section name="Hyperthreading" helptext="Toggles hyperthreading on systems that support it.  This setting is supported on G5 and earlier systems.  For newer systems, use the Intel_Hyperthreading setting.">Disabled</Section>
+   <Section name="NMI_Debug_Button" helptext="Allows generating NMI(non-maskable interrupt) via NMI button/jumper for hardware debugging.">Enabled</Section>
+@@ -45,7 +45,5 @@
+   <Section name="Adjacent_Sector_Prefetch" helptext="System performance tuning entry">Enabled</Section>
+-  <Section name="ATA_Drive_Write_Cache" helptext="Enables the write cache on attached ATA disks">Enabled</Section>
+-  <Section name="Embedded_SATA_Configuration" helptext="Sets the mode for the embedded SATA controller. Set RAID mode to enable B120i controller.">SATA_Legacy_Enabled</Section>
+   <Section name="No_Execute_Memory_Protection" helptext="Enables No Execute mode if the system CPU supports it">Enabled</Section>
+   <Section name="Legacy_SERR">Enabled</Section>
+-  <Section name="CPU_Virtualization" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by the server.">Enabled</Section>
++  <Section name="CPU_Virtualization" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by the server.">Disabled</Section>
+   <Section name="Embedded_NIC" helptext="This setting allows the configuring of network controllers in the server. 0 - Disabled, 1 - Network Boot, 2 - iSCSI"><NIC0>01</NIC0><NIC1>00</NIC1><NIC2>00</NIC2><NIC3>00</NIC3></Section>
+@@ -71,3 +69,3 @@
+   <Section name="Intel_Processor_Turbo_Mode" helptext="Allows Intel processors to transition to a higher frequency than its rated speed if the processor has available headroom and is within temperature specification.">Enabled</Section>
+-  <Section name="Intel_VT-d2" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by Intel's Virtualization Technology for Directed I/O.">Enabled</Section>
++  <Section name="Intel_VT-d2" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by Intel's Virtualization Technology for Directed I/O.">Disabled</Section>
+   <Section name="HP_Power_Profile" helptext="Selects the level of power versus performance for the system.">Maximum_Performance</Section>
+@@ -95,3 +93,3 @@
+   <Section name="Power_Supply_Requirements_Override" helptext="Overrides the number of power supplies required.  This setting will be ignored on the DL580 G7.">Normal</Section>
+-  <Section name="Collaborative_Power_Control" helptext="For OSes that support the Processor Clocking Control Interface, enabling this option allows the OS to request processor frequency changes even when the server has the Power Regulator option configured for Dynamic Power Savings Mode.">Enabled</Section>
++  <Section name="Collaborative_Power_Control" helptext="For OSes that support the Processor Clocking Control Interface, enabling this option allows the OS to request processor frequency changes even when the server has the Power Regulator option configured for Dynamic Power Savings Mode.">Disabled</Section>
+   <Section name="DCU_Prefetcher" helptext="This setting is called DCU Streamer Prefetcher in RBSU on newer BIOS. System performance tuning entry.">Enabled</Section>
+@@ -102,3 +100,3 @@
+   <Section name="Energy_Performance_Bias" helptext="Sets the mode for the Energy/Performance Bias. ">Maximum_Performance</Section>
+-  <Section name="System_Locality_Information_Table_G7" helptext="This ACPI SLIT (System Locality Information Table) describes the relative access times between processors, memory subsystems, and I/O subsystems.">Disabled</Section>
++  <Section name="System_Locality_Information_Table_G7" helptext="This ACPI SLIT (System Locality Information Table) describes the relative access times between processors, memory subsystems, and I/O subsystems.">Enabled</Section>
+   <Section name="Intel_DIMM_Voltage_Preference" helptext=".">Optimized_for_Performance</Section>
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw1 conrep.s.log.sdw3
+--- conrep.s.log.sdw1   2015-06-19 12:41:23.235213434 +0300
++++ conrep.s.log.sdw3   2015-06-19 12:41:23.463213621 +0300
+@@ -1,6 +1,6 @@
+-sdw1
++sdw3
+ <?xml version="1.0" encoding="UTF-8"?>
+-<!--generated by conrep version 4.0.0.0-->
+-<Conrep version="4.0.0.0" originating_platform="ProLiant DL380 G7" originating_family="P67" originating_romdate="07/02/2013" originating_processor_manufacturer="Intel">
+-  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>sdw1</Line0></Section>
++<!--generated by conrep version 4.1.2.0-->
++<Conrep version="4.1.2.0" originating_platform="ProLiant DL380 G7" originating_family="P67" originating_romdate="07/02/2013" originating_processor_manufacturer="Intel">
++  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>sdw3</Line0></Section>
+   <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>02</Index1><Index2>01</Index2><Index3>03</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
+@@ -46,3 +46,3 @@
+   <Section name="ATA_Drive_Write_Cache" helptext="Enables the write cache on attached ATA disks">Enabled</Section>
+-  <Section name="Embedded_SATA_Configuration" helptext="Sets the mode for the embedded SATA controller. Set RAID mode to enable B120i controller.">SATA_Legacy_Enabled</Section>
++  <Section name="Embedded_SATA_Configuration" helptext="Sets the mode for the embedded SATA controller. Set RAID mode to enable B120i,B320i,and B140i controllers.">SATA_Legacy_Enabled</Section>
+   <Section name="No_Execute_Memory_Protection" helptext="Enables No Execute mode if the system CPU supports it">Enabled</Section>
+@@ -88,2 +88,4 @@
+   <Section name="PCI_Bus_Padding_Option_Gen8" helptext="For Gen8 servers only. Option allows the user to disable the default PCI Bus setting where each expansion slot is provided an extra PCI Bus number. By default, the system ROM will pad one PCI bus per bridge to not affect current bus numbering schemes.">Enabled</Section>
++  <Section name="Power-on_Logo" helptext="Allows disabling of HP logo at system boot.">Disabled</Section>
++  <Section name="Hide_Option_ROM_Messages" helptext="Allows disabling of Hide Option ROM Messages feature.">Disabled</Section>
+   <Section name="Redundant_Power_Supply_Mode" helptext="Allows configuring how the system will handle redundant power supply configs.  Balanced mode shares the power delivery equally between installed power supplies.">Balanced_Mode</Section>
+@@ -99,5 +101,6 @@
+   <Section name="Data_Reuse" helptext="For G7 and earlier servers only. System performance tuning entry.">Enabled</Section>
++  <Section name="QPI_Bandwidth_Optimization" helptext="The QPI link between 2 processors has been tuned to provide the best performance for all known applications.">Balanced</Section>
+   <Section name="Intel_Turbo_Boost_Optimization" helptext="Optimize Turbo Boost heuristics for different situations.">Optimized_for_Performance</Section>
+   <Section name="Intel_F11_Boot_Menu_Prompt" helptext="This option allows the disabling of the POST One Time Boot F11 Prompt on Gen8 Servers. ">Enabled</Section>
+-  <Section name="Energy_Performance_Bias" helptext="Sets the mode for the Energy/Performance Bias. ">Maximum_Performance</Section>
++  <Section name="Energy_Performance_Bias" helptext="Sets the mode for the Energy/Performance Bias. For Gen8 servers. ">Maximum_Performance</Section>
+   <Section name="System_Locality_Information_Table_G7" helptext="This ACPI SLIT (System Locality Information Table) describes the relative access times between processors, memory subsystems, and I/O subsystems.">Disabled</Section>
+@@ -105,3 +108,2 @@
+   <Section name="SR-IOV" helptext="This option provides the capability to enable or disable SR-IOV(Single Root I/O Virtualization). ">Disabled</Section>
+-  <Section name="Enhanced_System_Boot_Memory_RAS" helptext="Enabling this option results in the system validating memory during the memory initialization process. Enabling this option may result in a significant increase in system boot time. ">Disabled</Section>
+ </Conrep>
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw1 conrep.s.log.sdw4
+--- conrep.s.log.sdw1   2015-06-19 12:41:23.235213434 +0300
++++ conrep.s.log.sdw4   2015-06-19 12:41:23.536213680 +0300
+@@ -1,2 +1,2 @@
+-sdw1
++sdw4
+ <?xml version="1.0" encoding="UTF-8"?>
+@@ -4,3 +4,3 @@
+ <Conrep version="4.0.0.0" originating_platform="ProLiant DL380 G7" originating_family="P67" originating_romdate="07/02/2013" originating_processor_manufacturer="Intel">
+-  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>sdw1</Line0></Section>
++  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>sdw4</Line0></Section>
+   <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>02</Index1><Index2>01</Index2><Index3>03</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw1 conrep.s.log.sdw2 > diff.conrep.sdw1.sdw2
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw1 conrep.s.log.sdw3 > diff.conrep.sdw1.sdw3
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw1 conrep.s.log.sdw4 > diff.conrep.sdw1.sdw4
+
+................................................................................
+................................................................................
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw2 conrep.s.log.sdw3                                                                                                            --- conrep.s.log.sdw2   2015-06-19 12:41:23.388213560 +0300                                                                                                                                            +++ conrep.s.log.sdw3   2015-06-19 12:41:23.463213621 +0300
+@@ -1,7 +1,7 @@
+-sdw2
++sdw3
+ <?xml version="1.0" encoding="UTF-8"?>
+-<!--generated by conrep version 4.0.0.0-->
+-<Conrep version="4.0.0.0" originating_platform="ProLiant DL380 G7" originating_family="P67" originating_romdate="07/02/2013" originating_processor_manufacturer="Intel">
+-  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>hq-msk-gp-tst-</Line0><Line1>sdw2</Line1></Section>
+-  <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>01</Index1><Index2>03</Index2><Index3>02</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
++<!--generated by conrep version 4.1.2.0-->
++<Conrep version="4.1.2.0" originating_platform="ProLiant DL380 G7" originating_family="P67" originating_romdate="07/02/2013" originating_processor_manufacturer="Intel">
++  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>sdw3</Line0></Section>
++  <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>02</Index1><Index2>01</Index2><Index3>03</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
+   <Section name="IPL_Order_Size" helptext="Current Initial ProgramLoad device boot order size."><Size0>05</Size0></Section>
+@@ -27,3 +27,3 @@
+   <Section name="POST_F1_Prompt" helptext="Controls display of the F1 POST prompt.">Delayed</Section>
+-  <Section name="Hyperthreading" helptext="Toggles hyperthreading on systems that support it.  This setting is supported on G5 and earlier systems.  For newer systems, use the Intel_Hyperthreading setting.">Disabled</Section>
++  <Section name="Hyperthreading" helptext="Toggles hyperthreading on systems that support it.  This setting is supported on G5 and earlier systems.  For newer systems, use the Intel_Hyperthreading setting.">Enabled</Section>
+   <Section name="NMI_Debug_Button" helptext="Allows generating NMI(non-maskable interrupt) via NMI button/jumper for hardware debugging.">Enabled</Section>
+@@ -45,5 +45,7 @@
+   <Section name="Adjacent_Sector_Prefetch" helptext="System performance tuning entry">Enabled</Section>
++  <Section name="ATA_Drive_Write_Cache" helptext="Enables the write cache on attached ATA disks">Enabled</Section>
++  <Section name="Embedded_SATA_Configuration" helptext="Sets the mode for the embedded SATA controller. Set RAID mode to enable B120i,B320i,and B140i controllers.">SATA_Legacy_Enabled</Section>
+   <Section name="No_Execute_Memory_Protection" helptext="Enables No Execute mode if the system CPU supports it">Enabled</Section>
+   <Section name="Legacy_SERR">Enabled</Section>
+-  <Section name="CPU_Virtualization" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by the server.">Disabled</Section>
++  <Section name="CPU_Virtualization" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by the server.">Enabled</Section>
+   <Section name="Embedded_NIC" helptext="This setting allows the configuring of network controllers in the server. 0 - Disabled, 1 - Network Boot, 2 - iSCSI"><NIC0>01</NIC0><NIC1>00</NIC1><NIC2>00</NIC2><NIC3>00</NIC3></Section>
+@@ -69,3 +71,3 @@
+   <Section name="Intel_Processor_Turbo_Mode" helptext="Allows Intel processors to transition to a higher frequency than its rated speed if the processor has available headroom and is within temperature specification.">Enabled</Section>
+-  <Section name="Intel_VT-d2" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by Intel's Virtualization Technology for Directed I/O.">Disabled</Section>
++  <Section name="Intel_VT-d2" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by Intel's Virtualization Technology for Directed I/O.">Enabled</Section>
+   <Section name="HP_Power_Profile" helptext="Selects the level of power versus performance for the system.">Maximum_Performance</Section>
+@@ -86,2 +88,4 @@
+   <Section name="PCI_Bus_Padding_Option_Gen8" helptext="For Gen8 servers only. Option allows the user to disable the default PCI Bus setting where each expansion slot is provided an extra PCI Bus number. By default, the system ROM will pad one PCI bus per bridge to not affect current bus numbering schemes.">Enabled</Section>
++  <Section name="Power-on_Logo" helptext="Allows disabling of HP logo at system boot.">Disabled</Section>
++  <Section name="Hide_Option_ROM_Messages" helptext="Allows disabling of Hide Option ROM Messages feature.">Disabled</Section>
+   <Section name="Redundant_Power_Supply_Mode" helptext="Allows configuring how the system will handle redundant power supply configs.  Balanced mode shares the power delivery equally between installed power supplies.">Balanced_Mode</Section>
+@@ -93,3 +97,3 @@
+   <Section name="Power_Supply_Requirements_Override" helptext="Overrides the number of power supplies required.  This setting will be ignored on the DL580 G7.">Normal</Section>
+-  <Section name="Collaborative_Power_Control" helptext="For OSes that support the Processor Clocking Control Interface, enabling this option allows the OS to request processor frequency changes even when the server has the Power Regulator option configured for Dynamic Power Savings Mode.">Disabled</Section>
++  <Section name="Collaborative_Power_Control" helptext="For OSes that support the Processor Clocking Control Interface, enabling this option allows the OS to request processor frequency changes even when the server has the Power Regulator option configured for Dynamic Power Savings Mode.">Enabled</Section>
+   <Section name="DCU_Prefetcher" helptext="This setting is called DCU Streamer Prefetcher in RBSU on newer BIOS. System performance tuning entry.">Enabled</Section>
+@@ -97,9 +101,9 @@
+   <Section name="Data_Reuse" helptext="For G7 and earlier servers only. System performance tuning entry.">Enabled</Section>
++  <Section name="QPI_Bandwidth_Optimization" helptext="The QPI link between 2 processors has been tuned to provide the best performance for all known applications.">Balanced</Section>
+   <Section name="Intel_Turbo_Boost_Optimization" helptext="Optimize Turbo Boost heuristics for different situations.">Optimized_for_Performance</Section>
+   <Section name="Intel_F11_Boot_Menu_Prompt" helptext="This option allows the disabling of the POST One Time Boot F11 Prompt on Gen8 Servers. ">Enabled</Section>
+-  <Section name="Energy_Performance_Bias" helptext="Sets the mode for the Energy/Performance Bias. ">Maximum_Performance</Section>
+-  <Section name="System_Locality_Information_Table_G7" helptext="This ACPI SLIT (System Locality Information Table) describes the relative access times between processors, memory subsystems, and I/O subsystems.">Enabled</Section>
++  <Section name="Energy_Performance_Bias" helptext="Sets the mode for the Energy/Performance Bias. For Gen8 servers. ">Maximum_Performance</Section>
++  <Section name="System_Locality_Information_Table_G7" helptext="This ACPI SLIT (System Locality Information Table) describes the relative access times between processors, memory subsystems, and I/O subsystems.">Disabled</Section>
+   <Section name="Intel_DIMM_Voltage_Preference" helptext=".">Optimized_for_Performance</Section>
+   <Section name="SR-IOV" helptext="This option provides the capability to enable or disable SR-IOV(Single Root I/O Virtualization). ">Disabled</Section>
+-  <Section name="Enhanced_System_Boot_Memory_RAS" helptext="Enabling this option results in the system validating memory during the memory initialization process. Enabling this option may result in a significant increase in system boot time. ">Disabled</Section>
+ </Conrep>
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -U 1 conrep.s.log.sdw2 conrep.s.log.sdw4                                                                                                            --- conrep.s.log.sdw2   2015-06-19 12:41:23.388213560 +0300                                                                                                                                            +++ conrep.s.log.sdw4   2015-06-19 12:41:23.536213680 +0300                                                                                                                                            @@ -1,2 +1,2 @@
+-sdw2
++sdw4
+ <?xml version="1.0" encoding="UTF-8"?>
+@@ -4,4 +4,4 @@
+ <Conrep version="4.0.0.0" originating_platform="ProLiant DL380 G7" originating_family="P67" originating_romdate="07/02/2013" originating_processor_manufacturer="Intel">
+-  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>hq-msk-gp-tst-</Line0><Line1>sdw2</Line1></Section>                                                               -  <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>01</Index1><Index2>03</Index2><Index3>02</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
++  <Section name="IMD_ServerName" helptext="LCD Display name for this server"><Line0>sdw4</Line0></Section>
++  <Section name="IPL_Order" helptext="Current Initial ProgramLoad device boot order."><Index0>00</Index0><Index1>02</Index1><Index2>01</Index2><Index3>03</Index3><Index4>04</Index4><Index5>ff</Index5><Index6>ff</Index6><Index7>ff</Index7><Index8>ff</Index8><Index9>ff</Index9><Index10>ff</Index10><Index11>ff</Index11><Index12>ff</Index12><Index13>ff</Index13><Index14>ff</Index14><Index15>ff</Index15></Section>
+   <Section name="IPL_Order_Size" helptext="Current Initial ProgramLoad device boot order size."><Size0>05</Size0></Section>
+@@ -27,3 +27,3 @@
+   <Section name="POST_F1_Prompt" helptext="Controls display of the F1 POST prompt.">Delayed</Section>
+-  <Section name="Hyperthreading" helptext="Toggles hyperthreading on systems that support it.  This setting is supported on G5 and earlier systems.  For newer systems, use the Intel_Hyperthreading setting.">Disabled</Section>
++  <Section name="Hyperthreading" helptext="Toggles hyperthreading on systems that support it.  This setting is supported on G5 and earlier systems.  For newer systems, use the Intel_Hyperthreading setting.">Enabled</Section>
+   <Section name="NMI_Debug_Button" helptext="Allows generating NMI(non-maskable interrupt) via NMI button/jumper for hardware debugging.">Enabled</Section>
+@@ -45,5 +45,7 @@                                                                                                                                                                                         <Section name="Adjacent_Sector_Prefetch" helptext="System performance tuning entry">Enabled</Section>
++  <Section name="ATA_Drive_Write_Cache" helptext="Enables the write cache on attached ATA disks">Enabled</Section>
++  <Section name="Embedded_SATA_Configuration" helptext="Sets the mode for the embedded SATA controller. Set RAID mode to enable B120i controller.">SATA_Legacy_Enabled</Section>
+   <Section name="No_Execute_Memory_Protection" helptext="Enables No Execute mode if the system CPU supports it">Enabled</Section>
+   <Section name="Legacy_SERR">Enabled</Section>
+-  <Section name="CPU_Virtualization" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by the server.">Disabled</Section>
++  <Section name="CPU_Virtualization" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by the server.">Enabled</Section>
+   <Section name="Embedded_NIC" helptext="This setting allows the configuring of network controllers in the server. 0 - Disabled, 1 - Network Boot, 2 - iSCSI"><NIC0>01</NIC0><NIC1>00</NIC1><NIC2>00</NIC2><NIC3>00</NIC3></Section>
+@@ -69,3 +71,3 @@
+   <Section name="Intel_Processor_Turbo_Mode" helptext="Allows Intel processors to transition to a higher frequency than its rated speed if the processor has available headroom and is within temperature specification.">Enabled</Section>
+-  <Section name="Intel_VT-d2" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by Intel's Virtualization Technology for Directed I/O.">Disabled</Section>
++  <Section name="Intel_VT-d2" helptext="When enabled, a Virtual Machine Manager supporting this feature can utilize hardware capabilities provided by Intel's Virtualization Technology for Directed I/O.">Enabled</Section>
+   <Section name="HP_Power_Profile" helptext="Selects the level of power versus performance for the system.">Maximum_Performance</Section>
+@@ -93,3 +95,3 @@
+   <Section name="Power_Supply_Requirements_Override" helptext="Overrides the number of power supplies required.  This setting will be ignored on the DL580 G7.">Normal</Section>
+-  <Section name="Collaborative_Power_Control" helptext="For OSes that support the Processor Clocking Control Interface, enabling this option allows the OS to request processor frequency changes even when the server has the Power Regulator option configured for Dynamic Power Savings Mode.">Disabled</Section>
++  <Section name="Collaborative_Power_Control" helptext="For OSes that support the Processor Clocking Control Interface, enabling this option allows the OS to request processor frequency changes even when the server has the Power Regulator option configured for Dynamic Power Savings Mode.">Enabled</Section>
+   <Section name="DCU_Prefetcher" helptext="This setting is called DCU Streamer Prefetcher in RBSU on newer BIOS. System performance tuning entry.">Enabled</Section>
+@@ -100,3 +102,3 @@
+   <Section name="Energy_Performance_Bias" helptext="Sets the mode for the Energy/Performance Bias. ">Maximum_Performance</Section>
+-  <Section name="System_Locality_Information_Table_G7" helptext="This ACPI SLIT (System Locality Information Table) describes the relative access times between processors, memory subsystems, and I/O subsystems.">Enabled</Section>
++  <Section name="System_Locality_Information_Table_G7" helptext="This ACPI SLIT (System Locality Information Table) describes the relative access times between processors, memory subsystems, and I/O subsystems.">Disabled</Section>
+   <Section name="Intel_DIMM_Voltage_Preference" helptext=".">Optimized_for_Performance</Section>
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# for var1 in sdw{1..4} ; do ssh -t ${var1} "( hostname ; hpssacli controller all show config )" ; done
+sdw1
+
+Smart Array P410 in Slot 1                (sn: PACCRID11320CXP)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK                                                                                                                                                           
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+                                                                                                                                                                                                             logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+                                                                                                                                                                                                          SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 50014380167EDDEF)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438014D6E100)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438014D6E10F)
+
+Connection to sdw1 closed.
+sdw2
+
+Smart Array P410 in Slot 1                (sn: PACCRID11320CZ8)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 50014380167ED48F)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438009BD5390)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438009BD539F)
+
+Connection to sdw2 closed.
+sdw3
+
+Smart Array P410 in Slot 1                (sn: PACCRID11320C8F)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SAS, 600 GB, OK)
+      physicaldrive 2I:1:1 (port 2I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 2I:1:2 (port 2I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 2I:1:3 (port 2I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 2I:1:4 (port 2I:box 1:bay 4, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 50014380167EEABF)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438014D76160)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438014D7616F)
+
+Connection to sdw3 closed.
+sdw4
+
+Smart Array P410 in Slot 1                (sn: PACCRID11320D5P)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SAS, 600 GB, OK)
+      physicaldrive 2I:1:1 (port 2I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 2I:1:2 (port 2I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 2I:1:3 (port 2I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 2I:1:4 (port 2I:box 1:bay 4, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 50014380167EEBFF)
+
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438014D73D00)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438014D73D0F)
+
+Connection to sdw4 closed.
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+................................................................................
+................................................................................
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# for var1 in sdw{1..4} ; do ssh -t ${var1} "( hostname ; hpssacli controller slot=1 logicaldrive 1 show detail )" ; done
+sdw1
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      Logical Drive: 1
+         Size: 3.8 TB
+         Fault Tolerance: 5
+         Heads: 255
+         Sectors Per Track: 63
+         Cylinders: 65535
+         Strip Size: 128 KB
+         Full Stripe Size: 896 KB
+         Status: OK
+         Caching:  Enabled
+         Parity Initialization Status: Initialization Completed
+         Unique Identifier: 600508B1001C8991BD17B5E931E1A751
+         Disk Name: /dev/sdb          Mount Points: /data2 3.4 TB Partition Number 2, /work2 304.7 GB Partition Number 3
+         OS Status: LOCKED
+         Logical Drive Label: AE0F78B8PACCRID11320CXP5CFE
+         Drive Type: Data
+         LD Acceleration Method: Controller Cache
+
+Connection to sdw1 closed.
+sdw2
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      Logical Drive: 1
+         Size: 3.8 TB
+         Fault Tolerance: 5
+         Heads: 255
+         Sectors Per Track: 63
+         Cylinders: 65535
+         Strip Size: 128 KB
+         Full Stripe Size: 896 KB
+         Status: OK
+         Caching:  Enabled
+         Parity Initialization Status: Initialization Completed
+         Unique Identifier: 600508B1001C7CBE9AE98973D61B7283
+         Disk Name: /dev/sdb          Mount Points: /data2 3.4 TB Partition Number 2, /work2 304.7 GB Partition Number 3
+         OS Status: LOCKED
+         Logical Drive Label: ADF1DCB2PACCRID11320CZ81946
+         Drive Type: Data
+         LD Acceleration Method: Controller Cache
+
+Connection to sdw2 closed.
+sdw3
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      Logical Drive: 1
+         Size: 3.8 TB
+         Fault Tolerance: 5
+         Heads: 255
+         Sectors Per Track: 63
+         Cylinders: 65535
+         Strip Size: 128 KB
+         Full Stripe Size: 896 KB
+         Status: OK
+         Caching:  Enabled
+         Parity Initialization Status: Initialization Failed
+         Unique Identifier: 600508B1001C727A5458A036E1B7EF16
+         Disk Name: /dev/sdb          Mount Points: /data2 3.4 TB Partition Number 2, /work2 304.7 GB Partition Number 3
+         OS Status: LOCKED
+         Logical Drive Label: AE32D50BPACCRID11320C8F3FBA
+         Drive Type: Data
+         LD Acceleration Method: Controller Cache
+
+Connection to sdw3 closed.
+sdw4
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      Logical Drive: 1
+         Size: 3.8 TB
+         Fault Tolerance: 5
+         Heads: 255
+         Sectors Per Track: 63
+         Cylinders: 65535
+         Strip Size: 128 KB
+         Full Stripe Size: 896 KB
+         Status: OK
+         Caching:  Enabled
+         Parity Initialization Status: Initialization Failed
+         Unique Identifier: 600508B1001C6DBBD1BCB8F43E0FC4A1
+         Disk Name: /dev/sdb          Mount Points: /data2 3.4 TB Partition Number 2, /work2 304.7 GB Partition Number 3
+         OS Status: LOCKED
+         Logical Drive Label: AE3256CFPACCRID11320D5P8160
+         Drive Type: Data
+         LD Acceleration Method: Controller Cache
+
+Connection to sdw4 closed.
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# for var1 in sdw{1..4} ; do ssh -t ${var1} "( hostname ; hpssacli controller slot=1 show detail )" > hpssacli.slot.1.show.detail.${var1} ; done
+Connection to sdw1 closed.
+Connection to sdw2 closed.
+Connection to sdw3 closed.
+Connection to sdw4 closed.
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -y --suppress-common-lines hpssacli.slot.1.show.detail.sdw1 hpssacli.slot.1.show.detail.sdw2
+sdw1                                                          | sdw2
+   Serial Number: PACCRID11320CXP                             |    Serial Number: PACCRID11320CZ8
+   Cache Serial Number: PBCDF0CRH1A1M6                        |    Cache Serial Number: PBCDF0CRH1A125
+   Firmware Version: 6.40                                     |    Firmware Version: 6.62
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -y --suppress-common-lines hpssacli.slot.1.show.detail.sdw1 hpssacli.slot.1.show.detail.sdw3
+sdw1                                                          | sdw3
+   Serial Number: PACCRID11320CXP                             |    Serial Number: PACCRID11320C8F
+   Cache Serial Number: PBCDF0CRH1A1M6                        |    Cache Serial Number: PBCDF0CRH1A1QD
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -y --suppress-common-lines hpssacli.slot.1.show.detail.sdw1 hpssacli.slot.1.show.detail.sdw4
+sdw1                                                          | sdw4
+   Serial Number: PACCRID11320CXP                             |    Serial Number: PACCRID11320D5P
+   Cache Serial Number: PBCDF0CRH1A1M6                        |    Cache Serial Number: PBCDF0CRH4A2DO
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -y --suppress-common-lines hpssacli.slot.0.show.detail.sdw1 hpssacli.slot.0.show.detail.sdw2
+sdw1                                                          | sdw2
+   Serial Number: 5001438014D6E100                            |    Serial Number: 5001438009BD5390
+   Cache Serial Number: PBCDF0CRH1G32D                        |    Cache Serial Number: PBCDF0CRH1G2OE
+   Firmware Version: 6.40                                     |    Firmware Version: 6.62
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -y --suppress-common-lines hpssacli.slot.0.show.detail.sdw1 hpssacli.slot.0.show.detail.sdw3
+sdw1                                                          | sdw3
+   Serial Number: 5001438014D6E100                            |    Serial Number: 5001438014D76160
+   Cache Serial Number: PBCDF0CRH1G32D                        |    Cache Serial Number: PBCDF0CRH1G2Z3
+[root@hq-msk-gp-tst-smdw 20150619-1234]# diff -Nar -y --suppress-common-lines hpssacli.slot.0.show.detail.sdw1 hpssacli.slot.0.show.detail.sdw4
+sdw1                                                          | sdw4
+   Serial Number: 5001438014D6E100                            |    Serial Number: 5001438014D73D00
+   Cache Serial Number: PBCDF0CRH1G32D                        |    Cache Serial Number: PBCDF0CRH1F0P8
+[root@hq-msk-gp-tst-smdw 20150619-1234]#
+
+
+
+
+
+
+

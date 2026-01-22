@@ -1,0 +1,112 @@
+
+
+
+[root@m1-pr-iris13p ~]# showmount -e v6250-m1 | grep -e '/vol/integration_fs/integration3/iris_file_exch'
+/vol/integration_fs/integration3/iris_file_exch            m1-pr-iris13p.tcsbank.ru,ds-pr-iris12p.tcsbank.ru,m1-pr-iris11p.tcsbank.ru,vm-pr-samid01.tcsbank.ru,m1-sasetl01t.tcsbank.ru,ds-sasetl01p.tcsbank.ru,m1-sasetl01p.tcsbank.ru,vm-pr-iris01p.tcsbank.ru,ds-pr-iris02p.tcsbank.ru,m1-pr-iris02p.tcsbank.ru,ds-pr-iris03p.tcsbank.ru
+[root@m1-pr-iris13p ~]#
+
+
+[root@m1-pr-iris13p ~]# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+6: team0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP
+    inet 10.217.10.29/24 brd 10.217.10.255 scope global team0
+       valid_lft forever preferred_lft forever
+[root@m1-pr-iris13p ~]#
+
+[root@m1-pr-iris13p ~]# less /var/log/messages-20170220
+...
+Feb 17 18:43:04 m1-pr-iris13p iris_audit_3[135487]: 3  2017-02-17 15:43:04.976480  I  0435            File '/TCSIris/inv/inv000000000000007273/investigation_case_2017-02-17_15-43-04_001000000000470189.iri
+s' created.
+Feb 17 18:44:21 m1-pr-iris13p kernel: nfs: server v6250-m1 not responding, still trying
+Feb 17 18:44:50 m1-pr-iris13p iris_audit_3[135487]: 3  2017-02-17 15:44:50.177829  I  0435            File '/TCSIris/inv/inv000000000000007271/investigation_case_2017-02-17_15-44-50_001000000000470190.iri
+s' created.
+...
+
+
+[root@m1-pr-iris13p ~]# less /var/log/messages-* | grep 'nfs:'
+Feb 17 18:44:21 m1-pr-iris13p kernel: nfs: server v6250-m1 not responding, still trying
+[root@m1-pr-iris13p ~]#
+
+[root@m1-pr-iris13p ~]# cat /etc/fstab
+...
+v6250-m1:/vol/integration_fs/integration3/iris_file_exch        /mnt/iris_file_exch     nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock  0       0
+...
+
+[root@m1-pr-iris13p ~]# umount /mnt/iris_file_exch
+^C
+[root@m1-pr-iris13p ~]# umount -v -f /mnt/iris_file_exch
+/mnt/iris_file_exch: nfs mount point detected
+umount.nfs: /mnt/iris_file_exch: device is busy
+/mnt/iris_file_exch: umount failed
+[root@m1-pr-iris13p ~]# lsof /mnt/iris_file_exch
+^C
+[root@m1-pr-iris13p ~]# umount -v -f /mnt/iris_file_exch
+/mnt/iris_file_exch: nfs mount point detected
+umount.nfs: /mnt/iris_file_exch: device is busy
+/mnt/iris_file_exch: umount failed
+[root@m1-pr-iris13p ~]# umount -v -f -l /mnt/iris_file_exch
+/mnt/iris_file_exch: nfs mount point detected
+/mnt/iris_file_exch: umounted
+[root@m1-pr-iris13p ~]# mount -v /mnt/iris_file_exch
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,nolock,addr=10.217.67.8'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.67.8 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.67.8 prog 100005 vers 3 prot TCP port 4046
+[root@m1-pr-iris13p ~]#
+
+[root@m1-pr-iris13p ~]# mount
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+devtmpfs on /dev type devtmpfs (rw,nosuid,size=792472784k,nr_inodes=198118196,mode=755)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,mode=755)
+tmpfs on /sys/fs/cgroup type tmpfs (ro,nosuid,nodev,noexec,mode=755)
+cgroup on /sys/fs/cgroup/systemd type cgroup (rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+cgroup on /sys/fs/cgroup/cpu,cpuacct type cgroup (rw,nosuid,nodev,noexec,relatime,cpuacct,cpu)
+cgroup on /sys/fs/cgroup/net_cls type cgroup (rw,nosuid,nodev,noexec,relatime,net_cls)
+cgroup on /sys/fs/cgroup/blkio type cgroup (rw,nosuid,nodev,noexec,relatime,blkio)
+cgroup on /sys/fs/cgroup/devices type cgroup (rw,nosuid,nodev,noexec,relatime,devices)
+cgroup on /sys/fs/cgroup/freezer type cgroup (rw,nosuid,nodev,noexec,relatime,freezer)
+cgroup on /sys/fs/cgroup/perf_event type cgroup (rw,nosuid,nodev,noexec,relatime,perf_event)
+cgroup on /sys/fs/cgroup/cpuset type cgroup (rw,nosuid,nodev,noexec,relatime,cpuset)
+cgroup on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
+cgroup on /sys/fs/cgroup/hugetlb type cgroup (rw,nosuid,nodev,noexec,relatime,hugetlb)
+configfs on /sys/kernel/config type configfs (rw,relatime)
+/dev/sda3 on / type xfs (rw,relatime,attr2,inode64,noquota)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=30,pgrp=1,timeout=300,minproto=5,maxproto=5,direct)
+mqueue on /dev/mqueue type mqueue (rw,relatime)
+hugetlbfs on /dev/hugepages type hugetlbfs (rw,relatime)
+debugfs on /sys/kernel/debug type debugfs (rw,relatime)
+sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+nfsd on /proc/fs/nfsd type nfsd (rw,relatime)
+/dev/sdb1 on /data type xfs (rw,relatime,attr2,inode64,noquota)
+/dev/sda1 on /boot type ext2 (rw,relatime)
+/dev/sda2 on /opt type xfs (rw,relatime,attr2,inode64,noquota)
+binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,relatime)
+tmpfs on /run/user/567 type tmpfs (rw,nosuid,nodev,relatime,size=158497312k,mode=700,uid=567,gid=567)
+tmpfs on /run/user/525 type tmpfs (rw,nosuid,nodev,relatime,size=158497312k,mode=700,uid=525,gid=525)
+v6250-m1:/vol/integration_fs/integration3/iris_file_exch on /mnt/iris_file_exch type nfs (rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,nolock,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.67.8,mountvers=3,mountport=4046,mountproto=tcp,local_lock=all,addr=10.217.67.8)
+[root@m1-pr-iris13p ~]# df -hT /mnt/iris_file_exch
+Filesystem                                               Type  Size  Used Avail Use% Mounted on
+v6250-m1:/vol/integration_fs/integration3/iris_file_exch nfs   6.4T  4.1T  2.3T  65% /mnt/iris_file_exch
+[root@m1-pr-iris13p ~]# ls /mnt/iris_file_exch
+Agg_submerchant                    CityCoordinates               iostat_mci_ds-pr-iris02p.txt            logs_3_golive_crash.zip        mtid1                 SME_organizations
+agg_submerch_limits                cluster.iris                  iostat_res_m1-pr-iris02p.txt            mci_traffic.pcap               people_add_data       SME_organizations_test
+agreements                         cpu.txt                       IPGeo                                   messages                       people_add_data_test  sysctl-a_iris_1_new.txt
+AirFrom1                           DE43c_CNTRY                   ipt                                     messages_from_5_6_correct.zip  perf.data             system_event_log_3_2017-02-01.iris
+AirToFinal                         dst_card_data                 iris                                    messages_from_5_6.zip          PGproviders           tar_logs.sh
+AML_compliance_limits              Fraud_acq                     iris_file_exch$ (v6250-m1) - Ярлык.lnk  messages_inst5                 reports               tar_notifications.sh
+audit_event_log_3_2017-02-01.iris  HISTORY                       iris_to_db_stream                       messages_inst5_trunc           safe                  tar_sqls.sh
+Binbank_trxn_reestr                ignor_conn.pcap               IssBins                                 messages_inst6                 settings.iris
+cfg                                INN                           limits.conf                             messages_inst6_trunc           SME_links
+cfg_3_golive_crash.zip             iostat_api_ds-pr-iris03p.txt  limits.conf1                            move_sqls.sh                   SME_links_test
+[root@m1-pr-iris13p ~]#
+
+
+

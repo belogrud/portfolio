@@ -1,0 +1,671 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер	496108
+Название	№496108
+Приоритет	Средний
+Класс обслуживания	9x5
+Дата и время обращения	18.06.2015 11:54
+Дата регистрации	18.06.2015 11:54
+Тип запроса	Запрос на обслуживание
+Категория	
+Критичность	1 - 1-10 клиентов
+Срочность	Низкая
+Описание запроса
+Коллеги, умер sdw4 в тестовом Greenplum. Были проблемы с xfs на /data2 (невозможно было зайти на раздел), после выполнения umount /data2 сервер умер окончательно. С задачей по перемонтированию xfs (495702) это не связано, xfs отвалился сам собой. 
+Просьба поднять сервер. 
+
+С уважением, 
+Дмитрий Павлов 
+Администратор DWH
+Текущее состояние	Принят на обработку
+Автор	system
+Ответственный за запрос	Леонов Алексей / unix-admins
+Кем решен	
+Кем закрыт	
+Массовая проблема	нет
+Количество задач (активных/всего)	0 / 0
+Количество файлов	1
+
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО	Павлов Дмитрий
+Соглашение	Базовое соглашение
+Сервис	Офисное оборудование
+Контактное лицо	Павлов Дмитрий
+Контактный e-mail	d.s.pavlov@tinkoff.ru
+Контактные телефоны	79169038738, 2404
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-tst-sdw4 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ31450H65
+        UUID: 39333835-3431-5A43-3331-343530483635
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: System watchdog timer expired
+
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# hponcfg -i
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.85 Device type = iLO 3 Driver name = hpilo
+<RIBCL VERSION="2.0">
+ <LOGIN USER_LOGIN="adminname" PASSWORD="password">
+ <SERVER_INFO MODE="read">
+ <GET_EMBEDDED_HEALTH>
+  <GET_ALL_HEALTH_STATUS/>
+ </GET_EMBEDDED_HEALTH>
+ </SERVER_INFO>
+ </LOGIN>
+</RIBCL>
+<GET_EMBEDDED_HEALTH_DATA>
+    <HEALTH_AT_A_GLANCE>
+       <FANS STATUS= "OK"/>
+       <FANS REDUNDANCY= "Redundant"/>
+       <TEMPERATURE STATUS= "OK"/>
+       <POWER_SUPPLIES STATUS= "OK"/>
+       <POWER_SUPPLIES REDUNDANCY= "Redundant"/>
+       <DRIVE STATUS= "OK"/>
+    </HEALTH_AT_A_GLANCE>
+</GET_EMBEDDED_HEALTH_DATA>
+Script succeeded
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+[root@hq-msk-gp-tst-sdw4 ~]# lsblk
+NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda      8:0    0   3.8T  0 disk
+├─sda1   8:1    0  1000M  0 part /boot
+├─sda2   8:2    0   3.4T  0 part /data1
+├─sda3   8:3    0 304.7G  0 part /work1
+└─sda4   8:4    0  46.9G  0 part /
+sdb      8:16   0   3.8T  0 disk
+├─sdb1   8:17   0   3.4T  0 part /data2
+├─sdb2   8:18   0 304.7G  0 part /work2
+└─sdb3   8:19   0   125G  0 part [SWAP]
+[root@hq-msk-gp-tst-sdw4 ~]# lsscsi -g
+[0:0:0:0]    disk    HP       LOGICAL VOLUME   6.40  /dev/sda   /dev/sg1
+[0:3:0:0]    storage HP       P410i            6.40  -         /dev/sg0
+[1:0:0:0]    disk    HP       LOGICAL VOLUME   6.40  /dev/sdb   /dev/sg3
+[1:3:0:0]    storage HP       P410             6.40  -         /dev/sg2
+[root@hq-msk-gp-tst-sdw4 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg3 | grep -e "Serial number:" ; done
+
+Count: 0
+Serial number:                PPJWPNUB
+
+Count: 1
+Serial number:                PPJZ964B
+
+Count: 2
+Serial number:                PPK0HUXB
+
+Count: 3
+Serial number:        EA01PB90WKVY1135
+
+Count: 4
+Serial number:                PPJZNKGB
+
+Count: 5
+Serial number:                PPJ9NVAB
+
+Count: 6
+Serial number:                KWGSYLRR
+
+Count: 7
+Serial number:                PPJZMZ1B
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# smartctl -x -d cciss,7 /dev/sg3
+smartctl 5.43 2012-06-30 r3573 [x86_64-linux-2.6.32-504.12.2.el6.x86_64] (local build)
+Copyright (C) 2002-12 by Bruce Allen, http://smartmontools.sourceforge.net
+
+/dev/sg3 [cciss_disk_07] [SCSI]: Device open changed type from 'sat,auto' to 'cciss'
+Vendor:               HP
+Product:              EG0600FBDBU
+Revision:             HPDA
+User Capacity:        600,127,266,816 bytes [600 GB]
+Logical block size:   512 bytes
+Logical Unit id:      0x5000cca012a87468
+Serial number:                PPJZMZ1B
+Device type:          disk
+Transport protocol:   SAS
+Local Time is:        Thu Jun 18 12:54:54 2015 MSK
+Device supports SMART and is Enabled
+Temperature Warning Enabled
+SMART Health Status: OK
+
+Current Drive Temperature:     26 C
+Drive Trip Temperature:        65 C
+Manufactured in week 35 of year 2011
+Specified cycle count over device lifetime:  50000
+Accumulated start-stop cycles:  8
+Specified load-unload count over device lifetime:  300000
+Accumulated load-unload cycles:  1114
+Elements in grown defect list: 594
+Vendor (Seagate) cache information
+  Blocks sent to initiator = 94568584214216704
+
+Error counter log:
+           Errors Corrected by           Total   Correction     Gigabytes    Total
+               ECC          rereads/    errors   algorithm      processed    uncorrected
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 17907078         0      1267          0     766624.473         294
+write:         0   626383         0    626383          0     487932.921           0
+verify:        0      445         0  325538051          0       8170.367           0
+
+Non-medium error count:     1677
+
+SMART Self-test log
+Num  Test              Status                 segment  LifeTime  LBA_first_err [SK ASC ASQ]
+     Description                              number   (hours)
+# 1  Background short  Completed                   -      86                 - [-   -    -]
+# 2  Background short  Completed                   -      74                 - [-   -    -]
+# 3  Background long   Completed                   -      18                 - [-   -    -]
+# 4  Background short  Completed                   -       0                 - [-   -    -]
+
+Long (extended) Self Test duration: 4889 seconds [81.5 minutes]
+
+Background scan results log
+  Status: scan is active
+    Accumulated power on time, hours:minutes 30633:38 [1838018 minutes]
+    Number of background scans performed: 311,  scan progress: 0.00%
+    Number of background medium scans performed: 311
+Protocol Specific port log page for SAS SSP
+relative target port id = 1
+  generation code = 11
+  number of phys = 1
+  phy identifier = 0
+    attached device type: end device
+    attached reason: unknown
+    reason: unknown
+    negotiated logical link rate: phy enabled; 6 Gbps
+    attached initiator port: ssp=1 stp=1 smp=1
+    attached target port: ssp=0 stp=0 smp=0
+    SAS address = 0x5000cca012a87469
+    attached SAS address = 0x50014380167eebf4
+    attached phy identifier = 7
+    Invalid DWORD count = 198
+    Running disparity error count = 198
+    Loss of DWORD synchronization = 50
+    Phy reset problem = 0
+    Phy event descriptors:
+     Invalid word count: 198
+     Running disparity error count: 198
+     Loss of dword synchronization count: 50
+     Phy reset problem count: 0
+relative target port id = 2
+  generation code = 11
+  number of phys = 1
+  phy identifier = 1
+    attached device type: no device attached
+    attached reason: unknown
+    reason: power on
+    negotiated logical link rate: phy enabled; unknown
+    attached initiator port: ssp=0 stp=0 smp=0
+    attached target port: ssp=0 stp=0 smp=0
+    SAS address = 0x5000cca012a8746a
+    attached SAS address = 0x0
+    attached phy identifier = 0
+    Invalid DWORD count = 0
+    Running disparity error count = 0
+    Loss of DWORD synchronization = 0
+    Phy reset problem = 0
+    Phy event descriptors:
+     Invalid word count: 0
+     Running disparity error count: 0
+     Loss of dword synchronization count: 0
+     Phy reset problem count: 0
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg3 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:                PPJWPNUB
+Elements in grown defect list: 237
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 12348742         0        11          0     770387.740         237
+write:         0   347235         0    347235          0     491673.015           0
+Non-medium error count:      348
+
+Count: 1
+Serial number:                PPJZ964B
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0  8605241         0         0          0     762781.315           0
+write:         0  1966002         0   1966002          0     493435.323           0
+Non-medium error count:      327
+
+Count: 2
+Serial number:                PPK0HUXB
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 55629373         0         0          0     743679.815           0
+write:         0   550263         0    550263          0     485274.369           0
+Non-medium error count:      317
+
+Count: 3
+Serial number:        EA01PB90WKVY1135
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       46         0         0          0    1842717.564           0
+write:         0        0         0         0          0     506441.559           0
+Non-medium error count:     3673
+
+Count: 4
+Serial number:                PPJZNKGB
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 10320101         0         0          0     738974.811           0
+write:         0   473025         0    473025          0     488256.412           0
+Non-medium error count:      339
+
+Count: 5
+Serial number:                PPJ9NVAB
+Elements in grown defect list: 2
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 14867502         0         1          0     742695.220           0
+write:         0   803559         0    803559          0     484231.775           0
+Non-medium error count:      322
+
+Count: 6
+Serial number:                KWGSYLRR
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        2         0         0          0     245763.598           0
+write:         0        0         0         0          0     189268.301           0
+Non-medium error count:        9
+
+Count: 7
+Serial number:                PPJZMZ1B
+Elements in grown defect list: 594
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 17907096         0      1267          0     766624.654         294
+write:         0   626383         0    626383          0     487933.081           0
+Non-medium error count:     1677
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg3 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:                PPJWPNUB
+Elements in grown defect list: 237
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 12348742         0        11          0     770387.740         237
+write:         0   347235         0    347235          0     491673.015           0
+Non-medium error count:      348
+
+Count: 1
+Serial number:                PPJZ964B
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0  8605241         0         0          0     762781.315           0
+write:         0  1966002         0   1966002          0     493435.323           0
+Non-medium error count:      327
+
+Count: 2
+Serial number:                PPK0HUXB
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 55629373         0         0          0     743679.815           0
+write:         0   550263         0    550263          0     485274.369           0
+Non-medium error count:      317
+
+Count: 3
+Serial number:        EA01PB90WKVY1135
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       46         0         0          0    1842717.564           0
+write:         0        0         0         0          0     506441.559           0
+Non-medium error count:     3673
+
+Count: 4
+Serial number:                PPJZNKGB
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 10320101         0         0          0     738974.811           0
+write:         0   473025         0    473025          0     488256.412           0
+Non-medium error count:      339
+
+Count: 5
+Serial number:                PPJ9NVAB
+Elements in grown defect list: 2
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 14867502         0         1          0     742695.220           0
+write:         0   803559         0    803559          0     484231.775           0
+Non-medium error count:      322
+
+Count: 6
+Serial number:                KWGSYLRR
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        2         0         0          0     245763.598           0
+write:         0        0         0         0          0     189268.301           0
+Non-medium error count:        9
+
+Count: 7
+Serial number:                PPJZMZ1B
+Elements in grown defect list: 594
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 17907096         0      1267          0     766624.654         294
+write:         0   626383         0    626383          0     487933.081           0
+Non-medium error count:     1677
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# hpacucli controller slot=1 physicaldrive 2I:1:4 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 2I:1:4
+         Port: 2I
+         Box: 1
+         Bay: 4
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Rotational Speed: 10000
+         Firmware Revision: HPDA
+         Serial Number:         PPJZMZ1B
+         Model: HP      EG0600FBDBU
+         Current Temperature (C): 26
+         Maximum Temperature (C): 37
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# hpacucli controller slot=1 show config
+
+Smart Array P410 in Slot 1                (sn: PACCRID11320D5P)
+
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SAS, 600 GB, OK)
+      physicaldrive 2I:1:1 (port 2I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 2I:1:2 (port 2I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 2I:1:3 (port 2I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 2I:1:4 (port 2I:box 1:bay 4, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250 (WWID: 50014380167EEBFF)
+
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# smartctl -a -d cciss,7 /dev/sg3
+smartctl 5.43 2012-06-30 r3573 [x86_64-linux-2.6.32-504.12.2.el6.x86_64] (local build)
+Copyright (C) 2002-12 by Bruce Allen, http://smartmontools.sourceforge.net
+
+/dev/sg3 [cciss_disk_07] [SCSI]: Device open changed type from 'sat,auto' to 'cciss'
+Vendor:               HP
+Product:              EG0600FBDBU
+Revision:             HPDA
+User Capacity:        600,127,266,816 bytes [600 GB]
+Logical block size:   512 bytes
+Logical Unit id:      0x5000cca012a87468
+Serial number:                PPJZMZ1B
+Device type:          disk
+Transport protocol:   SAS
+Local Time is:        Thu Jun 18 13:00:28 2015 MSK
+Device supports SMART and is Enabled
+Temperature Warning Enabled
+SMART Health Status: OK
+
+Current Drive Temperature:     26 C
+Drive Trip Temperature:        65 C
+Manufactured in week 35 of year 2011
+Specified cycle count over device lifetime:  50000
+Accumulated start-stop cycles:  8
+Specified load-unload count over device lifetime:  300000
+Accumulated load-unload cycles:  1114
+Elements in grown defect list: 594
+Vendor (Seagate) cache information
+  Blocks sent to initiator = 94568670029676544
+
+Error counter log:
+           Errors Corrected by           Total   Correction     Gigabytes    Total
+               ECC          rereads/    errors   algorithm      processed    uncorrected
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0 17907153         0      1267          0     766624.822         294
+write:         0   626384         0    626384          0     487933.251           0
+verify:        0      445         0  325538051          0       8170.367           0
+
+Non-medium error count:     1677
+
+SMART Self-test log
+Num  Test              Status                 segment  LifeTime  LBA_first_err [SK ASC ASQ]
+     Description                              number   (hours)
+# 1  Background short  Completed                   -      86                 - [-   -    -]
+# 2  Background short  Completed                   -      74                 - [-   -    -]
+# 3  Background long   Completed                   -      18                 - [-   -    -]
+# 4  Background short  Completed                   -       0                 - [-   -    -]
+
+Long (extended) Self Test duration: 4889 seconds [81.5 minutes]
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+................................................................................
+................................................................................
+
+
+Ваша заявка была успешно размещена. Сохраните идентификатор заявки: 4651686628 для использования в будущем.
+Электронное сообщение с подтверждением будет отправлено контактному лицу по заявке. HP свяжется в вами, чтобы начать работу над вашей проблемой в соответствии с условиями контракта или гарантии.    Щелкните на изображение, чтобы открыть новое окно со сведениями о поддержке. 
+* Примечание: Ваша заявка была подана при помощи несвязанного идентификатора гарантии. Заявка не будет доступна в функции отчета о заявке до тех пор, пока вы не свяжите идентификатор гарантии со своим идентификатором HP Passport.
+Привязка соглашений о поддержке 
+Привязать услуги HP Care Pack 
+Привязка гарантий 
+Добавить вложения к заявке:    Щелкните на изображение, чтобы открыть новое окно со сведениями о поддержке. 
+Нажмите на эту ссылку, чтобы отправить вложение hpsupport_global@hp.com (максимальный размер 5 МБ):
+Информация о заявке
+Идентификатор заявки:	4651686628
+Заголовок заявки:
+Hard drive failure
+Степень серьезности	1-Критический сбой
+Серийный номер продукта:	CZ31450H65
+Номер продукта:	583914-B21
+Передано:	18.06.2015 11:08:16
+Последнее обновление:	18.06.2015 11:08:16
+Источник:	Web
+Статус заявки:	Получено HP
+Детали заявки
+Операционная система и версия:	Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Продукт:	HP ProLiant DL Servers
+Поставщик продукта:	
+Описание проблемы:
+Наблюдается критичное ухудшение производительности прикладного ПО, работающего на сервере по причине ошибок на одном из HDD сервера.
+Сервер так же самостоятельно перезагрузился по ASR.
+Необходимо заменить неисправный HDD на новый.
+При необходимости выгрузки дополнительных данных, пожалуйста сообщите реквизиты доступа к Вашему ftp-порталу.
+
+Присутствие инженера HP для замены детали не требуется.
+
+Доставить новую деталь можно по адресу:
+123060, г. Москва, ул. 1-й Волоколамский проезд, д.10, стр.1. (бизнес-центр Диапазон).
+Выполненные меры по устранению неисправности:
+[root@hq-msk-gp-tst-sdw4 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+Manufacturer: HP
+Product Name: ProLiant DL380 G7
+Version: Not Specified
+Serial Number: CZ31450H65
+UUID: 39333835-3431-5A43-3331-343530483635
+Wake-up Type: Power Switch
+SKU Number: 583914-B21
+Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+Status: System watchdog timer expired
+
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+[root@hq-msk-gp-tst-sdw4 ~]# smartctl -a -d cciss,7 /dev/sg3
+smartctl 5.43 2012-06-30 r3573 [x86_64-linux-2.6.32-504.12.2.el6.x86_64] (local build)
+Copyright (C) 2002-12 by Bruce Allen, http://smartmontools.sourceforge.net
+
+/dev/sg3 [cciss_disk_07] [SCSI]: Device open changed type from 'sat,auto' to 'cciss'
+Vendor: HP
+Product: EG0600FBDBU
+Revision: HPDA
+User Capacity: 600,127,266,816 bytes [600 GB]
+Logical block size: 512 bytes
+Logical Unit id: 0x5000cca012a87468
+Serial number: PPJZMZ1B
+Device type: disk
+Transport protocol: SAS
+Local Time is: Thu Jun 18 13:00:28 2015 MSK
+Device supports SMART and is Enabled
+Temperature Warning Enabled
+SMART Health Status: OK
+
+Current Drive Temperature: 26 C
+Drive Trip Temperature: 65 C
+Manufactured in week 35 of year 2011
+Specified cycle count over device lifetime: 50000
+Accumulated start-stop cycles: 8
+Specified load-unload count over device lifetime: 300000
+Accumulated load-unload cycles: 1114
+Elements in grown defect list: 594
+Vendor (Seagate) cache information
+Blocks sent to initiator = 94568670029676544
+
+Error counter log:
+Errors Corrected by Total Correction Gigabytes Total
+ECC rereads/ errors algorithm processed uncorrected
+fast | delayed rewrites corrected invocations [10^9 bytes] errors
+read: 0 17907153 0 1267 0 766624.822 294
+write: 0 626384 0 626384 0 487933.251 0
+verify: 0 445 0 325538051 0 8170.367 0
+
+Non-medium error count: 1677
+
+SMART Self-test log
+Num Test Status segment LifeTime LBA_first_err [SK ASC ASQ]
+Description number (hours)
+# 1 Background short Completed - 86 - [- - -]
+# 2 Background short Completed - 74 - [- - -]
+# 3 Background long Completed - 18 - [- - -]
+# 4 Background short Completed - 0 - [- - -]
+
+Long (extended) Self Test duration: 4889 seconds [81.5 minutes]
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+[root@hq-msk-gp-tst-sdw4 ~]# hpacucli controller slot=1 physicaldrive 2I:1:4 show detail
+
+Smart Array P410 in Slot 1
+
+array A
+
+physicaldrive 2I:1:4
+Port: 2I
+Box: 1
+Bay: 4
+Status: OK
+Drive Type: Data Drive
+Interface Type: SAS
+Size: 600 GB
+Rotational Speed: 10000
+Firmware Revision: HPDA
+Serial Number: PPJZMZ1B
+Model: HP EG0600FBDBU
+Current Temperature (C): 26
+Maximum Temperature (C): 37
+PHY Count: 2
+PHY Transfer Rate: 6.0Gbps, Unknown
+
+
+[root@hq-msk-gp-tst-sdw4 ~]# hpacucli controller slot=1 show config
+
+Smart Array P410 in Slot 1 (sn: PACCRID11320D5P)
+
+array A (SAS, Unused Space: 0 MB)
+
+
+logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS, 600 GB, OK)
+physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS, 600 GB, OK)
+physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SAS, 600 GB, OK)
+physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SAS, 600 GB, OK)
+physicaldrive 2I:1:1 (port 2I:box 1:bay 1, SAS, 600 GB, OK)
+physicaldrive 2I:1:2 (port 2I:box 1:bay 2, SAS, 600 GB, OK)
+physicaldrive 2I:1:3 (port 2I:box 1:bay 3, SAS, 600 GB, OK)
+physicaldrive 2I:1:4 (port 2I:box 1:bay 4, SAS, 600 GB, OK)
+
+SEP (Vendor ID PMCSIERA, Model SRC 8x6G) 250 (WWID: 50014380167EEBFF)
+
+[root@hq-msk-gp-tst-sdw4 ~]#
+Контактные данные и сведения по местонахождению оборудования
+Контактная информация
+Электрооборудования
+Имя:	Sergey		
+Фамилия:	Belogrud	Контактный телефон по вопросам оборудования:	+79150464278
+Номер телефона:	+74956481000 2173	Название компании:	TCS Bank
+Дополнительный номер телефона: 
++79150464278	Адресная строка 1:	1-ый Волоколамский пр-д, д.10, к.1
+Адрес электронной почты:	s.belogrud@tinkoff.ru		
+Город	Москва
+Штат/область:	Moscow region
+Почтовый индекс:	123040
+Страна/регион:	РОССИЯ
+
+Контактная информация (2)
+Имя:	Алексей		
+Фамилия:	Леонов		
+Номер телефона:	+74956481000 2536		
+Дополнительный номер телефона: 
++79096319617		
+Адрес электронной почты:	a.leonov@tinkoff.ru
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-tst-sdw4 ~]# at 9:45 tomorrow <<< 'hpssacli controller slot=1 array a physicaldrive 2I:1:4 modify led=on duration=7200'
+job 2 at 2015-06-19 09:45
+[root@hq-msk-gp-tst-sdw4 ~]# hpssacli controller slot=1 array a physicaldrive 2I:1:4 modify led=on duration=7200
+[root@hq-msk-gp-tst-sdw4 ~]# at 9:45 tomorrow <<< 'hpuid -e'
+job 3 at 2015-06-19 09:45
+[root@hq-msk-gp-tst-sdw4 ~]# at 11:45 tomorrow <<< 'hpuid -d'
+job 4 at 2015-06-19 11:45
+[root@hq-msk-gp-tst-sdw4 ~]#
+
+
+
+
+
+
+
+

@@ -1,0 +1,468 @@
+
+define service{
+        use                         generic-service
+        host_name                   tinkoff.loans
+        service_description         Check https://tinkoff.loans/api/v1/version
+        check_command               check_http! -H tinkoff.loans --ssl -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+        contacts                    l.byakov_email,l.byakov_sms,s.sveshnikov_email,s.sveshnikov_sms,a.golovko1_email,a.golovko1_sms
+        contact_groups              empty-group
+        check_interval              1
+}
+
+objects/servers/vmware/tinkoff.loans.cfg:        check_command               check_http! -H tinkoff.loans --ssl -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+
+
+objects/servers/dc-ds/linux/processing/ds-pr-ig03.cfg:    check_command           check_http!-p 5505 --url=/afisha/ws/afishaWs?wsdl
+objects/servers/dc-ds/linux/kvk/ds-kvk-prod-be01.cfg:    check_command                 check_http!-u /system/ping -e 200
+objects/servers/dc-ds/linux/ds-mss-tta-prod-api01.cfg:         check_command               check_http2!-H ds-mss-tta-prod-api01 -p 8080 -t 30
+
+
+define command{
+    command_name            check_https_pg2_rest_api
+    command_line            $USER1$/check_http -H securepay.tinkoff.ru -S -u /system/checkHealth -s "<RESPONSE><MESSAGE>OK</MESSAGE></RESPONSE>"
+}
+define service{
+    use                      generic-service
+    host_name                vm-dbamon01
+    service_description      MERCHANT - API - Payments
+    contacts                      m.pankevich_email,m.pankevich_sms,v.veselov_email,v.veselov_sms,processing_duty_sms,cards_24x7_email,s.belyakov_email,o.babushkin_email,o.babushkin_sms,a.loshchinin_email,a.loshchinin_sms
+    check_command            check_https_pg2_rest_api
+    notification_interval    5
+    max_check_attempts       1
+    flap_detection_enabled   0
+    check_interval           1
+}
+
+define service{
+    use                      generic-service
+    host_name                ds-mvno-bss-interface01p
+    service_description      WL billing HTTPSessions
+    contacts             telco_monitoring_email
+    check_command            check_nrpe_args!check_jmx!'-U service:jmx:rmi:///jndi/rmi://localhost:17001/jmxrmi -O "com.forward.admin3.server.kit.monitoring:type=ApplicationStateMonitor" -A HTTPSessions --username fwdjmx --password fusionfusion123'
+}
+
+define service{
+    use                      generic-service
+    host_name                m1-bc11-bl15
+    service_description      HTTPS
+    check_command            check_http!-S
+    contact_groups           +vmware-admins
+}
+
+................................................................................
+
+
+objects/servers/vmware/vm-dbamon01.cfg:    command_name            check_https_pg2_rest_api
+objects/servers/vmware/vm-dbamon01.cfg:    check_command            check_https_pg2_rest_api
+
+objects/servers/vmware/ds-mvno-bss-interface01p.cfg:    service_description      WL billing HTTPSessions
+objects/servers/vmware/ds-mvno-bss-interface01p.cfg:    check_command            check_nrpe_args!check_jmx!'-U service:jmx:rmi:///jndi/rmi://localhost:17001/jmxrmi -O "com.forward.admin3.server.kit.monitoring:type=ApplicationStateMonitor" -A HTTPSessions --username fwdjmx --password fusionfusion123'
+
+objects/servers/vmware/m1-mvno-bss-interface01p.cfg:    service_description      WL billing HTTPSessions
+objects/servers/vmware/m1-mvno-bss-interface01p.cfg:    check_command            check_nrpe_args!check_jmx!'-U service:jmx:rmi:///jndi/rmi://localhost:17001/jmxrmi -O "com.forward.admin3.server.kit.monitoring:type=ApplicationStateMonitor" -A HTTPSessions --username fwdjmx --password fusionfusion123'
+
+objects/servers/dc-m1/blades/m1-bc11-bl15.cfg:    service_description      HTTPS
+objects/servers/dc-m1/blades/m1-bc10-bl04.cfg:    service_description      HTTPS
+
+
+define service{
+    use                      generic-service
+    host_name                vm-psc02p
+    service_description      rhttpproxy
+    check_command            check_tcp!443
+    contact_groups           +vmware-admins
+}
+
+define service{
+        use                     generic-service
+        host_name               ds-msk-mail1304
+        service_description     ds-msk-mail1304.tcsbank.ru:443 SSL check
+        servicegroups           Certificate Validation - Service Group
+        check_command           check-ssl-cert!90!7!ds-msk-mail1304:443
+        check_interval          1440
+        notification_interval   1440
+        contact_groups          exchange-admins
+}
+
+[root@vm-vol-nag4-tst etc]# pynag list filename where object_type=host and host_name__contains=ds-linotp01 --quiet
+/usr/local/nagios/etc/objects/servers/vmware/ds-linotp01.cfg
+[root@vm-vol-nag4-tst etc]# pynag list filename where object_type=host and host_name__contains=m1-linotp01 --quiet
+/usr/local/nagios/etc/objects/servers/vmware/m1-linotp01.cfg
+[root@vm-vol-nag4-tst etc]#
+
+
+[root@vm-vol-nag4-tst etc]# grep -irle "443" objects/servers/
+objects/servers/dc-vol/esxi/hq-msk-vol-esxi01.cfg
+objects/servers/dc-vol/esxi/hq-msk-vol-esxi02.cfg
+objects/servers/dc-ds/windows/exchange/ds-msk-mail1304.cfg
+objects/servers/dc-ds/windows/exchange/ds-msk-mail01.ti.local.cfg
+objects/servers/dc-ds/windows/exchange/ds-msk-mail1301.cfg
+objects/servers/dc-ds/windows/exchange/ds-msk-mail1302.cfg
+objects/servers/dc-ds/windows/exchange/ds-msk-mail1306.cfg
+objects/servers/dc-ds/windows/exchange/ds-msk-mail1307.cfg
+objects/servers/dc-ds/windows/exchange/ds-msk-mail1303.cfg
+objects/servers/of-vol-misc/ds-ironport01-mgmt.cfg
+objects/servers/of-vol-misc/m1-ironport04-mgmt.cfg
+objects/servers/of-vol-misc/ds-ironport04-mgmt.cfg
+objects/servers/of-vol-misc/m1-ironport02-mgmt.cfg
+objects/servers/of-vol-misc/m1-ironport02-mgmt.cfg.16jul2014
+objects/servers/vmware/mg-pg.cfg
+objects/servers/vmware/dmz/vm-dmz-app111.cfg
+objects/servers/vmware/ha-vcs01p.cfg
+objects/servers/vmware/f5-psc01p.cfg
+objects/servers/vmware/vm-psc01p.cfg
+objects/servers/vmware/vm-psc02p.cfg
+objects/servers/vmware/network/wifi/vm-unifi01p.cfg
+objects/servers/vmware/vm-jira.cfg
+objects/servers/dc-var-linux/mobileapptest.cfg
+objects/servers/dc-var-linux/mobileappdev.cfg
+objects/servers/dc-var-linux/vm-dmz-app146.cfg
+objects/servers/dc-m1/windows/security/m1-observeit01.cfg
+objects/servers/dc-m1/windows/exchange/m1-msk-mail1304.cfg
+objects/servers/dc-m1/windows/exchange/m1-msk-mail1308.cfg
+objects/servers/dc-m1/windows/exchange/m1-msk-mail1303.cfg
+objects/servers/dc-m1/windows/exchange/m1-msk-mail01.ti.local.cfg
+objects/servers/dc-m1/windows/exchange/m1-msk-mail1302.cfg
+objects/servers/dc-m1/windows/exchange/m1-msk-mail1301.cfg
+objects/servers/dc-m1/windows/exchange/m1-msk-mail1305.cfg
+objects/servers/dc-m1/linux/security/m1-arc-manager.cfg
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# check_http --help
+check_http v1.4.16 (nagios-plugins 1.4.16)
+Copyright (c) 1999 Ethan Galstad <nagios@nagios.org>
+Copyright (c) 1999-2011 Nagios Plugin Development Team
+        <nagiosplug-devel@lists.sourceforge.net>
+
+This plugin tests the HTTP service on the specified host. It can test
+normal (http) and secure (https) servers, follow redirects, search for
+strings and regular expressions, check connection times, and report on
+certificate expiration times.
+
+
+Usage:
+ check_http -H <vhost> | -I <IP-address> [-u <uri>] [-p <port>]
+       [-w <warn time>] [-c <critical time>] [-t <timeout>] [-L] [-a auth]
+       [-b proxy_auth] [-f <ok|warning|critcal|follow|sticky|stickyport>]
+       [-e <expect>] [-s string] [-l] [-r <regex> | -R <case-insensitive regex>]
+       [-P string] [-m <min_pg_size>:<max_pg_size>] [-4|-6] [-N] [-M <age>]
+       [-A string] [-k string] [-S <version>] [--sni] [-C <warn_age>[,<crit_age>]]
+       [-T <content-type>] [-j method]
+NOTE: One or both of -H and -I must be specified
+
+Options:
+ -h, --help
+    Print detailed help screen
+ -V, --version
+    Print version information
+ --extra-opts=[section][@file]
+    Read options from an ini file. See http://nagiosplugins.org/extra-opts
+    for usage and examples.
+ -H, --hostname=ADDRESS
+    Host name argument for servers using host headers (virtual host)
+    Append a port to include it in the header (eg: example.com:5000)
+ -I, --IP-address=ADDRESS
+    IP address or name (use numeric address if possible to bypass DNS lookup).
+ -p, --port=INTEGER
+    Port number (default: 80)
+ -4, --use-ipv4
+    Use IPv4 connection
+ -6, --use-ipv6
+    Use IPv6 connection
+ -S, --ssl=VERSION
+    Connect via SSL. Port defaults to 443. VERSION is optional, and prevents
+    auto-negotiation (1 = TLSv1, 2 = SSLv2, 3 = SSLv3).
+ --sni
+    Enable SSL/TLS hostname extension support (SNI)
+ -C, --certificate=INTEGER
+    Minimum number of days a certificate has to be valid. Port defaults to 443
+    (when this option is used the URL is not checked.)
+
+ -e, --expect=STRING
+    Comma-delimited list of strings, at least one of them is expected in
+    the first (status) line of the server response (default: HTTP/1.)
+    If specified skips all other status line logic (ex: 3xx, 4xx, 5xx processing)
+ -s, --string=STRING
+    String to expect in the content
+ -u, --url=PATH
+    URL to GET or POST (default: /)
+ -P, --post=STRING
+    URL encoded http POST data
+ -j, --method=STRING  (for example: HEAD, OPTIONS, TRACE, PUT, DELETE)
+    Set HTTP method.
+ -N, --no-body
+    Don't wait for document body: stop reading after headers.
+    (Note that this still does an HTTP GET or POST, not a HEAD.)
+ -M, --max-age=SECONDS
+    Warn if document is more than SECONDS old. the number can also be of
+    the form "10m" for minutes, "10h" for hours, or "10d" for days.
+ -T, --content-type=STRING
+    specify Content-Type header media type when POSTing
+
+ -l, --linespan
+    Allow regex to span newlines (must precede -r or -R)
+ -r, --regex, --ereg=STRING
+    Search page for regex STRING
+ -R, --eregi=STRING
+    Search page for case-insensitive regex STRING
+ --invert-regex
+    Return CRITICAL if found, OK if not
+
+ -a, --authorization=AUTH_PAIR
+    Username:password on sites with basic authentication
+ -b, --proxy-authorization=AUTH_PAIR
+    Username:password on proxy-servers with basic authentication
+ -A, --useragent=STRING
+    String to be sent in http header as "User Agent"
+ -k, --header=STRING
+    Any other tags to be sent in http header. Use multiple times for additional headers
+ -L, --link
+    Wrap output in HTML link (obsoleted by urlize)
+ -f, --onredirect=<ok|warning|critical|follow|sticky|stickyport>
+    How to handle redirected pages. sticky is like follow but stick to the
+    specified IP address. stickyport also ensures port stays the same.
+ -m, --pagesize=INTEGER<:INTEGER>
+    Minimum page size required (bytes) : Maximum page size required (bytes)
+ -w, --warning=DOUBLE
+    Response time to result in warning status (seconds)
+ -c, --critical=DOUBLE
+    Response time to result in critical status (seconds)
+ -t, --timeout=INTEGER
+    Seconds before connection times out (default: 10)
+ -v, --verbose
+    Show details for command-line debugging (Nagios may truncate output)
+
+Notes:
+ This plugin will attempt to open an HTTP connection with the host.
+ Successful connects return STATE_OK, refusals and timeouts return STATE_CRITICAL
+ other errors return STATE_UNKNOWN.  Successful connects, but incorrect reponse
+ messages from the host result in STATE_WARNING return values.  If you are
+ checking a virtual server that uses 'host headers' you must supply the FQDN
+ (fully qualified domain name) as the [host_name] argument.
+
+ This plugin can also check whether an SSL enabled web server is able to
+ serve content (optionally within a specified time) or whether the X509
+ certificate is still valid for the specified number of days.
+
+ Please note that this plugin does not check if the presented server
+ certificate matches the hostname of the server, or if the certificate
+ has a valid chain of trust to one of the locally installed CAs.
+
+Examples:
+ CHECK CONTENT: check_http -w 5 -c 10 --ssl -H www.verisign.com
+
+ When the 'www.verisign.com' server returns its content within 5 seconds,
+ a STATE_OK will be returned. When the server returns its content but exceeds
+ the 5-second threshold, a STATE_WARNING will be returned. When an error occurs,
+ a STATE_CRITICAL will be returned.
+
+ CHECK CERTIFICATE: check_http -H www.verisign.com -C 14
+
+ When the certificate of 'www.verisign.com' is valid for more than 14 days,
+ a STATE_OK is returned. When the certificate is still valid, but for less than
+ 14 days, a STATE_WARNING is returned. A STATE_CRITICAL will be returned when
+ the certificate is expired.
+ CHECK CERTIFICATE: check_http -H www.verisign.com -C 30,14
+
+ When the certificate of 'www.verisign.com' is valid for more than 30 days,
+ a STATE_OK is returned. When the certificate is still valid, but for less than
+ 30 days, but more than 14 days, a STATE_WARNING is returned.
+ A STATE_CRITICAL will be returned when certificate expires in less than 14 days
+
+Send email to nagios-users@lists.sourceforge.net if you have questions
+regarding use of this software. To submit patches or suggest improvements,
+send email to nagiosplug-devel@lists.sourceforge.net
+
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# check_http -v -H ds-linotp01 --ssl -u "/account/login"
+GET /account/login HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: ds-linotp01
+
+
+https://ds-linotp01:443/account/login is 2935 characters
+STATUS: HTTP/1.1 576 Logout from LinOTP selfservice
+**** HEADER ****
+Date: Fri, 22 Dec 2017 08:47:58 GMT
+Server: Apache
+Pragma: no-cache
+Cache-Control: no-cache
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+Strict-Transport-Security: max-age=315360000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Permitted-Cross-Domain-Policies: none
+Content-Length: 2516
+Connection: close
+Content-Type: text/html; charset=utf-8
+**** CONTENT ****
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+<title>LinOTP 2 User self service</title>
+<meta name="copyright" content="KeyIdentity GmbH">
+<meta name="keywords" content="LinOTP 2, self service">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8">
+<meta http-equiv="content-style-type" content="text/css">
+
+<meta http-equiv="X-UA-Compatible" content="IE=8,chrome=1">
+
+<link type="text/css" rel="stylesheet" href="/selfservice/style.css">
+<link type="text/css" rel="stylesheet" href="/selfservice/custom-style.css">
+<script type="text/javascript" src="/js/jquery-1.12.4.min.js"></script>
+
+</head>
+
+<body>
+
+<script>
+$(document).ready(function() {
+    $('form:first *:input[type!=hidden]:first').focus();
+});
+</script>
+
+<div id="wrap">
+
+    <div id="header" class="clearfix">
+        <span class="portalname float_left">Selfservice Portal</span>
+        <div id="logo" class="float_right"> </div>
+    </div>
+
+
+<div id="sidebar">
+
+<P>
+This is the LinOTP self service portal. You may login here with your username and realm.
+</P>
+<P>
+Within the self service portal you may reset the PINs of your tokens, assign new tokens or resync your tokens.
+</p>
+<p>
+If you lost a token, you may also disable this token.
+</p>
+
+</div> <!-- sidebar -->
+
+<div id="main">
+<h1>Login to LinOTP self service</h1>
+
+  <p>
+    <form action="/account/dologin" method="POST">
+      <table>
+        <tr><td><label for=login>Username:</label></td>
+        <td><input type="text" id="login" name="login" value=""></td></tr>
+            <tr style="display:none;">
+              <td>Realm:</td>
+              <td><input type="text" id="realm" name="realm"
+                  value=''></td>
+            </tr>
+        <tr style="display:none;">
+            <td><input type="hidden" name="realmbox" value="False"></td>
+            <td><input type="hidden" name="defaultRealm" value="tinkoff-bank"></td></tr>
+        <tr><td><label for=password>Password:</label></td>
+        <td><input autocomplete="off" type="password" id="password" name="password"></td></tr>
+        <tr><td> </td>
+        <td>   <input type="submit" value="Login"></td></tr>
+      </table>
+    </form>
+  </p>
+
+<div id='errorDiv'></div>
+<div id='successDiv'></div>
+
+
+</div>  <!-- end of main-->
+
+<div id="footer">
+    LinOTP 2.9.3.3 --- &copy; 2010 - 2017 KeyIdentity GmbH
+</div>
+</div>  <!-- end of wrap -->
+</body>
+</html>
+
+
+
+
+
+
+HTTP CRITICAL: HTTP/1.1 576 Logout from LinOTP selfservice - 2935 bytes in 0.017 second response time |time=0.017000s;;;0.000000 size=2935B;;;0
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# check_http -H ds-linotp01 --ssl -e "576 Logout from LinOTP selfservice" -u "/account/log
+in"
+HTTP OK: Status line output matched "576 Logout from LinOTP selfservice" - 2935 bytes in 0.019 second response time|time=0.018546s;;;0.000000 size=2935B;;;0
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# check_http -H m1-linotp01 --ssl -e "576 Logout from LinOTP selfservice" -u "/account/log
+in"
+HTTP OK: Status line output matched "576 Logout from LinOTP selfservice" - 2935 bytes in 0.027 second response time|time=0.026889s;;;0.000000 size=2935B;;;0
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# check_http -v -H tinkoff.loans --ssl -e "200 OK" -r "\{.*\}" -u "/api/v1/version"
+GET /api/v1/version HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: tinkoff.loans
+
+
+https://tinkoff.loans:443/api/v1/version is 354 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Server: openresty
+Date: Fri, 22 Dec 2017 08:55:46 GMT
+Content-Type: application/json; charset=UTF-8
+Content-Length: 134
+Connection: close
+Access-Control-Allow-Origin: *
+X-UA-Compatible: IE=Edge
+**** CONTENT ****
+{"commitId":"cf1260ca80a8ec380454235c6a0db94002e01c5e","abbrev":"cf1260c","date":"2017-12-20 16:53:31 +0300","branch":"release/v1.22"}
+Status line output matched "200 OK" -
+HTTP OK: Status line output matched "200 OK" - 354 bytes in 0.020 second response time |time=0.019506s;;;0.000000 size=354B;;;0
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst etc]# git --no-pager diff  objects/servers/vmware/ds-linotp01.cfg objects/servers/vmware/m1-li
+notp01.cfg
+diff --git a/objects/servers/vmware/ds-linotp01.cfg b/objects/servers/vmware/ds-linotp01.cfg
+index 1554412..f468a61 100644
+--- a/objects/servers/vmware/ds-linotp01.cfg
++++ b/objects/servers/vmware/ds-linotp01.cfg
+@@ -72,3 +72,9 @@ define service{
+     service_description      ds-linotp01.tcsbank.ru:3306 MySQL check
+     check_command            check_tcp!3306
+ }
++define service{
++        use                         generic-service
++        host_name                   ds-linotp01
++        service_description         Check https://ds-linotp01/account/login
++        check_command               check_http! -H ds-linotp01 --ssl -e "576 Logout from LinOTP selfservice" -u "/account/login"
++}
+diff --git a/objects/servers/vmware/m1-linotp01.cfg b/objects/servers/vmware/m1-linotp01.cfg
+index 89b87e4..a54a26c 100644
+--- a/objects/servers/vmware/m1-linotp01.cfg
++++ b/objects/servers/vmware/m1-linotp01.cfg
+@@ -72,3 +72,9 @@ define service{
+     service_description      m1-linotp01.tcsbank.ru:3306 MySQL check
+     check_command            check_tcp!3306
+ }
++define service{
++        use                         generic-service
++        host_name                   m1-linotp01
++        service_description         Check https://m1-linotp01/account/login
++        check_command               check_http! -H m1-linotp01 --ssl -e "576 Logout from LinOTP selfservice" -u "/account/login"
++}
+[root@vm-vol-nag4-tst etc]#
+

@@ -1,0 +1,1331 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   614605
+Название    №614605
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  06.11.2015 14:18
+Дата регистрации    06.11.2015 14:18
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Для обновления нашей системе и перехода на новый стэк ПО, нам необходимы несколько новых виртуалок для отладки окружения и дальнейшего перехода:
+
+Требования к виртуальным машинам и доступам:
+Тестовое окружение:
+vm-kvk-qa-be02 по аналогии с vm-kvk-qa-be01
+Продуктовое окружение:
+ДЦ M1: m1-kvk-prod-be02 по аналогии с m1-kvk-prod-be01
+ДЦ DS: ds-kvk-prod-be02 по аналогии с ds-kvk-prod-be01
+
+Требования по софту:
+все по аналогии с имеющимися, за исключением:
+вместо apache + mod_php устанавливаем nginx + php-fpm, версия php 5.6
+
+модули php, которые должны быть установлены:
+curl
+gd
+memcache
+oci8
+pdo
+pdo_oci8
+soap
+xml
+zip
+
+
+................................................................................
+................................................................................
+
+09.11.2015 14:23    ВМ готовы:
+m1-kvk-prod-be02 [10.218.2.71]
+ds-kvk-prod-be02 [10.218.7.71]
+vm-kvk-qa-be02 [10.218.13.154]
+@unix-admins
+puppet, ssh, софт, мониторинг
+@net-admins
+сетевые доступы
+
+----
+по аналогии
+m1-kvk-prod-be01
+ds-kvk-prod-be01
+vm-kvk-qa-be01  Хохлачев Сергей Г
+
+................................................................................
+................................................................................
+
+[root@puppet ~]# puppet cert list | egrep -e "m1-kvk-prod-be02|ds-kvk-prod-be02|vm-kvk-qa-be02"
+  "ds-kvk-prod-be02.tcsbank.ru"         (SHA256) 2C:D4:6D:E8:C5:EA:7A:5C:9F:7D:90:E5:46:3F:F7:CC:C7:99:89:4D:C2:41:D5:2B:E6:3D:F2:10:42:7B:4C:02
+  "m1-kvk-prod-be02.tcsbank.ru"         (SHA256) EF:54:0D:E6:F2:AB:95:AA:04:28:6B:F0:36:E5:D5:A9:AF:31:4E:AA:F9:5B:1C:FF:50:BF:B3:AE:9F:F8:8F:59
+  "vm-kvk-qa-be02.tcsbank.ru"           (SHA256) 72:EA:94:01:C3:44:85:71:8D:B9:47:4B:98:31:3D:4C:CD:56:06:25:26:02:2D:B0:45:F7:95:AD:C4:04:22:F8
+[root@puppet ~]#
+
+
+[root@puppet ~]# puppet cert sign ds-kvk-prod-be02.tcsbank.ru ; puppet cert sign m1-kvk-prod-be02.tcsbank.ru ; puppet cert sign vm-kvk-qa-be02.tcsbank.ru
+Notice: Signed certificate request for ds-kvk-prod-be02.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest ds-kvk-prod-be02.tcsbank.ru at '/var/lib/puppet/ssl/ca/requests/ds-kvk-prod-be02.tcsbank.ru.pem'
+Notice: Signed certificate request for m1-kvk-prod-be02.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest m1-kvk-prod-be02.tcsbank.ru at '/var/lib/puppet/ssl/ca/requests/m1-kvk-prod-be02.tcsbank.ru.pem'
+Notice: Signed certificate request for vm-kvk-qa-be02.tcsbank.ru
+Notice: Removing file Puppet::SSL::CertificateRequest vm-kvk-qa-be02.tcsbank.ru at '/var/lib/puppet/ssl/ca/requests/vm-kvk-qa-be02.tcsbank.ru.pem'
+[root@puppet ~]#
+
+[root@m1-kvk-prod-be02 ~]# puppet agent -t -v
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts in /var/lib/puppet/lib/facter/sockets_count.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/hdd_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/memory_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/bash_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/storage_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/cores_per_socket.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/root_home.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/facter_dot_d.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/pe_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/sku_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/yum_repos.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/ilo_firmware.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/nic_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/tzdata_check.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/puppet_vardir.rb
+Info: Caching catalog for m1-kvk-prod-be02.tcsbank.ru
+Info: Applying configuration version '1446709142'
+Notice: Finished catalog run in 0.09 seconds
+[root@m1-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# puppet agent -t -v
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts in /var/lib/puppet/lib/facter/sockets_count.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/hdd_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/memory_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/bash_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/storage_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/cores_per_socket.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/root_home.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/facter_dot_d.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/pe_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/sku_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/yum_repos.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/ilo_firmware.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/nic_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/tzdata_check.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/puppet_vardir.rb
+Info: Caching catalog for m1-kvk-prod-be02.tcsbank.ru
+Warning: The package type's allow_virtual parameter will be changing its default value from false to true in a future release. If you do not want to allow virtual packages, please explicitly set allow_virtual to false.
+   (at /usr/lib/ruby/site_ruby/1.8/puppet/type.rb:816:in `set_default')
+Info: Applying configuration version '1446709142'
+Notice: /Stage[main]/Accounts::Admins/Group[ash]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[a.leonov]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[a.leonov]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[a.leonov@tcs5020.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[zbir]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[zbir]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[zbir@tcs7308.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[che]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[avk]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[avk]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[che]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[avk@tcs6365.tcsbank.ru]/ensure: created
+Error: Could not set 'file' on ensure: cannot generate tempfile `/etc/nrpe.d/check_ntp.cfg20151109-12014-k5ijao-9' at 19:/etc/puppet/modules/fixntpcheck/manifests/init.pp
+Error: Could not set 'file' on ensure: cannot generate tempfile `/etc/nrpe.d/check_ntp.cfg20151109-12014-k5ijao-9' at 19:/etc/puppet/modules/fixntpcheck/manifests/init.pp
+Wrapped exception:
+cannot generate tempfile `/etc/nrpe.d/check_ntp.cfg20151109-12014-k5ijao-9'
+Error: /Stage[main]/Fixntpcheck/File[/etc/nrpe.d/check_ntp.cfg]/ensure: change from absent to file failed: Could not set 'file' on ensure: cannot generate tempfile `/etc/nrpe.d/check_ntp.cfg20151109-12014-k5ijao-9' at 19:/etc/puppet/modules/fixntpcheck/manifests/init.pp
+Notice: /Stage[main]/Fixntpcheck/File[/etc/nrpe.d/check_ntp.cfg]/content: audit change: newly-recorded value absent
+Error: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Error: No matching Packages to list
+Error: /Stage[main]/Ntp::Install/Package[ntp]/ensure: change from absent to present failed: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Error: No matching Packages to list
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp::Service/Service[ntp]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Service/Service[ntp]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp/Anchor[ntp::end]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp/Anchor[ntp::end]: Skipping because of failed dependencies
+Notice: /Stage[main]/Accounts::Admins/Group[bsv]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[bsv]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[ash]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[ash@m1-pds01.ti.local]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[tan]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[tan]/ensure: created
+Notice: /Stage[main]/Fixntpcheck/Exec[/etc/init.d/nrpe reload]: Dependency File[/etc/nrpe.d/check_ntp.cfg] has failures: true
+Warning: /Stage[main]/Fixntpcheck/Exec[/etc/init.d/nrpe reload]: Skipping because of failed dependencies
+Notice: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]/content:
+--- /etc/puppet/puppet.conf     2014-06-10 01:08:14.000000000 +0400
++++ /tmp/puppet-file20151109-12014-1j25dxd-0    2015-11-09 15:35:03.433753123 +0300
+@@ -23,3 +23,10 @@
+     # extension indicating the cache format is added automatically.
+     # The default value is '$confdir/localconfig'.
+     localconfig = $vardir/localconfig
++
++    #report = true
++    #reports = puppetdb
++
++    #storeconfigs = true
++    #storeconfigs_backend = puppetdb
++
+
+Info: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]: Filebucketed /etc/puppet/puppet.conf to main with sum 58e2f9765e2994db8e8ab19a3513356e
+Notice: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]/content: content changed '{md5}58e2f9765e2994db8e8ab19a3513356e' to '{md5}2f7adbdcc4d78601cad3be82df8dd7de'
+Info: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]: Scheduling refresh of Class[Puppet::Service]
+Info: Class[Puppet::Service]: Scheduling refresh of Service[puppet]
+Notice: /Stage[main]/Puppet::Service/Service[puppet]: Triggered 'refresh' from 1 events
+Notice: Finished catalog run in 26.77 seconds
+[root@m1-kvk-prod-be02 ~]#
+
+................................................................................
+[root@ds-kvk-prod-be02 ~]# puppet agent -t -v
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts in /var/lib/puppet/lib/facter/sockets_count.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/hdd_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/memory_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/bash_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/storage_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/cores_per_socket.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/root_home.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/facter_dot_d.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/pe_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/sku_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/yum_repos.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/ilo_firmware.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/nic_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/tzdata_check.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/puppet_vardir.rb
+Info: Caching catalog for ds-kvk-prod-be02.tcsbank.ru
+Warning: The package type's allow_virtual parameter will be changing its default value from false to true in a future release. If you do not want to allow virtual packages, please explicitly set allow_virtual to false.
+   (at /usr/lib/ruby/site_ruby/1.8/puppet/type.rb:816:in `set_default')
+Info: Applying configuration version '1446709142'
+Notice: /Stage[main]/Accounts::Admins/Group[ash]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[a.leonov]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[a.leonov]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[a.leonov@tcs5020.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[zbir]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[zbir]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[zbir@tcs7308.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[che]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[avk]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[avk]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[che]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[avk@tcs6365.tcsbank.ru]/ensure: created
+Error: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Error: No matching Packages to list
+Error: /Stage[main]/Ntp::Install/Package[ntp]/ensure: change from absent to present failed: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Error: No matching Packages to list
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp::Service/Service[ntp]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Service/Service[ntp]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp/Anchor[ntp::end]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp/Anchor[ntp::end]: Skipping because of failed dependencies
+Notice: /Stage[main]/Accounts::Admins/Group[bsv]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[bsv]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[ash]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[ash@m1-pds01.ti.local]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[tan]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[tan]/ensure: created
+Notice: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]/content:
+--- /etc/puppet/puppet.conf     2014-06-10 01:08:14.000000000 +0400
++++ /tmp/puppet-file20151109-11853-nyfr3z-0     2015-11-09 15:31:42.819992468 +0300
+@@ -23,3 +23,10 @@
+     # extension indicating the cache format is added automatically.
+     # The default value is '$confdir/localconfig'.
+     localconfig = $vardir/localconfig
++
++    #report = true
++    #reports = puppetdb
++
++    #storeconfigs = true
++    #storeconfigs_backend = puppetdb
++
+
+Info: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]: Filebucketed /etc/puppet/puppet.conf to main with sum 58e2f9765e2994db8e8ab19a3513356e
+Notice: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]/content: content changed '{md5}58e2f9765e2994db8e8ab19a3513356e' to '{md5}2f7adbdcc4d78601cad3be82df8dd7de'
+Info: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]: Scheduling refresh of Class[Puppet::Service]
+Info: Class[Puppet::Service]: Scheduling refresh of Service[puppet]
+Notice: /Stage[main]/Puppet::Service/Service[puppet]: Triggered 'refresh' from 1 events
+Notice: Finished catalog run in 14.07 seconds
+[root@ds-kvk-prod-be02 ~]#
+................................................................................
+
+[root@vm-kvk-qa-be02 ~]# puppet agent -t -v
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts in /var/lib/puppet/lib/facter/sockets_count.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/hdd_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/memory_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/bash_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/storage_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/cores_per_socket.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/root_home.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/facter_dot_d.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/pe_version.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/sku_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/yum_repos.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/ilo_firmware.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/nic_info.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/tzdata_check.rb
+Info: Loading facts in /var/lib/puppet/lib/facter/puppet_vardir.rb
+Info: Caching catalog for vm-kvk-qa-be02.tcsbank.ru
+Warning: The package type's allow_virtual parameter will be changing its default value from false to true in a future release. If you do not want to allow virtual packages, please explicitly set allow_virtual to false.
+   (at /usr/lib/ruby/site_ruby/1.8/puppet/type.rb:816:in `set_default')
+Info: Applying configuration version '1446709142'
+Notice: /Stage[main]/Accounts::Admins/Group[ash]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[a.leonov]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[a.leonov]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[a.leonov@tcs5020.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[zbir]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[zbir]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[zbir@tcs7308.tcsbank.ru]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[che]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[avk]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[avk]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[che]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Ssh_authorized_key[avk@tcs6365.tcsbank.ru]/ensure: created
+Error: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Error: No matching Packages to list
+Error: /Stage[main]/Ntp::Install/Package[ntp]/ensure: change from absent to present failed: Execution of '/usr/bin/yum -d 0 -e 0 -y list ntp' returned 1: This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Error: No matching Packages to list
+Notice: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Config/File[/etc/ntp.conf]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp::Service/Service[ntp]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp::Service/Service[ntp]: Skipping because of failed dependencies
+Notice: /Stage[main]/Ntp/Anchor[ntp::end]: Dependency Package[ntp] has failures: true
+Warning: /Stage[main]/Ntp/Anchor[ntp::end]: Skipping because of failed dependencies
+Notice: /Stage[main]/Accounts::Admins/Group[bsv]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[bsv]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[ash]/ensure: created
+Notice: /Stage[main]/Accounts::Admins_ssh_keys/Ssh_authorized_key[ash@m1-pds01.ti.local]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/Group[tan]/ensure: created
+Notice: /Stage[main]/Accounts::Admins/User[tan]/ensure: created
+Notice: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]/content:
+--- /etc/puppet/puppet.conf     2014-06-10 01:08:14.000000000 +0400
++++ /tmp/puppet-file20151109-11732-6jzoij-0     2015-11-09 15:38:07.616945611 +0300
+@@ -23,3 +23,10 @@
+     # extension indicating the cache format is added automatically.
+     # The default value is '$confdir/localconfig'.
+     localconfig = $vardir/localconfig
++
++    #report = true
++    #reports = puppetdb
++
++    #storeconfigs = true
++    #storeconfigs_backend = puppetdb
++
+
+Info: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]: Filebucketed /etc/puppet/puppet.conf to main with sum 58e2f9765e2994db8e8ab19a3513356e
+Notice: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]/content: content changed '{md5}58e2f9765e2994db8e8ab19a3513356e' to '{md5}2f7adbdcc4d78601cad3be82df8dd7de'
+Info: /Stage[main]/Puppet::Config/File[/etc/puppet/puppet.conf]: Scheduling refresh of Class[Puppet::Service]
+Info: Class[Puppet::Service]: Scheduling refresh of Service[puppet]
+Notice: /Stage[main]/Puppet::Service/Service[puppet]: Triggered 'refresh' from 1 events
+Notice: Finished catalog run in 26.56 seconds
+[root@vm-kvk-qa-be02 ~]#
+
+................................................................................
+
+[root@m1-kvk-prod-be02 ~]# yum install nagios-plugins nagios-plugins-disk nagios-plugins-load nagios-plugins-nrpe nagios-plugins-procs nagios-plugins-users nagios-plugins-load nagios-plugins-swap nrpe
+
+[root@ds-kvk-prod-be02 ~]# yum install nagios-plugins nagios-plugins-disk nagios-plugins-load nagios-plugins-nrpe nagios-plugins-procs nagios-plugins-users nagios-plugins-load nagios-plugins-swap nrpe
+
+[root@vm-kvk-qa-be02 ~]# yum install nagios-plugins nagios-plugins-disk nagios-plugins-load nagios-plugins-nrpe nagios-plugins-procs nagios-plugins-users nagios-plugins-load nagios-plugins-swap nrpe
+
+................................................................................
+
+[root@m1-kvk-prod-be02 ~]# yum search all nginx
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+============================================================================================================================== Matched: nginx ===============================================================================================================================
+nginx-filesystem.noarch : The basic directory layout for the Nginx server
+collectd-nginx.x86_64 : Nginx plugin for collectd
+munin-nginx.noarch : Network-wide graphing framework (cgi files for nginx)
+nginx.x86_64 : A high performance web server and reverse proxy server
+owncloud-nginx.noarch : Nginx integration for ownCloud
+goaccess.x86_64 : Real-time web log analyzer and interactive viewer
+rubygem-passenger-native.x86_64 : Phusion Passenger native extensions
+rubygem-passenger-native-libs.x86_64 : Phusion Passenger native extensions
+tcpcopy.x86_64 : An online request replication tool
+uwsgi.x86_64 : Fast, self-healing, application container server
+[root@m1-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# yum search all php-fpm
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+============================================================================================================================= Matched: php-fpm ==============================================================================================================================
+php-fpm.x86_64 : PHP FastCGI Process Manager
+[root@m1-kvk-prod-be02 ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-kvk-prod-be02 ~]# yum install nginx php-fpm
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package nginx.x86_64 0:1.0.15-12.el6 will be installed
+--> Processing Dependency: nginx-filesystem = 1.0.15-12.el6 for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: nginx-filesystem for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: gd for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: GeoIP for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: libgd.so.2()(64bit) for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: libGeoIP.so.1()(64bit) for package: nginx-1.0.15-12.el6.x86_64
+---> Package php-fpm.x86_64 0:5.3.3-27.el6_5.2 will be installed
+--> Processing Dependency: php-common(x86-64) = 5.3.3-27.el6_5.2 for package: php-fpm-5.3.3-27.el6_5.2.x86_64
+--> Running transaction check
+---> Package GeoIP.x86_64 0:1.6.5-1.el6 will be installed
+--> Processing Dependency: geoipupdate for package: GeoIP-1.6.5-1.el6.x86_64
+--> Processing Dependency: GeoIP-data for package: GeoIP-1.6.5-1.el6.x86_64
+---> Package gd.x86_64 0:2.0.35-11.el6 will be installed
+--> Processing Dependency: libpng12.so.0(PNG12_0)(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libpng12.so.0()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libjpeg.so.62()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libfreetype.so.6()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libfontconfig.so.1()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libXpm.so.4()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libX11.so.6()(64bit) for package: gd-2.0.35-11.el6.x86_64
+---> Package nginx-filesystem.noarch 0:1.0.15-12.el6 will be installed
+---> Package php-common.x86_64 0:5.3.3-27.el6_5.2 will be installed
+--> Running transaction check
+---> Package GeoIP-GeoLite-data.noarch 0:2015.04-2.el6 will be installed
+--> Processing Dependency: GeoIP-GeoLite-data-extra = 2015.04-2.el6 for package: GeoIP-GeoLite-data-2015.04-2.el6.noarch
+---> Package fontconfig.x86_64 0:2.8.0-5.el6 will be installed
+---> Package freetype.x86_64 0:2.3.11-15.el6_6.1 will be installed
+---> Package geoipupdate.x86_64 0:2.2.1-2.el6 will be installed
+---> Package libX11.x86_64 0:1.6.0-6.el6 will be installed
+--> Processing Dependency: libX11-common = 1.6.0-6.el6 for package: libX11-1.6.0-6.el6.x86_64
+--> Processing Dependency: libxcb.so.1()(64bit) for package: libX11-1.6.0-6.el6.x86_64
+---> Package libXpm.x86_64 0:3.5.10-2.el6 will be installed
+---> Package libjpeg-turbo.x86_64 0:1.2.1-3.el6_5 will be installed
+---> Package libpng.x86_64 2:1.2.49-1.el6_2 will be installed
+--> Running transaction check
+---> Package GeoIP-GeoLite-data-extra.noarch 0:2015.04-2.el6 will be installed
+---> Package libX11-common.noarch 0:1.6.0-6.el6 will be installed
+---> Package libxcb.x86_64 0:1.9.1-3.el6 will be installed
+--> Processing Dependency: libXau.so.6()(64bit) for package: libxcb-1.9.1-3.el6.x86_64
+--> Running transaction check
+---> Package libXau.x86_64 0:1.0.6-4.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=============================================================================================================================================================================================================================================================================
+ Package                                                              Arch                                               Version                                                         Repository                                                                     Size
+=============================================================================================================================================================================================================================================================================
+Installing:
+ nginx                                                                x86_64                                             1.0.15-12.el6                                                   tcs-epel                                                                      404 k
+ php-fpm                                                              x86_64                                             5.3.3-27.el6_5.2                                                tcs-rhel-x86_64-server-optional-6                                             1.1 M
+Installing for dependencies:
+ GeoIP                                                                x86_64                                             1.6.5-1.el6                                                     tcs-epel                                                                      113 k
+ GeoIP-GeoLite-data                                                   noarch                                             2015.04-2.el6                                                   tcs-epel                                                                      343 k
+ GeoIP-GeoLite-data-extra                                             noarch                                             2015.04-2.el6                                                   tcs-epel                                                                       23 M
+ fontconfig                                                           x86_64                                             2.8.0-5.el6                                                     tcs-rhel-x86_64-server-6                                                      186 k
+ freetype                                                             x86_64                                             2.3.11-15.el6_6.1                                               tcs-rhel-x86_64-server-6                                                      361 k
+ gd                                                                   x86_64                                             2.0.35-11.el6                                                   tcs-rhel-x86_64-server-6                                                      142 k
+ geoipupdate                                                          x86_64                                             2.2.1-2.el6                                                     tcs-epel                                                                       28 k
+ libX11                                                               x86_64                                             1.6.0-6.el6                                                     tcs-rhel-x86_64-server-6                                                      587 k
+ libX11-common                                                        noarch                                             1.6.0-6.el6                                                     tcs-rhel-x86_64-server-6                                                      192 k
+ libXau                                                               x86_64                                             1.0.6-4.el6                                                     tcs-rhel-x86_64-server-6                                                       24 k
+ libXpm                                                               x86_64                                             3.5.10-2.el6                                                    tcs-rhel-x86_64-server-6                                                       51 k
+ libjpeg-turbo                                                        x86_64                                             1.2.1-3.el6_5                                                   tcs-rhel-x86_64-server-6                                                      174 k
+ libpng                                                               x86_64                                             2:1.2.49-1.el6_2                                                tcs-rhel-x86_64-server-6                                                      182 k
+ libxcb                                                               x86_64                                             1.9.1-3.el6                                                     tcs-rhel-x86_64-server-6                                                      110 k
+ nginx-filesystem                                                     noarch                                             1.0.15-12.el6                                                   tcs-epel                                                                      8.1 k
+ php-common                                                           x86_64                                             5.3.3-27.el6_5.2                                                tcs-rhel-x86_64-server-6                                                      526 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================================================
+Install      18 Package(s)
+
+Total download size: 27 M
+Installed size: 61 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/18): GeoIP-1.6.5-1.el6.x86_64.rpm                                                                                                                                                                                                                  | 113 kB     00:00
+(2/18): GeoIP-GeoLite-data-2015.04-2.el6.noarch.rpm                                                                                                                                                                                                   | 343 kB     00:00
+(3/18): GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch.rpm                                                                                                                                                                                             |  23 MB     00:01
+(4/18): fontconfig-2.8.0-5.el6.x86_64.rpm                                                                                                                                                                                                             | 186 kB     00:00
+(5/18): freetype-2.3.11-15.el6_6.1.x86_64.rpm                                                                                                                                                                                                         | 361 kB     00:00
+(6/18): gd-2.0.35-11.el6.x86_64.rpm                                                                                                                                                                                                                   | 142 kB     00:00
+(7/18): geoipupdate-2.2.1-2.el6.x86_64.rpm                                                                                                                                                                                                            |  28 kB     00:00
+(8/18): libX11-1.6.0-6.el6.x86_64.rpm                                                                                                                                                                                                                 | 587 kB     00:00
+(9/18): libX11-common-1.6.0-6.el6.noarch.rpm                                                                                                                                                                                                          | 192 kB     00:00
+(10/18): libXau-1.0.6-4.el6.x86_64.rpm                                                                                                                                                                                                                |  24 kB     00:00
+(11/18): libXpm-3.5.10-2.el6.x86_64.rpm                                                                                                                                                                                                               |  51 kB     00:00
+(12/18): libjpeg-turbo-1.2.1-3.el6_5.x86_64.rpm                                                                                                                                                                                                       | 174 kB     00:00
+(13/18): libpng-1.2.49-1.el6_2.x86_64.rpm                                                                                                                                                                                                             | 182 kB     00:00
+(14/18): libxcb-1.9.1-3.el6.x86_64.rpm                                                                                                                                                                                                                | 110 kB     00:00
+(15/18): nginx-1.0.15-12.el6.x86_64.rpm                                                                                                                                                                                                               | 404 kB     00:00
+(16/18): nginx-filesystem-1.0.15-12.el6.noarch.rpm                                                                                                                                                                                                    | 8.1 kB     00:00
+(17/18): php-common-5.3.3-27.el6_5.2.x86_64.rpm                                                                                                                                                                                                       | 526 kB     00:00
+(18/18): php-fpm-5.3.3-27.el6_5.2.x86_64.rpm                                                                                                                                                                                                          | 1.1 MB     00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                                                                                         13 MB/s |  27 MB     00:02
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch                                                                                                                                                                                                            1/18
+  Installing : GeoIP-GeoLite-data-2015.04-2.el6.noarch                                                                                                                                                                                                                  2/18
+  Installing : freetype-2.3.11-15.el6_6.1.x86_64                                                                                                                                                                                                                        3/18
+  Installing : fontconfig-2.8.0-5.el6.x86_64                                                                                                                                                                                                                            4/18
+  Installing : libXau-1.0.6-4.el6.x86_64                                                                                                                                                                                                                                5/18
+  Installing : libxcb-1.9.1-3.el6.x86_64                                                                                                                                                                                                                                6/18
+  Installing : libjpeg-turbo-1.2.1-3.el6_5.x86_64                                                                                                                                                                                                                       7/18
+  Installing : php-common-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                       8/18
+  Installing : 2:libpng-1.2.49-1.el6_2.x86_64                                                                                                                                                                                                                           9/18
+  Installing : geoipupdate-2.2.1-2.el6.x86_64                                                                                                                                                                                                                          10/18
+  Installing : GeoIP-1.6.5-1.el6.x86_64                                                                                                                                                                                                                                11/18
+  Installing : libX11-common-1.6.0-6.el6.noarch                                                                                                                                                                                                                        12/18
+  Installing : libX11-1.6.0-6.el6.x86_64                                                                                                                                                                                                                               13/18
+  Installing : libXpm-3.5.10-2.el6.x86_64                                                                                                                                                                                                                              14/18
+  Installing : gd-2.0.35-11.el6.x86_64                                                                                                                                                                                                                                 15/18
+  Installing : nginx-filesystem-1.0.15-12.el6.noarch                                                                                                                                                                                                                   16/18
+  Installing : nginx-1.0.15-12.el6.x86_64                                                                                                                                                                                                                              17/18
+  Installing : php-fpm-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                         18/18
+  Verifying  : php-fpm-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                          1/18
+  Verifying  : nginx-filesystem-1.0.15-12.el6.noarch                                                                                                                                                                                                                    2/18
+  Verifying  : libxcb-1.9.1-3.el6.x86_64                                                                                                                                                                                                                                3/18
+  Verifying  : GeoIP-1.6.5-1.el6.x86_64                                                                                                                                                                                                                                 4/18
+  Verifying  : GeoIP-GeoLite-data-2015.04-2.el6.noarch                                                                                                                                                                                                                  5/18
+  Verifying  : libXpm-3.5.10-2.el6.x86_64                                                                                                                                                                                                                               6/18
+  Verifying  : libX11-common-1.6.0-6.el6.noarch                                                                                                                                                                                                                         7/18
+  Verifying  : fontconfig-2.8.0-5.el6.x86_64                                                                                                                                                                                                                            8/18
+  Verifying  : libX11-1.6.0-6.el6.x86_64                                                                                                                                                                                                                                9/18
+  Verifying  : geoipupdate-2.2.1-2.el6.x86_64                                                                                                                                                                                                                          10/18
+  Verifying  : GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch                                                                                                                                                                                                           11/18
+  Verifying  : freetype-2.3.11-15.el6_6.1.x86_64                                                                                                                                                                                                                       12/18
+  Verifying  : 2:libpng-1.2.49-1.el6_2.x86_64                                                                                                                                                                                                                          13/18
+  Verifying  : php-common-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                      14/18
+  Verifying  : nginx-1.0.15-12.el6.x86_64                                                                                                                                                                                                                              15/18
+  Verifying  : libjpeg-turbo-1.2.1-3.el6_5.x86_64                                                                                                                                                                                                                      16/18
+  Verifying  : libXau-1.0.6-4.el6.x86_64                                                                                                                                                                                                                               17/18
+  Verifying  : gd-2.0.35-11.el6.x86_64                                                                                                                                                                                                                                 18/18
+
+Installed:
+  nginx.x86_64 0:1.0.15-12.el6                                                                                                       php-fpm.x86_64 0:5.3.3-27.el6_5.2
+
+Dependency Installed:
+  GeoIP.x86_64 0:1.6.5-1.el6              GeoIP-GeoLite-data.noarch 0:2015.04-2.el6 GeoIP-GeoLite-data-extra.noarch 0:2015.04-2.el6 fontconfig.x86_64 0:2.8.0-5.el6 freetype.x86_64 0:2.3.11-15.el6_6.1  gd.x86_64 0:2.0.35-11.el6      geoipupdate.x86_64 0:2.2.1-2.el6
+  libX11.x86_64 0:1.6.0-6.el6             libX11-common.noarch 0:1.6.0-6.el6        libXau.x86_64 0:1.0.6-4.el6                     libXpm.x86_64 0:3.5.10-2.el6    libjpeg-turbo.x86_64 0:1.2.1-3.el6_5 libpng.x86_64 2:1.2.49-1.el6_2 libxcb.x86_64 0:1.9.1-3.el6
+  nginx-filesystem.noarch 0:1.0.15-12.el6 php-common.x86_64 0:5.3.3-27.el6_5.2
+
+Complete!
+[root@m1-kvk-prod-be02 ~]#
+
+
+................................................................................
+................................................................................
+
+[root@ds-kvk-prod-be02 ~]# yum install nginx php-fpm
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package nginx.x86_64 0:1.0.15-12.el6 will be installed
+--> Processing Dependency: nginx-filesystem = 1.0.15-12.el6 for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: nginx-filesystem for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: gd for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: GeoIP for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: libgd.so.2()(64bit) for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: libGeoIP.so.1()(64bit) for package: nginx-1.0.15-12.el6.x86_64
+---> Package php-fpm.x86_64 0:5.3.3-27.el6_5.2 will be installed
+--> Processing Dependency: php-common(x86-64) = 5.3.3-27.el6_5.2 for package: php-fpm-5.3.3-27.el6_5.2.x86_64
+--> Running transaction check
+---> Package GeoIP.x86_64 0:1.6.5-1.el6 will be installed
+--> Processing Dependency: geoipupdate for package: GeoIP-1.6.5-1.el6.x86_64
+--> Processing Dependency: GeoIP-data for package: GeoIP-1.6.5-1.el6.x86_64
+---> Package gd.x86_64 0:2.0.35-11.el6 will be installed
+--> Processing Dependency: libpng12.so.0(PNG12_0)(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libpng12.so.0()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libjpeg.so.62()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libfreetype.so.6()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libfontconfig.so.1()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libXpm.so.4()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libX11.so.6()(64bit) for package: gd-2.0.35-11.el6.x86_64
+---> Package nginx-filesystem.noarch 0:1.0.15-12.el6 will be installed
+---> Package php-common.x86_64 0:5.3.3-27.el6_5.2 will be installed
+--> Running transaction check
+---> Package GeoIP-GeoLite-data.noarch 0:2015.04-2.el6 will be installed
+--> Processing Dependency: GeoIP-GeoLite-data-extra = 2015.04-2.el6 for package: GeoIP-GeoLite-data-2015.04-2.el6.noarch
+---> Package fontconfig.x86_64 0:2.8.0-5.el6 will be installed
+---> Package freetype.x86_64 0:2.3.11-15.el6_6.1 will be installed
+---> Package geoipupdate.x86_64 0:2.2.1-2.el6 will be installed
+---> Package libX11.x86_64 0:1.6.0-6.el6 will be installed
+--> Processing Dependency: libX11-common = 1.6.0-6.el6 for package: libX11-1.6.0-6.el6.x86_64
+--> Processing Dependency: libxcb.so.1()(64bit) for package: libX11-1.6.0-6.el6.x86_64
+---> Package libXpm.x86_64 0:3.5.10-2.el6 will be installed
+---> Package libjpeg-turbo.x86_64 0:1.2.1-3.el6_5 will be installed
+---> Package libpng.x86_64 2:1.2.49-1.el6_2 will be installed
+--> Running transaction check
+---> Package GeoIP-GeoLite-data-extra.noarch 0:2015.04-2.el6 will be installed
+---> Package libX11-common.noarch 0:1.6.0-6.el6 will be installed
+---> Package libxcb.x86_64 0:1.9.1-3.el6 will be installed
+--> Processing Dependency: libXau.so.6()(64bit) for package: libxcb-1.9.1-3.el6.x86_64
+--> Running transaction check
+---> Package libXau.x86_64 0:1.0.6-4.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=============================================================================================================================================================================================================================================================================
+ Package                                                              Arch                                               Version                                                         Repository                                                                     Size
+=============================================================================================================================================================================================================================================================================
+Installing:
+ nginx                                                                x86_64                                             1.0.15-12.el6                                                   tcs-epel                                                                      404 k
+ php-fpm                                                              x86_64                                             5.3.3-27.el6_5.2                                                tcs-rhel-x86_64-server-optional-6                                             1.1 M
+Installing for dependencies:
+ GeoIP                                                                x86_64                                             1.6.5-1.el6                                                     tcs-epel                                                                      113 k
+ GeoIP-GeoLite-data                                                   noarch                                             2015.04-2.el6                                                   tcs-epel                                                                      343 k
+ GeoIP-GeoLite-data-extra                                             noarch                                             2015.04-2.el6                                                   tcs-epel                                                                       23 M
+ fontconfig                                                           x86_64                                             2.8.0-5.el6                                                     tcs-rhel-x86_64-server-6                                                      186 k
+ freetype                                                             x86_64                                             2.3.11-15.el6_6.1                                               tcs-rhel-x86_64-server-6                                                      361 k
+ gd                                                                   x86_64                                             2.0.35-11.el6                                                   tcs-rhel-x86_64-server-6                                                      142 k
+ geoipupdate                                                          x86_64                                             2.2.1-2.el6                                                     tcs-epel                                                                       28 k
+ libX11                                                               x86_64                                             1.6.0-6.el6                                                     tcs-rhel-x86_64-server-6                                                      587 k
+ libX11-common                                                        noarch                                             1.6.0-6.el6                                                     tcs-rhel-x86_64-server-6                                                      192 k
+ libXau                                                               x86_64                                             1.0.6-4.el6                                                     tcs-rhel-x86_64-server-6                                                       24 k
+ libXpm                                                               x86_64                                             3.5.10-2.el6                                                    tcs-rhel-x86_64-server-6                                                       51 k
+ libjpeg-turbo                                                        x86_64                                             1.2.1-3.el6_5                                                   tcs-rhel-x86_64-server-6                                                      174 k
+ libpng                                                               x86_64                                             2:1.2.49-1.el6_2                                                tcs-rhel-x86_64-server-6                                                      182 k
+ libxcb                                                               x86_64                                             1.9.1-3.el6                                                     tcs-rhel-x86_64-server-6                                                      110 k
+ nginx-filesystem                                                     noarch                                             1.0.15-12.el6                                                   tcs-epel                                                                      8.1 k
+ php-common                                                           x86_64                                             5.3.3-27.el6_5.2                                                tcs-rhel-x86_64-server-6                                                      526 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================================================
+Install      18 Package(s)
+
+Total download size: 27 M
+Installed size: 61 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/18): GeoIP-1.6.5-1.el6.x86_64.rpm                                                                                                                                                                                                                  | 113 kB     00:00
+(2/18): GeoIP-GeoLite-data-2015.04-2.el6.noarch.rpm                                                                                                                                                                                                   | 343 kB     00:00
+(3/18): GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch.rpm                                                                                                                                                                                             |  23 MB     00:02
+(4/18): fontconfig-2.8.0-5.el6.x86_64.rpm                                                                                                                                                                                                             | 186 kB     00:00
+(5/18): freetype-2.3.11-15.el6_6.1.x86_64.rpm                                                                                                                                                                                                         | 361 kB     00:00
+(6/18): gd-2.0.35-11.el6.x86_64.rpm                                                                                                                                                                                                                   | 142 kB     00:00
+(7/18): geoipupdate-2.2.1-2.el6.x86_64.rpm                                                                                                                                                                                                            |  28 kB     00:00
+(8/18): libX11-1.6.0-6.el6.x86_64.rpm                                                                                                                                                                                                                 | 587 kB     00:00
+(9/18): libX11-common-1.6.0-6.el6.noarch.rpm                                                                                                                                                                                                          | 192 kB     00:00
+(10/18): libXau-1.0.6-4.el6.x86_64.rpm                                                                                                                                                                                                                |  24 kB     00:00
+(11/18): libXpm-3.5.10-2.el6.x86_64.rpm                                                                                                                                                                                                               |  51 kB     00:00
+(12/18): libjpeg-turbo-1.2.1-3.el6_5.x86_64.rpm                                                                                                                                                                                                       | 174 kB     00:00
+(13/18): libpng-1.2.49-1.el6_2.x86_64.rpm                                                                                                                                                                                                             | 182 kB     00:00
+(14/18): libxcb-1.9.1-3.el6.x86_64.rpm                                                                                                                                                                                                                | 110 kB     00:00
+(15/18): nginx-1.0.15-12.el6.x86_64.rpm                                                                                                                                                                                                               | 404 kB     00:00
+(16/18): nginx-filesystem-1.0.15-12.el6.noarch.rpm                                                                                                                                                                                                    | 8.1 kB     00:00
+(17/18): php-common-5.3.3-27.el6_5.2.x86_64.rpm                                                                                                                                                                                                       | 526 kB     00:00
+(18/18): php-fpm-5.3.3-27.el6_5.2.x86_64.rpm                                                                                                                                                                                                          | 1.1 MB     00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                                                                                        9.4 MB/s |  27 MB     00:02
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch                                                                                                                                                                                                            1/18
+  Installing : GeoIP-GeoLite-data-2015.04-2.el6.noarch                                                                                                                                                                                                                  2/18
+  Installing : freetype-2.3.11-15.el6_6.1.x86_64                                                                                                                                                                                                                        3/18
+  Installing : fontconfig-2.8.0-5.el6.x86_64                                                                                                                                                                                                                            4/18
+  Installing : libXau-1.0.6-4.el6.x86_64                                                                                                                                                                                                                                5/18
+  Installing : libxcb-1.9.1-3.el6.x86_64                                                                                                                                                                                                                                6/18
+  Installing : libjpeg-turbo-1.2.1-3.el6_5.x86_64                                                                                                                                                                                                                       7/18
+  Installing : php-common-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                       8/18
+  Installing : 2:libpng-1.2.49-1.el6_2.x86_64                                                                                                                                                                                                                           9/18
+  Installing : geoipupdate-2.2.1-2.el6.x86_64                                                                                                                                                                                                                          10/18
+  Installing : GeoIP-1.6.5-1.el6.x86_64                                                                                                                                                                                                                                11/18
+  Installing : libX11-common-1.6.0-6.el6.noarch                                                                                                                                                                                                                        12/18
+  Installing : libX11-1.6.0-6.el6.x86_64                                                                                                                                                                                                                               13/18
+  Installing : libXpm-3.5.10-2.el6.x86_64                                                                                                                                                                                                                              14/18
+  Installing : gd-2.0.35-11.el6.x86_64                                                                                                                                                                                                                                 15/18
+  Installing : nginx-filesystem-1.0.15-12.el6.noarch                                                                                                                                                                                                                   16/18
+  Installing : nginx-1.0.15-12.el6.x86_64                                                                                                                                                                                                                              17/18
+  Installing : php-fpm-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                         18/18
+  Verifying  : php-fpm-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                          1/18
+  Verifying  : nginx-filesystem-1.0.15-12.el6.noarch                                                                                                                                                                                                                    2/18
+  Verifying  : libxcb-1.9.1-3.el6.x86_64                                                                                                                                                                                                                                3/18
+  Verifying  : GeoIP-1.6.5-1.el6.x86_64                                                                                                                                                                                                                                 4/18
+  Verifying  : GeoIP-GeoLite-data-2015.04-2.el6.noarch                                                                                                                                                                                                                  5/18
+  Verifying  : libXpm-3.5.10-2.el6.x86_64                                                                                                                                                                                                                               6/18
+  Verifying  : libX11-common-1.6.0-6.el6.noarch                                                                                                                                                                                                                         7/18
+  Verifying  : fontconfig-2.8.0-5.el6.x86_64                                                                                                                                                                                                                            8/18
+  Verifying  : libX11-1.6.0-6.el6.x86_64                                                                                                                                                                                                                                9/18
+  Verifying  : geoipupdate-2.2.1-2.el6.x86_64                                                                                                                                                                                                                          10/18
+  Verifying  : GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch                                                                                                                                                                                                           11/18
+  Verifying  : freetype-2.3.11-15.el6_6.1.x86_64                                                                                                                                                                                                                       12/18
+  Verifying  : 2:libpng-1.2.49-1.el6_2.x86_64                                                                                                                                                                                                                          13/18
+  Verifying  : php-common-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                      14/18
+  Verifying  : nginx-1.0.15-12.el6.x86_64                                                                                                                                                                                                                              15/18
+  Verifying  : libjpeg-turbo-1.2.1-3.el6_5.x86_64                                                                                                                                                                                                                      16/18
+  Verifying  : libXau-1.0.6-4.el6.x86_64                                                                                                                                                                                                                               17/18
+  Verifying  : gd-2.0.35-11.el6.x86_64                                                                                                                                                                                                                                 18/18
+
+Installed:
+  nginx.x86_64 0:1.0.15-12.el6                                                                                                       php-fpm.x86_64 0:5.3.3-27.el6_5.2
+
+Dependency Installed:
+  GeoIP.x86_64 0:1.6.5-1.el6              GeoIP-GeoLite-data.noarch 0:2015.04-2.el6 GeoIP-GeoLite-data-extra.noarch 0:2015.04-2.el6 fontconfig.x86_64 0:2.8.0-5.el6 freetype.x86_64 0:2.3.11-15.el6_6.1  gd.x86_64 0:2.0.35-11.el6      geoipupdate.x86_64 0:2.2.1-2.el6
+  libX11.x86_64 0:1.6.0-6.el6             libX11-common.noarch 0:1.6.0-6.el6        libXau.x86_64 0:1.0.6-4.el6                     libXpm.x86_64 0:3.5.10-2.el6    libjpeg-turbo.x86_64 0:1.2.1-3.el6_5 libpng.x86_64 2:1.2.49-1.el6_2 libxcb.x86_64 0:1.9.1-3.el6
+  nginx-filesystem.noarch 0:1.0.15-12.el6 php-common.x86_64 0:5.3.3-27.el6_5.2
+
+Complete!
+[root@ds-kvk-prod-be02 ~]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-kvk-qa-be02 ~]# yum install nginx php-fpm
+Loaded plugins: product-id, rhnplugin, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+This system is not registered with RHN Classic or RHN Satellite.
+You can use rhn_register to register.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package nginx.x86_64 0:1.0.15-12.el6 will be installed
+--> Processing Dependency: nginx-filesystem = 1.0.15-12.el6 for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: nginx-filesystem for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: gd for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: GeoIP for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: libgd.so.2()(64bit) for package: nginx-1.0.15-12.el6.x86_64
+--> Processing Dependency: libGeoIP.so.1()(64bit) for package: nginx-1.0.15-12.el6.x86_64
+---> Package php-fpm.x86_64 0:5.3.3-27.el6_5.2 will be installed
+--> Processing Dependency: php-common(x86-64) = 5.3.3-27.el6_5.2 for package: php-fpm-5.3.3-27.el6_5.2.x86_64
+--> Running transaction check
+---> Package GeoIP.x86_64 0:1.6.5-1.el6 will be installed
+--> Processing Dependency: geoipupdate for package: GeoIP-1.6.5-1.el6.x86_64
+--> Processing Dependency: GeoIP-data for package: GeoIP-1.6.5-1.el6.x86_64
+---> Package gd.x86_64 0:2.0.35-11.el6 will be installed
+--> Processing Dependency: libpng12.so.0(PNG12_0)(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libpng12.so.0()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libjpeg.so.62()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libfreetype.so.6()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libfontconfig.so.1()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libXpm.so.4()(64bit) for package: gd-2.0.35-11.el6.x86_64
+--> Processing Dependency: libX11.so.6()(64bit) for package: gd-2.0.35-11.el6.x86_64
+---> Package nginx-filesystem.noarch 0:1.0.15-12.el6 will be installed
+---> Package php-common.x86_64 0:5.3.3-27.el6_5.2 will be installed
+--> Running transaction check
+---> Package GeoIP-GeoLite-data.noarch 0:2015.04-2.el6 will be installed
+--> Processing Dependency: GeoIP-GeoLite-data-extra = 2015.04-2.el6 for package: GeoIP-GeoLite-data-2015.04-2.el6.noarch
+---> Package fontconfig.x86_64 0:2.8.0-5.el6 will be installed
+---> Package freetype.x86_64 0:2.3.11-15.el6_6.1 will be installed
+---> Package geoipupdate.x86_64 0:2.2.1-2.el6 will be installed
+---> Package libX11.x86_64 0:1.6.0-6.el6 will be installed
+--> Processing Dependency: libX11-common = 1.6.0-6.el6 for package: libX11-1.6.0-6.el6.x86_64
+--> Processing Dependency: libxcb.so.1()(64bit) for package: libX11-1.6.0-6.el6.x86_64
+---> Package libXpm.x86_64 0:3.5.10-2.el6 will be installed
+---> Package libjpeg-turbo.x86_64 0:1.2.1-3.el6_5 will be installed
+---> Package libpng.x86_64 2:1.2.49-1.el6_2 will be installed
+--> Running transaction check
+---> Package GeoIP-GeoLite-data-extra.noarch 0:2015.04-2.el6 will be installed
+---> Package libX11-common.noarch 0:1.6.0-6.el6 will be installed
+---> Package libxcb.x86_64 0:1.9.1-3.el6 will be installed
+--> Processing Dependency: libXau.so.6()(64bit) for package: libxcb-1.9.1-3.el6.x86_64
+--> Running transaction check
+---> Package libXau.x86_64 0:1.0.6-4.el6 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=============================================================================================================================================================================================================================================================================
+ Package                                                              Arch                                               Version                                                         Repository                                                                     Size
+=============================================================================================================================================================================================================================================================================
+Installing:
+ nginx                                                                x86_64                                             1.0.15-12.el6                                                   tcs-epel                                                                      404 k
+ php-fpm                                                              x86_64                                             5.3.3-27.el6_5.2                                                tcs-rhel-x86_64-server-optional-6                                             1.1 M
+Installing for dependencies:
+ GeoIP                                                                x86_64                                             1.6.5-1.el6                                                     tcs-epel                                                                      113 k
+ GeoIP-GeoLite-data                                                   noarch                                             2015.04-2.el6                                                   tcs-epel                                                                      343 k
+ GeoIP-GeoLite-data-extra                                             noarch                                             2015.04-2.el6                                                   tcs-epel                                                                       23 M
+ fontconfig                                                           x86_64                                             2.8.0-5.el6                                                     tcs-rhel-x86_64-server-6                                                      186 k
+ freetype                                                             x86_64                                             2.3.11-15.el6_6.1                                               tcs-rhel-x86_64-server-6                                                      361 k
+ gd                                                                   x86_64                                             2.0.35-11.el6                                                   tcs-rhel-x86_64-server-6                                                      142 k
+ geoipupdate                                                          x86_64                                             2.2.1-2.el6                                                     tcs-epel                                                                       28 k
+ libX11                                                               x86_64                                             1.6.0-6.el6                                                     tcs-rhel-x86_64-server-6                                                      587 k
+ libX11-common                                                        noarch                                             1.6.0-6.el6                                                     tcs-rhel-x86_64-server-6                                                      192 k
+ libXau                                                               x86_64                                             1.0.6-4.el6                                                     tcs-rhel-x86_64-server-6                                                       24 k
+ libXpm                                                               x86_64                                             3.5.10-2.el6                                                    tcs-rhel-x86_64-server-6                                                       51 k
+ libjpeg-turbo                                                        x86_64                                             1.2.1-3.el6_5                                                   tcs-rhel-x86_64-server-6                                                      174 k
+ libpng                                                               x86_64                                             2:1.2.49-1.el6_2                                                tcs-rhel-x86_64-server-6                                                      182 k
+ libxcb                                                               x86_64                                             1.9.1-3.el6                                                     tcs-rhel-x86_64-server-6                                                      110 k
+ nginx-filesystem                                                     noarch                                             1.0.15-12.el6                                                   tcs-epel                                                                      8.1 k
+ php-common                                                           x86_64                                             5.3.3-27.el6_5.2                                                tcs-rhel-x86_64-server-6                                                      526 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================================================
+Install      18 Package(s)
+
+Total download size: 27 M
+Installed size: 61 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/18): GeoIP-1.6.5-1.el6.x86_64.rpm                                                                                                                                                                                                                  | 113 kB     00:00
+(2/18): GeoIP-GeoLite-data-2015.04-2.el6.noarch.rpm                                                                                                                                                                                                   | 343 kB     00:00
+(3/18): GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch.rpm                                                                                                                                                                                             |  23 MB     00:01
+(4/18): fontconfig-2.8.0-5.el6.x86_64.rpm                                                                                                                                                                                                             | 186 kB     00:00
+(5/18): freetype-2.3.11-15.el6_6.1.x86_64.rpm                                                                                                                                                                                                         | 361 kB     00:00
+(6/18): gd-2.0.35-11.el6.x86_64.rpm                                                                                                                                                                                                                   | 142 kB     00:00
+(7/18): geoipupdate-2.2.1-2.el6.x86_64.rpm                                                                                                                                                                                                            |  28 kB     00:00
+(8/18): libX11-1.6.0-6.el6.x86_64.rpm                                                                                                                                                                                                                 | 587 kB     00:00
+(9/18): libX11-common-1.6.0-6.el6.noarch.rpm                                                                                                                                                                                                          | 192 kB     00:00
+(10/18): libXau-1.0.6-4.el6.x86_64.rpm                                                                                                                                                                                                                |  24 kB     00:00
+(11/18): libXpm-3.5.10-2.el6.x86_64.rpm                                                                                                                                                                                                               |  51 kB     00:00
+(12/18): libjpeg-turbo-1.2.1-3.el6_5.x86_64.rpm                                                                                                                                                                                                       | 174 kB     00:00
+(13/18): libpng-1.2.49-1.el6_2.x86_64.rpm                                                                                                                                                                                                             | 182 kB     00:00
+(14/18): libxcb-1.9.1-3.el6.x86_64.rpm                                                                                                                                                                                                                | 110 kB     00:00
+(15/18): nginx-1.0.15-12.el6.x86_64.rpm                                                                                                                                                                                                               | 404 kB     00:00
+(16/18): nginx-filesystem-1.0.15-12.el6.noarch.rpm                                                                                                                                                                                                    | 8.1 kB     00:00
+(17/18): php-common-5.3.3-27.el6_5.2.x86_64.rpm                                                                                                                                                                                                       | 526 kB     00:00
+(18/18): php-fpm-5.3.3-27.el6_5.2.x86_64.rpm                                                                                                                                                                                                          | 1.1 MB     00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                                                                                         16 MB/s |  27 MB     00:01
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch                                                                                                                                                                                                            1/18
+  Installing : GeoIP-GeoLite-data-2015.04-2.el6.noarch                                                                                                                                                                                                                  2/18
+  Installing : freetype-2.3.11-15.el6_6.1.x86_64                                                                                                                                                                                                                        3/18
+  Installing : fontconfig-2.8.0-5.el6.x86_64                                                                                                                                                                                                                            4/18
+  Installing : libXau-1.0.6-4.el6.x86_64                                                                                                                                                                                                                                5/18
+  Installing : libxcb-1.9.1-3.el6.x86_64                                                                                                                                                                                                                                6/18
+  Installing : libjpeg-turbo-1.2.1-3.el6_5.x86_64                                                                                                                                                                                                                       7/18
+  Installing : php-common-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                       8/18
+  Installing : 2:libpng-1.2.49-1.el6_2.x86_64                                                                                                                                                                                                                           9/18
+  Installing : geoipupdate-2.2.1-2.el6.x86_64                                                                                                                                                                                                                          10/18
+  Installing : GeoIP-1.6.5-1.el6.x86_64                                                                                                                                                                                                                                11/18
+  Installing : libX11-common-1.6.0-6.el6.noarch                                                                                                                                                                                                                        12/18
+  Installing : libX11-1.6.0-6.el6.x86_64                                                                                                                                                                                                                               13/18
+  Installing : libXpm-3.5.10-2.el6.x86_64                                                                                                                                                                                                                              14/18
+  Installing : gd-2.0.35-11.el6.x86_64                                                                                                                                                                                                                                 15/18
+  Installing : nginx-filesystem-1.0.15-12.el6.noarch                                                                                                                                                                                                                   16/18
+  Installing : nginx-1.0.15-12.el6.x86_64                                                                                                                                                                                                                              17/18
+  Installing : php-fpm-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                         18/18
+  Verifying  : php-fpm-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                          1/18
+  Verifying  : nginx-filesystem-1.0.15-12.el6.noarch                                                                                                                                                                                                                    2/18
+  Verifying  : libxcb-1.9.1-3.el6.x86_64                                                                                                                                                                                                                                3/18
+  Verifying  : GeoIP-1.6.5-1.el6.x86_64                                                                                                                                                                                                                                 4/18
+  Verifying  : GeoIP-GeoLite-data-2015.04-2.el6.noarch                                                                                                                                                                                                                  5/18
+  Verifying  : libXpm-3.5.10-2.el6.x86_64                                                                                                                                                                                                                               6/18
+  Verifying  : libX11-common-1.6.0-6.el6.noarch                                                                                                                                                                                                                         7/18
+  Verifying  : fontconfig-2.8.0-5.el6.x86_64                                                                                                                                                                                                                            8/18
+  Verifying  : libX11-1.6.0-6.el6.x86_64                                                                                                                                                                                                                                9/18
+  Verifying  : geoipupdate-2.2.1-2.el6.x86_64                                                                                                                                                                                                                          10/18
+  Verifying  : GeoIP-GeoLite-data-extra-2015.04-2.el6.noarch                                                                                                                                                                                                           11/18
+  Verifying  : freetype-2.3.11-15.el6_6.1.x86_64                                                                                                                                                                                                                       12/18
+  Verifying  : 2:libpng-1.2.49-1.el6_2.x86_64                                                                                                                                                                                                                          13/18
+  Verifying  : php-common-5.3.3-27.el6_5.2.x86_64                                                                                                                                                                                                                      14/18
+  Verifying  : nginx-1.0.15-12.el6.x86_64                                                                                                                                                                                                                              15/18
+  Verifying  : libjpeg-turbo-1.2.1-3.el6_5.x86_64                                                                                                                                                                                                                      16/18
+  Verifying  : libXau-1.0.6-4.el6.x86_64                                                                                                                                                                                                                               17/18
+  Verifying  : gd-2.0.35-11.el6.x86_64                                                                                                                                                                                                                                 18/18
+
+Installed:
+  nginx.x86_64 0:1.0.15-12.el6                                                                                                       php-fpm.x86_64 0:5.3.3-27.el6_5.2
+
+Dependency Installed:
+  GeoIP.x86_64 0:1.6.5-1.el6              GeoIP-GeoLite-data.noarch 0:2015.04-2.el6 GeoIP-GeoLite-data-extra.noarch 0:2015.04-2.el6 fontconfig.x86_64 0:2.8.0-5.el6 freetype.x86_64 0:2.3.11-15.el6_6.1  gd.x86_64 0:2.0.35-11.el6      geoipupdate.x86_64 0:2.2.1-2.el6
+  libX11.x86_64 0:1.6.0-6.el6             libX11-common.noarch 0:1.6.0-6.el6        libXau.x86_64 0:1.0.6-4.el6                     libXpm.x86_64 0:3.5.10-2.el6    libjpeg-turbo.x86_64 0:1.2.1-3.el6_5 libpng.x86_64 2:1.2.49-1.el6_2 libxcb.x86_64 0:1.9.1-3.el6
+  nginx-filesystem.noarch 0:1.0.15-12.el6 php-common.x86_64 0:5.3.3-27.el6_5.2
+
+Complete!
+[root@vm-kvk-qa-be02 ~]#
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ for var1 in m1-kvk-prod-be02.cfg ds-kvk-prod-be02.cfg vm-kvk-qa-be02.cfg ; do cp ../vm-vol-nag01t_nagios_conf_templates/vm-lin-template.cfg objects/servers/vmware/${var1} ; done
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ find . -name *kvk*
+./objects/groups/host-group/kvk-servers.cfg
+./objects/servers/vmware/.m1-kvk-prod-be02.cfg.swp
+./objects/servers/vmware/ds-kvk-prod-be02.cfg
+./objects/servers/vmware/m1-kvk-prod-be02.cfg
+./objects/servers/vmware/.ds-kvk-prod-be02.cfg.swp
+./objects/servers/vmware/.vm-kvk-qa-be02.cfg.swp
+./objects/servers/vmware/vm-kvk-composer.cfg
+./objects/servers/vmware/vm-kvk-qa-be02.cfg
+./objects/servers/dc-ds/linux/kvk
+./objects/servers/dc-ds/linux/kvk/ds-kvk-prod-be01.cfg
+./objects/servers/dc-ds/linux/kvk/ds-kvk-dmz-fe01.cfg
+./objects/servers/dc-m1/linux/kvk
+./objects/servers/dc-m1/linux/kvk/m1-kvk-dmz-fe01.cfg
+./objects/servers/dc-m1/linux/kvk/m1-kvk-prod-be01.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git add objects/servers/vmware/ds-kvk-prod-be02.cfg objects/servers/vmware/m1-kvk-prod-be02.cfg objects/servers/vmware/vm-kvk-qa-be02.cfg
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git status
+# On branch belogrud
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       new file:   objects/servers/vmware/ds-kvk-prod-be02.cfg
+#       new file:   objects/servers/vmware/m1-kvk-prod-be02.cfg
+#       new file:   objects/servers/vmware/vm-kvk-qa-be02.cfg
+#
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ git commit -m "SD#614605. Added follow servers to monitoring: m1-kvk-prod-be02, ds-kvk-prod-be02, vm-kvk-qa-be02" objects/servers/vmware/m1-kvk-prod-be02.cfg objects/servers/vmware/ds-kvk-prod-be02.cfg objects/servers/vmware/vm-kvk-qa-be02.cfg
+[belogrud 4ac1d15] SD#614605. Added follow servers to monitoring: m1-kvk-prod-be02, ds-kvk-prod-be02, vm-kvk-qa-be02
+ 3 files changed, 138 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/vmware/ds-kvk-prod-be02.cfg
+ create mode 100644 objects/servers/vmware/m1-kvk-prod-be02.cfg
+ create mode 100644 objects/servers/vmware/vm-kvk-qa-be02.cfg
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+................................................................................
+................................................................................
+
+
+1. git checkout belogrud.
+*. git pull -> this command pull all master branch into branch belogrud.
+2. create configuration file for host.
+3. git add file ; git commit file ; git push branch belogrud.
+        Here we can not commit this file. It will allow work with two
+different configuration file. One of them can be stashed if it needs.
+
+*. copy configurtion file to /etc/nagios folder and restart nagios.
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; cp ~bsv/work/vm-vol-nag01t/objects/servers/vmware/vm-pwc01.cfg objects/servers/vmware/ ; ls objects/servers/vmware/vm-pwc01.cfg ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+
+
+4. wait unitl all checks will work fine.
+5. remove configuration file from /etc/nagios folder and restart nagios.
+6. git commit good file ; git checkout master and merge master branch with branch belogrud.
+*. git push and sudo to root and git pull and restart nagios.
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; cp ~bsv/work/vm-vol-nag01t/objects/servers/vmware/m1-kvk-prod-be02.cfg objects/servers/vmware/ ; ls objects/servers/vmware/m1-kvk-prod-be02.cfg ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; cp ~bsv/work/vm-vol-nag01t/objects/servers/vmware/ds-kvk-prod-be02.cfg objects/servers/vmware/ ; ls objects/servers/vmware/ds-kvk-prod-be02.cfg ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; cp ~bsv/work/vm-vol-nag01t/objects/servers/vmware/vm-kvk-qa-be02.cfg objects/servers/vmware/ ; ls objects/servers/vmware/vm-kvk-qa-be02.cfg ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+
+................................................................................
+................................................................................
+
+[support@centos00 en]$ ls -Alh /media/sf_share/nagios/nrpe.d/
+total 4.0K
+-rwxrwx--- 1 root vboxsf 140 May  6  2014 check_cpu.cfg
+-rwxrwx--- 1 root vboxsf 597 Nov 21  2013 check_disks.cfg
+-rwxrwx--- 1 root vboxsf 104 Oct 23  2013 check_load.cfg
+-rwxrwx--- 1 root vboxsf 126 Oct 23  2013 check_memory.cfg
+-rwxrwx--- 1 root vboxsf  86 Nov 22  2013 check_nofile.cfg
+-rwxrwx--- 1 root vboxsf 469 Feb  4  2014 check_ntp.cfg
+-rwxrwx--- 1 root vboxsf 161 Oct 23  2013 check_procs.cfg
+[support@centos00 en]$
+
+[support@centos00 en]$ sshpass -e scp /media/sf_share/nagios/nrpe.d/* bsv@m1-kvk-prod-be02:/tmp/
+[support@centos00 en]$ sshpass -e scp /media/sf_share/nagios/nrpe.d/* bsv@ds-kvk-prod-be02:/tmp/
+[support@centos00 en]$ sshpass -e scp /media/sf_share/nagios/nrpe.d/* bsv@vm-kvk-qa-be02:/tmp/
+
+[root@m1-kvk-prod-be02 ~]# cp /tmp/check_* /etc/nrpe.d/
+cp: overwrite `/etc/nrpe.d/check_ntp.cfg'? n
+[root@m1-kvk-prod-be02 ~]# service nrpe restart
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+[root@m1-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# grep -e check_memory_load_linux /etc/nrpe.d/*
+/etc/nrpe.d/check_memory.cfg:command[check_memory_load_linux]=/usr/lib64/nagios/plugins/check_mem_linux.pl -f -w 0.03 -c 0.01
+[root@m1-kvk-prod-be02 ~]# grep -e check_root_fs /etc/nrpe.d/*
+/etc/nrpe.d/check_disks.cfg:command[check_root_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -u MB -w 100 -c 50 -p /
+[root@m1-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# yes | rm /tmp/check_*
+rm: remove regular file `/tmp/check_cpu.cfg'? rm: remove regular file `/tmp/check_disks.cfg'? rm: remove regular file `/tmp/check_load.cfg'? rm: remove regular file `/tmp/check_memory.cfg'? rm: remove regular file `/tmp/check_nofile.cfg'? rm: remove regular file `/tmp/check_ntp.cfg'? rm: remove regular file `/tmp/check_procs.cfg'? [root@m1-kvk-prod-be02 ~]#
+
+[root@ds-kvk-prod-be02 ~]# cp /tmp/check_* /etc/nrpe.d/
+[root@ds-kvk-prod-be02 ~]# service nrpe restart
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+[root@ds-kvk-prod-be02 ~]# yes | rm /tmp/check_*
+rm: remove regular file `/tmp/check_cpu.cfg'? rm: remove regular file `/tmp/check_disks.cfg'? rm: remove regular file `/tmp/check_load.cfg'? rm: remove regular file `/tmp/check_memory.cfg'? rm: remove regular file `/tmp/check_nofile.cfg'? rm: remove regular file `/tmp/check_ntp.cfg'? rm: remove regular file `/tmp/check_procs.cfg'? [root@ds-kvk-prod-be02 ~]#
+
+[root@vm-kvk-qa-be02 ~]# cp /tmp/check_* /etc/nrpe.d/ ; service nrpe restart ; yes | rm /tmp/check_*
+Shutting down nrpe:                                        [  OK  ]
+Starting nrpe:                                             [  OK  ]
+rm: remove regular file `/tmp/check_cpu.cfg'? rm: remove regular file `/tmp/check_disks.cfg'? rm: remove regular file `/tmp/check_load.cfg'? rm: remove regular file `/tmp/check_memory.cfg'? rm: remove regular file `/tmp/check_nofile.cfg'? rm: remove regular file `/tmp/check_ntp.cfg'? rm: remove regular file `/tmp/check_procs.cfg'? [root@vm-kvk-qa-be02 ~]#
+
+
+[support@centos00 en]$ sshpass -e scp /media/sf_share/nagios/plugins/check_* bsv@m1-kvk-prod-be02:/tmp/
+[support@centos00 en]$ sshpass -e scp /media/sf_share/nagios/plugins/check_* bsv@ds-kvk-prod-be02:/tmp/
+[support@centos00 en]$ sshpass -e scp /media/sf_share/nagios/plugins/check_* bsv@vm-kvk-qa-be02:/tmp/
+
+
+[root@m1-kvk-prod-be02 ~]# ls -Alh /usr/lib64/nagios/plugins/
+total 392K
+-rwxr-xr-x 1 root root  65K Sep 11 21:06 check_disk
+-rwxr-xr-x 1 root root  49K Sep 11 21:06 check_load
+-rwxr-xr-x 1 root root  22K Sep 19 00:56 check_nrpe
+-rwxr-xr-x 1 root root  61K Sep 11 21:06 check_procs
+-rwxr-xr-x 1 root root  48K Sep 11 21:06 check_swap
+-rwxr-xr-x 1 root root  44K Sep 11 21:06 check_users
+-rwxr-xr-x 1 root root  44K Sep 11 21:06 negate
+-rwxr-xr-x 1 root root  41K Sep 11 21:06 urlize
+-rwxr-xr-x 1 root root 2.8K Sep 11 21:05 utils.sh
+[root@m1-kvk-prod-be02 ~]# chown root:root /tmp/check_* ; chmod 755 /tmp/check_*
+[root@m1-kvk-prod-be02 ~]# cp /tmp/check_* /usr/lib64/nagios/plugins/
+[root@m1-kvk-prod-be02 ~]#
+
+
+[root@ds-kvk-prod-be02 ~]# chown root:root /tmp/check_* ; chmod 755 /tmp/check_*
+[root@ds-kvk-prod-be02 ~]# cp /tmp/check_* /usr/lib64/nagios/plugins/
+[root@ds-kvk-prod-be02 ~]# ls -Alh /usr/lib64/nagios/plugins/
+total 484K
+-rwxr-xr-x 1 root root 6.4K Nov  9 17:40 check_cpu_perf.sh
+-rwxr-xr-x 1 root root 6.3K Nov  9 17:40 check_cpu.sh
+-rwxr-xr-x 1 root root  359 Nov  9 17:40 check_dbtest.sh
+-rwxr-xr-x 1 root root  65K Sep 11 21:06 check_disk
+-rwxr-xr-x 1 root root 4.5K Nov  9 17:40 check_hpsa
+-rwxr-xr-x 1 root root  49K Sep 11 21:06 check_load
+-rwxr-xr-x 1 root root 7.9K Nov  9 17:40 check_mem_linux.pl
+-rwxr-xr-x 1 root root  22K Sep 19 00:56 check_nrpe
+-rwxr-xr-x 1 root root  53K Nov  9 17:40 check_ntp_time
+-rwxr-xr-x 1 root root  61K Sep 11 21:06 check_procs
+-rwxr-xr-x 1 root root  48K Sep 11 21:06 check_swap
+-rwxr-xr-x 1 root root  44K Sep 11 21:06 check_users
+-rwxr-xr-x 1 root root  44K Sep 11 21:06 negate
+-rwxr-xr-x 1 root root  41K Sep 11 21:06 urlize
+-rwxr-xr-x 1 root root 2.8K Sep 11 21:05 utils.sh
+[root@ds-kvk-prod-be02 ~]#
+
+[root@vm-kvk-qa-be02 ~]# chown root:root /tmp/check_* ; chmod 755 /tmp/check_*
+[root@vm-kvk-qa-be02 ~]# cp /tmp/check_* /usr/lib64/nagios/plugins/
+[root@vm-kvk-qa-be02 ~]# ls -Alh /usr/lib64/nagios/plugins/
+total 484K
+-rwxr-xr-x 1 root root 6.4K Nov  9 17:41 check_cpu_perf.sh
+-rwxr-xr-x 1 root root 6.3K Nov  9 17:41 check_cpu.sh
+-rwxr-xr-x 1 root root  359 Nov  9 17:41 check_dbtest.sh
+-rwxr-xr-x 1 root root  65K Sep 11 21:06 check_disk
+-rwxr-xr-x 1 root root 4.5K Nov  9 17:41 check_hpsa
+-rwxr-xr-x 1 root root  49K Sep 11 21:06 check_load
+-rwxr-xr-x 1 root root 7.9K Nov  9 17:41 check_mem_linux.pl
+-rwxr-xr-x 1 root root  22K Sep 19 00:56 check_nrpe
+-rwxr-xr-x 1 root root  53K Nov  9 17:41 check_ntp_time
+-rwxr-xr-x 1 root root  61K Sep 11 21:06 check_procs
+-rwxr-xr-x 1 root root  48K Sep 11 21:06 check_swap
+-rwxr-xr-x 1 root root  44K Sep 11 21:06 check_users
+-rwxr-xr-x 1 root root  44K Sep 11 21:06 negate
+-rwxr-xr-x 1 root root  41K Sep 11 21:06 urlize
+-rwxr-xr-x 1 root root 2.8K Sep 11 21:05 utils.sh
+[root@vm-kvk-qa-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# yes | rm /tmp/check_*
+rm: remove regular file `/tmp/check_cpu_perf.sh'? rm: remove regular file `/tmp/check_cpu.sh'? rm: remove regular file `/tmp/check_dbtest.sh'? rm: remove regular file `/tmp/check_hpsa'? rm: remove regular file `/tmp/check_mem_linux.pl'? rm: remove regular file `/tmp/check_ntp_time'? [root@m1-kvk-prod-be02 ~]#
+
+[root@ds-kvk-prod-be02 ~]# yes | rm /tmp/check_*
+rm: remove regular file `/tmp/check_cpu_perf.sh'? rm: remove regular file `/tmp/check_cpu.sh'? rm: remove regular file `/tmp/check_dbtest.sh'? rm: remove regular file `/tmp/check_hpsa'? rm: remove regular file `/tmp/check_mem_linux.pl'? rm: remove regular file `/tmp/check_ntp_time'? [root@ds-kvk-prod-be02 ~]#
+
+[root@vm-kvk-qa-be02 ~]# yes | rm /tmp/check_*
+rm: remove regular file `/tmp/check_cpu_perf.sh'? rm: remove regular file `/tmp/check_cpu.sh'? rm: remove regular file `/tmp/check_dbtest.sh'? rm: remove regular file `/tmp/check_hpsa'? rm: remove regular file `/tmp/check_mem_linux.pl'? rm: remove regular file `/tmp/check_ntp_time'? [root@vm-kvk-qa-be02 ~]#
+
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ sudo -u root -i sh -c 'cd /etc/nagios ; rm objects/servers/vmware/{m1-kvk-prod-be02.cfg,ds-kvk-prod-be02.cfg,vm-kvk-qa-be02.cfg} ; read -p "Press enter to continue" ' ; sudo -u root -i sh -c '/usr/sbin/nagios -v /etc/nagios/nagios.cfg ; read -p "Press enter to continue" ; service nagios reload'
+
+
+................................................................................
+................................................................................
+
+[root@m1-kvk-prod-be01 ~]# grep kvkuser /etc/passwd /etc/shadow
+/etc/passwd:kvkuser:x:505:505::/home/kvkuser:/bin/bash
+/etc/shadow:kvkuser:$6$Dbd05ozZ$vJkR86yzYzAf5x8IQBTfVAtLDSXxx4t5oDFnckGiWLuS/fl9Jt/VgCeuereEnzRcqGg/lhcsy5pRzuOUOPigt.:16716:0:99999:7:::
+[root@m1-kvk-prod-be01 ~]#
+[root@m1-kvk-prod-be01 ~]# id kvkuser
+uid=505(kvkuser) gid=505(kvkuser) groups=505(kvkuser),0(root),10(wheel)
+[root@m1-kvk-prod-be01 ~]# sudo -l -U kvkuser
+Matching Defaults entries for kvkuser on this host:
+    !visiblepw, always_set_home, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE INPUTRC KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES",
+    env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE", env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User kvkuser may run the following commands on this host:
+    (ALL) ALL
+[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be01 ~]# ls -Alh ~kvkuser/.ssh/
+total 16K
+-rw------- 1 kvkuser kvkuser 1.2K Aug  5 16:42 authorized_keys
+-rw------- 1 kvkuser kvkuser 1.7K Aug 19  2013 id_rsa
+-rw-r--r-- 1 kvkuser kvkuser  406 Aug 19  2013 id_rsa.pub
+-rw------- 1 kvkuser kvkuser 1.8K Aug 19  2013 known_hosts
+[root@m1-kvk-prod-be01 ~]#
+
+................................................................................
+
+[root@m1-kvk-prod-be02 ~]# groupadd -g 505 kvkuser && useradd -u 505 -g kvkuser -c "SD#614605" -m -G wheel -s /bin/bash -p '$6$Dbd05ozZ$vJkR86yzYzAf5x8IQBTfVAtLDSXxx4t5oDFnckGiWLuS/fl9Jt/VgCeuereEnzRcqGg/lhcsy5pRzuOUOPigt.' kvkuser
+[root@m1-kvk-prod-be02 ~]#
+[root@ds-kvk-prod-be02 ~]# groupadd -g 505 kvkuser && useradd -u 505 -g kvkuser -c "SD#614605" -m -G wheel -s /bin/bash -p '$6$Dbd05ozZ$vJkR86yzYzAf5x8IQBTfVAtLDSXxx4t5oDFnckGiWLuS/fl9Jt/VgCeuereEnzRcqGg/lhcsy5pRzuOUOPigt.' kvkuser
+[root@ds-kvk-prod-be02 ~]#
+[root@vm-kvk-qa-be02 ~]# groupadd -g 505 kvkuser && useradd -u 505 -g kvkuser -c "SD#614605" -m -G wheel -s /bin/bash -p '$6$Dbd05ozZ$vJkR86yzYzAf5x8IQBTfVAtLDSXxx4t5oDFnckGiWLuS/fl9Jt/VgCeuereEnzRcqGg/lhcsy5pRzuOUOPigt.' kvkuser
+[root@vm-kvk-qa-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# su - kvkuser
+[kvkuser@m1-kvk-prod-be02 ~]$ ssh localhost
+The authenticity of host 'localhost (127.0.0.1)' can't be established.
+RSA key fingerprint is 0f:b2:ee:9a:ed:99:21:24:56:cb:29:e5:72:cf:1c:cf.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'localhost' (RSA) to the list of known hosts.
+kvkuser@localhost's password:
+
+[kvkuser@m1-kvk-prod-be02 ~]$ exit
+logout
+[root@m1-kvk-prod-be02 ~]# ls -Alh ~kvkuser/.ssh/
+total 4.0K
+-rw-r--r-- 1 kvkuser kvkuser 391 Nov  9 18:10 known_hosts
+[root@m1-kvk-prod-be02 ~]#
+
+[root@ds-kvk-prod-be02 ~]# su - kvkuser
+[kvkuser@ds-kvk-prod-be02 ~]$ ssh localhost
+The authenticity of host 'localhost (127.0.0.1)' can't be established.
+RSA key fingerprint is 10:a7:2f:26:7e:ec:3d:19:00:76:3b:33:40:e4:51:e1.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'localhost' (RSA) to the list of known hosts.
+kvkuser@localhost's password:
+
+[kvkuser@ds-kvk-prod-be02 ~]$
+
+[root@vm-kvk-qa-be02 ~]# su - kvkuser
+[kvkuser@vm-kvk-qa-be02 ~]$ ssh localhost
+The authenticity of host 'localhost (127.0.0.1)' can't be established.
+RSA key fingerprint is 84:f8:19:f3:29:7e:14:a3:cc:78:8b:57:82:c9:de:9f.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'localhost' (RSA) to the list of known hosts.
+kvkuser@localhost's password:
+
+[kvkuser@vm-kvk-qa-be02 ~]$ logout
+[root@vm-kvk-qa-be02 ~]#
+
+[root@m1-kvk-prod-be01 ~]# scp ~kvkuser/.ssh/authorized_keys root@m1-kvk-prod-be02:~kvkuser/.ssh/
+The authenticity of host 'm1-kvk-prod-be02 (10.218.2.71)' can't be established.
+RSA key fingerprint is 0f:b2:ee:9a:ed:99:21:24:56:cb:29:e5:72:cf:1c:cf.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'm1-kvk-prod-be02,10.218.2.71' (RSA) to the list of known hosts.
+root@m1-kvk-prod-be02's password:
+authorized_keys                                                                                                                                                                                                                            100% 1221     1.2KB/s   00:00
+[root@m1-kvk-prod-be01 ~]# scp ~kvkuser/.ssh/authorized_keys root@ds-kvk-prod-be02:~kvkuser/.ssh/
+The authenticity of host 'ds-kvk-prod-be02 (10.218.7.71)' can't be established.
+RSA key fingerprint is 10:a7:2f:26:7e:ec:3d:19:00:76:3b:33:40:e4:51:e1.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'ds-kvk-prod-be02,10.218.7.71' (RSA) to the list of known hosts.
+root@ds-kvk-prod-be02's password:
+authorized_keys                                                                                                                                                                                                                            100% 1221     1.2KB/s   00:00
+[root@m1-kvk-prod-be01 ~]# scp ~kvkuser/.ssh/authorized_keys root@vm-kvk-qa-be02:~kvkuser/.ssh/
+^C[root@m1-kvk-prod-be01 ~]#
+[root@m1-kvk-prod-be01 ~]# scp ~kvkuser/.ssh/authorized_keys root@vm-kvk-qa-be02:~kvkuser/.ssh/
+^C[root@m1-kvk-prod-be01 ~]#
+
+[root@m1-kvk-prod-be02 ~]# ls -Alh ~kvkuser/.ssh/authorized_keys
+-rw------- 1 root root 1.2K Nov  9 18:14 /home/kvkuser/.ssh/authorized_keys
+[root@m1-kvk-prod-be02 ~]# chown kvkuser:kvkuser ~kvkuser/.ssh/authorized_keys
+[root@m1-kvk-prod-be02 ~]#
+
+[root@ds-kvk-prod-be02 ~]# chown kvkuser:kvkuser ~kvkuser/.ssh/authorized_keys
+[root@ds-kvk-prod-be02 ~]# ls -Alh ~kvkuser/.ssh/authorized_keys
+-rw------- 1 kvkuser kvkuser 1.2K Nov  9 18:14 /home/kvkuser/.ssh/authorized_keys
+[root@ds-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be01 ~]# cat ~kvkuser/.ssh/authorized_keys
+***
+
+[root@m1-kvk-prod-be01 ~]#
+[root@vm-kvk-qa-be02 ~]# su - kvkuser
+[kvkuser@vm-kvk-qa-be02 ~]$ cat > ~kvkuser/.ssh/authorized_keys
+***
+[kvkuser@vm-kvk-qa-be02 ~]$ ls -Alh !$
+ls -Alh ~kvkuser/.ssh/authorized_keys
+-rw-rw-r-- 1 kvkuser kvkuser 1.2K Nov  9 18:21 /home/kvkuser/.ssh/authorized_keys
+[kvkuser@vm-kvk-qa-be02 ~]$ chmod 600 !$
+chmod 600 ~kvkuser/.ssh/authorized_keys
+[kvkuser@vm-kvk-qa-be02 ~]$ ls -Alh ~kvkuser/.ssh/authorized_keys
+-rw------- 1 kvkuser kvkuser 1.2K Nov  9 18:21 /home/kvkuser/.ssh/authorized_keys
+[kvkuser@vm-kvk-qa-be02 ~]$ logout
+[root@vm-kvk-qa-be02 ~]#
+
+................................................................................
+................................................................................
+
+Дата
+Комментарий Автор
+09.11.2015 18:24    Учётная запись kvkuser создана.
+Хэш пароля взят с m1-kvk-prod-be01.
+Файл ~kvkuser/.ssh/authorized_keys скопирован с этого же сервера на три новых сервера.  Белогруд Сергей В
+09.11.2015 18:01    В nagios мониторинг для серверов сделан.    Белогруд Сергей В
+09.11.2015 17:30    пользователь kvkuser с произвольным паролем, авторизованные ssh-ключи скопируйте пожалуйста "по аналогии" :)    Калинин Алексей
+09.11.2015 16:13    Первичке.
+Передать заявку автору.
+Для уточнения по вопросу из комментария "09.11.2015 15:55". Белогруд Сергей В
+09.11.2015 16:12    Установлено следующее ПО и его зависимости, имеющееся в репозиториях.
+yum install nginx php-fpm
+
+Прочее пожалуйста или самостоятельно или с детальным описанием получения пакетов и методов их установки (если это экзотические действа).
+Замечу, что на конкретной системе не любой каприз может быть выполнен разумными затратами усилий на это.    Белогруд Сергей В
+09.11.2015 15:55    Вопрос автору заявки.
+
+Какие конкретно учётные для подключения по ssh создать?
+В данном случае именно конкретно, а не "по аналогии с...".  Белогруд Сергей В
+09.11.2015 15:39    Серверы в puppet добавлены. Белогруд Сергей В
+09.11.2015 15:20    Первичке.
+
+Розенвассер поторопился.
+
+Эти работы ещё не выполнены.
+@unix-admins
+puppet, ssh, софт, мониторинг
+
+Оставить заявку на unix-admins. Белогруд Сергей В
+09.11.2015 15:14    Первичке.
+
+Действовать согласно комментарию "09.11.2015 14:46".    Белогруд Сергей В
+09.11.2015 14:46    Спасибо! Теперь на Михаила Ефремова переведите плиз Розенвассер Александр
+09.11.2015 14:23    ВМ готовы:
+m1-kvk-prod-be02 [10.218.2.71]
+ds-kvk-prod-be02 [10.218.7.71]
+vm-kvk-qa-be02 [10.218.13.154]
+@unix-admins
+puppet, ssh, софт, мониторинг
+@net-admins
+сетевые доступы
+
+----
+по аналогии
+m1-kvk-prod-be01
+ds-kvk-prod-be01
+vm-kvk-qa-be01  Хохлачев Сергей Г
+
+
+................................................................................
+................................................................................
+
+
+#   Tue Nov 10 15:26:17 MSK 2015
+
+[root@m1-kvk-prod-be01 ~]# egrep -e "ema|lzn|tms" /etc/passwd /etc/shadow
+/etc/passwd:lzn:x:504:504:Makhnev Nikita,BC Diapazone,2069,:/home/lzn:/bin/bash
+/etc/passwd:tms:x:557:557:Aboltin Nikita,,,:/home/tms:/bin/bash
+/etc/passwd:ema:x:571:571:Efremov Mikhail,,,:/home/ema:/bin/bash
+/etc/shadow:lzn:$6$dJfNiGSD$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/:16716:0:99999:7:::
+/etc/shadow:tms:$6$SALTsalt$7MlFAUjjMU5aUZauiOeqIu9XY.M1AfJ.Mhy.o2dvXFoq44HdsPdKuGGA9mA1up1dXhThpPect8CC0YWFGI8Gz1:16716:0:99999:7:::
+/etc/shadow:ema:$6$.GL0BSb/$db9ENx54QeyH/cVAHbcVeThes6A80KJaJ/vcdKY7HM9m6Emo4kMutY1BSLPs9IWhMxbB8wGYd0CWiPeY/yyw60:16716:0:99999:7:::
+[root@m1-kvk-prod-be01 ~]#
+
+
+[support@centos00 ~]$ for var1 in m1-kvk-prod-be02 ; do SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; groupadd -g 504 lzn && useradd -u 504 -g lzn -c \"SD#614605. Makhnev Nikita,BC Diapazone,2069\" -m -G wheel -s /bin/bash -p \"\$6\$dJfNiGSD\$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/\" lzn ' )" ; done
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+[sudo] password for bsv:
+m1-kvk-prod-be02.tcsbank.ru
+Connection to m1-kvk-prod-be02 closed.
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ for var1 in m1-kvk-prod-be02 ; do SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; grep lzn /etc/passwd /etc/shadow ; id lzn ' )" ; done  [sudo] password for bsv:
+m1-kvk-prod-be02.tcsbank.ru
+/etc/passwd:lzn:x:504:504:SD#614605. Makhnev Nikita,BC Diapazone,2069:/home/lzn:/bin/bash
+/etc/shadow:lzn:/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/:16749:0:99999:7:::
+uid=504(lzn) gid=504(lzn) groups=504(lzn),10(wheel)
+Connection to m1-kvk-prod-be02 closed.
+[support@centos00 ~]$ for var1 in m1-kvk-prod-be02 ; do SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; usermod -p \'\$6\$dJfNiGSD\$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/\' lzn ; grep lzn /etc/passwd /etc/shadow ; id lzn ' )" ; done
+bash: -c: line 0: unexpected EOF while looking for matching `''
+bash: -c: line 1: syntax error: unexpected end of file
+Connection to m1-kvk-prod-be02 closed.
+[support@centos00 ~]$
+
+[root@m1-kvk-prod-be02 ~]# usermod -p '$6$dJfNiGSD$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/' lzn
+[root@m1-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# groupadd -g 557 tms && useradd -u 557 -g tms -c "SD#614605. Aboltin Nikita" -m -G wheel -s /bin/bash -p '$6$SALTsalt$7MlFAUjjMU5aUZauiOeqIu9XY.M1AfJ.Mhy.o2dvXFoq44HdsPdKuGGA9mA1up1dXhThpPect8CC0YWFGI8Gz1' tms
+[root@m1-kvk-prod-be02 ~]#
+
+[root@m1-kvk-prod-be02 ~]# groupadd -g 571 ema && useradd -u 571 -g ema -c "SD#614605. Efremov Mikhail" -m -G wheel -s /bin/bash -p '$6$.GL0BSb/$db9ENx54QeyH/cVAHbcVeThes6A80KJaJ/vcdKY7HM9m6Emo4kMutY1BSLPs9IWhMxbB8wGYd0CWiPeY/yyw60' ema
+[root@m1-kvk-prod-be02 ~]#
+
+
+[root@ds-kvk-prod-be02 ~]# groupadd -g 504 lzn && useradd -u 504 -g lzn -c "SD#614605. Makhnev Nikita,BC Diapazone,2069" -m -G wheel -s /bin/bash -p '$6$dJfNiGSD$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/' lzn
+[root@ds-kvk-prod-be02 ~]# groupadd -g 557 tms && useradd -u 557 -g tms -c "SD#614605. Aboltin Nikita" -m -G wheel -s /bin/bash -p '$6$SALTsalt$7MlFAUjjMU5aUZauiOeqIu9XY.M1AfJ.Mhy.o2dvXFoq44HdsPdKuGGA9mA1up1dXhThpPect8CC0YWFGI8Gz1' tms
+[root@ds-kvk-prod-be02 ~]# groupadd -g 571 ema && useradd -u 571 -g ema -c "SD#614605. Efremov Mikhail" -m -G wheel -s /bin/bash -p '$6$.GL0BSb/$db9ENx54QeyH/cVAHbcVeThes6A80KJaJ/vcdKY7HM9m6Emo4kMutY1BSLPs9IWhMxbB8wGYd0CWiPeY/yyw60' ema
+[root@ds-kvk-prod-be02 ~]#
+
+[root@vm-kvk-qa-be02 ~]# groupadd -g 504 lzn && useradd -u 504 -g lzn -c "SD#614605. Makhnev Nikita,BC Diapazone,2069" -m -G wheel -s /bin/bash -p '$6$dJfNiGSD$ByOfkxlQPIbbSA91aXVPSd6Yt2D/vaJfUli/vm2TgmSGqLAYVNDi7Uy2U6EEK8AE.vXolemlQDhpowJtEJ4pr/' lzn
+[root@vm-kvk-qa-be02 ~]# groupadd -g 557 tms && useradd -u 557 -g tms -c "SD#614605. Aboltin Nikita" -m -G wheel -s /bin/bash -p '$6$SALTsalt$7MlFAUjjMU5aUZauiOeqIu9XY.M1AfJ.Mhy.o2dvXFoq44HdsPdKuGGA9mA1up1dXhThpPect8CC0YWFGI8Gz1' tms
+[root@vm-kvk-qa-be02 ~]# groupadd -g 571 ema && useradd -u 571 -g ema -c "SD#614605. Efremov Mikhail" -m -G wheel -s /bin/bash -p '$6$.GL0BSb/$db9ENx54QeyH/cVAHbcVeThes6A80KJaJ/vcdKY7HM9m6Emo4kMutY1BSLPs9IWhMxbB8wGYd0CWiPeY/yyw60' ema
+[root@vm-kvk-qa-be02 ~]#
+
+................................................................................
+
+
+[support@centos00 ~]$ for var1 in m1-kvk-prod-be02 ds-kvk-prod-be02 vm-kvk-qa-be02 ; do SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; id lzn ; id tms ; id ema ' )" ; done
+[sudo] password for bsv:
+m1-kvk-prod-be02.tcsbank.ru
+uid=504(lzn) gid=504(lzn) groups=504(lzn),10(wheel)
+uid=557(tms) gid=557(tms) groups=557(tms),10(wheel)
+uid=571(ema) gid=571(ema) groups=571(ema),10(wheel)
+Connection to m1-kvk-prod-be02 closed.
+[sudo] password for bsv:
+ds-kvk-prod-be02.tcsbank.ru
+uid=504(lzn) gid=504(lzn) groups=504(lzn),10(wheel)
+uid=557(tms) gid=557(tms) groups=557(tms),10(wheel)
+uid=571(ema) gid=571(ema) groups=571(ema),10(wheel)
+Connection to ds-kvk-prod-be02 closed.
+[sudo] password for bsv:
+vm-kvk-qa-be02.tcsbank.ru
+uid=504(lzn) gid=504(lzn) groups=504(lzn),10(wheel)
+uid=557(tms) gid=557(tms) groups=557(tms),10(wheel)
+uid=571(ema) gid=571(ema) groups=571(ema),10(wheel)
+Connection to vm-kvk-qa-be02 closed.
+[support@centos00 ~]$
+
+................................................................................
+
+
+
+
+

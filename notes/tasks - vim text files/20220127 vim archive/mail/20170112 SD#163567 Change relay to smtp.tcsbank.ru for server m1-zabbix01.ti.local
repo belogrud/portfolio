@@ -1,0 +1,55 @@
+
+
+:!hostname
+m1-zabbix01.ti.local
+
+[root@m1-zabbix01 ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = m1-zabbix01
+mydomain = ti.local
+myorigin = $myhostname
+inet_protocols = ipv4
+relayhost = [smtp.tcsbank.ru]
+[root@m1-zabbix01 ~]#
+
+[root@m1-zabbix01 ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.17...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 ds-msk-mail1301.tcsbank.ru Microsoft ESMTP MAIL Service ready at Thu, 12 Jan 2017 19:36:36 +0300
+helo
+250 ds-msk-mail1301.tcsbank.ru Hello [10.219.0.236]
+mail from:<root@m1-zabbix01>
+250 2.1.0 Sender OK
+rcpt to:<s.belogrud@tinkoff.ru>
+250 2.1.5 Recipient OK
+data
+354 Start mail input; end with <CRLF>.<CRLF>
+Subject: test 1
+
+Test 1
+
+.
+250 2.6.0 <51a3c4286d3843d1a81d29e304c6e9d5@ds-msk-mail1301.tcsbank.ru> [InternalId=3633542342776, Hostname=ds-msk-mail1301.tcsbank.ru] Queued mail for delivery
+^]
+telnet> quit
+Connection closed.
+[root@m1-zabbix01 ~]#
+
+[root@m1-zabbix01 ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@m1-zabbix01 ~]#
+
+[root@m1-zabbix01 ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" s.belogrud@tinkoff.ru
+
+Jan 12 19:38:03 m1-zabbix01 postfix/postfix-script[29822]: stopping the Postfix mail system
+Jan 12 19:38:03 m1-zabbix01 postfix/master[2040]: terminating on signal 15
+Jan 12 19:38:03 m1-zabbix01 postfix/postfix-script[29894]: starting the Postfix mail system
+Jan 12 19:38:03 m1-zabbix01 postfix/master[29895]: daemon started -- version 2.6.6, configuration /etc/postfix
+Jan 12 19:38:44 m1-zabbix01 postfix/pickup[29902]: 8F23CA005F: uid=0 from=<root>
+Jan 12 19:38:44 m1-zabbix01 postfix/cleanup[30229]: 8F23CA005F: message-id=<20170112163844.8F23CA005F@m1-zabbix01>
+Jan 12 19:38:44 m1-zabbix01 postfix/qmgr[29903]: 8F23CA005F: from=<root@m1-zabbix01.ti.local>, size=524, nrcpt=1 (queue active)
+Jan 12 19:38:44 m1-zabbix01 postfix/smtp[30231]: 8F23CA005F: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.17]:25, delay=0.17, delays=0.04/0.05/0.01/0.08, dsn=2.6.0, status=sent (250 2.6.0 <20170112163844.8F23CA005F@m1-zabbix01> [InternalId=3633542343180, Hostname=m1-msk-mail1302.tcsbank.ru] Queued mail for delivery)
+Jan 12 19:38:44 m1-zabbix01 postfix/qmgr[29903]: 8F23CA005F: removed
+
+

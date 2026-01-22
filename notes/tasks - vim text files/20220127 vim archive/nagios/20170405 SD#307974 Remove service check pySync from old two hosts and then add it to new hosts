@@ -1,0 +1,141 @@
+
+
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="ds-gp-prd-nfs" --quiet
+/usr/local/nagios/etc/objects/servers/dc-ds/linux/greenplum/production/ds-gp-prd-nfs.cfg
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="m1-gp-prd-nfs" --quiet
+/usr/local/nagios/etc/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-nfs.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#307974. Removed not need service check - pySync." servers/dc-ds/linux/greenplum/production/ds-gp-prd-nfs.cfg servers/dc-m1/linux/greenplum/prod/m1-gp-prd-nfs.cfg
+[master 9e43bba] SD#307974. Removed not need service check - pySync.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 12 insertions(+), 12 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 26, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (14/14), done.
+Writing objects: 100% (14/14), 1.13 KiB, done.
+Total 14 (delta 11), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   a8179a6..9e43bba  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p
+commit 9e43bba1981981cf50cfd819eb81f07763648230
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Apr 5 11:10:19 2017 +0300
+
+    SD#307974. Removed not need service check - pySync.
+
+diff --git a/objects/servers/dc-ds/linux/greenplum/production/ds-gp-prd-nfs.cfg b/objects/servers/dc-ds/linux/greenplum/production/ds-gp-prd-nfs.cfg
+index 0aef10e..af747a5 100644
+--- a/objects/servers/dc-ds/linux/greenplum/production/ds-gp-prd-nfs.cfg
++++ b/objects/servers/dc-ds/linux/greenplum/production/ds-gp-prd-nfs.cfg
+@@ -50,9 +50,9 @@ define service{
+     service_description      Server Health
+     check_command            check_dell
+ }
+-define service{
+-    use                      generic-service
+-    host_name                ds-gp-prd-nfs
+-    service_description      pySync service
+-    check_command            check_nrpe!check_pysync
+-}
++#define service{
++#    use                      generic-service
++#    host_name                ds-gp-prd-nfs
++#    service_description      pySync service
++#    check_command            check_nrpe!check_pysync
++#}
+diff --git a/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-nfs.cfg b/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-nfs.cfg
+index d630b5b..a830503 100644
+--- a/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-nfs.cfg
++++ b/objects/servers/dc-m1/linux/greenplum/prod/m1-gp-prd-nfs.cfg
+@@ -50,9 +50,9 @@ define service{
+     service_description      Server Health
+     check_command            check_dell
+ }
+-define service{
+-    use                      generic-service
+-    host_name                m1-gp-prd-nfs
+-    service_description      pySync service
+-    check_command            check_nrpe!check_pysync
+-}
++#define service{
++#    use                      generic-service
++#    host_name                m1-gp-prd-nfs
++#    service_description      pySync service
++#    check_command            check_nrpe!check_pysync
++#}
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-nfs ~]# awk '/pysync/{print}' /etc/nrpe.d/*
+command[check_pysync]=/usr/lib64/nagios/plugins/check_procs -a 'pySync.py --conf=/opt/pySync/sync.conf' -c 1:1
+[root@m1-gp-prd-nfs ~]#
+
+[root@m1-gp-prd-nfs ~]# grep "pysync" /etc/nrpe.d/*
+/etc/nrpe.d/check_procs.cfg:command[check_pysync]=/usr/lib64/nagios/plugins/check_procs -a 'pySync.py --conf=/opt/pySync/sync.conf' -c 1:1
+[root@m1-gp-prd-nfs ~]#
+[root@m1-gp-prd-bkp1 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@m1-gp-prd-bkp1 ~]#
+
+[root@m1-gp-prd-bkp1 ~]# /usr/lib64/nagios/plugins/check_procs -a 'pySync.py --conf=/opt/pySync/sync.conf' -c 1:1
+PROCS OK: 1 process with args 'pySync.py --conf=/opt/pySync/sync.conf' | procs=1;;1:1;0;
+[root@m1-gp-prd-bkp1 ~]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name__contains="m1-gp-prd-bkp1" --quiet                                                                                 /usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-gp-prd-bkp1.cfg
+[root@vm-vol-nag4-tst objects]#
+
+define service{
+    use                             generic-service
+    host_name                       m1-gp-prd-bkp1
+    service_description             pySync service
+    check_command                   check_nrpe!check_pysync
+
+}
+
+................................................................................
+................................................................................
+
+[root@ds-gp-prd-bkp1 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@ds-gp-prd-bkp1 ~]# /usr/lib64/nagios/plugins/check_procs -a 'pySync.py --conf=/opt/pySync/sync.conf' -c 1:1
+PROCS OK: 1 process with args 'pySync.py --conf=/opt/pySync/sync.conf' | procs=1;;1:1;0;
+[root@ds-gp-prd-bkp1 ~]#
+
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#307974. Added one check - pySync." servers/dc-ds/linux/ds-gp-prd-bkp1.cfg servers/dc-m1/linux/m1-gp-prd-bkp1.cfg
+[master e7bed77] SD#307974. Added one check - pySync.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 15 insertions(+), 0 deletions(-)
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 18, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (10/10), done.
+Writing objects: 100% (10/10), 919 bytes, done.
+Total 10 (delta 9), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   9e43bba..e7bed77  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+

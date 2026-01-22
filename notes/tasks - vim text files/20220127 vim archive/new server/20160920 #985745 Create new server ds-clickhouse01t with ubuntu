@@ -1,0 +1,1874 @@
+
+................................................................................
+................................................................................
+
+араметры запроса
+[редактировать критичность]
+Номер   985745
+Название    №985745
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  30.08.2016 19:18
+Дата регистрации    30.08.2016 19:18
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день,
+
+Прошу предоставить сервер для тестовых испытаний СУБД ClickHouse на задаче построения сегментов по Web-логам.
+Конфигурация сервера:
+32 ядра CPU
+125 G RAM
+HDD - 7.6 Tb для раздела данных. Около 600 G для корневого раздела.
+ОС - Ubuntu Server 14.04.4 LTS
+
+
+С уважением,
+
+Мельников Андрей
+Руководитель отдела больших данных
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Мельников Андрей
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+Контактное лицо Мельников Андрей
+Контактный e-mail   a.melnikov@tinkoff.ru
+Контактные телефоны 2859
+
+................................................................................
+................................................................................
+
+#
+#   This is one server with Debian OS installed. Monitoring this server was produced by Leonov Aleksey.
+#   It's more closer to ubuntu, that ever we have.
+#
+[root@vm-vol-nag4-tst objects]# pynag list filename where object_type=host and host_name=zabbix
+filename
+--------------------------------------------------------------------------------
+/usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-zabbix02.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+root@ds-clickhouse01t:~# apt-get install nagios-nrpe-server
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+nagios-nrpe-server is already the newest version.
+0 upgraded, 0 newly installed, 0 to remove and 88 not upgraded.
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# service nagios-nrpe-server start
+ * Starting nagios-nrpe nagios-nrpe
+   ...done.
+root@ds-clickhouse01t:~#
+
+#   Useless for me.
+#   root@ds-clickhouse01t:~# vim /etc/default/nagios-nrpe-server
+
+root@ds-clickhouse01t:~# update-rc.d nagios-nrpe-server defaults
+ System start/stop links for /etc/init.d/nagios-nrpe-server already exist.
+root@ds-clickhouse01t:~# update-rc.d nagios-nrpe-server enable
+update-rc.d: warning:  start runlevel arguments (none) do not match nagios-nrpe-server Default-Start values (2 3 4 5)
+update-rc.d: warning:  stop runlevel arguments (none) do not match nagios-nrpe-server Default-Stop values (0 1 6)
+ Enabling system startup links for /etc/init.d/nagios-nrpe-server ...
+ Removing any system startup links for /etc/init.d/nagios-nrpe-server ...
+   /etc/rc0.d/K20nagios-nrpe-server
+   /etc/rc1.d/K20nagios-nrpe-server
+   /etc/rc2.d/S20nagios-nrpe-server
+   /etc/rc3.d/S20nagios-nrpe-server
+   /etc/rc4.d/S20nagios-nrpe-server
+   /etc/rc5.d/S20nagios-nrpe-server
+   /etc/rc6.d/K20nagios-nrpe-server
+ Adding system startup for /etc/init.d/nagios-nrpe-server ...
+   /etc/rc0.d/K20nagios-nrpe-server -> ../init.d/nagios-nrpe-server
+   /etc/rc1.d/K20nagios-nrpe-server -> ../init.d/nagios-nrpe-server
+   /etc/rc6.d/K20nagios-nrpe-server -> ../init.d/nagios-nrpe-server
+   /etc/rc2.d/S20nagios-nrpe-server -> ../init.d/nagios-nrpe-server
+   /etc/rc3.d/S20nagios-nrpe-server -> ../init.d/nagios-nrpe-server
+   /etc/rc4.d/S20nagios-nrpe-server -> ../init.d/nagios-nrpe-server
+   /etc/rc5.d/S20nagios-nrpe-server -> ../init.d/nagios-nrpe-server
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# service nagios-nrpe-server status
+ * nagios-nrpe is not running
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# ls -Alh /etc/nrpe.d/
+total 32K
+-rw-r--r-- 1 root root 262 Sep 19 19:29 access.cfg
+-rw-r--r-- 1 root root 262 Sep 19 19:27 allowed.cfg
+-rw-r--r-- 1 root root 570 Sep 19 19:27 check_disks.cfg
+-rw-r--r-- 1 root root  80 Sep 19 19:27 check_load.cfg
+-rw-r--r-- 1 root root  96 Sep 19 19:27 check_memory.cfg
+-rw-r--r-- 1 root root 192 Sep 19 19:27 check_ntp.cfg
+-rw-r--r-- 1 root root  86 Sep 19 19:27 check_passwords.cfg
+-rw-r--r-- 1 root root 161 Sep 19 19:27 check_procs.cfg
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# cat /etc/nrpe.d/check_disks.cfg
+command[check_boot_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /boot
+command[check_root_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /
+command[check_opt_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /opt
+command[check_tmp_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /tmp
+command[check_usr_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /usr
+command[check_var_fs]=/usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /var
+root@ds-clickhouse01t:~# /usr/lib64/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /
+-bash: /usr/lib64/nagios/plugins/check_disk: No such file or directory
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# ls /usr/lib/nagios/plugins/
+check_apt      check_dhcp      check_file_age  check_icmp          check_jabber  check_mrtg         check_nntps     check_oracle  check_real       check_snmp   check_time   urlize
+check_breeze   check_dig       check_flexlm    check_ide_smart     check_ldap    check_mrtgtraf     check_nt        check_overcr  check_rpc        check_spop   check_udp    utils.pm
+check_by_ssh   check_disk      check_ftp       check_ifoperstatus  check_ldaps   check_mysql        check_ntp       check_pgsql   check_rta_multi  check_ssh    check_ups    utils.sh
+check_clamd    check_disk_smb  check_host      check_ifstatus      check_load    check_mysql_query  check_ntp_peer  check_ping    check_sensors    check_ssmtp  check_users
+check_cluster  check_dns       check_hpjd      check_imap          check_log     check_nagios       check_ntp_time  check_pop     check_simap      check_swap   check_wave
+check_dbi      check_dummy     check_http      check_ircd          check_mailq   check_nntp         check_nwstat    check_procs   check_smtp       check_tcp    negate
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# sed -i 's/lib64/lib/g' /etc/nrpe.d/*.cfg
+
+root@ds-clickhouse01t:~# cat /etc/nrpe.d/check_disks.cfg
+command[check_boot_fs]=/usr/lib/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /boot
+command[check_root_fs]=/usr/lib/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /
+command[check_opt_fs]=/usr/lib/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /opt
+command[check_tmp_fs]=/usr/lib/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /tmp
+command[check_usr_fs]=/usr/lib/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /usr
+command[check_var_fs]=/usr/lib/nagios/plugins/check_disk -W 20% -K 10% -w 20% -c 10% -p /var
+root@ds-clickhouse01t:~#
+
+
+#
+#   This feature become available after applyed "nrpe" and "nrpe-access" in puppet.
+#
+root@ds-clickhouse01t:~# vim /etc/nagios/nrpe.cfg
+...
+#allowed_hosts=127.0.0.1,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6
+allowed_hosts=127.0.0.1,172.16.1.11,172.16.1.115,172.16.1.117,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6,mon1.tcsbank.ru,mon2.tcsbank.ru,mon3.tcsbank.ru,mon4.tcsbank.ru,mon5.tcsbank.ru,mon6.tcsbank.ru,mon7.tcsbank.ru
+...
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim -o /usr/local/nagios/etc/objects/servers/dc-m1/linux/m1-zabbix02.cfg servers/dc-ds/linux/ds-clickhouse01t.cfg
+
+[root@vm-vol-nag4-tst objects]# grep -ire "a.melnikov" contacts/*
+contacts/a.melnikov.cfg:        contact_name            a.melnikov_email
+contacts/a.melnikov.cfg:        email                   a.melnikov@tinkoff.ru
+contacts/a.melnikov.cfg:        contact_name            a.melnikov_sms
+contacts/a.melnikov.cfg:        email                   a.melnikov@tinkoff.ru
+[root@vm-vol-nag4-tst objects]#
+
+
+................................................................................
+
+root@ds-clickhouse01t:~# less /var/log/syslog
+...
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30148]: Invalid IPv6 address in ACL: mon6.tcsbank.ru
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30148]: Invalid IPv6 address in ACL: mon7.tcsbank.ru
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30149]: Starting up daemon
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30149]: Warning: Could not get group entry for 'nrpe'
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30149]: Warning: Could not set effective GID=-1
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30149]: Warning: Could not get passwd entry for 'nrpe'
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30149]: Warning: Possibly root user failed dropping privileges with initgroups()
+Sep 20 14:27:32 ds-clickhouse01 nrpe[30149]: Error: NRPE daemon cannot be run as user/group root!
+...
+
+root@ds-clickhouse01t:~# apt-get install nagios-nrpe-server nagios-plugins
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+nagios-nrpe-server is already the newest version.
+nagios-plugins is already the newest version.
+0 upgraded, 0 newly installed, 0 to remove and 88 not upgraded.
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# vim /etc/nagios/nrpe.cfg
+...
+# NRPE USER
+# This determines the effective user that the NRPE daemon should run as.
+# You can either supply a username or a UID.
+#
+# NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+nrpe_user=nrpe
+
+# NRPE GROUP
+# This determines the effective group that the NRPE daemon should run as.
+# You can either supply a group name or a GID.
+#
+# NOTE: This option is ignored if NRPE is running under either inetd or xinetd
+
+nrpe_group=nrpe
+...
+
+
+root@ds-clickhouse01t:~# id nrpe
+id: nrpe: no such user
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# dpkg-query -L nagios-nrpe-server
+/.
+/etc
+/etc/nagios
+/etc/nagios/nrpe.cfg
+/etc/nagios/nrpe_local.cfg
+...
+
+root@ds-clickhouse01t:~# mv /etc/nagios/nrpe.cfg{,.from.puppet}
+
+root@ds-clickhouse01t:~# dpkg -S nrpe.cfg
+nagios-nrpe-server: /etc/nagios/nrpe.cfg
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# apt-get -o Dpkg::Options::="--force-confmiss" install --reinstall nagios-nrpe-server
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+0 upgraded, 0 newly installed, 1 reinstalled, 0 to remove and 88 not upgraded.
+Need to get 0 B/32.8 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+(Reading database ... 61512 files and directories currently installed.)
+Preparing to unpack .../nagios-nrpe-server_2.15-0ubuntu1_amd64.deb ...
+ * Stopping nagios-nrpe nagios-nrpe
+start-stop-daemon: warning: failed to kill 30149: No such process
+   ...done.
+Unpacking nagios-nrpe-server (2.15-0ubuntu1) over (2.15-0ubuntu1) ...
+Processing triggers for ureadahead (0.100.0-16) ...
+Processing triggers for man-db (2.6.7.1-1ubuntu1) ...
+Setting up nagios-nrpe-server (2.15-0ubuntu1) ...
+
+Configuration file `/etc/nagios/nrpe.cfg', does not exist on system.
+Installing new config file as you requested.
+ * Starting nagios-nrpe nagios-nrpe
+   ...done.
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# cp /etc/nagios/nrpe.cfg{,.orig}
+
+
+root@ds-clickhouse01t:~# diff -Nuar <(egrep -v -e "^#|^$" /etc/nagios/nrpe.cfg) <(egrep -v -e "^#|^$" /etc/nagios/nrpe.cfg.from.puppet)
+--- /dev/fd/63  2016-09-20 15:00:22.990867263 +0300
++++ /dev/fd/62  2016-09-20 15:00:22.990867263 +0300
+@@ -1,19 +1,11 @@
+ log_facility=daemon
+ pid_file=/var/run/nagios/nrpe.pid
+ server_port=5666
+-nrpe_user=nagios
+-nrpe_group=nagios
+-allowed_hosts=127.0.0.1
+-
+-dont_blame_nrpe=0
+-allow_bash_command_substitution=0
++nrpe_user=nrpe
++nrpe_group=nrpe
++allowed_hosts=127.0.0.1,172.16.1.11,172.16.1.115,172.16.1.117,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6,mon1.tcsbank.ru,mon2.tcsbank.ru,mon3.tcsbank.ru,mon4.tcsbank.ru,mon5.tcsbank.ru,mon6.tcsbank.ru,mon7.tcsbank.ru
++dont_blame_nrpe=1
+ debug=0
+-command_timeout=60
++command_timeout=300
+ connection_timeout=300
+-command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+-command[check_load]=/usr/lib/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+-command[check_hda1]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
+-command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+-command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 150 -c 200
+-include=/etc/nagios/nrpe_local.cfg
+-include_dir=/etc/nagios/nrpe.d/
++include_dir=/etc/nrpe.d/
+root@ds-clickhouse01t:~#
+
+
+root@ds-clickhouse01t:~# vim -o /etc/nagios/nrpe.{cfg,cfg.from.puppet}
+
+
+root@ds-clickhouse01t:~# diff -Nuar <(egrep -v -e "^#|^$" /etc/nagios/nrpe.cfg.orig) <(egrep -v -e "^#|^$" /etc/nagios/nrpe.cfg)
+--- /dev/fd/63  2016-09-20 15:09:23.318268055 +0300
++++ /dev/fd/62  2016-09-20 15:09:23.318268055 +0300
+@@ -3,17 +3,12 @@
+ server_port=5666
+ nrpe_user=nagios
+ nrpe_group=nagios
+-allowed_hosts=127.0.0.1
++allowed_hosts=127.0.0.1,172.16.1.11,172.16.1.115,172.16.1.117,nag2,monitoring1,monitoring2,monitoring3,monitoring4,monitoring5,monitoring6,mon1.tcsbank.ru,mon2.tcsbank.ru,mon3.tcsbank.ru,mon4.tcsbank.ru,mon5.tcsbank.ru,mon6.tcsbank.ru,mon7.tcsbank.ru
+
+-dont_blame_nrpe=0
+-allow_bash_command_substitution=0
++dont_blame_nrpe=1
+ debug=0
+-command_timeout=60
++command_timeout=300
+ connection_timeout=300
+-command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+-command[check_load]=/usr/lib/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+-command[check_hda1]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
+-command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+-command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 150 -c 200
++include_dir=/etc/nrpe.d/
+ include=/etc/nagios/nrpe_local.cfg
+ include_dir=/etc/nagios/nrpe.d/
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# service nagios-nrpe-server status
+ * nagios-nrpe is not running
+root@ds-clickhouse01t:~# service nagios-nrpe-server start
+ * Starting nagios-nrpe nagios-nrpe
+   ...done.
+root@ds-clickhouse01t:~# service nagios-nrpe-server status
+ * nagios-nrpe is running
+root@ds-clickhouse01t:~# ps axu | grep nrp[e]
+nagios    31089  0.0  0.0  23464  2488 ?        Ss   15:11   0:00 /usr/sbin/nrpe -c /etc/nagios/nrpe.cfg -d
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# netstat -nlpt | grep nrpe
+tcp        0      0 0.0.0.0:5666            0.0.0.0:*               LISTEN      31089/nrpe
+tcp6       0      0 :::5666                 :::*                    LISTEN      31089/nrpe
+root@ds-clickhouse01t:~#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# vim -o /home/bsv/work/templates/hw-lin-template.cfg servers/dc-ds/linux/ds-clickhouse01t.cfg
+
+root@ds-clickhouse01t:~# /usr/lib/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+OK - load average: 0.00, 0.01, 0.05|load1=0.000;15.000;30.000;0; load5=0.010;10.000;25.000;0; load15=0.050;5.000;20.000;0;
+root@ds-clickhouse01t:~# grep check_memory_load_linux /etc/nrpe.d/*
+/etc/nrpe.d/check_memory.cfg:command[check_memory_load_linux]=/usr/lib/nagios/plugins/check_mem_linux.pl -f -C -w 20 -c 10
+root@ds-clickhouse01t:~# /usr/lib/nagios/plugins/check_mem_linux.pl -f -C -w 20 -c 10
+-bash: /usr/lib/nagios/plugins/check_mem_linux.pl: No such file or directory
+root@ds-clickhouse01t:~#
+
+[root@puppet ~]# scp /etc/puppet/modules/nagios/files/check_mem_linux.pl bsv@ds-clickhouse01t:/tmp/
+bsv@ds-clickhouse01t's password:
+check_mem_linux.pl                                                                                                                                                 100% 8030     7.8KB/s   00:00
+[root@puppet ~]#
+
+root@ds-clickhouse01t:~# cp /tmp/check_mem_linux.pl /usr/lib/nagios/plugins/
+
+................................................................................
+
+
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# gpg --keyserver-options http-proxy=http://rhsm_user:6eKoEvNHFS5IycxhqH5W@mwg.gtm.tcsbank.ru:8080 --keyserver hkp://pool.sks-keyservers.net:80 --recv-key 1285491434D8786F
+gpg: directory `/root/.gnupg' created
+gpg: new configuration file `/root/.gnupg/gpg.conf' created
+gpg: WARNING: options in `/root/.gnupg/gpg.conf' are not yet active during this run
+gpg: keyring `/root/.gnupg/secring.gpg' created
+gpg: keyring `/root/.gnupg/pubring.gpg' created
+gpg: requesting key 34D8786F from hkp server pool.sks-keyservers.net
+gpgkeys: key 1285491434D8786F can't be retrieved
+gpg: no valid OpenPGP data found.
+gpg: Total number processed: 0
+root@ds-clickhouse01t:~/work/20160920-1642#
+root@ds-clickhouse01t:~/work/20160920-1642# gpg -a --export 1285491434D8786F | sudo apt-key add -
+gpg: WARNING: nothing exported
+gpg: no valid OpenPGP data found.
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get update
+...
+Ign http://repo-linux.tcsbank.ru trusty/restricted Translation-en_US
+Ign http://repo-linux.tcsbank.ru trusty/universe Translation-en_US
+Err http://linux.dell.com trusty InRelease
+
+Err http://linux.dell.com trusty Release.gpg
+  Unable to connect to linux.dell.com:http:
+Reading package lists... Done
+W: Failed to fetch http://linux.dell.com/repo/community/ubuntu/dists/trusty/InRelease
+
+W: Failed to fetch http://linux.dell.com/repo/community/ubuntu/dists/trusty/Release.gpg  Unable to connect to linux.dell.com:http:
+
+W: Some index files failed to download. They have been ignored, or old ones used instead.
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# curl -x http://mwg.gtm.tcsbank.ru:8080 --user rhsm_user:6eKoEvNHFS5IycxhqH5W http://linux.dell.com/repo/community/ubuntu/dists/trusty
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<!-- FileName: index.html
+     Language: [en]
+-->
+<!--Head-->
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta http-equiv="X-UA-Compatible" content="IE=7" />
+  <title>McAfee Web Gateway - Notification</title>
+  <script src="/mwg-internal/de5fs23hu73ds/files/javascript/sw.js" type="text/javascript" ></script>
+  <link rel="stylesheet" href="/mwg-internal/de5fs23hu73ds/files/default/stylesheet.css" />
+</head>
+<!--/Head-->
+<!--Body-->
+<body onload="swOnLoad();">
+  <table class='bodyTable'>
+    <tr>
+      <td class='bodyData' background='/mwg-internal/de5fs23hu73ds/files/default/img/bg_body.gif'>
+<!--Logo-->
+<table class='logoTable'>
+  <tr>
+    <td class='logoData'>
+      <a href='http://www.mcafee.com'>
+        <img src='/mwg-internal/de5fs23hu73ds/files/default/img/logo_mwg.png'></a>
+    </td>
+  </tr>
+</table>
+<!--/Logo-->
+<!--Contents-->
+
+<!--/Contents-->
+<!--Policy-->
+<table class='policyTable'>
+  <tr>
+    <td class='policyHeading'>
+      <hr>
+      Company Acceptable Use Policy
+    </td>
+  </tr>
+  <tr>
+    <td class='policyData'>
+      This is an optional acceptable use disclaimer that appears on every page. You may change the wording or remove this section entirely in index.html.
+    </td>
+  </tr>
+</table>
+<!--/Policy-->
+<!--Foot-->
+<table class='footTable'>
+  <tr>
+    <td class='helpDeskData' background='/mwg-internal/de5fs23hu73ds/files/default/img/bg_navbar.jpg'>
+      For assistance, please contact your system administrator.
+    </td>
+  </tr>
+  <tr>
+    <td class='footData'>
+      generated <span id="time">2016-09-20 17:04:06</span> by McAfee Web Gateway
+      <br />
+      curl/7.35.0
+    </td>
+  </tr>
+</table>
+<!--/Foot-->
+      </td>
+    </tr>
+  </table>
+</body>
+<!--/Body-->
+</html>
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+[root@ds-repo01 ~]# curl -x http://mwg.gtm.tcsbank.ru:8080 --user rhsm_user:6eKoEvNHFS5IycxhqH5W http://linux.dell.com/repo/community/ubuntu/dists/trusty
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>301 Moved Permanently</title>
+</head><body>
+<h1>Moved Permanently</h1>
+<p>The document has moved <a href="http://linux.dell.com/repo/community/ubuntu/dists/trusty/">here</a>.</p>
+</body></html>
+[root@ds-repo01 ~]#
+
+
+#
+#   Was added trailed "/" symbol.
+#
+[root@ds-repo01 ~]# curl -x http://mwg.gtm.tcsbank.ru:8080 --user rhsm_user:6eKoEvNHFS5IycxhqH5W http://linux.dell.com/repo/community/ubuntu/dists/trusty/
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /repo/community/ubuntu/dists/trusty</title>
+ </head>
+ <body>
+<h1>Index of /repo/community/ubuntu/dists/trusty</h1>
+<table><tr><th><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=D">Name</a></th><th><a href="?C=M;O=A">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr><tr><th colspan="5"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[DIR]"></td><td><a href="/repo/community/ubuntu/dists/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64">Contents-amd64</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">2.5M</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64.bz2">Contents-amd64.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">149K</td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-amd64.gz">Contents-amd64.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">277K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386">Contents-i386</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">3.8K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386.bz2">Contents-i386.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">628 </td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-i386.gz">Contents-i386.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">539 </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release">Release</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right"> 29K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release.gpg">Release.gpg</a></td><td align="right">16-Jun-2016 12:00  </td><td align="right">836 </td></tr>
+<tr><td valign="top"><img src="/icons/folder.gif" alt="[DIR]"></td><td><a href="openmanage/">openmanage/</a></td><td align="right">16-Jun-2016 11:56  </td><td align="right">  - </td></tr>
+<tr><th colspan="5"><hr></th></tr>
+</table>
+</body></html>
+[root@ds-repo01 ~]#
+
+[support@centos00 vm-vol-nag01t]$ base64
+rhsm_user:6eKoEvNHFS5IycxhqH5W
+cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==
+[support@centos00 vm-vol-nag01t]$
+
+
+[support@centos00 vm-vol-nag01t]$ base64 -d
+cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==
+rhsm_user:6eKoEvNHFS5IycxhqH5W
+[support@centos00 vm-vol-nag01t]$
+
+[root@ds-repo01 ~]# vim /etc/nginx/conf.d/default.conf
+...
+    location /test2 {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://10.218.11.51:8080;
+        proxy_set_header Authorization "Basic cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==";
+    }
+...
+
+[root@ds-repo01 ~]# service nginx restart
+Stopping nginx:                                            [  OK  ]
+Starting nginx:                                            [  OK  ]
+[root@ds-repo01 ~]#
+
+
+[root@ds-repo01 ~]# netstat -nlpt | grep 81
+tcp        0      0 127.0.0.1:25                0.0.0.0:*                   LISTEN      1815/master
+[root@ds-repo01 ~]#
+
+
+
+
+
+server {
+    listen 81;
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://10.218.11.51:8080;
+        proxy_set_header Authorization "Basic cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==";
+    }
+}
+
+
+[root@ds-repo01 ~]# service nginx restart
+Stopping nginx:                                            [  OK  ]
+Starting nginx:                                            [  OK  ]
+[root@ds-repo01 ~]# netstat -nlpt | grep 81
+tcp        0      0 0.0.0.0:81                  0.0.0.0:*                   LISTEN      10129/nginx
+tcp        0      0 127.0.0.1:25                0.0.0.0:*                   LISTEN      1815/master
+[root@ds-repo01 ~]#
+
+[root@ds-repo01 ~]# curl -x http://localhost:81 http://linux.dell.com/repo/community/ubuntu/dists/trusty/
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<!-- FileName: index.html
+     Language: [en]
+-->
+<!--Head-->
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta http-equiv="X-UA-Compatible" content="IE=7" />
+  <title>McAfee Web Gateway - Notification</title>
+  <script src="/mwg-internal/de5fs23hu73ds/files/javascript/sw.js" type="text/javascript" ></script>
+  <link rel="stylesheet" href="/mwg-internal/de5fs23hu73ds/files/default/stylesheet.css" />
+</head>
+<!--/Head-->
+<!--Body-->
+<body onload="swOnLoad();">
+  <table class='bodyTable'>
+    <tr>
+      <td class='bodyData' background='/mwg-internal/de5fs23hu73ds/files/default/img/bg_body.gif'>
+<!--Logo-->
+<table class='logoTable'>
+  <tr>
+    <td class='logoData'>
+      <a href='http://www.mcafee.com'>
+        <img src='/mwg-internal/de5fs23hu73ds/files/default/img/logo_mwg.png'></a>
+    </td>
+  </tr>
+</table>
+<!--/Logo-->
+<!--Contents-->
+<!-- FileName: URLBlocked.html
+     Language: [en]
+-->
+<!--Title-->
+<table class='titleTable' background='/mwg-internal/de5fs23hu73ds/files/default/img/bg_navbar.jpg'>
+  <tr>
+    <td class='titleData'>
+      Blocked by URL Filter Database
+    </td>
+  </tr>
+</table>
+<!--/Title-->
+
+<!--Content-->
+<table class="contentTable">
+  <tr>
+    <td class="contentData">
+     Your requested URL has been blocked by the URL Filter database module of McAfee Web Gateway. The URL is listed in categories that are not allowed by your administrator at this time.
+    </td>
+  </tr>
+</table>
+<!--/Content-->
+
+<!--Info-->
+<table class="infoTable">
+  <tr>
+    <td class="infoData">
+      <b>URL: </b><script type="text/javascript">break_line("http://linux.dell.com/repo/community/ubuntu/dists/trusty/");</script><br />
+
+        <script type="text/javascript">
+          writeToDocument("<b>URL Categories: </b>" + "Business" );
+        </script><br />
+      <b>Reputation: </b>Minimal Risk<br />
+      <b>Media Type: </b>application/x-empty<br />
+    </td>
+  </tr>
+</table>
+<!--/Info-->
+
+
+<!--/Contents-->
+<!--Policy-->
+<table class='policyTable'>
+  <tr>
+    <td class='policyHeading'>
+      <hr>
+      Company Acceptable Use Policy
+    </td>
+  </tr>
+  <tr>
+    <td class='policyData'>
+      This is an optional acceptable use disclaimer that appears on every page. You may change the wording or remove this section entirely in index.html.
+    </td>
+  </tr>
+</table>
+<!--/Policy-->
+<!--Foot-->
+<table class='footTable'>
+  <tr>
+    <td class='helpDeskData' background='/mwg-internal/de5fs23hu73ds/files/default/img/bg_navbar.jpg'>
+      For assistance, please contact your system administrator.
+    </td>
+  </tr>
+  <tr>
+    <td class='footData'>
+      generated <span id="time">2016-09-20 17:40:33</span> by McAfee Web Gateway
+      <br />
+      curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.14.3.0 zlib/1.2.3 libidn/1.18 libssh2/1.4.2
+    </td>
+  </tr>
+</table>
+<!--/Foot-->
+      </td>
+    </tr>
+  </table>
+</body>
+<!--/Body-->
+</html>
+[root@ds-repo01 ~]#
+
+
+
+server {
+    listen 81;
+
+    location / {
+        proxy_set_header Host $host;
+        #proxy_set_header X-Real-IP $remote_addr;
+        #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://mwg.gtm.tcsbank.ru:8080;
+        proxy_set_header Authorization "Basic cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==";
+    }
+}
+
+
+[root@ds-repo01 ~]# curl -x http://localhost:81 http://linux.dell.com/repo/community/ubuntu/dists/trusty/
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /repo/community/ubuntu/dists/trusty</title>
+ </head>
+ <body>
+<h1>Index of /repo/community/ubuntu/dists/trusty</h1>
+<table><tr><th><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=D">Name</a></th><th><a href="?C=M;O=A">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr><tr><th colspan="5"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[DIR]"></td><td><a href="/repo/community/ubuntu/dists/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64">Contents-amd64</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">2.5M</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64.bz2">Contents-amd64.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">149K</td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-amd64.gz">Contents-amd64.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">277K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386">Contents-i386</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">3.8K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386.bz2">Contents-i386.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">628 </td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-i386.gz">Contents-i386.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">539 </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release">Release</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right"> 29K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release.gpg">Release.gpg</a></td><td align="right">16-Jun-2016 12:00  </td><td align="right">836 </td></tr>
+<tr><td valign="top"><img src="/icons/folder.gif" alt="[DIR]"></td><td><a href="openmanage/">openmanage/</a></td><td align="right">16-Jun-2016 11:56  </td><td align="right">  - </td></tr>
+<tr><th colspan="5"><hr></th></tr>
+</table>
+</body></html>
+[root@ds-repo01 ~]#
+
+................................................................................
+
+
+server {
+    listen 81;
+
+    location / {
+        proxy_set_header Host $host;
+        #proxy_set_header X-Real-IP $remote_addr;
+        #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://mwg.gtm.tcsbank.ru:8080;
+        proxy_set_header Authorization "Basic cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==";
+    }
+
+    location /rewrite_dell {
+        proxy_set_header Host $host;
+        #proxy_set_header X-Real-IP $remote_addr;
+        #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://mwg.gtm.tcsbank.ru:8080;
+        proxy_set_header Authorization "Basic cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==";
+        rewrite ^/rewrite_dell(.*)$ $1 break;
+    }
+}
+
+
+[root@ds-repo01 ~]# service nginx restart
+Stopping nginx:                                            [  OK  ]
+Starting nginx:                                            [  OK  ]
+[root@ds-repo01 ~]# curl -x http://localhost:81 http://linux.dell.com/rewrite_dell/repo/community/ubuntu/dists/trusty/
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /repo/community/ubuntu/dists/trusty</title>
+ </head>
+ <body>
+<h1>Index of /repo/community/ubuntu/dists/trusty</h1>
+<table><tr><th><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=D">Name</a></th><th><a href="?C=M;O=A">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr><tr><th colspan="5"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[DIR]"></td><td><a href="/repo/community/ubuntu/dists/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64">Contents-amd64</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">2.5M</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64.bz2">Contents-amd64.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">149K</td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-amd64.gz">Contents-amd64.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">277K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386">Contents-i386</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">3.8K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386.bz2">Contents-i386.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">628 </td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-i386.gz">Contents-i386.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">539 </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release">Release</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right"> 29K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release.gpg">Release.gpg</a></td><td align="right">16-Jun-2016 12:00  </td><td align="right">836 </td></tr>
+<tr><td valign="top"><img src="/icons/folder.gif" alt="[DIR]"></td><td><a href="openmanage/">openmanage/</a></td><td align="right">16-Jun-2016 11:56  </td><td align="right">  - </td></tr>
+<tr><th colspan="5"><hr></th></tr>
+</table>
+</body></html>
+[root@ds-repo01 ~]# curl -x http://localhost:81 http://linux.dell.com/rewrite_de/repo/community/ubuntu/dists/trusty/
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>404 Not Found</title>
+</head><body>
+<h1>Not Found</h1>
+<p>The requested URL /rewrite_de/repo/community/ubuntu/dists/trusty/ was not found on this server.</p>
+</body></html>
+[root@ds-repo01 ~]#
+
+................................................................................
+
+    location /repo-linux-redirect-via-proxy {
+        proxy_set_header Host $host;
+        #proxy_set_header X-Real-IP $remote_addr;
+        #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://mwg.gtm.tcsbank.ru:8080;
+        proxy_set_header Authorization "Basic cmhzbV91c2VyOjZlS29Fdk5IRlM1SXljeGhxSDVXCg==";
+        rewrite ^/repo-linux-redirect-via-proxy(.*)$ $1 break;
+    }
+
+
+[root@ds-repo01 ~]# service nginx restart
+Stopping nginx:                                            [  OK  ]
+Starting nginx:                                            [  OK  ]
+[root@ds-repo01 ~]# curl -x http://localhost:80 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/dists/trusty/
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /repo/community/ubuntu/dists/trusty</title>
+ </head>
+ <body>
+<h1>Index of /repo/community/ubuntu/dists/trusty</h1>
+<table><tr><th><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=D">Name</a></th><th><a href="?C=M;O=A">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr><tr><th colspan="5"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[DIR]"></td><td><a href="/repo/community/ubuntu/dists/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64">Contents-amd64</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">2.5M</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64.bz2">Contents-amd64.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">149K</td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-amd64.gz">Contents-amd64.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">277K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386">Contents-i386</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">3.8K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386.bz2">Contents-i386.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">628 </td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-i386.gz">Contents-i386.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">539 </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release">Release</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right"> 29K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release.gpg">Release.gpg</a></td><td align="right">16-Jun-2016 12:00  </td><td align="right">836 </td></tr>
+<tr><td valign="top"><img src="/icons/folder.gif" alt="[DIR]"></td><td><a href="openmanage/">openmanage/</a></td><td align="right">16-Jun-2016 11:56  </td><td align="right">  - </td></tr>
+<tr><th colspan="5"><hr></th></tr>
+</table>
+</body></html>
+[root@ds-repo01 ~]#
+
+
+................................................................................
+
+root@ds-clickhouse01t:~/work/20160920-1642# curl -x http://repo-linux:80 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/dists/trusty/
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /repo/community/ubuntu/dists/trusty</title>
+ </head>
+ <body>
+<h1>Index of /repo/community/ubuntu/dists/trusty</h1>
+<table><tr><th><img src="/icons/blank.gif" alt="[ICO]"></th><th><a href="?C=N;O=D">Name</a></th><th><a href="?C=M;O=A">Last modified</a></th><th><a href="?C=S;O=A">Size</a></th><th><a href="?C=D;O=A">Description</a></th></tr><tr><th colspan="5"><hr></th></tr>
+<tr><td valign="top"><img src="/icons/back.gif" alt="[DIR]"></td><td><a href="/repo/community/ubuntu/dists/">Parent Directory</a></td><td>&nbsp;</td><td align="right">  - </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64">Contents-amd64</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">2.5M</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-amd64.bz2">Contents-amd64.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">149K</td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-amd64.gz">Contents-amd64.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">277K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386">Contents-i386</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">3.8K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Contents-i386.bz2">Contents-i386.bz2</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">628 </td></tr>
+<tr><td valign="top"><img src="/icons/compressed.gif" alt="[   ]"></td><td><a href="Contents-i386.gz">Contents-i386.gz</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right">539 </td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release">Release</a></td><td align="right">16-Jun-2016 11:57  </td><td align="right"> 29K</td></tr>
+<tr><td valign="top"><img src="/icons/unknown.gif" alt="[   ]"></td><td><a href="Release.gpg">Release.gpg</a></td><td align="right">16-Jun-2016 12:00  </td><td align="right">836 </td></tr>
+<tr><td valign="top"><img src="/icons/folder.gif" alt="[DIR]"></td><td><a href="openmanage/">openmanage/</a></td><td align="right">16-Jun-2016 11:56  </td><td align="right">  - </td></tr>
+<tr><th colspan="5"><hr></th></tr>
+</table>
+</body></html>
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+................................................................................
+
+root@ds-clickhouse01t:~/work/20160920-1642# echo 'deb http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu trusty openmanage' | sudo tee -a /etc/apt/sources.list.d/linux.dell.com.sources.list
+deb http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu trusty openmanage
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# ls -Alh ~/.gnupg/
+total 12K
+-rw------- 1 root root 9.2K Sep 20 16:51 gpg.conf
+-rw------- 1 root root    0 Sep 20 16:51 pubring.gpg
+-rw------- 1 root root    0 Sep 20 16:51 secring.gpg
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+root@ds-clickhouse01t:~/work/20160920-1642# gpg --keyserver-options http-proxy=http://repo-linux.tcsbank.ru:80 --keyserver hkp://pool.sks-keyservers.net:80 --recv-key 1285491434D8786F
+gpg: requesting key 34D8786F from hkp server pool.sks-keyservers.net
+gpgkeys: key 1285491434D8786F not found on keyserver
+gpg: no valid OpenPGP data found.
+gpg: Total number processed: 0
+root@ds-clickhouse01t:~/work/20160920-1642# gpg -a --export 1285491434D8786F | sudo apt-key add -
+gpg: WARNING: nothing exported
+gpg: no valid OpenPGP data found.
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+Ign http://repo-linux.tcsbank.ru trusty/multiverse Translation-en_US
+Ign http://repo-linux.tcsbank.ru trusty/restricted Translation-en_US
+Ign http://repo-linux.tcsbank.ru trusty/universe Translation-en_US
+Reading package lists... Done
+W: Failed to fetch http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/dists/trusty/InRelease
+
+W: Failed to fetch http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/dists/trusty/Release.gpg  Unable to connect to linux.dell.com:http:
+
+W: Some index files failed to download. They have been ignored, or old ones used instead.
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+root@ds-clickhouse01t:~/work/20160920-1642# vim /etc/apt/sources.list.d/linux.dell.com.sources.list
+
+................................................................................
+
+root@ds-clickhouse01t:~# curl -x http://repo-linux:80 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/dists/trusty/ | w3m -dump -T text/html
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  2461  100  2461    0     0   4296      0 --:--:-- --:--:-- --:--:--  4302
+Index of /repo/community/ubuntu/dists/trusty
+
+[ICO]        Name          Last modified   Size Description
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[DIR] Parent Directory                        -
+[ ]   Contents-amd64     16-Jun-2016 11:57 2.5M
+[ ]   Contents-amd64.bz2 16-Jun-2016 11:57 149K
+[ ]   Contents-amd64.gz  16-Jun-2016 11:57 277K
+[ ]   Contents-i386      16-Jun-2016 11:57 3.8K
+[ ]   Contents-i386.bz2  16-Jun-2016 11:57  628
+[ ]   Contents-i386.gz   16-Jun-2016 11:57  539
+[ ]   Release            16-Jun-2016 11:57  29K
+[ ]   Release.gpg        16-Jun-2016 12:00  836
+[DIR] openmanage/        16-Jun-2016 11:56    -
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+root@ds-clickhouse01t:~#
+
+................................................................................
+................................................................................
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# vim /etc/apt/apt.conf
+Acquire::http::Proxy "http://repo-linux.tcsbank.ru:80";
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get update
+...
+Hit http://repo-linux.tcsbank.ru trusty/restricted Translation-en
+Hit http://repo-linux.tcsbank.ru trusty/universe Translation-en
+Ign http://linux.dell.com trusty InRelease
+Ign http://repo-linux.tcsbank.ru trusty/main Translation-en_US
+Ign http://repo-linux.tcsbank.ru trusty/multiverse Translation-en_US
+Ign http://repo-linux.tcsbank.ru trusty/restricted Translation-en_US
+Ign http://repo-linux.tcsbank.ru trusty/universe Translation-en_US
+Get:1 http://linux.dell.com trusty Release.gpg [836 B]
+Get:2 http://linux.dell.com trusty Release [29.3 kB]
+Ign http://linux.dell.com trusty Release
+Get:3 http://linux.dell.com trusty/openmanage amd64 Packages [25.3 kB]
+Get:4 http://linux.dell.com trusty/openmanage i386 Packages [1,747 B]
+Ign http://linux.dell.com trusty/openmanage Translation-en_US
+Ign http://linux.dell.com trusty/openmanage Translation-en
+Fetched 57.1 kB in 6s (9,021 B/s)
+Reading package lists... Done
+W: GPG error: http://linux.dell.com trusty Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 1285491434D8786F
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get install srvadmin-all
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+  acl argtable2 at-spi2-core ca-certificates-java cim-schema colord cpp
+  cpp-4.8 dbus-x11 dconf-gsettings-backend dconf-service desktop-file-utils
+  fontconfig fontconfig-config fonts-dejavu-core fonts-dejavu-extra
+  gcc-4.8-base gconf-service gconf-service-backend gconf2 gconf2-common gdisk
+  gvfs gvfs-common gvfs-daemons gvfs-libs hicolor-icon-theme java-common
+  libasound2 libasound2-data libasyncns0 libatasmart4 libatk-bridge2.0-0
+  libatk-wrapper-java libatk-wrapper-java-jni libatk1.0-0 libatk1.0-data
+  libatspi2.0-0 libavahi-glib1 libbonobo2-0 libbonobo2-common
+  libcairo-gobject2 libcairo2 libcanberra0 libcimcclient0 libcloog-isl4
+  libcmpicppimpl0 libcolord1 libcolorhug1 libdatrie1 libdconf1 libdrm-intel1
+  libdrm-nouveau2 libdrm-radeon1 libexif12 libflac8 libfontconfig1 libfontenc1
+  libgconf-2-4 libgconf2-4 libgd3 libgdk-pixbuf2.0-0 libgdk-pixbuf2.0-common
+  libgif4 libgl1-mesa-dri libgl1-mesa-glx libglapi-mesa libgnome2-0
+  libgnome2-bin libgnome2-common libgnomevfs2-0 libgnomevfs2-common
+  libgphoto2-6 libgphoto2-l10n libgphoto2-port10 libgraphite2-3 libgtk-3-0
+  libgtk-3-bin libgtk-3-common libgtk2.0-0 libgtk2.0-bin libgtk2.0-common
+  libgudev-1.0-0 libgusb2 libharfbuzz0b libice6 libicu52 libidl-common libidl0
+  libieee1284-3 libisl10 libjasper1 libjbig0 libjpeg-turbo8 libjpeg8
+  liblcms2-2 libllvm3.4 libltdl7 libmpc3 libmpfr4 libnspr4 libnss3
+  libnss3-nssdb libogg0 libopenipmi0 liborbit-2-0 liborbit2 libpango-1.0-0
+  libpangocairo-1.0-0 libpangoft2-1.0-0 libpciaccess0 libpixman-1-0 libpulse0
+  libsane libsane-common libsctp1 libsecret-1-0 libsecret-common libsfcutil0
+  libslp1 libsm6 libsmbios2 libsndfile1 libstdc++6 libsysfs2 libthai-data
+  libthai0 libtiff5 libtxc-dxtn-s2tc0 libudisks2-0 libv4l-0 libv4lconvert0
+  libvorbis0a libvorbisenc2 libvorbisfile3 libvpx1 libwayland-client0
+  libwayland-cursor0 libwsman-client2 libwsman-curl-client-transport1
+  libwsman-server1 libwsman1 libx11-xcb1 libxaw7 libxcb-dri2-0 libxcb-dri3-0
+  libxcb-glx0 libxcb-present0 libxcb-render0 libxcb-shape0 libxcb-shm0
+  libxcb-sync1 libxcomposite1 libxcursor1 libxdamage1 libxfixes3 libxft2
+  libxi6 libxinerama1 libxkbcommon0 libxmu6 libxpm4 libxrandr2 libxrender1
+  libxshmfence1 libxslt1.1 libxt6 libxtst6 libxv1 libxxf86dga1 libxxf86vm1
+  lksctp-tools openipmi openjdk-7-jre openjdk-7-jre-headless openwsman
+  policykit-1-gnome python-libsmbios sfcb smbios-utils sound-theme-freedesktop
+  srvadmin-base srvadmin-deng srvadmin-deng-snmp srvadmin-hapi
+  srvadmin-idrac-ivmcli srvadmin-idrac-snmp srvadmin-idrac-vmcli
+  srvadmin-idracadm7 srvadmin-idracadm8 srvadmin-isvc srvadmin-isvc-snmp
+  srvadmin-itunnelprovider srvadmin-jre srvadmin-nvme srvadmin-omacore
+  srvadmin-omacs srvadmin-omcommon srvadmin-omilcore srvadmin-ominst
+  srvadmin-oslog srvadmin-rac-components srvadmin-racdrsc srvadmin-smcommon
+  srvadmin-smweb srvadmin-storage srvadmin-storage-cli srvadmin-storage-snmp
+  srvadmin-storelib srvadmin-storelib-sysfs srvadmin-tomcat srvadmin-webserver
+  srvadmin-xmlsup syscfg tzdata tzdata-java udisks2 x11-common x11-utils
+Suggested packages:
+  cpp-doc gcc-4.8-locales gconf-defaults-service gvfs-backends
+  gvfs-backends-goa default-jre equivs libasound2-plugins alsa-utils
+  libbonobo2-bin libcanberra-gtk0 libcanberra-pulse libgd-tools libglide3
+  desktop-base libgnomevfs2-bin libgnomevfs2-extra gamin fam gnome-mime-data
+  gphoto2 gtkam librsvg2-common libjasper-runtime liblcms2-utils ttf-baekmuk
+  ttf-arphic-gbsn00lp ttf-arphic-bsmi00lp ttf-arphic-gkai00mp
+  ttf-arphic-bkai00mp pulseaudio avahi-daemon hplip hpoj libsane-extras
+  sane-utils slpd openslp-doc libsmbios-doc icedtea-7-plugin
+  icedtea-7-jre-jamvm libnss-mdns sun-java6-fonts fonts-ipafont-gothic
+  fonts-ipafont-mincho ttf-wqy-microhei ttf-wqy-zenhei ttf-indic-fonts-core
+  ttf-telugu-fonts ttf-oriya-fonts ttf-kannada-fonts ttf-bengali-fonts
+  sblim-cmpi-base reiserfsprogs exfat-utils btrfs-tools mdadm cryptsetup-bin
+  mesa-utils
+The following NEW packages will be installed:
+  acl argtable2 at-spi2-core ca-certificates-java cim-schema colord cpp
+  cpp-4.8 dbus-x11 dconf-gsettings-backend dconf-service desktop-file-utils
+  fontconfig fontconfig-config fonts-dejavu-core fonts-dejavu-extra
+  gconf-service gconf-service-backend gconf2 gconf2-common gdisk gvfs
+  gvfs-common gvfs-daemons gvfs-libs hicolor-icon-theme java-common libasound2
+  libasound2-data libasyncns0 libatasmart4 libatk-bridge2.0-0
+  libatk-wrapper-java libatk-wrapper-java-jni libatk1.0-0 libatk1.0-data
+  libatspi2.0-0 libavahi-glib1 libbonobo2-0 libbonobo2-common
+  libcairo-gobject2 libcairo2 libcanberra0 libcimcclient0 libcloog-isl4
+  libcmpicppimpl0 libcolord1 libcolorhug1 libdatrie1 libdconf1 libdrm-intel1
+  libdrm-nouveau2 libdrm-radeon1 libexif12 libflac8 libfontconfig1 libfontenc1
+  libgconf-2-4 libgconf2-4 libgd3 libgdk-pixbuf2.0-0 libgdk-pixbuf2.0-common
+  libgif4 libgl1-mesa-dri libgl1-mesa-glx libglapi-mesa libgnome2-0
+  libgnome2-bin libgnome2-common libgnomevfs2-0 libgnomevfs2-common
+  libgphoto2-6 libgphoto2-l10n libgphoto2-port10 libgraphite2-3 libgtk-3-0
+  libgtk-3-bin libgtk-3-common libgtk2.0-0 libgtk2.0-bin libgtk2.0-common
+  libgudev-1.0-0 libgusb2 libharfbuzz0b libice6 libicu52 libidl-common libidl0
+  libieee1284-3 libisl10 libjasper1 libjbig0 libjpeg-turbo8 libjpeg8
+  liblcms2-2 libllvm3.4 libltdl7 libmpc3 libmpfr4 libnspr4 libnss3
+  libnss3-nssdb libogg0 libopenipmi0 liborbit-2-0 liborbit2 libpango-1.0-0
+  libpangocairo-1.0-0 libpangoft2-1.0-0 libpciaccess0 libpixman-1-0 libpulse0
+  libsane libsane-common libsctp1 libsecret-1-0 libsecret-common libsfcutil0
+  libslp1 libsm6 libsmbios2 libsndfile1 libsysfs2 libthai-data libthai0
+  libtiff5 libtxc-dxtn-s2tc0 libudisks2-0 libv4l-0 libv4lconvert0 libvorbis0a
+  libvorbisenc2 libvorbisfile3 libvpx1 libwayland-client0 libwayland-cursor0
+  libwsman-client2 libwsman-curl-client-transport1 libwsman-server1 libwsman1
+  libx11-xcb1 libxaw7 libxcb-dri2-0 libxcb-dri3-0 libxcb-glx0 libxcb-present0
+  libxcb-render0 libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcomposite1
+  libxcursor1 libxdamage1 libxfixes3 libxft2 libxi6 libxinerama1 libxkbcommon0
+  libxmu6 libxpm4 libxrandr2 libxrender1 libxshmfence1 libxslt1.1 libxt6
+  libxtst6 libxv1 libxxf86dga1 libxxf86vm1 lksctp-tools openipmi openjdk-7-jre
+  openjdk-7-jre-headless openwsman policykit-1-gnome python-libsmbios sfcb
+  smbios-utils sound-theme-freedesktop srvadmin-all srvadmin-base
+  srvadmin-deng srvadmin-deng-snmp srvadmin-hapi srvadmin-idrac-ivmcli
+  srvadmin-idrac-snmp srvadmin-idrac-vmcli srvadmin-idracadm7
+  srvadmin-idracadm8 srvadmin-isvc srvadmin-isvc-snmp srvadmin-itunnelprovider
+  srvadmin-jre srvadmin-nvme srvadmin-omacore srvadmin-omacs srvadmin-omcommon
+  srvadmin-omilcore srvadmin-ominst srvadmin-oslog srvadmin-rac-components
+  srvadmin-racdrsc srvadmin-smcommon srvadmin-smweb srvadmin-storage
+  srvadmin-storage-cli srvadmin-storage-snmp srvadmin-storelib
+  srvadmin-storelib-sysfs srvadmin-tomcat srvadmin-webserver srvadmin-xmlsup
+  syscfg tzdata-java udisks2 x11-common x11-utils
+The following packages will be upgraded:
+  gcc-4.8-base libstdc++6 tzdata
+3 upgraded, 217 newly installed, 0 to remove and 85 not upgraded.
+Need to get 217 MB of archives.
+After this operation, 834 MB of additional disk space will be used.
+Do you want to continue? [Y/n]
+
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get install srvadmin-idrac7
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+  libargtable2-0 libopenipmi0 libsmbios2 openipmi python-libsmbios
+  smbios-utils srvadmin-deng srvadmin-hapi srvadmin-idrac-vmcli
+  srvadmin-idracadm7 srvadmin-isvc srvadmin-omacs srvadmin-omilcore
+  srvadmin-rac-components srvadmin-racadm4 srvadmin-racdrsc
+Suggested packages:
+  libsmbios-doc
+The following NEW packages will be installed:
+  libargtable2-0 libopenipmi0 libsmbios2 openipmi python-libsmbios
+  smbios-utils srvadmin-deng srvadmin-hapi srvadmin-idrac-vmcli
+  srvadmin-idrac7 srvadmin-idracadm7 srvadmin-isvc srvadmin-omacs
+  srvadmin-omilcore srvadmin-rac-components srvadmin-racadm4 srvadmin-racdrsc
+0 upgraded, 17 newly installed, 0 to remove and 88 not upgraded.
+Need to get 4,468 kB of archives.
+After this operation, 25.3 MB of additional disk space will be used.
+Do you want to continue? [Y/n]
+
+Do you want to continue? [Y/n] Y
+WARNING: The following packages cannot be authenticated!
+  srvadmin-omilcore srvadmin-deng srvadmin-hapi srvadmin-idrac-vmcli
+  srvadmin-racadm4 srvadmin-rac-components srvadmin-racdrsc srvadmin-idracadm7
+  srvadmin-isvc srvadmin-omacs srvadmin-idrac7
+Install these packages without verification? [y/N] y
+Get:1 http://repo-linux.tcsbank.ru/ubuntu/ trusty/universe libargtable2-0 amd64 12-1ubuntu1 [13.8 kB]
+Get:2 http://repo-linux.tcsbank.ru/ubuntu/ trusty-updates/main libopenipmi0 amd64 2.0.18-0ubuntu7.2 [423 kB]
+Get:3 http://repo-linux.tcsbank.ru/ubuntu/ trusty/universe libsmbios2 amd64 2.2.28-2 [272 kB]
+Get:4 http://repo-linux.tcsbank.ru/ubuntu/ trusty-updates/main openipmi amd64 2.0.18-0ubuntu7.2 [125 kB]
+Get:5 http://repo-linux.tcsbank.ru/ubuntu/ trusty/universe python-libsmbios all 2.2.28-2 [34.7 kB]
+Get:6 http://repo-linux.tcsbank.ru/ubuntu/ trusty/universe smbios-utils amd64 2.2.28-2 [149 kB]
+Get:7 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-omilcore all 8.3.0 [18.8 kB]
+Get:8 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-deng amd64 8.3.0-1 [687 kB]
+Get:9 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-hapi amd64 8.3.0-1 [300 kB]
+Get:10 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-idrac-vmcli amd64 8.2.0-1 [84.7 kB]
+Get:11 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-racadm4 amd64 7.4.0-1 [183 kB]
+Get:12 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-rac-components amd64 8.2.0-1 [15.3 kB]
+Get:13 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-racdrsc amd64 8.2.0-1 [10.7 kB]
+Get:14 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-idracadm7 amd64 8.2.0-1 [561 kB]
+Get:15 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-isvc amd64 8.3.0-1 [1,209 kB]
+Get:16 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-omacs amd64 8.3.0-2 [381 kB]
+Get:17 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-idrac7 amd64 7.4.0-1 [1,594 B]
+Fetched 4,468 kB in 16s (270 kB/s)
+Selecting previously unselected package libargtable2-0.
+(Reading database ... 61512 files and directories currently installed.)
+Preparing to unpack .../libargtable2-0_12-1ubuntu1_amd64.deb ...
+Unpacking libargtable2-0 (12-1ubuntu1) ...
+Selecting previously unselected package libopenipmi0.
+Preparing to unpack .../libopenipmi0_2.0.18-0ubuntu7.2_amd64.deb ...
+Unpacking libopenipmi0 (2.0.18-0ubuntu7.2) ...
+Selecting previously unselected package libsmbios2.
+Preparing to unpack .../libsmbios2_2.2.28-2_amd64.deb ...
+Unpacking libsmbios2 (2.2.28-2) ...
+Selecting previously unselected package openipmi.
+Preparing to unpack .../openipmi_2.0.18-0ubuntu7.2_amd64.deb ...
+Unpacking openipmi (2.0.18-0ubuntu7.2) ...
+Selecting previously unselected package python-libsmbios.
+Preparing to unpack .../python-libsmbios_2.2.28-2_all.deb ...
+Unpacking python-libsmbios (2.2.28-2) ...
+Selecting previously unselected package smbios-utils.
+Preparing to unpack .../smbios-utils_2.2.28-2_amd64.deb ...
+Unpacking smbios-utils (2.2.28-2) ...
+Selecting previously unselected package srvadmin-omilcore.
+Preparing to unpack .../srvadmin-omilcore_8.3.0_all.deb ...
+Unpacking srvadmin-omilcore (8.3.0) ...
+Selecting previously unselected package srvadmin-deng.
+Preparing to unpack .../srvadmin-deng_8.3.0-1_amd64.deb ...
+Unpacking srvadmin-deng (8.3.0-1) ...
+Selecting previously unselected package srvadmin-hapi.
+Preparing to unpack .../srvadmin-hapi_8.3.0-1_amd64.deb ...
+Unpacking srvadmin-hapi (8.3.0-1) ...
+Selecting previously unselected package srvadmin-idrac-vmcli.
+Preparing to unpack .../srvadmin-idrac-vmcli_8.2.0-1_amd64.deb ...
+Unpacking srvadmin-idrac-vmcli (8.2.0-1) ...
+Selecting previously unselected package srvadmin-racadm4.
+Preparing to unpack .../srvadmin-racadm4_7.4.0-1_amd64.deb ...
+Unpacking srvadmin-racadm4 (7.4.0-1) ...
+Selecting previously unselected package srvadmin-rac-components.
+Preparing to unpack .../srvadmin-rac-components_8.2.0-1_amd64.deb ...
+Unpacking srvadmin-rac-components (8.2.0-1) ...
+Selecting previously unselected package srvadmin-racdrsc.
+Preparing to unpack .../srvadmin-racdrsc_8.2.0-1_amd64.deb ...
+Unpacking srvadmin-racdrsc (8.2.0-1) ...
+Selecting previously unselected package srvadmin-idracadm7.
+Preparing to unpack .../srvadmin-idracadm7_8.2.0-1_amd64.deb ...
+Unpacking srvadmin-idracadm7 (8.2.0-1) ...
+Selecting previously unselected package srvadmin-isvc.
+Preparing to unpack .../srvadmin-isvc_8.3.0-1_amd64.deb ...
+Unpacking srvadmin-isvc (8.3.0-1) ...
+Selecting previously unselected package srvadmin-omacs.
+Preparing to unpack .../srvadmin-omacs_8.3.0-2_amd64.deb ...
+Unpacking srvadmin-omacs (8.3.0-2) ...
+Selecting previously unselected package srvadmin-idrac7.
+Preparing to unpack .../srvadmin-idrac7_7.4.0-1_amd64.deb ...
+Unpacking srvadmin-idrac7 (7.4.0-1) ...
+Processing triggers for ureadahead (0.100.0-16) ...
+Processing triggers for man-db (2.6.7.1-1ubuntu1) ...
+Setting up libargtable2-0 (12-1ubuntu1) ...
+Setting up libopenipmi0 (2.0.18-0ubuntu7.2) ...
+Setting up libsmbios2 (2.2.28-2) ...
+Setting up openipmi (2.0.18-0ubuntu7.2) ...
+Setting up python-libsmbios (2.2.28-2) ...
+Setting up smbios-utils (2.2.28-2) ...
+Setting up srvadmin-omilcore (8.3.0) ...
+     **********************************************************
+     After the install process completes, you may need
+     to log out and then log in again to reset the PATH
+     variable to access the Dell OpenManage CLI utilities
+     **********************************************************
+Setting up srvadmin-deng (8.3.0-1) ...
+26 files processed
+7 files processed
+OS SNMP support not installed
+update-rc.d: warning: default start runlevel arguments (2 3 4 5) do not match dataeng Default-Start values (3 5)
+update-rc.d: warning: default stop runlevel arguments (0 1 6) do not match dataeng Default-Stop values (1 2)
+ Adding system startup for /etc/init.d/dataeng ...
+   /etc/rc0.d/K20dataeng -> ../init.d/dataeng
+   /etc/rc1.d/K20dataeng -> ../init.d/dataeng
+   /etc/rc6.d/K20dataeng -> ../init.d/dataeng
+   /etc/rc2.d/S20dataeng -> ../init.d/dataeng
+   /etc/rc3.d/S20dataeng -> ../init.d/dataeng
+   /etc/rc4.d/S20dataeng -> ../init.d/dataeng
+   /etc/rc5.d/S20dataeng -> ../init.d/dataeng
+Setting up srvadmin-idrac-vmcli (8.2.0-1) ...
+Setting up srvadmin-racadm4 (7.4.0-1) ...
+update-alternatives: using /opt/dell/srvadmin/sbin/racadm-wrapper-rac4 to provide /opt/dell/srvadmin/sbin/racadm (racadm) in auto mode
+Setting up srvadmin-rac-components (8.2.0-1) ...
+Setting up srvadmin-racdrsc (8.2.0-1) ...
+Setting up srvadmin-idracadm7 (8.2.0-1) ...
+update-alternatives: using /opt/dell/srvadmin/sbin/racadm-wrapper-idrac7 to provide /opt/dell/srvadmin/sbin/racadm (racadm) in auto mode
+Setting up srvadmin-omacs (8.3.0-2) ...
+Processing triggers for ureadahead (0.100.0-16) ...
+Setting up srvadmin-hapi (8.3.0-1) ...
+Setting up srvadmin-isvc (8.3.0-1) ...
+56 files processed
+6 files processed
+23 files processed
+Setting up srvadmin-idrac7 (7.4.0-1) ...
+Processing triggers for libc-bin (2.19-0ubuntu6.7) ...
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get install srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+libsysfs2 libxslt1.1 srvadmin-base srvadmin-nvme srvadmin-omacore
+...
+Setting up srvadmin-storelib-sysfs (8.3.0) ...
+update-alternatives: using /lib/x86_64-linux-gnu/libsysfs.so.2 to provide /opt/lsi/3rdpartylibs/x86_64/libsysfs.so (srvadmin-storelib-sysfs) in auto mode
+update-alternatives: warning: not replacing /opt/lsi/3rdpartylibs/x86_64/libsysfs.so with a link
+Setting up srvadmin-storelib (8.3.0) ...
+Setting up srvadmin-smcommon (8.3.0) ...
+Setting up srvadmin-nvme (8.3.0) ...
+Setting up srvadmin-xmlsup (8.3.0-1) ...
+Setting up srvadmin-storage (8.3.0) ...
+Setting up srvadmin-ominst (8.3.0-1) ...
+Setting up srvadmin-omacore (8.3.0-1) ...
+Setting up srvadmin-base (8.3.0) ...
+Setting up srvadmin-deng-snmp (8.3.0-1) ...
+Setting up srvadmin-idrac-snmp (8.2.0-1) ...
+Setting up srvadmin-isvc-snmp (8.3.0-1) ...
+Setting up srvadmin-server-snmp (8.3.0) ...
+Setting up srvadmin-storage-snmp (8.3.0) ...
+Setting up srvadmin-storageservices-snmp (7.4.0) ...
+Processing triggers for libc-bin (2.19-0ubuntu6.7) ...
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+root@ds-clickhouse01t:~/work/20160920-1642# racadm getniccfg | head
+racadm: command not found
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get install srvadmin-idrac
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following extra packages will be installed:
+  srvadmin-idrac-ivmcli srvadmin-idracadm
+The following NEW packages will be installed:
+  srvadmin-idrac srvadmin-idrac-ivmcli srvadmin-idracadm
+0 upgraded, 3 newly installed, 0 to remove and 88 not upgraded.
+Need to get 724 kB of archives.
+After this operation, 2,317 kB of additional disk space will be used.
+Do you want to continue? [Y/n] Y
+WARNING: The following packages cannot be authenticated!
+  srvadmin-idracadm srvadmin-idrac-ivmcli srvadmin-idrac
+Install these packages without verification? [y/N] y
+Get:1 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-idracadm amd64 7.4.0-1 [631 kB]
+Get:2 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-idrac-ivmcli amd64 8.2.0-1 [91.7 kB]
+Get:3 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-idrac amd64 7.4.0-1 [1,766 B]
+Fetched 724 kB in 3s (200 kB/s)
+Selecting previously unselected package srvadmin-idracadm.
+(Reading database ... 63614 files and directories currently installed.)
+Preparing to unpack .../srvadmin-idracadm_7.4.0-1_amd64.deb ...
+Unpacking srvadmin-idracadm (7.4.0-1) ...
+Selecting previously unselected package srvadmin-idrac-ivmcli.
+Preparing to unpack .../srvadmin-idrac-ivmcli_8.2.0-1_amd64.deb ...
+Unpacking srvadmin-idrac-ivmcli (8.2.0-1) ...
+Selecting previously unselected package srvadmin-idrac.
+Preparing to unpack .../srvadmin-idrac_7.4.0-1_amd64.deb ...
+Unpacking srvadmin-idrac (7.4.0-1) ...
+Setting up srvadmin-idracadm (7.4.0-1) ...
+Setting up srvadmin-idrac-ivmcli (8.2.0-1) ...
+Setting up srvadmin-idrac (7.4.0-1) ...
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get install dcism
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following NEW packages will be installed:
+  dcism
+0 upgraded, 1 newly installed, 0 to remove and 88 not upgraded.
+Need to get 159 kB of archives.
+After this operation, 733 kB of additional disk space will be used.
+WARNING: The following packages cannot be authenticated!
+  dcism
+Install these packages without verification? [y/N] y
+Get:1 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage dcism amd64 2.0.0-1 [159 kB]
+Fetched 159 kB in 1s (98.8 kB/s)
+Selecting previously unselected package dcism.
+(Reading database ... 63634 files and directories currently installed.)
+Preparing to unpack .../dcism_2.0.0-1_amd64.deb ...
+Unpacking dcism (2.0.0-1) ...
+Processing triggers for ureadahead (0.100.0-16) ...
+Setting up dcism (2.0.0-1) ...
+ Adding system startup for /etc/init.d/dcismeng ...
+   /etc/rc0.d/K20dcismeng -> ../init.d/dcismeng
+   /etc/rc1.d/K20dcismeng -> ../init.d/dcismeng
+   /etc/rc6.d/K20dcismeng -> ../init.d/dcismeng
+   /etc/rc2.d/S20dcismeng -> ../init.d/dcismeng
+   /etc/rc3.d/S20dcismeng -> ../init.d/dcismeng
+   /etc/rc4.d/S20dcismeng -> ../init.d/dcismeng
+   /etc/rc5.d/S20dcismeng -> ../init.d/dcismeng
+Processing triggers for ureadahead (0.100.0-16) ...
+Processing triggers for libc-bin (2.19-0ubuntu6.7) ...
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# apt-get install snmp snmpd
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+snmp is already the newest version.
+snmp set to manually installed.
+The following NEW packages will be installed:
+  snmpd
+0 upgraded, 1 newly installed, 0 to remove and 88 not upgraded.
+Need to get 73.3 kB of archives.
+After this operation, 232 kB of additional disk space will be used.
+Do you want to continue? [Y/n] Y
+Get:1 http://repo-linux.tcsbank.ru/ubuntu/ trusty-updates/main snmpd amd64 5.7.2~dfsg-8.1ubuntu3.2 [73.3 kB]
+Fetched 73.3 kB in 0s (1,431 kB/s)
+Preconfiguring packages ...
+Selecting previously unselected package snmpd.
+(Reading database ... 63703 files and directories currently installed.)
+Preparing to unpack .../snmpd_5.7.2~dfsg-8.1ubuntu3.2_amd64.deb ...
+Unpacking snmpd (5.7.2~dfsg-8.1ubuntu3.2) ...
+Processing triggers for ureadahead (0.100.0-16) ...
+Processing triggers for man-db (2.6.7.1-1ubuntu1) ...
+Setting up snmpd (5.7.2~dfsg-8.1ubuntu3.2) ...
+update-rc.d: warning:  stop runlevel arguments (1) do not match snmpd Default-Stop values (0 1 6)
+ * Starting network management services:
+Processing triggers for ureadahead (0.100.0-16) ...
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+root@ds-clickhouse01t:~/work/20160920-1642# update-rc.d snmpd enable
+update-rc.d: warning:  start runlevel arguments (none) do not match snmpd Default-Start values (2 3 4 5)
+update-rc.d: warning:  stop runlevel arguments (none) do not match snmpd Default-Stop values (0 1 6)
+ Enabling system startup links for /etc/init.d/snmpd ...
+ Removing any system startup links for /etc/init.d/snmpd ...
+   /etc/rc1.d/K20snmpd
+   /etc/rc2.d/S20snmpd
+   /etc/rc3.d/S20snmpd
+   /etc/rc4.d/S20snmpd
+   /etc/rc5.d/S20snmpd
+ Adding system startup for /etc/init.d/snmpd ...
+   /etc/rc1.d/K20snmpd -> ../init.d/snmpd
+   /etc/rc2.d/S20snmpd -> ../init.d/snmpd
+   /etc/rc3.d/S20snmpd -> ../init.d/snmpd
+   /etc/rc4.d/S20snmpd -> ../init.d/snmpd
+   /etc/rc5.d/S20snmpd -> ../init.d/snmpd
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+#
+#   In puppet added class "snmpconfig".
+#
+root@ds-clickhouse01t:~/work/20160920-1642# cp /etc/snmp/snmpd.conf{,.orig}
+root@ds-clickhouse01t:~/work/20160920-1642# puppet agent -t
+Info: Retrieving pluginfacts
+Info: Retrieving plugin
+Info: Loading facts
+Info: Caching catalog for ds-clickhouse01t.tcsbank.ru
+Info: Applying configuration version '1474445235'
+Notice: /Stage[main]/Snmpconfig/File[/etc/snmp]/group: group changed 'root' to 'wheel'
+Notice: /Stage[main]/Snmpconfig/File[/etc/snmp]/mode: mode changed '0755' to '0750'
+Notice: /Stage[main]/Snmpconfig/File[/etc/snmp/includer.sh]/ensure: defined content as '{md5}683805e594ad37ab5b2af36bff8a6f38'
+Notice: /Stage[main]/Snmpconfig/File[/etc/snmp/config.d]/ensure: created
+Notice: /Stage[main]/Snmpconfig/File[/etc/snmp/config.d/rocomm.conf]/ensure: defined content as '{md5}c3635e965a111b34e41c1769374e5130'
+Info: /Stage[main]/Snmpconfig/File[/etc/snmp/config.d/rocomm.conf]: Scheduling refresh of Exec[/etc/init.d/snmpd reload]
+Notice: /Stage[main]/Snmpconfig/Exec[/etc/init.d/snmpd reload]: Triggered 'refresh' from 1 events
+Notice: /Stage[main]/Snmpconfig/Exec[run_includer]/returns: executed successfully
+Notice: Finished catalog run in 1.45 seconds
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+
+root@ds-clickhouse01t:~/work/20160920-1642# diff -Nuar /etc/snmp/snmpd.conf{,.orig}
+--- /etc/snmp/snmpd.conf        2016-09-21 12:06:22.466769718 +0300
++++ /etc/snmp/snmpd.conf.orig   2016-09-21 12:06:11.126784581 +0300
+@@ -191,4 +191,3 @@
+                                            #  Listen for network connections (from localhost)
+                                            #    rather than the default named socket /var/agentx/master
+ #agentXSocket    tcp:localhost:705
+-includeDir /etc/snmp/config.d
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+root@ds-clickhouse01t:~/work/20160920-1642# ls -Alh /etc/snmp/config.d/
+total 4.0K
+-rw-r--r-- 1 root root 125 Sep 21 12:06 rocomm.conf
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+root@ds-clickhouse01t:~/work/20160920-1642# cat /etc/snmp/config.d/rocomm.conf
+rocommunity tcspub 172.16.1.6
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 172.16.1.11
+root@ds-clickhouse01t:~/work/20160920-1642#
+
+#
+#   It's very important thing!
+#   It allow to run all necessary services to monitoring work.
+#
+root@ds-clickhouse01t:~# reboot
+
+#
+#   After reboot aftocompetition of this command starts working (tab button).
+#   And it's show appropriate information!
+#
+root@ds-clickhouse01t:~# racadm getniccfg | head
+
+IPv4 settings:
+NIC Enabled          = 1
+IPv4 Enabled         = 1
+DHCP Enabled         = 0
+IP Address           = 10.219.10.223
+Subnet Mask          = 255.255.255.0
+Gateway              = 10.219.10.254
+
+IPv6 settings:
+root@ds-clickhouse01t:~#
+
+
+#
+#   But in nagios snmp check for dell hardware didn't start work...
+#
+root@ds-clickhouse01t:~# snmpwalk -v 2c -c tcspub 10.218.64.50 1. | head
+1.: Unknown Object Identifier ()
+root@ds-clickhouse01t:~#
+
+................................................................................
+
+root@ds-clickhouse01t:~# less /var/log/syslog
+...
+Sep 21 12:37:20 ds-clickhouse01 snmpd[2250]: message repeated 93 times: [ error on subcontainer 'ia_addr' insert (-1)]
+Sep 21 12:37:32 ds-clickhouse01 snmpd[2250]: Received TERM or STOP signal...  shutting down...
+Sep 21 12:37:35 ds-clickhouse01 snmpd[3570]: error on subcontainer 'ia_addr' insert (-1)
+Sep 21 12:37:35 ds-clickhouse01 snmpd[3570]: error on subcontainer 'ia_addr' insert (-1)
+Sep 21 12:37:35 ds-clickhouse01 snmpd[3570]: Cannot statfs /var/lib/ureadahead/debugfs/tracing#012: No such file or directory
+Sep 21 12:37:35 ds-clickhouse01 snmpd[3570]: /etc/snmp/snmpd.conf: line 144: Warning: Unknown token: defaultMonitors.
+Sep 21 12:37:35 ds-clickhouse01 snmpd[3570]: /etc/snmp/snmpd.conf: line 146: Warning: Unknown token: linkUpDownNotifications.
+Sep 21 12:37:35 ds-clickhouse01 snmpd[3570]: Turning on AgentX master support.
+Sep 21 12:37:35 ds-clickhouse01 snmpd[3572]: NET-SNMP version 5.7.2
+Sep 21 12:38:05 ds-clickhouse01 snmpd[3572]: error on subcontainer 'ia_addr' insert (-1)
+root@ds-clickhouse01t:~#
+
+................................................................................
+................................................................................
+
+root@ds-clickhouse01t:~# egrep -v -e "^#| *#|^$"  /etc/snmp/snmpd.conf
+agentAddress  udp:127.0.0.1:161
+view   all         included   .1
+view   systemonly  included   .1.3.6.1.2.1.1
+view   systemonly  included   .1.3.6.1.2.1.25.1
+ rocommunity public  default    -V systemonly
+ rouser   authOnlyUser
+sysLocation    Sitting on the Dock of the Bay
+sysContact     Me <me@example.org>
+sysServices    72
+proc  mountd
+proc  ntalkd    4
+proc  sendmail 10 1
+disk       /     10000
+disk       /var  5%
+includeAllDisks  10%
+load   12 10 5
+ trapsink     localhost public
+iquerySecName   internalUser
+rouser          internalUser
+defaultMonitors          yes
+linkUpDownNotifications  yes
+ extend    test1   /bin/echo  Hello, world!
+ extend-sh test2   echo Hello, world! ; echo Hi there ; exit 35
+ master          agentx
+includeDir /etc/snmp/config.d
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# cp /etc/snmp/snmpd.conf{,.20160922-1158}
+
+#
+#   This config was taken from ds-gp-prd-sdw1.
+#
+root@ds-clickhouse01t:~# cat > /etc/snmp/snmpd.conf
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser  default       tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+root@ds-clickhouse01t:~#
+
+
+root@ds-clickhouse01t:~# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+Timeout: No Response from 127.0.0.1
+root@ds-clickhouse01t:~# service snmpd stop
+ * Stopping network management services:
+root@ds-clickhouse01t:~# service snmpd status
+ * snmpd is not running
+root@ds-clickhouse01t:~# service snmpd start
+ * Starting network management services:
+root@ds-clickhouse01t:~# service snmpd status
+ * snmpd is running
+root@ds-clickhouse01t:~# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux ds-clickhouse01t 4.2.0-27-generic #32~14.04.1-Ubuntu SMP Fri Jan 22 15:32:26 UTC 2016 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (3838) 0:00:38.38
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "ds-clickhouse01t"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (0) 0:00:00.00
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# netstat -nlpu | grep snmp
+udp        0      0 0.0.0.0:58357           0.0.0.0:*                           26879/snmpd
+udp        0      0 0.0.0.0:161             0.0.0.0:*                           26879/snmpd
+root@ds-clickhouse01t:~#
+
+#
+#   Still not working...
+#
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_openmanage -H 10.218.64.50 -C tcspub -P 2c -p
+ERROR: (SNMP) OpenManage is not installed or is not working correctly
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# snmpwalk -v 2c -c tcspub 10.218.64.50 1 | head
+No log handling enabled - turning on stderr logging
+Did not find 'mib-2' in module SNMPv2-SMI-v1 (/root/.snmp/mibs/host-resources-mib.mib)
+Unlinked OID in HOST-RESOURCES-MIB: host ::= { mib-2 25 }
+Undefined identifier: mib-2 near line 109 of /root/.snmp/mibs/host-resources-mib.mib
+Did not find 'hrMIBAdminInfo' in module HOST-RESOURCES-MIB (/usr/share/snmp/mibs/HOST-RESOURCES-TYPES.txt)
+Did not find 'hrStorage' in module HOST-RESOURCES-MIB (/usr/share/snmp/mibs/HOST-RESOURCES-TYPES.txt)
+...
+
+
+root@ds-clickhouse01t:~# apt-get install srvadmin-cm
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following NEW packages will be installed:
+  srvadmin-cm
+0 upgraded, 1 newly installed, 0 to remove and 88 not upgraded.
+Need to get 67.0 MB of archives.
+After this operation, 67.8 MB of additional disk space will be used.
+WARNING: The following packages cannot be authenticated!
+  srvadmin-cm
+Install these packages without verification? [y/N] y
+Get:1 http://linux.dell.com/repo-linux-redirect-via-proxy/repo/community/ubuntu/ trusty/openmanage srvadmin-cm amd64 7.4.0-1 [67.0 MB]
+Fetched 67.0 MB in 1min 27s (768 kB/s)
+Selecting previously unselected package srvadmin-cm.
+(Reading database ... 65152 files and directories currently installed.)
+Preparing to unpack .../srvadmin-cm_7.4.0-1_amd64.deb ...
+Unpacking srvadmin-cm (7.4.0-1) ...
+Setting up srvadmin-cm (7.4.0-1) ...
+update-alternatives: using /opt/dell/srvadmin/sbin/lx64/invcol to provide /opt/dell/srvadmin/sbin/invcol (srvadmin-cm-invcol) in auto mode
+root@ds-clickhouse01t:~#
+
+
+root@ds-clickhouse01t:~# apt-get install srvadmin-base
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+srvadmin-base is already the newest version.
+srvadmin-base set to manually installed.
+0 upgraded, 0 newly installed, 0 to remove and 88 not upgraded.
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# apt-get install openipmi ipmitool
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+openipmi is already the newest version.
+openipmi set to manually installed.
+The following NEW packages will be installed:
+  ipmitool
+0 upgraded, 1 newly installed, 0 to remove and 88 not upgraded.
+Need to get 332 kB of archives.
+After this operation, 1,306 kB of additional disk space will be used.
+Do you want to continue? [Y/n] Y
+Get:1 http://repo-linux.tcsbank.ru/ubuntu/ trusty-updates/universe ipmitool amd64 1.8.13-1ubuntu0.6 [332 kB]
+Fetched 332 kB in 0s (4,480 kB/s)
+Selecting previously unselected package ipmitool.
+(Reading database ... 65161 files and directories currently installed.)
+Preparing to unpack .../ipmitool_1.8.13-1ubuntu0.6_amd64.deb ...
+Unpacking ipmitool (1.8.13-1ubuntu0.6) ...
+Processing triggers for ureadahead (0.100.0-16) ...
+Processing triggers for man-db (2.6.7.1-1ubuntu1) ...
+Setting up ipmitool (1.8.13-1ubuntu0.6) ...
+ * Starting IPMI event daemon
+ipmievd: using pidfile /var/run/ipmievd.pid0
+   ...done.
+Processing triggers for ureadahead (0.100.0-16) ...
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# /etc/init.d/openipmi status
+ipmi_msghandler module loaded.
+ipmi_si module loaded.
+ipmi_devintf module loaded.
+/dev/ipmi0 exists.
+root@ds-clickhouse01t:~#
+root@ds-clickhouse01t:~# lsmod | grep ipmi
+ipmi_ssif              24576  0
+ipmi_devintf           20480  6
+ipmi_si                57344  3
+ipmi_msghandler        49152  3 ipmi_ssif,ipmi_devintf,ipmi_si
+root@ds-clickhouse01t:~#
+
+
+root@ds-clickhouse01t:~# service dataeng status
+dsm_sa_datamgrd (pid 2505 2402) is running
+dsm_sa_eventmgrd (pid 2469) is running
+dsm_sa_snmpd (pid 2495) is running
+root@ds-clickhouse01t:~# service dataeng restart
+Stopping Systems Management Data Engine:
+Stopping dsm_sa_snmpd: /etc/init.d/dataeng: 1103: /etc/init.d/dataeng: usleep: not found
+ *
+Stopping dsm_sa_eventmgrd: /etc/init.d/dataeng: 1103: /etc/init.d/dataeng: usleep: not found
+ *
+Stopping dsm_sa_datamgrd: /etc/init.d/dataeng: 1103: /etc/init.d/dataeng: usleep: not found
+ *
+Starting Systems Management Data Engine:
+Starting dsm_sa_datamgrd:  *
+Starting dsm_sa_eventmgrd:  *
+Starting dsm_sa_snmpd:  *
+/etc/init.d/dataeng: 566: /etc/init.d/dataeng: /opt/dell/srvadmin//lib64/srvadmin-deng/dcfwsnmp.sh: Permission denied
+
+WARNING: The SNMP port appears to be closed by the firewall.
+You may not be able to manage this system remotely using SNMP.
+See Firewall Configuration in the product user's guide.
+root@ds-clickhouse01t:~#
+
+root@ds-clickhouse01t:~# apt-get install srvadmin-all snmp snmpd snmp-mibs-downloader libsnmp-base ipmitool -y
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+libsnmp-base is already the newest version.
+libsnmp-base set to manually installed.
+snmp is already the newest version.
+snmpd is already the newest version.
+ipmitool is already the newest version.
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ srvadmin-all : Depends: srvadmin-idracadm8 (>= 8.3.0) but it is not going to be installed
+E: Unable to correct problems, you have held broken packages.
+root@ds-clickhouse01t:~#
+
+
+root@ds-clickhouse01t:~# apt-get --auto-remove remove srvadmin-all
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+Package 'srvadmin-all' is not installed, so not removed
+0 upgraded, 0 newly installed, 0 to remove and 88 not upgraded.
+root@ds-clickhouse01t:~#
+
+................................................................................
+
+root@ds-clickhouse01t:~# apt-get --auto-remove remove srvadmin-idrac srvadmin-idrac7
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages will be REMOVED:
+  libargtable2-0 srvadmin-idrac srvadmin-idrac-ivmcli srvadmin-idrac-vmcli
+  srvadmin-idrac7 srvadmin-idracadm srvadmin-idracadm7 srvadmin-rac-components
+  srvadmin-racadm4 srvadmin-racdrsc
+0 upgraded, 0 newly installed, 10 to remove and 88 not upgraded.
+After this operation, 5,481 kB disk space will be freed.
+Do you want to continue? [Y/n] Y
+(Reading database ... 65173 files and directories currently installed.)
+Removing srvadmin-idrac (7.4.0-1) ...
+Removing srvadmin-idrac7 (7.4.0-1) ...
+Removing srvadmin-idracadm7 (8.2.0-1) ...
+Removing srvadmin-idrac-ivmcli (8.2.0-1) ...
+Removing srvadmin-idrac-vmcli (8.2.0-1) ...
+Removing srvadmin-idracadm (7.4.0-1) ...
+update-alternatives: warning: alternative /opt/dell/srvadmin/sbin/racadm-wrapper-idrac7 (part of link group racadm) doesn't exist; removing from list of alternatives
+update-alternatives: warning: /etc/alternatives/racadm is dangling; it will be updated with best choice
+Removing srvadmin-rac-components (8.2.0-1) ...
+Removing srvadmin-racadm4 (7.4.0-1) ...
+update-alternatives: warning: /etc/alternatives/racadm is dangling; it will be updated with best choice
+Removing srvadmin-racdrsc (8.2.0-1) ...
+Removing libargtable2-0 (12-1ubuntu1) ...
+Processing triggers for libc-bin (2.19-0ubuntu6.7) ...
+root@ds-clickhouse01t:~#
+
+clickhouse01t:~# apt-get install srvadmin-all snmp snmpd snmp-mibs-downloader libsnmp-base ipmitool -y --force-yes
+package lists... Done
+ dependency tree
+state information... Done
+base is already the newest version.
+base set to manually installed.
+already the newest version.
+ already the newest version.
+...
+Adding debian:GeoTrust_Primary_Certification_Authority_-_G3.pem
+Adding debian:CA_Disig_Root_R1.pem
+Adding debian:D-TRUST_Root_Class_3_CA_2_2009.pem
+done.
+Setting up libatk-wrapper-java-jni:amd64 (0.30.4-4) ...
+Processing triggers for libc-bin (2.19-0ubuntu6.7) ...
+Processing triggers for ca-certificates (20141019ubuntu0.14.04.1) ...
+Updating certificates in /etc/ssl/certs... 0 added, 0 removed; done.
+Running hooks in /etc/ca-certificates/update.d....
+done.
+done.
+root@ds-clickhouse01t:~#
+
+
+root@ds-clickhouse01t:~# service dataeng restart
+Stopping Systems Management Data Engine:
+Stopping dsm_sa_snmpd: /etc/init.d/dataeng: 1103: /etc/init.d/dataeng: usleep: not found
+ *
+Stopping dsm_sa_eventmgrd: /etc/init.d/dataeng: 1103: /etc/init.d/dataeng: usleep: not found
+ *
+Stopping dsm_sa_datamgrd: /etc/init.d/dataeng: 1103: /etc/init.d/dataeng: usleep: not found
+ *
+Starting Systems Management Data Engine:
+Starting dsm_sa_datamgrd:  *
+Starting dsm_sa_eventmgrd:  *
+Starting dsm_sa_snmpd:  *
+root@ds-clickhouse01t:~#
+
+
+root@ds-clickhouse01t:~# omreport system summary | head
+sh: 1: /bin/rpm: not found
+System Summary
+
+------------------
+Software Profile
+------------------
+Systems Management
+Name                       : Server Administrator
+Version                    : 8.3.0
+Description                : Systems Management Software
+
+omreportUnsuccessful command execution!
+root@ds-clickhouse01t:~#
+
+................................................................................
+
+root@ds-clickhouse01t:~# omconfig about
+sh: 1: /bin/rpm: not found
+
+Product name : Server Administrator
+Version      : 8.3.0
+Copyright    : Copyright (C) Dell Inc. 1995-2015 All rights reserved.
+Company      : Dell Inc.
+
+root@ds-clickhouse01t:~# omreport about
+sh: 1: /bin/rpm: not found
+
+Product name : Server Administrator
+Version      : 8.3.0
+Copyright    : Copyright (C) Dell Inc. 1995-2015 All rights reserved.
+Company      : Dell Inc.
+
+root@ds-clickhouse01t:~#
+
+................................................................................
+
+
+root@ds-clickhouse01t:~# less /var/log/syslog
+...
+Sep 22 14:55:42 ds-clickhouse01 snmpd[26879]: message repeated 677 times: [ error on subcontainer 'ia_addr' insert (-1)]
+Sep 22 14:55:47 ds-clickhouse01 snmpd[26879]: Received TERM or STOP signal...  shutting down...
+Sep 22 14:55:49 ds-clickhouse01 snmpd[41462]: error on subcontainer 'ia_addr' insert (-1)
+Sep 22 14:55:49 ds-clickhouse01 snmpd[41462]: error on subcontainer 'ia_addr' insert (-1)
+Sep 22 14:55:49 ds-clickhouse01 snmpd[41462]: getaddrinfo: mon6.tcsbank.ru Name or service not known
+Sep 22 14:55:49 ds-clickhouse01 snmpd[41462]: /etc/snmp/snmpd.conf: line 11: Error: cannot resolve source hostname
+Sep 22 14:55:49 ds-clickhouse01 snmpd[41462]: /etc/snmp/snmpd.conf: line 22: Warning: Unknown token: smuxpeer.
+Sep 22 14:55:49 ds-clickhouse01 snmpd[41462]: net-snmp: 1 error(s) in config file(s)
+Sep 22 14:55:49 ds-clickhouse01 snmpd[41464]: NET-SNMP version 5.7.2
+...
+Sep 22 14:56:19 ds-clickhouse01 snmpd[41464]: error on subcontainer 'ia_addr' insert (-1)
+...
+
+
+#
+#   I removed -I -smux...
+#   https://ubuntuforums.org/archive/index.php/t-1628304.html
+#
+root@ds-clickhouse01t:~# vim /etc/default/snmpd
+# This file controls the activity of snmpd and snmptrapd
+
+# Don't load any MIBs by default.
+# You might comment this lines once you have the MIBs downloaded.
+export MIBS=
+
+# snmpd control (yes means start daemon).
+SNMPDRUN=yes
+
+# snmpd options (use syslog, close stdin/out/err).
+#SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -I -smux,mteTrigger,mteTriggerConf -p /var/run/snmpd.pid'
+SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid'
+
+# snmptrapd control (yes means start daemon).  As of net-snmp version
+# 5.0, master agentx support must be enabled in snmpd before snmptrapd
+# can be run.  See snmpd.conf(5) for how to do this.
+TRAPDRUN=no
+
+# snmptrapd options (use syslog).
+TRAPDOPTS='-Lsd -p /var/run/snmptrapd.pid'
+
+
+root@ds-clickhouse01t:~# ps aux | grep snm[p]
+root      41358  0.0  0.0 332908 10120 ?        Ssl  14:50   0:00 /opt/dell/srvadmin//sbin/dsm_sa_snmpd
+snmp      41464  0.0  0.0  51828  7176 ?        S    14:55   0:00 /usr/sbin/snmpd -Lsd -Lf /dev/null -u snmp -g snmp -I -smux mteTrigger mteTriggerConf -p /var/run/snmpd.pid
+root@ds-clickhouse01t:~# service snmpd restart
+ * Restarting network management services:
+root@ds-clickhouse01t:~# ps aux | grep snm[p]
+root      41358  0.0  0.0 398444 10120 ?        Ssl  14:50   0:00 /opt/dell/srvadmin//sbin/dsm_sa_snmpd
+snmp      41582  0.0  0.0  52088  7160 ?        S    15:06   0:00 /usr/sbin/snmpd -Lsd -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid
+root@ds-clickhouse01t:~#
+
+
+#
+#   After that this shit start working!
+#
+[root@vm-vol-nag4-tst objects]# /usr/lib64/nagios/plugins/check_openmanage -H 10.218.64.50 -C tcspub -P 2c -p
+OK - System: 'PowerEdge R730xd', SN: '6ZSF8D2', 128 GB ram (8 dimms), 3 logical drives, 16 physical drives|T0_System_Board_Inlet=22C;42;47 T1_System_Board_Exhaust=35C;70;75 T2_CPU1=44C;82;87 T3_CPU2=44C;82;87 W2_System_Board_Pwr_Consumption=196W;0;0 A0_PS1_Current_1=0.4A;0;0 A1_PS2_Current_2=0.6A;0;0 V26_PS1_Voltage_1=232V;0;0 V27_PS2_Voltage_2=228V;0;0 F0_System_Board_Fan1=4200rpm;0;0 F1_System_Board_Fan2=4320rpm;0;0 F2_System_Board_Fan3=4200rpm;0;0 F3_System_Board_Fan4=4080rpm;0;0 F4_System_Board_Fan5=4200rpm;0;0 F5_System_Board_Fan6=4200rpm;0;0
+[root@vm-vol-nag4-tst objects]#
+
+#
+#   Server was rebooted and monitoring is working well.
+#
+................................................................................
+................................................................................
+
+root@ds-clickhouse01t:~# w
+ 15:14:47 up 1 day,  3:03,  2 users,  load average: 0.03, 0.03, 0.05
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+bsv      pts/1    tcs4500.tcsbank. Wed12    1.00s  0.34s  0.01s sshd: bsv [priv]
+a.melnik pts/0    tcs8993.tcsbank. 11:09   23.00s  0.28s  0.28s -bash
+root@ds-clickhouse01t:~#
+
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#   modified:   servers/dc-m1/linux/sas/m1-sasfront02p.cfg
+#   modified:   servers/vmware/vm-ds-repo01.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#   servers/dc-ds/linux/ds-clickhouse01t.cfg
+#   servers/vmware/vm-bicms01t.cfg
+#   servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# git add servers/dc-ds/linux/ds-clickhouse01t.cfg && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD:985745. Added monitoring for ubuntu host ds-clickhouse01t." servers/dc-ds/linux/ds-clickhouse01t.cfg
+[master 7a455c3] SD:985745. Added monitoring for ubuntu host ds-clickhouse01t.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 50 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/dc-ds/linux/ds-clickhouse01t.cfg
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 12, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 1.00 KiB, done.
+Total 7 (delta 5), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   bfb2cb9..7a455c3  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+
+
+
+

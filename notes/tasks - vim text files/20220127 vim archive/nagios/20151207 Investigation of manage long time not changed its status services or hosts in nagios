@@ -1,0 +1,3154 @@
+
+
+
+................................................................................
+
+#   Mon Dec  7 16:47:55 MSK 2015
+
+#   This is test nagios.
+#   It have "MKLivestatus".
+[root@vm-vol-nag01t nagios]# ls -Alh /usr/lib64/check_mk/
+total 480K
+-rwxr-xr-x 1 root root 477K Sep 30  2014 livestatus.o
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# grep livestatus /etc/nagios/nagios.cfg
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# vim +view /etc/nagios/nagios.cfg
+...
+# EVENT BROKER OPTIONS
+# Controls what (if any) data gets sent to the event broker.
+# Values:  0      = Broker nothing
+#         -1      = Broker everything
+#         <other> = See documentation
+
+event_broker_options=-1
+...
+
+# EVENT BROKER MODULE(S)
+# This directive is used to specify an event broker module that should
+# by loaded by Nagios at startup.  Use multiple directives if you want
+# to load more than one module.  Arguments that should be passed to
+# the module at startup are seperated from the module path by a space.
+#
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# WARNING !!! WARNING !!! WARNING !!! WARNING !!! WARNING !!! WARNING
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+# Do NOT overwrite modules while they are being used by Nagios or Nagios
+# will crash in a fiery display of SEGFAULT glory.  This is a bug/limitation
+# either in dlopen(), the kernel, and/or the filesystem.  And maybe Nagios...
+#
+# The correct/safe way of updating a module is by using one of these methods:
+#    1. Shutdown Nagios, replace the module file, restart Nagios
+#    2. Delete the original module file, move the new module file into place, restart Nagios
+#
+# Example:
+#
+#   broker_module=<modulepath> [moduleargs]
+
+#broker_module=/somewhere/module1.o
+#broker_module=/somewhere/module2.o arg1 arg2=3 debug=0
+broker_module=/usr/lib64/nagios/brokers/ndomod.so config_file=/etc/nagios/ndomod.cfg
+#broker_module=/usr/lib64/nagios/brokers/npcdmod.o config_file=/etc/pnp4nagios/npcd.cfg
+...
+
+
+[root@vm-vol-nag01t nagios]# ls -A1 /etc/nagios/ndo*
+/etc/nagios/ndo2db.cfg
+/etc/nagios/ndomod.cfg
+[root@vm-vol-nag01t nagios]#
+
+
+
+#   This is production nagios. And it compiled with "MK Livestatus" broker.
+#   http://mathias-kettner.de/checkmk_livestatus.html
+[root@vm-vol-nag3 ~]# ls -Alh /usr/lib64/check_mk/
+total 480K
+-rwxr-xr-x 1 root root 477K Sep 30  2014 livestatus.o
+[root@vm-vol-nag3 ~]#
+
+[root@vm-vol-nag3 ~]# grep livestatus /etc/nagios/nagios.cfg
+[root@vm-vol-nag3 ~]#
+
+
+................................................................................
+................................................................................
+
+Hello everybody.
+
+Could someone of experienced users help me to get right way.
+Task, that I want to resolve, described below.
+
+I'd like to get information from nagios about hosts and services, that have defined status (critical or warning) and have this status unchanged for a long time.
+Next type of task is to find all hosts and services that have no notification configured for them, but have critical or warning state.
+
+I think, I will write special programm (script), that will compute appropriate time lenght and other conditions and send special notification in according to it.
+
+This specific task needs us because we have lot of services monitored by nagios and sometimes one of our admins accidentally forget to fix issue during long time. Simultaneously, this services have created downtime, so we cannot receive any  notification. Only, accidentally, we can see something wrong during inspect nagios web-pages.
+Another one reason is when someone of our developers or other owners of monitored by nagios services, ask us to turn on downtime for their services for long period. And then, them forget about it at all.
+
+So, I ask your advices - what is better way should I use to resolve these tasks?
+
+I think, there are two methods, that can help me.
+1. One is to use "NDOUtils" ( https://exchange.nagios.org/directory/Addons/Database-Backends/NDOUtils/details ). This way suppose, that my script will get some info from mysql database, that contain everything about current state of all nagios checks.
+2. Another one way is to use "MK Livestatus" ( http://mathias-kettner.de/checkmk_livestatus.html ). This way suppose that my script will get appropriate information with "LQL - The Livestatus Query Language".
+
+So, what you say?
+
+With best regards,
+Sergey.
+
+................................................................................
+................................................................................
+
+
+Защита от дурака в контексте использования nagios.
+
+> - обработка долго-висящих в critical,warning,unknown объектов  - заполнение примечаний.
+> - обработка объектов с отключенными оповещениями  - заполнение примечаний.
+>
+
+Более развёрнутый перечень возникающих в этой области задач.
+1. Определение состояния объектов critical,warning,unknown которые в таком состоянии находятся некоторое определённое продолжительное время. Например не получается решить задачу длительное время или тот, кто решает задачу, по иной причине откладывает её решение на долгий срок, выставляя downtime или вообще отключая уведомления.
+2. Не прокомментированные состояния critical,warning,unknown (в процессе установки downtime или notification_acknowledged).
+3. Определение состояния объектов critical,warning,unknown по которым отправляются оповещения на уже не существующие адресаты.
+
+Замечание.
+Следует учесть особенность того, что оповещения могут быть отключены как посредством конфигурационных файлов, команд из командной строки так и из с помощью GUI через web-интерфейс.
+
+Backend база, использующаяся для NagWiz, в которой отражается состояние всех объектов. Если бы можно было получать время модификации поля объекта, например содержащего warning, то потом можно было бы определять сколько долго состояние этого поля не менялось и в зависимости от этого рассылать что-то дополнительно или что-то ещё делать (формировать таблицу)…
+Есть ещё некий файл в который nagios тоже что-то пишет по состоянию объектов.
+
+
+................................................................................
+................................................................................
+
+https://support.nagios.com/forum/viewtopic.php?f=7&t=36078
+
+Getting info about services state from nagios
+by belogrud » Mon Dec 07, 2015 8:04 pm
+Hello everybody.
+
+Could someone of experienced users help me to get right way.
+Task, that I want to resolve, described below.
+
+I'd like to get information from nagios about hosts and services, that have defined status (critical or warning) and have this status unchanged for a long time.
+Next type of task is to find all hosts and services that have no notification configured for them, but have critical or warning state.
+
+I think, I will write special programm (script), that will compute appropriate time lenght and other conditions and send special notification in according to it.
+
+This specific task needs us because we have lot of services monitored by nagios and sometimes one of our admins accidentally forget to fix issue during long time. Simultaneously, this services have created downtime, so we cannot receive any notification. Only, accidentally, we can see something wrong during inspect nagios web-pages.
+Another one reason is when someone of our developers or other owners of monitored by nagios services, ask us to turn on downtime for their services for long period. And then, them forget about it at all.
+
+So, I ask your advices - what is better way should I use to resolve these tasks?
+
+I think, there are two methods, that can help me.
+1. One is to use "NDOUtils" ( https://exchange.nagios.org/directory/A ... ls/details ). This way suppose, that my script will get some info from mysql database, that contain everything about current state of all nagios checks.
+2. Another one way is to use "MK Livestatus" ( http://mathias-kettner.de/checkmk_livestatus.html ). This way suppose that my script will get appropriate information with "LQL - The Livestatus Query Language".
+
+So, whay you say?
+
+With best regards,
+Sergey.
+belogrud
+
+Posts: 1
+Joined: Mon Dec 07, 2015 6:34 pm
+Top
+
+
+Re: Getting info about services state from nagios
+by tmcdonald » Mon Dec 07, 2015 11:05 pm
+I would also look at our JSON CGI for pulling info from Core:
+
+https://labs.nagios.com/2014/06/19/expl ... -7-part-1/
+
+As for the specifics of how you implement this, we typically don't address custom development architecture unless you have specific questions about a part of our software. We need to focus on actual issues/errors and not stray too far into the hypothetical realm.
+Nagios World Conference 2015 is over! See you next year!
+
+tmcdonald
+Divides by Zero
+
+Posts: 6220
+Joined: Mon Sep 23, 2013 4:40 pm
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# unixcat
+Usage: unixcat UNIX-socket
+[root@vm-vol-nag01t nagios]# rpm -qf /usr/lib64/check_mk/livestatus.o
+check-mk-livestatus-1.2.4p5-2.el6.x86_64
+[root@vm-vol-nag01t nagios]# rpm -qi check-mk-livestatus
+Name        : check-mk-livestatus          Relocations: (not relocatable)
+Version     : 1.2.4p5                           Vendor: Fedora Project
+Release     : 2.el6                         Build Date: Tue 30 Sep 2014 04:07:15 AM MSK
+Install Date: Mon 01 Dec 2014 11:34:24 AM MSK      Build Host: buildhw-06.phx2.fedoraproject.org
+Group       : Applications/Internet         Source RPM: check-mk-1.2.4p5-2.el6.src.rpm
+Size        : 494672                           License: GPLv2 and GPLv3
+Signature   : RSA/8, Tue 30 Sep 2014 06:55:12 PM MSK, Key ID 3b49df2a0608b895
+Packager    : Fedora Project
+URL         : http://mathias-kettner.de/check_mk
+Summary     : The check-mk's Livestatus
+Description :
+This package contains livestatus, the check-mk's plugin for
+accessing the relevant Nagios files being responsible of
+listing the hosts and services status.
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# rpm -ql check-mk-livestatus
+/usr/bin/unixcat
+/usr/lib64/check_mk
+/usr/lib64/check_mk/livestatus.o
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# ls /var/lib/check_mk/*
+/var/lib/check_mk/autochecks:
+
+/var/lib/check_mk/cache:
+
+/var/lib/check_mk/counters:
+
+/var/lib/check_mk/logwatch:
+
+/var/lib/check_mk/notify:
+
+/var/lib/check_mk/precompiled:
+
+/var/lib/check_mk/wato:
+
+/var/lib/check_mk/web:
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# rpm -qf /var/lib/check_mk
+file /var/lib/check_mk is not owned by any package
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# whereis cmk
+cmk: /usr/bin/cmk
+[root@vm-vol-nag01t nagios]# rpm -qf /usr/bin/cmk
+check-mk-1.2.4p5-2.el6.x86_64
+[root@vm-vol-nag01t nagios]# rpm -qi check-mk
+Name        : check-mk                     Relocations: (not relocatable)
+Version     : 1.2.4p5                           Vendor: Fedora Project
+Release     : 2.el6                         Build Date: Tue 30 Sep 2014 04:07:15 AM MSK
+Install Date: Mon 01 Dec 2014 11:26:20 AM MSK      Build Host: buildhw-06.phx2.fedoraproject.org
+Group       : Applications/Internet         Source RPM: check-mk-1.2.4p5-2.el6.src.rpm
+Size        : 2978793                          License: GPLv2 and GPLv3
+Signature   : RSA/8, Tue 30 Sep 2014 06:52:32 PM MSK, Key ID 3b49df2a0608b895
+Packager    : Fedora Project
+URL         : http://mathias-kettner.de/check_mk
+Summary     : A new general purpose Nagios-plugin for retrieving data
+Description :
+check-mk is a general purpose Nagios-plugin for retrieving data. It adopts a
+new approach for collecting data from operating systems and network components.
+It obsoletes NRPE, check_by_ssh, NSClient, and check_snmp and it has many
+benefits, the most important are a significant reduction of CPU usage on
+the Nagios host and an automatic inventory of items to be checked on hosts.
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# cmk -L
+Available check types:
+
+                                 plugin  perf-  in-
+Name                             type    data   vent.  service description
+-------------------------------------------------------------------------
+3ware_disks                      tcp     no     yes    RAID 3ware disk %s
+3ware_info                       tcp     no     yes    RAID 3ware controller %s
+3ware_units                      tcp     no     yes    RAID 3ware unit %s
+ad_replication                   tcp     no     yes    AD Replication %s
+aironet_clients                  snmp    yes    yes    Average client signal %s
+aironet_errors                   snmp    yes    yes    MAC CRC errors radio %s
+aix_lvm                          tcp     no     yes    Logical Volume %s
+aix_multipath                    tcp     no     yes    Multipath %s
+akcp_sensor_drycontact           snmp    no     yes    Device %s
+akcp_sensor_humidity             snmp    yes    yes    Humidity Sensor - %s
+akcp_sensor_temp                 snmp    yes    yes    Temperature %s
+alcatel_power                    snmp    no     yes    Power Supply %s
+apache_status                    tcp     yes    yes    Apache %s Status
+apc_ats_output                   snmp    yes    yes    Phase %s output
+apc_ats_status                   snmp    no     yes    ATS Status
+apc_humidity                     snmp    yes    yes    Humidity %s
+apc_inrow_airflow                snmp    yes    yes    Airflow
+apc_inrow_fanspeed               snmp    yes    yes    Fanspeed
+apc_inrow_temp                   snmp    yes    yes    Temperature %s
+apc_mod_pdu_modules              snmp    yes    yes    Module %s
+apc_powerswitch                  snmp    no     yes    Power Outlet Port %s
+apc_rackpdu_power                snmp    yes    yes    PDU %s
+apc_symmetra                     snmp    yes    yes    APC Symmetra status
+apc_symmetra_ext_temp            snmp    yes    yes    Temperature External %s
+apc_symmetra_power               snmp    yes    yes    Power phase %s
+apc_symmetra_temp                snmp    yes    yes    Temperature %s
+apc_symmetra_test                snmp    no     yes    Self Test
+arc_raid_status                  tcp     no     yes    Raid Array #%s
+bintec_info                      snmp    no     yes    Bintec Info
+blade_bays                       snmp    no     yes    BAY %s
+blade_blades                     snmp    no     yes    Blade %s
+blade_blowers                    snmp    yes    yes    Blower %s
+blade_bx_blades                  snmp    no     yes    Blade %s
+blade_bx_load                    snmp    yes    yes    CPU load
+blade_bx_powerfan                snmp    yes    yes    Blade Cooling %s
+blade_bx_powermod                snmp    no     yes    Power Module %s
+blade_bx_temp                    snmp    yes    yes    Blade Temp %s
+blade_health                     snmp    no     yes    Summary health state
+blade_mediatray                  snmp    no     yes    Media tray
+blade_misc                       tcp     no     no     %s
+blade_powerfan                   snmp    yes    yes    Power Module Cooling Device %s
+blade_powermod                   snmp    no     yes    Power Module %s
+bluecoat_diskcpu                 snmp    yes    yes    %s
+bluecoat_sensors                 snmp    yes    yes    %s
+brocade.fan                      snmp    yes    yes    FAN %s
+brocade.power                    snmp    no     yes    Power supply %s
+brocade.temp                     snmp    yes    yes    Temperature %s
+brocade_fcport                   snmp    yes    yes    Port %s
+brocade_mlx.module_cpu           snmp    yes    yes    CPU utilization Module %s
+brocade_mlx.module_mem           snmp    yes    yes    Memory Module %s
+brocade_mlx.module_status        snmp    no     yes    Status Module %s
+brocade_mlx_fan                  snmp    no     yes    Fan %s
+brocade_mlx_power                snmp    no     yes    Power supply %s
+brocade_mlx_temp                 snmp    yes    yes    Temperature %s
+canon_pages                      snmp    yes    yes    Pages %s
+carel_uniflair_cooling           snmp    yes    yes    Carel uniflair cooling
+casa_cpu_mem                     snmp    yes    yes    Memory %s
+casa_cpu_temp                    snmp    yes    yes    Temperature %s
+casa_cpu_util                    snmp    yes    yes    Utilization %s
+casa_fan                         snmp    no     yes    Fan %s
+casa_power                       snmp    no     yes    Power %s
+cbl_airlaser.hardware            snmp    yes    yes    CBL Airlaser Hardware
+cbl_airlaser.status              snmp    no     yes    CBL Airlaser Status
+check_mk.only_from               tcp     no     yes    Check_MK Agent Access
+cisco_asa_failover               snmp    no     yes    Cluster Status
+cisco_cpu                        snmp    yes    yes    CPU utilization
+cisco_fan                        snmp    no     yes    FAN %s
+cisco_fantray                    snmp    no     yes    FAN %s
+cisco_fru_power                  snmp    no     yes    FRU Power %s
+cisco_hsrp                       snmp    no     yes    HSRP Group %s
+cisco_mem                        snmp    yes    yes    Mem used %s
+cisco_power                      snmp    no     yes    Power %s
+cisco_qos                        snmp    yes    yes    QoS %s
+cisco_sys_mem                    snmp    yes    yes    Supervisor Mem Used
+cisco_temp                       snmp    no     yes    Temperature %s
+cisco_temp_perf                  snmp    yes    yes    Temperature %s
+cisco_temp_sensor                snmp    yes    yes    Temperature %s
+cisco_vpn_tunnel                 snmp    no     yes    VPN Tunnel %s
+cisco_wlc                        snmp    no     yes    AP %s
+cisco_wlc_clients                snmp    yes    yes    Clients
+cmciii.access                    snmp    no     yes    %s
+cmciii.can_current               snmp    yes    yes    %s
+cmciii.io                        snmp    no     yes    %s
+cmciii.psm_current               snmp    yes    yes    %s
+cmciii.psm_plugs                 snmp    no     yes    %s
+cmciii.sensor                    snmp    no     yes    %s
+cmciii.state                     snmp    no     yes    %s
+cmciii.temp                      snmp    yes    yes    %s
+cmciii_lcp_airin                 snmp    yes    yes    LCP Fanunit Air IN
+cmciii_lcp_airout                snmp    yes    yes    LCP Fanunit Air OUT
+cmciii_lcp_fans                  snmp    yes    yes    LCP Fanunit FAN %s
+cmciii_lcp_waterflow             snmp    yes    yes    LCP Fanunit WATER FLOW
+cmciii_lcp_waterin               snmp    yes    yes    LCP Fanunit Water IN
+cmciii_lcp_waterout              snmp    yes    yes    LCP Fanunit Water OUT
+cmctc.temp                       snmp    yes    yes    Temperature %s
+cmctc_lcp.blower                 snmp    yes    yes    Blower
+cmctc_lcp.blowergrade            snmp    yes    yes    Blower Grade
+cmctc_lcp.flow                   snmp    yes    yes    Waterflow
+cmctc_lcp.regulator              snmp    yes    yes    Regulator
+cmctc_lcp.temp                   snmp    yes    yes    Temperature
+cmctc_psm_m                      snmp    yes    yes    CMC %s
+cpsecure_sessions                snmp    yes    yes    Number of %s sessions
+cpu.loads                        tcp     yes    yes    CPU load
+cpu.threads                      tcp     yes    yes    Number of threads
+cups_queues                      tcp     yes    yes    CUPS Queue %s
+db2_mem                          tcp     yes    yes    Mem of %s
+decru_cpu                        snmp    yes    yes    CPU utilization
+decru_fans                       snmp    yes    yes    FAN %s
+decru_perf                       snmp    yes    yes    COUNTER %s
+decru_power                      snmp    no     yes    POWER %s
+decru_temps                      snmp    yes    yes    Temperature %s
+dell_om_disks                    snmp    no     yes    Physical Disk %s
+dell_om_esmlog                   snmp    no     yes    ESM Log
+dell_om_mem                      snmp    no     yes    Module %s
+dell_om_processors               snmp    no     yes    Processor %s
+dell_om_sensors                  snmp    yes    yes    Sensor %s
+dell_powerconnect_cpu            snmp    yes    yes    CPU utilization
+dell_powerconnect_fans           snmp    yes    yes    Sensor %s
+dell_powerconnect_psu            snmp    yes    yes    Sensor %s
+dell_powerconnect_temp           snmp    yes    yes    Temperature
+df                               tcp     yes    yes    fs_%s
+df_netapp                        snmp    yes    yes    fs_%s
+df_netapp32                      snmp    yes    yes    fs_%s
+disk_smb                         active  yes    -      -
+diskstat                         tcp     yes    yes    Disk IO %s
+dmi_sysinfo                      tcp     no     yes    DMI Sysinfo
+dmraid.ldisks                    tcp     no     yes    RAID LDisk %s
+dmraid.pdisks                    tcp     no     yes    RAID PDisk %s
+dns                              active  yes    -      -
+drbd                             tcp     yes    yes    DRBD %s status
+drbd.disk                        tcp     yes    yes    DRBD %s disk
+drbd.net                         tcp     yes    yes    DRBD %s net
+drbd.stats                       tcp     yes    yes    DRBD %s stats
+emerson_stat                     snmp    no     yes    Status
+emerson_temp                     snmp    yes    yes    Temperature
+esx_vsphere_counters.diskio      tcp     yes    yes    Disk IO SUMMARY
+esx_vsphere_counters.if          tcp     yes    yes    Interface %s
+esx_vsphere_counters.ramdisk     tcp     yes    yes    Ramdisk %s
+esx_vsphere_counters.uptime      tcp     yes    yes    Uptime
+esx_vsphere_datastores           tcp     yes    yes    fs_%s
+esx_vsphere_hostsystem.cpu_usage tcp     yes    yes    CPU utilization
+esx_vsphere_hostsystem.mem_usage tcp     yes    yes    Memory used
+esx_vsphere_hostsystem.multipath tcp     no     yes    Multipath %s
+esx_vsphere_hostsystem.state     tcp     no     yes    Overall state
+esx_vsphere_objects              tcp     no     yes    %s
+esx_vsphere_sensors              tcp     no     yes    Hardware Sensors
+esx_vsphere_vm.cpu               tcp     yes    yes    ESX CPU
+esx_vsphere_vm.heartbeat         tcp     no     yes    ESX Heartbeat
+esx_vsphere_vm.mem_usage         tcp     yes    yes    ESX Memory
+esx_vsphere_vm.name              tcp     no     yes    ESX Name
+etherbox.humidity                snmp    yes    yes    Sensor %s
+etherbox.smoke                   snmp    yes    yes    Sensor %s
+etherbox.switch                  snmp    yes    yes    Sensor %s
+etherbox.temp                    snmp    yes    yes    Sensor %s
+f5_bigip_cluster                 snmp    no     yes    Config Sync status
+f5_bigip_fans                    snmp    no     yes    FAN %s
+f5_bigip_interfaces              snmp    yes    yes    f5 Interface %s
+f5_bigip_pool                    snmp    no     yes    Load Balancing Pool %s
+f5_bigip_psu                     snmp    no     yes    PSU %s
+f5_bigip_temp                    snmp    yes    yes    Temperature %s
+f5_bigip_vserver                 snmp    no     yes    Virtual Server %s
+fileinfo                         tcp     yes    yes    File %s
+fileinfo.groups                  tcp     yes    yes    File group %s
+fjdarye100_cadaps                snmp    no     yes    Channel Adapter %s
+fjdarye100_cmods                 snmp    no     yes    Channel Module %s
+fjdarye100_cmods_mem             snmp    no     yes    Channel Module Memory %s
+fjdarye100_conencs               snmp    no     yes    Controller Enclosure %s
+fjdarye100_cpsus                 snmp    no     yes    CPSU %s
+fjdarye100_devencs               snmp    no     yes    Device Enclosure %s
+fjdarye100_disks                 snmp    no     yes    Disk %s
+fjdarye100_disks.summary         snmp    no     yes    Disk summary
+fjdarye100_rluns                 snmp    no     yes    RLUN %s
+fjdarye100_sum                   snmp    no     yes    Summary Status %s
+fjdarye100_syscaps               snmp    no     yes    System Capacitor Unit %s
+fjdarye60_cadaps                 snmp    no     yes    Channel Adapter %s
+fjdarye60_cmods                  snmp    no     yes    Channel Module %s
+fjdarye60_cmods_flash            snmp    no     yes    Channel Module Flash %s
+fjdarye60_cmods_mem              snmp    no     yes    Channel Module Memory %s
+fjdarye60_conencs                snmp    no     yes    Controller Enclosure %s
+fjdarye60_devencs                snmp    no     yes    Device Enclosure %s
+fjdarye60_disks                  snmp    no     yes    Disk %s
+fjdarye60_disks.summary          snmp    no     yes    Disk summary
+fjdarye60_expanders              snmp    no     yes    Expander %s
+fjdarye60_inletthmls             snmp    no     yes    Inlet Thermal %s
+fjdarye60_psus                   snmp    no     yes    PSU %s
+fjdarye60_rluns                  snmp    no     yes    RLUN %s
+fjdarye60_sum                    snmp    no     yes    Summary Status %s
+fjdarye60_syscaps                snmp    no     yes    System Capacitor Unit %s
+fjdarye60_thmls                  snmp    no     yes    Thermal %s
+form_submit                      active  no     -      -
+fortigate_cpu                    snmp    yes    yes    CPU utilization
+fortigate_memory                 snmp    yes    yes    Memory usage
+fortigate_sessions               snmp    yes    yes    Sessions
+fritz.config                     tcp     no     yes    Configuration
+fritz.conn                       tcp     yes    yes    Connection
+fritz.link                       tcp     no     yes    Link Info
+fritz.wan_if                     tcp     yes    yes    Interface %s
+fsc_fans                         snmp    yes    yes    FSC %s
+fsc_ipmi_mem_status              tcp     yes    yes    IPMI Memory status %s
+fsc_subsystems                   snmp    no     yes    FSC %s
+fsc_temp                         snmp    yes    yes    Temperature %s
+ftp                              active  yes    -      -
+genua_carp                       snmp    no     yes    Carp Interface %s
+genua_fan                        snmp    yes    yes    FAN %s
+genua_pfstate                    snmp    yes    yes    Paketfilter Status
+genua_state_correlation          snmp    no     yes    Carp Correlation
+h3c_lanswitch_cpu                snmp    yes    yes    CPU Utilization %s
+h3c_lanswitch_sensors            snmp    no     yes    %s
+heartbeat_crm                    tcp     no     yes    Heartbeat CRM General
+heartbeat_crm.resources          tcp     no     yes    Heartbeat CRM %s
+heartbeat_nodes                  tcp     no     yes    Heartbeat Node %s
+heartbeat_rscstatus              tcp     no     yes    Heartbeat Ressource Status
+hitachi_hnas_pnode               snmp    no     yes    PNode %s
+hitachi_hnas_quorumdevice        snmp    no     yes    Quorum Device
+hitachi_hnas_vnode               snmp    no     yes    EVS %s
+hp_blade                         snmp    no     yes    General Status
+hp_blade_blades                  snmp    no     yes    Blade %s
+hp_blade_fan                     snmp    no     yes    FAN %s
+hp_blade_manager                 snmp    no     yes    Manager %s
+hp_blade_psu                     snmp    yes    yes    PSU %s
+hp_eml_sum                       snmp    no     yes    Summary Status
+hp_procurve_cpu                  snmp    yes    yes    CPU utilization
+hp_procurve_mem                  snmp    yes    yes    Memory
+hp_procurve_sensors              snmp    no     yes    Sensor %s
+hp_proliant                      snmp    no     yes    General Status
+hp_proliant_cpu                  snmp    no     yes    HW CPU %s
+hp_proliant_da_cntlr             snmp    no     yes    HW Controller %s
+hp_proliant_da_phydrv            snmp    no     yes    HW Phydrv %s
+hp_proliant_fans                 snmp    yes    yes    HW FAN%s
+hp_proliant_mem                  snmp    no     yes    HW Mem %s
+hp_proliant_psu                  snmp    no     yes    HW PSU %s
+hp_proliant_temp                 snmp    yes    yes    Temperature %s
+hp_sts_drvbox                    snmp    no     yes    Drive Box %s
+hpux_cpu                         tcp     yes    yes    CPU load
+hpux_fchba                       tcp     no     yes    FC HBA %s
+hpux_if                          tcp     yes    yes    NIC %s
+hpux_lunstats                    tcp     yes    yes    Disk IO %s
+hpux_lvm                         tcp     no     yes    Logical Volume %s
+hpux_multipath                   tcp     no     yes    Multipath %s
+hpux_serviceguard                tcp     no     yes    Serviceguard
+hpux_snmp_cs.cpu                 snmp    yes    yes    CPU utilization
+hpux_tunables.maxfiles_lim       tcp     yes    yes    Number of open files
+hpux_tunables.nkthread           tcp     yes    yes    Number of threads
+hpux_tunables.nproc              tcp     yes    yes    Number of processes
+hpux_tunables.semmni             tcp     yes    yes    Number of IPC Semaphore IDs
+hpux_tunables.semmns             tcp     yes    yes    Number of IPC Semaphores
+hpux_tunables.shmseg             tcp     yes    yes    Number of shared memory segments
+hr_cpu                           snmp    yes    yes    CPU utilization
+hr_fs                            snmp    yes    yes    fs_%s
+hr_mem                           snmp    yes    yes    Memory used
+http                             active  yes    -      -
+hwg_temp                         snmp    yes    yes    Temperature %s
+hyperv_vms                       tcp     no     yes    hyperv_vms
+ibm_imm_health                   snmp    no     yes    System health
+ibm_rsa_health                   snmp    no     yes    System health
+ibm_xraid_pdisks                 snmp    no     yes    RAID PDisk %s
+icmp                             active  yes    -      -
+if                               snmp    yes    yes    Interface %s
+if64                             snmp    yes    yes    Interface %s
+if64_tplink                      snmp    yes    yes    Interface %s
+if_lancom                        snmp    yes    yes    Interface %s
+ifoperstatus                     snmp    no     yes    Interface %s
+ipmi                             tcp     yes    yes    IPMI Sensor %s
+ipmi_sensors                     tcp     yes    yes    IPMI Sensor %s
+ironport_misc                    tcp     no     no     %s
+j4p_performance.app_sess         tcp     yes    yes    JMX %s Sessions
+j4p_performance.app_state        tcp     no     yes    JMX %s State
+j4p_performance.mem              tcp     yes    yes    JMX %s Memory
+j4p_performance.serv_req         tcp     yes    yes    JMX %s Requests
+j4p_performance.threads          tcp     yes    yes    JMX %s Threads
+j4p_performance.uptime           tcp     yes    yes    JMX %s Uptime
+jar_signature                    tcp     no     yes    Jar-Signature %s
+job                              tcp     yes    yes    Job %s
+jolokia_info                     tcp     no     yes    JVM %s
+jolokia_metrics.app_sess         tcp     yes    yes    JVM %s Sessions
+jolokia_metrics.app_state        tcp     no     yes    JVM %s State
+jolokia_metrics.bea_queue        tcp     yes    yes    JVM %s Queue
+jolokia_metrics.bea_requests     tcp     yes    yes    JVM %s Requests
+jolokia_metrics.bea_sess         tcp     yes    yes    JVM %s Sessions
+jolokia_metrics.bea_threads      tcp     yes    yes    JVM %s Threads
+jolokia_metrics.mem              tcp     yes    yes    JVM %s Memory
+jolokia_metrics.requests         tcp     yes    yes    JVM %s Requests
+jolokia_metrics.serv_req         tcp     yes    yes    JVM %s Requests
+jolokia_metrics.threads          tcp     yes    yes    JVM %s Threads
+jolokia_metrics.uptime           tcp     yes    yes    JVM %s Uptime
+juniper_cpu                      snmp    yes    yes    CPU utilization %s
+kernel                           tcp     yes    yes    Kernel %s
+kernel.util                      tcp     yes    yes    CPU utilization
+ldap                             active  yes    -      -
+lgp_info                         snmp    no     yes    Liebert Info
+lgp_pdu_aux                      snmp    yes    yes    Liebert PDU AUX %s
+lgp_pdu_info                     snmp    no     yes    Liebert PDU Info %s
+liebert_bat_temp                 snmp    yes    yes    Battery Temp
+liebert_chiller_status           snmp    no     yes    Chiller status
+livestatus_status                tcp     yes    yes    OMD %s performance
+lnx_bonding                      tcp     no     yes    Bonding Interface %s
+lnx_if                           tcp     yes    yes    Interface %s
+lnx_thermal                      tcp     yes    yes    Temperature %s
+local                            tcp     yes    yes    %s
+logwatch                         tcp     no     yes    LOG %s
+logwatch.ec                      tcp     no     yes    Log Forwarding
+lparstat_aix                     tcp     yes    yes    lparstat
+lparstat_aix.cpu_util            tcp     yes    yes    CPU utilization
+lsi.array                        tcp     no     yes    RAID array %s
+lsi.disk                         tcp     no     yes    RAID disk %s
+mailman_lists                    tcp     yes    yes    Mailinglist %s
+mbg_lantime_refclock             snmp    yes    yes    LANTIME Refclock
+mbg_lantime_state                snmp    yes    yes    LANTIME State
+mcdata_fcport                    snmp    yes    yes    Port %s
+md                               tcp     no     yes    MD Softraid %s
+megaraid_bbu                     tcp     no     yes    RAID Adapter/BBU %s
+megaraid_ldisks                  tcp     yes    yes    RAID Adapter/LDisk %s
+megaraid_pdisks                  tcp     yes    yes    RAID PDisk Adapt/Enc/Sl %s
+mem.used                         tcp     yes    yes    Memory used
+mem.vmalloc                      tcp     yes    yes    Vmalloc address space
+mem.win                          tcp     yes    yes    Memory and pagefile
+mounts                           tcp     no     yes    Mount options of %s
+moxa_iologik_register            snmp    no     yes    Moxa Register
+mq_queues                        tcp     yes    yes    Queue %s
+mrpe                             tcp     yes    yes    %s
+mssql_backup                     tcp     yes    yes    %s Backup
+mssql_counters.cache_hits        tcp     yes    yes    %s
+mssql_counters.file_sizes        tcp     yes    yes    %s File Sizes
+mssql_counters.locks             tcp     yes    yes    %s Locks
+mssql_counters.transactions      tcp     yes    yes    %s Transactions
+mssql_tablespaces                tcp     yes    yes    %s Sizes
+mssql_versions                   tcp     no     yes    %s Version
+multipath                        tcp     no     yes    Multipath %s
+mysql.connections                tcp     no     yes    MySQL Daemon Connections
+mysql.innodb_io                  tcp     yes    yes    MySQL Daemon InnoDB IO
+mysql.sessions                   tcp     yes    yes    MySQL Daemon Sessions
+mysql_capacity                   tcp     yes    yes    MySQL DB %s Size
+netapp_cluster                   snmp    no     yes    metrocluster_w_%s
+netapp_cpu                       snmp    yes    yes    CPU utilization
+netapp_fcpio                     snmp    yes    yes    FCP I/O
+netapp_vfiler                    snmp    no     yes    vFiler Status %s
+netapp_volumes                   snmp    no     yes    NetApp Vol %s
+netctr.combined                  tcp     yes    yes    NIC %s counters
+netif.link                       tcp     no     yes    NIC %s link
+netif.params                     tcp     no     yes    NIC %s parameter
+nfsexports                       tcp     no     yes    NFS export %s
+nfsmounts                        tcp     no     yes    NFS mount %s
+ntp                              tcp     yes    yes    NTP Peer %s
+ntp.time                         tcp     yes    yes    NTP Time
+nvidia.errors                    tcp     no     yes    NVIDIA GPU Errors
+nvidia.temp                      tcp     yes    yes    Temperature NVIDIA %s
+omd_status                       tcp     no     yes    OMD %s status
+openvpn_clients                  tcp     yes    yes    OpenVPN Client %s
+oracle_asm_diskgroup             tcp     yes    yes    ASM Diskgroup %s
+oracle_jobs                      tcp     yes    yes    ORA %s Job
+oracle_logswitches               tcp     yes    yes    ORA %s Logswitches
+oracle_rman_backups              tcp     no     yes    ORA %s RMAN Backup
+oracle_sessions                  tcp     yes    yes    ORA %s Sessions
+oracle_tablespaces               tcp     yes    yes    ORA %s Tablespace
+oracle_version                   tcp     no     yes    ORA Version %s
+ovs_bonding                      tcp     no     yes    Bonding Interface %s
+pdu_gude_8301                    snmp    yes    yes    Phase %s
+pdu_gude_8310                    snmp    yes    yes    Phase %s
+plesk_backups                    tcp     yes    yes    Plesk Backup %s
+plesk_domains                    tcp     no     yes    Plesk Domains
+postfix_mailq                    tcp     yes    yes    Postfix Queue
+postgres_sessions                tcp     yes    yes    PostgreSQL Daemon Sessions
+postgres_stat_database           tcp     yes    yes    PostgreSQL DB %s Statistics
+postgres_stat_database.size      tcp     yes    yes    PostgreSQL DB %s Size
+printer_alerts                   snmp    no     yes    Alerts
+printer_pages                    snmp    yes    yes    Pages
+printer_supply                   snmp    yes    yes    Supply %s
+printer_supply_ricoh             snmp    yes    yes    Supply %s
+ps                               tcp     no     yes    proc_%s
+ps.perf                          tcp     yes    yes    proc_%s
+qmail_stats                      tcp     yes    yes    Qmail Queue
+qnap_disks                       snmp    no     yes    Disk %s
+raritan_emx                      snmp    yes    yes    Rack %s
+raritan_pdu_inlet                snmp    no     yes    Inlet Sensor %s
+raritan_pdu_plugs                snmp    no     yes    Plug %s
+sap.dialog                       tcp     yes    yes    %s Dialog
+sap.value                        tcp     yes    yes    %s
+sensatronics_temp                snmp    yes    yes    Temperature %s
+services                         tcp     no     yes    service_%s
+smart.stats                      tcp     yes    yes    SMART %s Stats
+smart.temp                       tcp     yes    yes    Temperature SMART %s
+smbios_sel                       tcp     no     yes    SMBIOS Event Log
+smtp                             active  yes    -      -
+sni_octopuse_cpu                 snmp    yes    yes    CPU utilization
+sni_octopuse_status              snmp    yes    yes    Global status
+sni_octopuse_trunks              snmp    no     yes    Trunk Port %s
+snia_sml                         tcp     no     no     %s
+snmp_info                        snmp    no     yes    SNMP Info
+snmp_uptime                      snmp    yes    yes    Uptime
+solaris_mem                      tcp     yes    yes    Memory used
+solaris_multipath                tcp     no     yes    Multipath %s
+sql                              active  yes    -      -
+statgrab_cpu                     tcp     yes    yes    CPU utilization
+statgrab_disk                    tcp     yes    yes    Disk IO %s
+statgrab_load                    tcp     yes    yes    CPU load
+statgrab_mem                     tcp     yes    yes    Memory used
+statgrab_net.ctr                 tcp     yes    yes    NIC %s counters
+statgrab_net.link                tcp     no     yes    NIC %s link
+statgrab_net.params              tcp     no     yes    NIC %s parameter
+steelhead_connections            snmp    yes    yes    Connections
+steelhead_peers                  snmp    no     yes    Peer %s
+steelhead_status                 snmp    no     yes    Status
+strem1_sensors                   snmp    yes    yes    Sensor - %s
+stulz_alerts                     snmp    no     yes    Alerts %s
+stulz_humidity                   snmp    yes    yes    Humidity %s
+stulz_powerstate                 snmp    yes    yes    State %s
+stulz_temp                       snmp    yes    yes    Temperature %s
+superstack3_sensors              snmp    no     yes    %s
+sylo                             tcp     yes    yes    Sylo
+sym_brightmail_queues            snmp    no     yes    Queue %s
+systemtime                       tcp     yes    yes    System Time
+tcp                              active  yes    -      -
+tcp_conn_stats                   tcp     yes    yes    TCP Connections
+timemachine                      tcp     no     yes    Backup Timemachine
+tsm_drives                       tcp     no     yes    TSM Drive %s
+tsm_paths                        tcp     no     yes    TSM Paths
+tsm_scratch                      tcp     no     yes    Scratch Pool %s
+tsm_sessions                     tcp     no     yes    tsm_sessions
+tsm_stagingpools                 tcp     yes    yes    TSM Stagingpool %s
+tsm_storagepools                 tcp     yes    yes    TSM Storagepool %s
+ucd_cpu_load                     snmp    yes    yes    CPU load
+ucd_cpu_util                     snmp    yes    yes    CPU utilization
+ups_bat_temp                     snmp    yes    yes    Temperature Battery
+ups_capacity                     snmp    yes    yes    Battery capacity
+ups_eaton_enviroment             snmp    yes    yes    Enviroment
+ups_in_freq                      snmp    yes    yes    IN frequency phase %s
+ups_in_voltage                   snmp    yes    yes    IN voltage phase %s
+ups_out_load                     snmp    yes    yes    OUT load phase %s
+ups_out_voltage                  snmp    yes    yes    OUT voltage phase %s
+ups_power                        snmp    yes    yes    Power phase %s
+ups_test                         snmp    no     yes    Self Test
+uptime                           tcp     yes    yes    Uptime
+vbox_guest                       tcp     no     yes    VBox Guest Additions
+veeam_client                     tcp     yes    yes    VEEAM Client
+veeam_jobs                       tcp     no     yes    VEEAM Job %s
+viprinet_firmware                snmp    no     yes    Firmware Version
+viprinet_mem                     snmp    no     yes    Memory
+viprinet_power                   snmp    no     yes    Power-Supply
+viprinet_router                  snmp    no     yes    Router Mode
+viprinet_serial                  snmp    no     yes    Serial Number
+viprinet_temp                    snmp    yes    yes    Temperature %s
+vms_cpu                          tcp     yes    yes    CPU utilization
+vms_diskstat.df                  tcp     yes    yes    fs_%s
+vms_if                           tcp     yes    yes    Interface %s
+vms_queuejobs                    tcp     no     yes    Queue Jobs
+vms_system.ios                   tcp     yes    yes    IOs
+vms_system.procs                 tcp     yes    yes    Number of processes
+vms_users                        tcp     yes    yes    VMS Users
+vmstat_aix                       tcp     yes    no     vmstat %s
+vxvm_enclosures                  tcp     no     yes    Enclosure %s
+vxvm_multipath                   tcp     no     yes    Multipath %s
+vxvm_objstatus                   tcp     no     yes    VXVM objstatus %s
+win_dhcp_pools                   tcp     yes    yes    DHCP Pool %s
+win_dhcp_pools.stats             tcp     yes    yes    DHCP Stats
+win_netstat                      tcp     no     no     TCP Connection %s
+win_printers                     tcp     no     yes    Printer %s
+windows_broadcom_bonding         tcp     no     yes    Bonding Interface %s
+windows_intel_bonding            tcp     no     yes    Bonding interface %s
+windows_multipath                tcp     no     yes    Multipath
+windows_tasks                    tcp     no     yes    Task %s
+windows_updates                  tcp     yes    yes    System Updates
+winperf.cpuusage                 tcp     yes    yes    CPU Usage
+winperf.diskstat                 tcp     yes    yes    Disk IO
+winperf_if                       tcp     yes    yes    Interface %s
+winperf_msx_queues               tcp     yes    yes    Queue %s
+winperf_phydisk                  tcp     yes    yes    Disk IO %s
+winperf_processor.util           tcp     yes    yes    CPU utilization
+winperf_tcp_conn                 tcp     yes    yes    TCP connections
+winperf_ts_sessions              tcp     yes    yes    Sessions
+wmic_process                     tcp     yes    no     proc_%s
+wut_webio_io.inputs              snmp    no     yes    INPUT %s
+wut_webtherm                     snmp    yes    yes    Thermograph Sensor %s
+zfsget                           tcp     yes    yes    fs_%s
+zpool_status                     tcp     no     yes    zpool status
+zypper                           tcp     no     yes    Zypper Updates
+[root@vm-vol-nag01t nagios]#jk
+
+................................................................................
+
+
+
+[root@vm-vol-nag01t nagios]# service nagios stop
+Stopping nagios: .done.
+[root@vm-vol-nag01t nagios]# vim /etc/nagios/nagios.cfg
+...
+broker_module=/usr/lib64/nagios/brokers/ndomod.so config_file=/etc/nagios/ndomod.cfg
+#broker_module=/usr/lib64/nagios/brokers/npcdmod.o config_file=/etc/pnp4nagios/npcd.cfg
+broker_module=/usr/lib64/check_mk/livestatus.o /var/lib/nagios/rw/live
+...
+[root@vm-vol-nag01t nagios]# service nagios start
+Starting nagios: done.
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# less /var/log/nagios/livestatus.log
+
+[root@vm-vol-nag01t nagios]# mkdir -p /var/lib/nagios/rw/
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# less /var/log/nagios/nagios.log
+    ...
+    [1449668419] Caught SIGTERM, shutting down...
+    [1449668419] Successfully shutdown... (PID=6749)
+    [1449668419] ndomod: Shutdown complete.
+    [1449668419] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' deinitialized successfully.
+    [1449668436] Nagios 3.5.1 starting... (PID=27248)
+    [1449668436] Local time is Wed Dec 09 16:40:36 MSK 2015
+    [1449668436] LOG VERSION: 2.0
+    [1449668436] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/lib/nagios/rw/live'
+    [1449668436] livestatus: Please visit us at http://mathias-kettner.de/
+    [1449668436] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+    [1449668436] livestatus: Please visit OMD at http://omdistro.org
+    [1449668436] livestatus: Unable to bind adress /var/lib/nagios/rw/live to UNIX socket: Permission denied
+!   [1449668436] Error: Function nebmodule_init() in module '/usr/lib64/check_mk/livestatus.o' returned an error.  Module will be unloaded.
+!   [1449668436] Event broker module '/usr/lib64/check_mk/livestatus.o' deinitialized successfully.
+    [1449668436] ndomod: NDOMOD 1.5.2 (06-08-2012) Copyright (c) 2009 Nagios Core Development Team and Community Contributors
+    [1449668436] ndomod: Successfully connected to data sink.  0 queued items to flush.
+    [1449668436] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' initialized successfully.
+    ...
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# grep nagios.cmd /etc/nagios/nagios.cfg
+command_file=/var/spool/nagios/cmd/nagios.cmd
+[root@vm-vol-nag01t nagios]# ls -Alh /var/spool/nagios/cmd/
+total 0
+prw-rw---- 1 nagios nagios 0 Dec  9 16:48 nagios.cmd
+[root@vm-vol-nag01t nagios]#
+
+    [1449669035] Caught SIGTERM, shutting down...
+    [1449669036] Successfully shutdown... (PID=27253)
+    [1449669036] ndomod: Shutdown complete.
+    [1449669036] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' deinitialized successfully.
+    [1449669092] Nagios 3.5.1 starting... (PID=11924)
+    [1449669092] Local time is Wed Dec 09 16:51:32 MSK 2015
+    [1449669092] LOG VERSION: 2.0
+    [1449669092] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/spool/nagios/cmd/live'
+    [1449669092] livestatus: Please visit us at http://mathias-kettner.de/
+    [1449669092] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+    [1449669092] livestatus: Please visit OMD at http://omdistro.org
+    [1449669092] livestatus: Warning: environment_macros are enabled. This might decrease the overall nagios performance
+    [1449669092] livestatus: Ignoring logfile '/var/log/nagios/archives/arichive.bz2':does not begin with '[123456789] '
+    [1449669092] livestatus: Ignoring duplicate logfile /var/log/nagios/archives/nagios-09-10-2015-00.log
+    [1449669093] livestatus: Finished initialization. Further log messages go to /var/log/nagios/livestatus.log
+!   [1449669093] Event broker module '/usr/lib64/check_mk/livestatus.o' initialized successfully.
+    [1449669093] ndomod: NDOMOD 1.5.2 (06-08-2012) Copyright (c) 2009 Nagios Core Development Team and Community Contributors
+    [1449669093] ndomod: Successfully connected to data sink.  0 queued items to flush.
+    [1449669093] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' initialized successfully.
+
+
+[root@vm-vol-nag01t nagios]# ls -Alh /var/spool/nagios/cmd/
+total 0
+srw-rw---- 1 nagios nagios 0 Dec  9 16:51 live
+prw-rw---- 1 nagios nagios 0 Dec  9 16:52 nagios.cmd
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# tail -f /var/log/nagios/livestatus.log
+^C
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# echo 'GET hosts' | unixcat /var/spool/nagios/cmd/live | head
+accept_passive_checks;acknowledged;acknowledgement_type;action_url;action_url_expanded;active_checks_enabled;address;alias;check_command;check_command_expanded;check_flapping_recovery_notification;check_freshness;check_interval;check_options;check_period;check_type;checks_enabled;childs;comments;comments_with_extra_info;comments_with_info;contact_groups;contacts;current_attempt;current_notification_number;custom_variable_names;custom_variable_values;custom_variables;display_name;downtimes;downtimes_with_info;event_handler;event_handler_enabled;execution_time;filename;first_notification_delay;flap_detection_enabled;groups;hard_state;has_been_checked;high_flap_threshold;icon_image;icon_image_alt;icon_image_expanded;in_check_period;in_notification_period;in_service_period;initial_state;is_executing;is_flapping;last_check;last_hard_state;last_hard_state_change;last_notification;last_state;last_state_change;last_time_down;last_time_unreachable;last_time_up;latency;long_plugin_output;low_flap_threshold;max_check_attempts;modified_attributes;modified_attributes_list;name;next_check;next_notification;no_more_notifications;notes;notes_expanded;notes_url;notes_url_expanded;notification_interval;notification_period;notifications_enabled;num_services;num_services_crit;num_services_hard_crit;num_services_hard_ok;num_services_hard_unknown;num_services_hard_warn;num_services_ok;num_services_pending;num_services_unknown;num_services_warn;obsess_over_host;parents;pending_flex_downtime;percent_state_change;perf_data;plugin_output;pnpgraph_present;process_performance_data;retry_interval;scheduled_downtime_depth;service_period;services;services_with_info;services_with_state;staleness;state;state_type;statusmap_image;total_services;worst_service_hard_state;worst_service_state;x_3d;y_3d;z_3d
+1;0;0;/pnp4nagios/graph?host=$HOSTNAME$;/pnp4nagios/graph?host=3560-12P-5_Redakciya;1;172.16.6.236;3560-12P-5_Redakciya;check-host-alive;check-host-alive;0;0;5.0000000000e+00;0;24x7;0;1;;;;;servicedesk-duty-critical-group,network-admins-web-access,network-admins;Naumen_nag_request_email,Naumen_nag_request_email-warning,a.derzhaev,a.derzhaev_email,a.derzhaev_sms,a.nikonenko,a.nikonenko_email,a.nikonenko_sms,a.terentyev_email,a.terentyev_sms,m.kubrak_email,m.kubrak_sms,s.bukovnya,s.bukovnya_email,s.bukovnya_sms,s.perepelkin,s.perepelkin_email,s.perepelkin_sms,s.smolenko_sms,servicedesk_duty_diapazon1_sms_FOR_DUTY_GROUP,servicedesk_duty_diapazon2_sms_FOR_DUTY_GROUP,servicedesk_duty_diapazon3_sms_FOR_DUTY_GROUP,servicedesk_duty_khutor_sms,servicedesk_duty_khutor_sms_FOR_DUTY_GROUP,servicedesk_duty_khutor_sms_critical,servicedesk_duty_sms,servicedesk_duty_sms_FOR_DUTY_GROUP,servicedesk_duty_sms_critical,v.sakalkin,v.sakalkin_email,v.sakalkin_sms,v.tsyganov_email;1;0;;;;3560-12P-5_Redakciya;;;;1;2.0495880000e+00;;0.0000000000e+00;1;cisco;0;1;0.0000000000e+00;cisco.png;;cisco.png;1;1;1;0;0;0;1449669097;0;1447968714;0;0;1447968714;1447968534;0;1449669105;2.5990000000e+00;;0.0000000000e+00;3;0;;3560-12P-5_Redakciya;1449669405;0;0;;;/nagios/notes/$HOSTNAME$.txt;/nagios/notes/3560-12P-5_Redakciya.txt;3.0000000000e+01;24x7;1;1;0;0;1;0;0;1;0;0;0;1;;0;0.0000000000e+00;rta=3.641000ms;3000.000000;5000.000000;0.000000 pl=0%;80;100;0;PING OK - Packet loss = 0%, RTA = 3.64 ms;-1;1;1.0000000000e+00;0;;PING;PING|0|1|PING OK - Packet loss = 0%, RTA = 12.39 ms;PING|0|1;8.7333333333e-01;0;1;cisco.gd2;1;0;0;0.0000000000e+00;0.0000000000e+00;0.0000000000e+00
+...
+
+[root@vm-vol-nag01t nagios]# tail -f /var/log/nagios/livestatus.log
+2015-12-09 16:55:59 Couldn't write 2804454 bytes to client socket: Broken pipe
+^C
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET contacts\nColumns: name alias" | unixcat /var/spool/nagios/cmd/live | head
+Michal.Yosifon_email;Michal Yosifon
+Naumen_nag_request_email;Integration converter log
+Naumen_nag_request_email-warning;Integration converter log
+Naumen_request_email;Integration converter log
+Naumen_request_email-warning;Integration converter log
+Rauf.Nasibov_email;Rauf Nasibov
+a.akolzin_email;Akolzin Aleksandr
+a.akolzin_sms;Akolzin Aleksandr
+a.aleksandrov1_email;Aleksandrov Aleksandr Vladimirovich
+a.aleksandrov_email;Aleksey Aleksandrov
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nColumns: host_name description state\nFilter: state = 2" | unixcat /var/spool/nagios/cmd/live | head
+AT2-PDU-OF3-L;AT2:Humidity;2
+D1-PDU-OF2-L;D1:Humidity;2
+HT3-PDU-R3-L;HT:Humidity;2
+HT4-PDU-R2-R;HT:Humidity;2
+db-acs-prod;ACS_DB_PROD_arch_Volume_nfs;2
+db-acs-prod;ACS_DB_PROD_di_Volume_nfs;2
+db-acs-prod;ACS_DB_PROD_ru_Volume_nfs;2
+db-ag-prod;AG_DB_PROD_arch_Volume_nfs;2
+db-ag-prod;AG_DB_PROD_di_Volume_nfs;2
+db-ag-prod;AG_DB_PROD_ru_Volume_nfs;2
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET downtimes" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+author
+comment
+duration
+end_time
+entry_time
+fixed
+host_accept_passive_checks
+host_acknowledged
+host_acknowledgement_type
+host_action_url
+host_action_url_expanded
+host_active_checks_enabled
+host_address
+host_alias
+host_check_command
+host_check_command_expanded
+host_check_flapping_recovery_notification
+host_check_freshness
+host_check_interval
+host_check_options
+host_check_period
+host_check_type
+host_checks_enabled
+host_childs
+host_comments
+host_comments_with_extra_info
+host_comments_with_info
+host_contact_groups
+host_contacts
+host_current_attempt
+host_current_notification_number
+host_custom_variable_names
+host_custom_variable_values
+host_custom_variables
+host_display_name
+host_downtimes
+host_downtimes_with_info
+host_event_handler
+host_event_handler_enabled
+host_execution_time
+host_filename
+host_first_notification_delay
+host_flap_detection_enabled
+host_groups
+host_hard_state
+host_has_been_checked
+host_high_flap_threshold
+host_icon_image
+host_icon_image_alt
+host_icon_image_expanded
+host_in_check_period
+host_in_notification_period
+host_in_service_period
+host_initial_state
+host_is_executing
+host_is_flapping
+host_last_check
+host_last_hard_state
+host_last_hard_state_change
+host_last_notification
+host_last_state
+host_last_state_change
+host_last_time_down
+host_last_time_unreachable
+host_last_time_up
+host_latency
+host_long_plugin_output
+host_low_flap_threshold
+host_max_check_attempts
+host_modified_attributes
+host_modified_attributes_list
+host_name
+host_next_check
+host_next_notification
+host_no_more_notifications
+host_notes
+host_notes_expanded
+host_notes_url
+host_notes_url_expanded
+host_notification_interval
+host_notification_period
+host_notifications_enabled
+host_num_services
+host_num_services_crit
+host_num_services_hard_crit
+host_num_services_hard_ok
+host_num_services_hard_unknown
+host_num_services_hard_warn
+host_num_services_ok
+host_num_services_pending
+host_num_services_unknown
+host_num_services_warn
+host_obsess_over_host
+host_parents
+host_pending_flex_downtime
+host_percent_state_change
+host_perf_data
+host_plugin_output
+host_pnpgraph_present
+host_process_performance_data
+host_retry_interval
+host_scheduled_downtime_depth
+host_service_period
+host_services
+host_services_with_info
+host_services_with_state
+host_staleness
+host_state
+host_state_type
+host_statusmap_image
+host_total_services
+host_worst_service_hard_state
+host_worst_service_state
+host_x_3d
+host_y_3d
+host_z_3d
+id
+is_service
+service_accept_passive_checks
+service_acknowledged
+service_acknowledgement_type
+service_action_url
+service_action_url_expanded
+service_active_checks_enabled
+service_check_command
+service_check_command_expanded
+service_check_freshness
+service_check_interval
+service_check_options
+service_check_period
+service_check_type
+service_checks_enabled
+service_comments
+service_comments_with_extra_info
+service_comments_with_info
+service_contact_groups
+service_contacts
+service_current_attempt
+service_current_notification_number
+service_custom_variable_names
+service_custom_variable_values
+service_custom_variables
+service_description
+service_display_name
+service_downtimes
+service_downtimes_with_info
+service_event_handler
+service_event_handler_enabled
+service_execution_time
+service_first_notification_delay
+service_flap_detection_enabled
+service_groups
+service_has_been_checked
+service_high_flap_threshold
+service_icon_image
+service_icon_image_alt
+service_icon_image_expanded
+service_in_check_period
+service_in_notification_period
+service_in_service_period
+service_initial_state
+service_is_executing
+service_is_flapping
+service_last_check
+service_last_hard_state
+service_last_hard_state_change
+service_last_notification
+service_last_state
+service_last_state_change
+service_last_time_critical
+service_last_time_ok
+service_last_time_unknown
+service_last_time_warning
+service_latency
+service_long_plugin_output
+service_low_flap_threshold
+service_max_check_attempts
+service_modified_attributes
+service_modified_attributes_list
+service_next_check
+service_next_notification
+service_no_more_notifications
+service_notes
+service_notes_expanded
+service_notes_url
+service_notes_url_expanded
+service_notification_interval
+service_notification_period
+service_notifications_enabled
+service_obsess_over_service
+service_percent_state_change
+service_perf_data
+service_plugin_output
+service_pnpgraph_present
+service_process_performance_data
+service_retry_interval
+service_scheduled_downtime_depth
+service_service_period
+service_staleness
+service_state
+service_state_type
+start_time
+triggered_by
+type
+[root@vm-vol-nag01t nagios]#
+
+
+#   It's funny. There are no downtimes on this testing server...
+[root@vm-vol-nag01t nagios]# echo -e "GET downtimes\nColumns: author comment duration end_time" | unixcat /var/spool/nagios/cmd/live
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+#
+#   Fri Dec 11 12:09:24 MSK 2015
+
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nColumns: host_name modified_attributes_list\nFilter: modified_attributes != 0" | unixcat /var/spool/nagios/cmd/live | head
+ds-db02-prod;notifications_enabled
+ds-db02-stb;notifications_enabled
+ds-db07-prod;notifications_enabled
+ds-db07-stb;notifications_enabled
+hq-msk-vol-dc02;notifications_enabled
+hq-vol-proxy01;notifications_enabled
+hqvolsps;notifications_enabled
+m1-db05-stb;flap_detection_enabled
+m1-db07-prod;notifications_enabled
+m1-db08-prod;notifications_enabled
+
+#   Find a host, that attributes were modified via GUI.
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nColumns: host_name modified_attributes_list\nFilter: modified_attributes ~ notifications_enabled\nFilter: notifications_enabled = 0" | unixcat /var/spool/nagios/cmd/live       null;notifications_enabled
+vcs01t-vip;notifications_enabled
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+#   The following example outputs the numbers of hosts which are OK, WARN, CRIT or UNKNOWN.
+#   OK, WARNING,    CRITICAL,   UNKNOWN
+#   0   1           2           3
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nStats: state = 0\nStats: state = 1\nStats: state = 2\nStats: state = 3" | unixcat /var/spool/nagios/cmd/live
+1426;1;0;0
+[root@vm-vol-nag01t nagios]#
+#   Same as above, but for services.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nStats: state = 0\nStats: state = 1\nStats: state = 2\nStats: state = 3" | unixcat /var/spool/nagios/cmd/live
+10758;390;176;310
+[root@vm-vol-nag01t nagios]#
+
+#   Playing with grouping information by lines.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nStats: state = 0\nStats: state = 1\nStats: state = 2\nStats: state = 3\nColumns: state" | unixcat /var/spool/nagios/cmd/live
+0;10764;0;0;0
+1;0;391;0;0
+2;0;0;170;0
+3;0;0;0;309
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nStats: state != 9999\nColumns: state" | unixcat /var/spool/nagios/cmd/live
+0;10770
+1;384
+2;171
+3;309
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+#   This is a way to get all available information about hosts, that have WARN state.
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nFilter: state = 1\n" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+
+#   Print only defined columns.
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nColumns: host_name contacts\nFilter: state = 1\n" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+m1-prt-mrk07
+Naumen_nag_request_email,a.aleksandrov_email,a.aleksandrov_sms,a.chernyh_email,a.chernyh_sms,a.kuritcyn_email,a.kuritcyn_sms,a.leonov_email,a.leonov_sms,a.terentyev_email,a.terentyev_sms,e.zbiranik_email,e.zbiranik_sms,n.makhnev_email,n.makhnev_sms,s.belogrud_email,s.belogrud_sms,servicedesk_duty_diapazon1_sms_FOR_DUTY_GROUP,servicedesk_duty_diapazon2_sms_FOR_DUTY_GROUP,servicedesk_duty_diapazon3_sms_FOR_DUTY_GROUP,servicedesk_duty_khutor_sms_FOR_DUTY_GROUP,servicedesk_duty_khutor_sms_critical,servicedesk_duty_sms_FOR_DUTY_GROUP,servicedesk_duty_sms_critical
+[root@vm-vol-nag01t nagios]#
+
+#   Same as above, but with column names.
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nColumns: host_name contacts\nFilter: state = 1\nColumnHeaders: on" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+name
+contacts
+m1-prt-mrk07
+Naumen_nag_request_email,a.aleksandrov_email,a.aleksandrov_sms,a.chernyh_email,a.chernyh_sms,a.kuritcyn_email,a.kuritcyn_sms,a.leonov_email,a.leonov_sms,a.terentyev_email,a.terentyev_sms,e.zbiranik_email,e.zbiranik_sms,n.makhnev_email,n.makhnev_sms,s.belogrud_email,s.belogrud_sms,servicedesk_duty_diapazon1_sms_FOR_DUTY_GROUP,servicedesk_duty_diapazon2_sms_FOR_DUTY_GROUP,servicedesk_duty_diapazon3_sms_FOR_DUTY_GROUP,servicedesk_duty_khutor_sms_FOR_DUTY_GROUP,servicedesk_duty_khutor_sms_critical,servicedesk_duty_sms_FOR_DUTY_GROUP,servicedesk_duty_sms_critical
+[root@vm-vol-nag01t nagios]#
+................................................................................
+
+#   Here is statistics of checks execution by time.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 0\nStats: min execution_time\nStats: max execution_time\nStats: avg execution_time" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+0.0000000000e+00
+4.3574324000e+01
+8.1883707895e-01
+[root@vm-vol-nag01t nagios]#
+
+#   Grouped by hosts.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 0\nStats: min execution_time\nStats: max execution_time\nStats: avg execution_time\nColumns: host_name" | unixcat /var/spool/nagios/cmd/live | head
+3560-12P-5_Redakciya;4.0668090000e+00;4.0668090000e+00;4.0668090000e+00
+AT1-UPS1;1.4001000000e-01;3.0964400000e-01;2.0331685714e-01
+AT1-UPS2;1.1726900000e-01;3.3463500000e-01;2.1689300000e-01
+AT1-UPS3;1.3222700000e-01;7.4540300000e-01;2.4224757143e-01
+AT2-PDU-OF3-L;9.5594000000e-02;4.0972080000e+00;8.3219966667e-01
+AT2-UPS1;1.1374800000e-01;2.4071400000e-01;1.6955364286e-01
+AT2-UPS2;1.1582900000e-01;2.7610100000e-01;1.7596657143e-01
+AT2-UPS3;1.1950300000e-01;4.4075800000e-01;2.1920764286e-01
+BarsumTCS;7.3509000000e-02;1.0036450000e+00;3.3813937500e-01
+D1-PDU-OF2-L;1.2075300000e-01;4.0961560000e+00;8.1306566667e-01
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 0\nStats: min execution_time\nStats: max execution_time\nStats: avg execution_time\nStats: avginv check_interval\nStats: suminv check_interval" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+0.0000000000e+00
+4.3574324000e+01
+8.2619379327e-01
+1.3553248268e-01
+1.4587361111e+03
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+#   Here is known for me method to get columns name of defined GET command. Here is for "hosts".
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nFilter: name = db-ag-prod\nColumnHeaders: on" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+accept_passive_checks
+acknowledged
+acknowledgement_type
+action_url
+action_url_expanded
+active_checks_enabled
+address
+alias
+check_command
+check_command_expanded
+check_flapping_recovery_notification
+check_freshness
+check_interval
+check_options
+check_period
+check_type
+checks_enabled
+childs
+comments
+comments_with_extra_info
+comments_with_info
+contact_groups
+contacts
+current_attempt
+current_notification_number
+custom_variable_names
+custom_variable_values
+custom_variables
+display_name
+downtimes
+downtimes_with_info
+event_handler
+event_handler_enabled
+execution_time
+filename
+first_notification_delay
+flap_detection_enabled
+groups
+hard_state
+has_been_checked
+high_flap_threshold
+icon_image
+icon_image_alt
+icon_image_expanded
+in_check_period
+in_notification_period
+in_service_period
+initial_state
+is_executing
+is_flapping
+last_check
+last_hard_state
+last_hard_state_change
+last_notification
+last_state
+last_state_change
+last_time_down
+last_time_unreachable
+last_time_up
+latency
+long_plugin_output
+low_flap_threshold
+max_check_attempts
+modified_attributes
+modified_attributes_list
+name
+next_check
+next_notification
+no_more_notifications
+notes
+notes_expanded
+notes_url
+notes_url_expanded
+notification_interval
+notification_period
+notifications_enabled
+num_services
+num_services_crit
+num_services_hard_crit
+num_services_hard_ok
+num_services_hard_unknown
+num_services_hard_warn
+num_services_ok
+num_services_pending
+num_services_unknown
+num_services_warn
+obsess_over_host
+parents
+pending_flex_downtime
+percent_state_change
+perf_data
+plugin_output
+pnpgraph_present
+process_performance_data
+retry_interval
+scheduled_downtime_depth
+service_period
+services
+services_with_info
+services_with_state
+staleness
+state
+state_type
+statusmap_image
+total_services
+worst_service_hard_state
+worst_service_state
+...
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: description = ACS_DB_PROD_di_Volume_nfs\nColumnHeaders: on" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+accept_passive_checks
+acknowledged
+acknowledgement_type
+action_url
+action_url_expanded
+active_checks_enabled
+check_command
+check_command_expanded
+check_freshness
+check_interval
+check_options
+check_period
+check_type
+checks_enabled
+comments
+comments_with_extra_info
+comments_with_info
+contact_groups
+contacts
+current_attempt
+current_notification_number
+custom_variable_names
+custom_variable_values
+custom_variables
+description
+display_name
+downtimes
+downtimes_with_info
+event_handler
+event_handler_enabled
+execution_time
+first_notification_delay
+flap_detection_enabled
+groups
+has_been_checked
+high_flap_threshold
+host_accept_passive_checks
+host_acknowledged
+host_acknowledgement_type
+host_action_url
+host_action_url_expanded
+host_active_checks_enabled
+host_address
+host_alias
+host_check_command
+host_check_command_expanded
+host_check_flapping_recovery_notification
+host_check_freshness
+host_check_interval
+host_check_options
+host_check_period
+host_check_type
+host_checks_enabled
+host_childs
+host_comments
+host_comments_with_extra_info
+host_comments_with_info
+host_contact_groups
+host_contacts
+host_current_attempt
+host_current_notification_number
+host_custom_variable_names
+host_custom_variable_values
+host_custom_variables
+host_display_name
+host_downtimes
+host_downtimes_with_info
+host_event_handler
+host_event_handler_enabled
+host_execution_time
+host_filename
+host_first_notification_delay
+host_flap_detection_enabled
+host_groups
+host_hard_state
+host_has_been_checked
+host_high_flap_threshold
+host_icon_image
+host_icon_image_alt
+host_icon_image_expanded
+host_in_check_period
+host_in_notification_period
+host_in_service_period
+host_initial_state
+host_is_executing
+host_is_flapping
+host_last_check
+host_last_hard_state
+host_last_hard_state_change
+host_last_notification
+host_last_state
+host_last_state_change
+host_last_time_down
+host_last_time_unreachable
+host_last_time_up
+host_latency
+host_long_plugin_output
+host_low_flap_threshold
+host_max_check_attempts
+host_modified_attributes
+host_modified_attributes_list
+host_name
+host_next_check
+host_next_notification
+host_no_more_notifications
+host_notes
+host_notes_expanded
+host_notes_url
+host_notes_url_expanded
+host_notification_interval
+host_notification_period
+host_notifications_enabled
+host_num_services
+host_num_services_crit
+host_num_services_hard_crit
+host_num_services_hard_ok
+host_num_services_hard_unknown
+host_num_services_hard_warn
+host_num_services_ok
+host_num_services_pending
+host_num_services_unknown
+host_num_services_warn
+host_obsess_over_host
+host_parents
+host_pending_flex_downtime
+host_percent_state_change
+host_perf_data
+host_plugin_output
+host_pnpgraph_present
+host_process_performance_data
+host_retry_interval
+host_scheduled_downtime_depth
+host_service_period
+host_services
+host_services_with_info
+host_services_with_state
+host_staleness
+host_state
+host_state_type
+host_statusmap_image
+host_total_services
+host_worst_service_hard_state
+host_worst_service_state
+host_x_3d
+host_y_3d
+host_z_3d
+icon_image
+icon_image_alt
+icon_image_expanded
+in_check_period
+in_notification_period
+in_service_period
+initial_state
+is_executing
+is_flapping
+last_check
+last_hard_state
+last_hard_state_change
+last_notification
+last_state
+last_state_change
+last_time_critical
+last_time_ok
+last_time_unknown
+last_time_warning
+latency
+long_plugin_output
+low_flap_threshold
+max_check_attempts
+modified_attributes
+modified_attributes_list
+next_check
+next_notification
+no_more_notifications
+notes
+notes_expanded
+notes_url
+notes_url_expanded
+notification_interval
+notification_period
+notifications_enabled
+obsess_over_service
+percent_state_change
+perf_data
+plugin_output
+pnpgraph_present
+process_performance_data
+retry_interval
+scheduled_downtime_depth
+service_period
+staleness
+state
+state_type
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 1\nColumns: host_name description\nColumnHeaders: on\nLimit: 10" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+host_name
+description
+cv-comsrv
+Service: CommVault Client Event Manager - Instance001
+cv-comsrv
+Service: CommVault Communications Service - Instance001
+db-bb-dta-prod
+BB_DTA_DB_PROD_di_Volume_nfs
+db-credb-prod
+CREDB_DB_PROD_di_Volume_nfs
+db-pg2-prod
+PG2_DB_PROD_di_Volume_nfs
+db-prime4-prod
+PRIME4_DB_PROD_di_Volume_nfs
+db-xxi-prod
+XXI_DB_PROD_di_Volume_nfs
+ds-bcpmda02
+CPU Load
+ds-bcpmda02
+Drive C:\ Space
+ds-bcpmda02
+Memory Usage
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nFilter: state = 1\nColumns: name\nColumnHeaders: on\nLimit: 1" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+
+#   This command waits unitl host m1-prt-mrk07 became green ( get status 0 ).
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nWaitObject: m1-prt-mrk07\nWaitCondition: state = 0\nWaitTrigger: state\nFilter: host_name = ds-bcpmda02" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+^C
+[root@vm-vol-nag01t nagios]#
+
+#   But similar command for service doesn't work properly....
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nWaitObject: CPU Load\nWaitCondition: state = 0\nWaitTrigger: state\nFilter: host_name = ds-bcpmda02\nFilter: description = CPU Load" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+[root@vm-vol-nag01t nagios]#
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name = ds-bcpmda02\nFilter: description = CPU Load\nColumns: display_name state" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+CPU Load
+1
+[root@vm-vol-nag01t nagios]#
+
+
+#   It should be use other syntax of the command.
+#   In field "WaitObject:" it should be use format "host;service description".
+#   And Filters are necessary.
+#   Below are prints all services of host ds-bcpmda02 if state of services "CPU Load" of this host have satus = 1 ( Warning ).
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nWaitObject: ds-bcpmda02;CPU Load\nWaitCondition: state = 1\nWaitTrigger: state\nFilter: host_name = ds-bcpmda02\nColumns: display_name state\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+200          98
+Uptime
+1
+Service: Windows Time
+1
+NSClient++ Version
+1
+Memory Usage
+1
+Drive C:\ Space
+1
+CPU Load
+1
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nWaitObject: ds-bcpmda02;CPU Load\nWaitCondition: state = 1\nWaitTrigger: state\nFilter: host_name = ds-bcpmda02\nFilter: description = CPU Load\nColumns: display_name state\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+200          11
+CPU Load
+1
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nWaitObject: ds-bcpmda02;CPU Load\nWaitCondition: state = 0\nWaitTrigger: state\nFilter: host_name = ds-bcpmda02\nFilter: description = CPU Load\nColumns: display_name state\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+^C
+[root@vm-vol-nag01t nagios]#
+
+#   Same as above, but this command wait 2 seconds and then executes its instruction (print several columns).
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nWaitObject: ds-bcpmda02;CPU Load\nWaitCondition: state = 0\nWaitTrigger: state\nWaitTimeout: 2000\nFilter: host_name = ds-bcpmda02\nFilter: description = CPU Load\nColumns: display_name state\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+200          11
+CPU Load
+1
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+#   Here is how to print errors during of command execution.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name = ds-bcpmda02\nFilter: description = CPU Load\nColumns: display_name state\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+200          11
+CPU Load
+1
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nWaitObject: CPU Load\nWaitCondition: state = 0\nWaitTrigger: state\nFilter: host_name = ds-bcpmda02\nFilter: description = CPU Load\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+400          66
+WaitObject: object 'CPU' not found or not supported by this table
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t nagios]# date -d "2015-01-01 00:00:00" "+%s"
+1420059600
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = ds-bcpmda02\nFilter: time >= 1420059600\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+^C
+[root@vm-vol-nag01t nagios]# date -d "2015-12-01 00:00:00" "+%s"
+1448917200
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = ds-bcpmda02\nFilter: time >= 1448917200\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+^C
+[root@vm-vol-nag01t nagios]# date +%s
+1449845494
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = ds-bcpmda02\nFilter: time >= 1448917200\nFilter: time < 1449845494\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live | sed -E 's/;/\n/g'
+^C
+[root@vm-vol-nag01t nagios]# grep log_initial_states /etc/nagios/nagios.cfg                                                                                                                                                      log_initial_states=0
+[root@vm-vol-nag01t nagios]#
+
+#   This parameter should be turned on.
+
+................................................................................
+................................................................................
+
+
+#   Wed Dec 16 14:30:23 MSK 2015
+
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = ds-bcpmda02\nFilter: service_description = CPU Load\nFilter: time >= 1448917200\nColumns: host_name service_description state duration duration_part\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live
+200       18125
+host_name;service_description;state;duration;duration_part
+ds-bcpmda02;CPU Load;0;0;0.0000000000e+00
+ds-bcpmda02;CPU Load;1;299;2.2169825311e-04
+ds-bcpmda02;CPU Load;1;5700;4.2263546579e-03
+ds-bcpmda02;CPU Load;1;600;4.4487943767e-04
+ds-bcpmda02;CPU Load;0;300;2.2243971884e-04
+ds-bcpmda02;CPU Load;1;6300;4.6712340956e-03
+...
+
+
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = ds-bcpmda02\nFilter: service_description = CPU Load\nFilter: time >= $(expr $(date "+%s") - 2)\nColumns: host_name service_description state duration from until\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live
+200         103
+host_name;service_description;state;duration;from;until
+ds-bcpmda02;CPU Load;1;2;1450268740;1450268742
+[root@vm-vol-nag01t nagios]#
+
+#   Here we have found length of "warning" state if we read last line.
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = ds-bcpmda02\nFilter: service_description = CPU Load\nFilter: time >= $(expr $(date "+%s") - 4 \* 60 \* 60)\nColumns: host_name service_description state duration from until duration_warning\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live
+200         291
+host_name;service_description;state;duration;from;until;duration_warning
+ds-bcpmda02;CPU Load;1;1611;1450254597;1450256208;1611
+ds-bcpmda02;CPU Load;1;1800;1450256208;1450258008;1800
+ds-bcpmda02;CPU Load;0;300;1450258008;1450258308;0
+ds-bcpmda02;CPU Load;1;10689;1450258308;1450268997;10689
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+#   This way can be found hosts and services, that have "Critical" state.
+#   Here output limited for 10 rows.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description\nColumnHeaders: on\nLimit: 10" | unixcat /var/spool/nagios/cmd/live
+host_name;description
+AT2-PDU-OF3-L;AT2:Humidity
+D1-PDU-OF2-L;D1:Humidity
+HT3-PDU-R3-L;HT:Humidity
+HT4-PDU-R2-R;HT:Humidity
+vm-dmz-app16;Current Load
+vm-sblapp14p;CPU Load
+vm-sblapp14p;Memory Usage
+
+#   This way can be found duration of critical state during defined interval.
+[root@vm-vol-nag01t nagios]# echo -e "GET statehist\nFilter: host_name = AT2-PDU-OF3-L\nFilter: service_description = AT2:Humidity\nFilter: time >= $(expr $(date "+%s") - 4 \* 60 \* 60)\nColumns: host_name service_description duration_critical\nColumnHeaders: on\nResponseHeader: fixed16" | unixcat /var/spool/nagios/cmd/live
+200          81
+host_name;service_description;duration_critical
+AT2-PDU-OF3-L;AT2:Humidity;14400
+[root@vm-vol-nag01t nagios]#
+
+#   This is way how to get number of services, that have "Critical" state and have no notification.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: notifications_enabled = 0\nStats: state = 2" | unixcat /var/spool/nagios/cmd/live
+7
+[root@vm-vol-nag01t nagios]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t 20151216-1851]# /usr/bin/time -f "Elapsed real time: %E\nPercentage of the CPU that this job got: %P\nMaximum resident set size of the process during its lifetime, in Kbytes: %M\nAverage resident set size of the process, in Kbytes: %t\nAverage total (data+stack+text) memory use of the process, in Kbytes: %K\nNumber of waits: %w\nNumber of file system inputs by the process: %I\nNumber of file system outputs by the process: %O\n" $(pwd)/script_for_nagios_broker.sh
+
+Critical state duration equal or even more then 10 days
+Host: HT4-PDU-R2-R
+Service: HT:Humidity
+Duration: 10.00 days
+
+Critical state duration equal or even more then 10 days
+Host: vm-dmz-app16
+Service: Current Load
+Duration: 10.00 days
+
+Critical state duration equal or even more then 10 days
+Host: vm-sblapp14p
+Service: CPU Load
+Duration: 10.00 days
+
+Critical state duration equal or even more then 10 days
+Host: vm-sblapp14p
+Service: Memory Usage
+Duration: 10.00 days
+Elapsed real time: 0:52.05
+Percentage of the CPU that this job got: 0%
+Maximum resident set size of the process during its lifetime, in Kbytes: 5136
+Average resident set size of the process, in Kbytes: 0
+Average total (data+stack+text) memory use of the process, in Kbytes: 0
+Number of waits: 312
+Number of file system inputs by the process: 520
+Number of file system outputs by the process: 144
+
+[root@vm-vol-nag01t 20151216-1851]#
+
+................................................................................
+................................................................................
+
+#   Do same with pynag.
+#   It available if livestatus broker module was installed.
+#   https://github.com/pynag/pynag/wiki/Pynag-command-line-utility
+#
+
+[root@vm-vol-nag01t nagios]# pynag config --get event_broker_options
+-1
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# pynag livestatus --get services --filter "state = 2" --filter "notifications_enabled = 0" --columns "host_name description"
+host_name            description
+--------------------------------------------------------------------------------
+AT2-PDU-OF3-L        AT2:Humidity
+D1-PDU-OF2-L         D1:Humidity
+HT3-PDU-R3-L         HT:Humidity
+HT4-PDU-R2-R         HT:Humidity
+vm-dmz-app16         Current Load
+vm-sblapp14p         CPU Load
+vm-sblapp14p         Memory Usage
+----------7 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]# pynag livestatus --get statehist --filter "host_name = AT2-PDU-OF3-L" --filter "service_description = AT2:Humidity" --filter "time >= $(expr $(date "+%s") - 4 \* 60 \* 60)" --columns "host_name service_description duration_critical"
+host_name            service_description  duration_critical
+--------------------------------------------------------------------------------
+AT2-PDU-OF3-L        AT2:Humidity         14400
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t ~]# mailq
+-Queue ID- --Size-- ----Arrival Time---- -Sender/Recipient-------
+BCF8B1C07F0      439 Thu Dec 17 18:37:14  root@nag-tst.tcsbank.ru
+                  (connect to tinkoff.ru[192.168.5.96]:25: Connection refused)
+                                         s.belogrud@tinkoff.ru
+
+-- 0 Kbytes in 1 Request.
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# find /var/spool/postfix/ -name BCF8B1C07F0
+/var/spool/postfix/deferred/B/BCF8B1C07F0
+/var/spool/postfix/defer/B/BCF8B1C07F0
+[root@vm-vol-nag01t ~]# ls -Alh /var/spool/postfix/deferred/B/BCF8B1C07F0
+-rwx------ 1 postfix postfix 669 Dec 18 17:58 /var/spool/postfix/deferred/B/BCF8B1C07F0
+[root@vm-vol-nag01t ~]# ls -Alh /var/spool/postfix/defer/B/BCF8B1C07F0
+-rw------- 1 postfix postfix 223 Dec 18 16:51 /var/spool/postfix/defer/B/BCF8B1C07F0
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# file /var/spool/postfix/defer/B/BCF8B1C07F0
+/var/spool/postfix/defer/B/BCF8B1C07F0: ASCII text
+[root@vm-vol-nag01t ~]# file /var/spool/postfix/deferred/B/BCF8B1C07F0
+/var/spool/postfix/deferred/B/BCF8B1C07F0: data
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# less /var/spool/postfix/defer/B/BCF8B1C07F0
+
+<s.belogrud@tinkoff.ru>: connect to tinkoff.ru[192.168.5.96]:25: Connection refused
+recipient=s.belogrud@tinkoff.ru
+offset=201
+status=4.4.1
+action=delayed
+reason=connect to tinkoff.ru[192.168.5.96]:25: Connection refused
+
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# less /var/spool/postfix/deferred/B/BCF8B1C07F0
+"/var/spool/postfix/deferred/B/BCF8B1C07F0" may be a binary file.  See it anyway?
+CO            439             226               1               0             439T^Q1450366634 750201A^Vcreate_time=1450366634A^Urewrite_context=localF^DrootS^Wroot@nag-tst.tcsbank.ruO^Us.belogrud@tinkoff.ruR^Us.belogrud@tinkoff.ruM
+^@N8Received: by nag-tst.tcsbank.ru (Postfix, from userid 0)N6  id BCF8B1C07F0; Thu, 17 Dec 2015 18:37:14 +0300 (MSK)N%Date: Thu, 17 Dec 2015 18:37:14 +0300N^]From: root@nag-tst.tcsbank.ruN^YTo: s.belogrud@tinkoff.ruN^NSubject: test1N'User-Agent: Heirloom mailx 12.4 7/29/08N^QMIME-Version: 1.0N*Content-Type: text/plain; charset=us-asciiN^_Content-Transfer-Encoding: 7bitN;Message-Id: <20151217153714.BCF8B1C07F0@nag-tst.tcsbank.ru>N^@N
+body test1X^@E^@
+[root@vm-vol-nag01t ~]#
+
+
+................................................................................
+................................................................................
+
+[bsv@vm-vol-nag01t vm-vol-nag01t]$ grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = nag-tst.tcsbank.ru
+mydomain = tcsbank.ru
+inet_protocols = ipv4
+[bsv@vm-vol-nag01t vm-vol-nag01t]$
+
+
+................................................................................
+................................................................................
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, December 18, 2015 3:30 PM
+To: helpdesk_in
+Cc: net-admins; Leonov Aleksey Vladimirovich; Aleksandrov Aleksey Valerievich
+Subject: Просьба разрешения отправки почты через релэй smtp.tcsbank.ru с сервера vm-vol-nag01t
+
+Добрый день.
+
+Заявка на Администраторов ЛВС.
+
+Прошу предоставить возможность отправки почты без авторизации внутрибанковским адресатам с сервера vm-vol-nag01t (172.16.1.117 ) через релэй smtp.tcsbank.ru.
+
+[root@vm-vol-nag01t ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.2...
+telnet: connect to address 10.219.0.2: Connection refused
+[root@vm-vol-nag01t ~]#
+
+Необходимость связана пока в основном с целью отладки скриптов и в целом методов информирования о событиях на nagios.
+
+С уважением,
+
+Сергей Белогруд
+Старший системный администратор
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    REJECT     tcp  --  0.0.0.0/0            0.0.0.0/0           tcp dpt:25 reject-with icmp-port-unreachable
+2    REJECT     tcp  --  0.0.0.0/0            0.0.0.0/0           tcp dpt:30080 reject-with icmp-port-unreachable
+
+[root@vm-vol-nag01t ~]#
+
+
+#   This way not for us.
+#   Because whole directory /etc/nagios/objects/ transfer to production nagios server.
+[root@vm-vol-nag01t ~]# vim /etc/nagios/objects/commands.cfg
+...
+# 'notify-host-by-email' command definition
+define command{
+        command_name    notify-host-by-email
+        # Original line.
+        # command_line  /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /bin/mail -s "** $NOTIFICATIONTYPE$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ **" $CONTACTEMAIL$
+        # Changed recipient address to fixed special local address. This is
+        command_line    /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /bin/mail -s "** $NOTIFICATIONTYPE$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ **" nagios_notification@localhost
+        }
+
+# 'notify-service-by-email' command definition
+define command{
+        command_name    notify-service-by-email
+        command_line    /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICEOUTPUT$\n" | /bin/mail -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$
+        }
+
+# 'notify-service-by-email' pg2 edit
+define command{
+        command_name    notify-service-by-email-pg2
+[root@vm-vol-nag01t ~]# grep enable_notification /etc/nagios/nagios.cfg
+enable_notifications=0
+[root@vm-vol-nag01t ~]# cat /etc/nagios/.git/in
+index  info/
+[root@vm-vol-nag01t ~]# cat /etc/nagios/.git/info/exclude
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+[root@vm-vol-nag01t ~]# grep -e enable_notification -e retain_state_information /etc/nagios/nagios.cfg
+retain_state_information=1
+# This file is used only if the retain_state_information
+enable_notifications=0
+[root@vm-vol-nag01t ~]#
+
+#   This is preprod.
+[root@vm-vol-nag4 ~]# cat /var/spool/cron/root
+11 20 * * * cd /etc/nagios && tar cjf /opt/local_backup/nagios_objects/nagios_`date +%d%m`.bz2 .
+*/15 * * * * cd /etc/nagios && git pull && /etc/init.d/nagios restart
+15 04 * * * /opt/TCS/nagios/scripts/nagios_notes.sh
+00 04 * * * /root/.pyenv/versions/nagnotes/bin/python /opt/vmware_notes/nagnotes.py
+15 05 * * * /opt/TCS/nagios/scripts/make_notes.sh
+
+[root@vm-vol-nag4 ~]#
+[root@vm-vol-nag4 ~]# grep enable_notification /etc/nagios/nagios.cfg
+enable_notifications=0
+[root@vm-vol-nag4 ~]#
+
+................................................................................
+
+#   This is production server.
+#
+[root@vm-vol-nag3 ~]# cat /var/spool/cron/root
+*/30 * * * * /opt/TCS/nagios/scripts/vim_dic.sh
+45 11 * * 1 /root/vcs_summary.sh
+#*/15 * * * * /opt/TCS/nagios/scripts/pg_provserv2.sh
+#20 20 * * * rsync -avz /etc/nagios/objects/ -e ssh --delete --exclude rc mon3:/etc/nagios/objects/
+00 16 * * * /opt/TCS/nagios/scripts/nagsync.sh
+*/30 * * * * /opt/TCS/nagios/scripts/prep_check.sh
+01 * * * * cat /var/log/squid/access.log | calamaris -a -F html > /var/www/html/squid.html
+[root@vm-vol-nag3 ~]# grep enable_notification /etc/nagios/nagios.cfg
+enable_notifications=1
+[root@vm-vol-nag3 ~]# cat /opt/TCS/nagios/scripts/nagsync.sh
+#!/bin/bash
+
+
+#go to working dir
+cd /etc/nagios
+#create backup
+tar czf /opt/nagback/nagback_`date +%d%m`.tar.gz .
+#get nagios config
+rsync -avz -e ssh --delete  --exclude ’.git’ mon3:/etc/nagios/objects/ /etc/nagios/objects/
+#get notes
+rsync -avz -e ssh  mon3:/tmp/notes/total/ /usr/share/nagios/html/notes/
+
+#check condition
+overall=`/usr/sbin/nagios -v /etc/nagios/nagios.cfg | egrep -e "Warnings|Errors|pre-flight|Checked"`
+status=`/usr/sbin/nagios -v /etc/nagios/nagios.cfg | egrep "One or more problems"`
+
+#case
+if [ -z "$status" ]
+  then echo $overall | mail -s 'nagios rsync complete. have no errors. nagios reloading' a.leonov@tinkoff.ru ; /etc/init.d/nagios reload ; exit 0
+  else echo $overall | mail -s 'nagios rsync complete. have some errors. need attention' a.leonov@tinkoff.ru ; exit 0
+fi
+
+
+## for revert changes do:
+## rm -rf /etc/nagios/* && tar xf /opt/nagback/nagback_`date +%d%m`.tar.gz -C /etc/nagios
+[root@vm-vol-nag3 ~]#
+
+................................................................................
+
+
+# The relay_domains parameter restricts what destinations this system will
+# relay mail to.  See the smtpd_recipient_restrictions description in
+# postconf(5) for detailed information.
+#
+#
+
+
+       reject_unlisted_recipient (with Postfix version 2.0: check_recipient_maps)
+              Reject  the  request  when the RCPT TO address is not listed in the list of valid recipients for its domain class. See the smtpd_reject_unlisted_recipient parameter description for details.  This
+              feature is available in Postfix 2.1 and later.
+...
+smtpd_reject_unlisted_recipient (default: yes)
+       Request that the Postfix SMTP server rejects mail for unknown recipient addresses, even when no explicit reject_unlisted_recipient access restriction is specified. This prevents the Postfix  queue  from
+       filling up with undeliverable MAILER-DAEMON messages.
+
+       ·      The recipient domain matches $mydestination, $inet_interfaces or $proxy_interfaces, but the recipient is not listed in $local_recipient_maps, and $local_recipient_maps is not null.
+
+       ·      The recipient domain matches $virtual_alias_domains but the recipient is not listed in $virtual_alias_maps.
+
+       ·      The recipient domain matches $virtual_mailbox_domains but the recipient is not listed in $virtual_mailbox_maps, and $virtual_mailbox_maps is not null.
+
+       ·      The recipient domain matches $relay_domains but the recipient is not listed in $relay_recipient_maps, and $relay_recipient_maps is not null.
+
+       This feature is available in Postfix 2.1 and later.
+
+[root@vm-vol-nag01t ~]# postconf -m
+btree
+cidr
+environ
+hash
+ldap
+mysql
+nis
+pcre
+proxy
+regexp
+static
+unix
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# postconf -n
+alias_database = hash:/etc/aliases
+alias_maps = hash:/etc/aliases
+command_directory = /usr/sbin
+config_directory = /etc/postfix
+daemon_directory = /usr/libexec/postfix
+data_directory = /var/lib/postfix
+debug_peer_level = 2
+home_mailbox = Mailbox
+html_directory = no
+inet_interfaces = localhost
+inet_protocols = ipv4
+local_recipient_maps = unix:passwd.byname $alias_maps
+mail_owner = postfix
+mail_spool_directory = /var/spool/mail
+mailq_path = /usr/bin/mailq.postfix
+manpage_directory = /usr/share/man
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+mydomain = tcsbank.ru
+myhostname = nag-tst.tcsbank.ru
+myorigin = $myhostname
+newaliases_path = /usr/bin/newaliases.postfix
+queue_directory = /var/spool/postfix
+readme_directory = /usr/share/doc/postfix-2.6.6/README_FILES
+sample_directory = /usr/share/doc/postfix-2.6.6/samples
+sendmail_path = /usr/sbin/sendmail.postfix
+setgid_group = postdrop
+unknown_local_recipient_reject_code = 550
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+printf 'ehlo hostname.domain.com\nmail from: <user@domain.com>\nrcpt to:' \
+    '<personalemail@anotheroneofmydomains.com>\nquit\n' | nc localhost 25
+................................................................................
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t ~]# cat /etc/sysconfig/iptables
+# Generated by iptables-save v1.4.7 on Mon Nov 16 16:26:29 2015
+*filter
+:INPUT ACCEPT [724:146514]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [788:120380]
+#-A OUTPUT -p tcp -m tcp --dport 25 -j REJECT --reject-with icmp-port-unreachable
+-A OUTPUT -p tcp -m tcp --dport 30080 -j REJECT --reject-with icmp-port-unreachable
+COMMIT
+# Completed on Mon Nov 16 16:26:29 2015
+[root@vm-vol-nag01t ~]#
+
+
+[root@vm-vol-nag01t ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.2...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 M1-MSK-MAIL20.tcsbank.ru Microsoft ESMTP MAIL Service ready at Fri, 18 Dec 2015 18:15:36 +0300
+ehlo
+250-M1-MSK-MAIL20.tcsbank.ru Hello [10.219.0.237]
+250-SIZE 52428800
+250-PIPELINING
+250-DSN
+250-ENHANCEDSTATUSCODES
+250-AUTH NTLM LOGIN
+250-8BITMIME
+250-BINARYMIME
+250 CHUNKING
+quit
+221 2.0.0 Service closing transmission channel
+Connection closed by foreign host.
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+[root@vm-vol-nag01t ~]# printf 'ehlo vm-vol-nag01t.tcsbank.ru\nmail from: <root@vm-vol-nag01t.tcsbank.ru>\nrcpt to: <s.belogrud@tcsbank.ru>\nquit\n' | nc smtp.tcsbank.ru 25
+220 M1-MSK-MAIL20.tcsbank.ru Microsoft ESMTP MAIL Service ready at Fri, 18 Dec 2015 18:27:52 +0300
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.2...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 M1-MSK-MAIL20.tcsbank.ru Microsoft ESMTP MAIL Service ready at Fri, 18 Dec 2015 18:28:06 +0300
+ehlo vm-vol-nag01t.tcsbank.ru
+250-M1-MSK-MAIL20.tcsbank.ru Hello [10.219.0.237]
+250-SIZE 52428800
+250-PIPELINING
+250-DSN
+250-ENHANCEDSTATUSCODES
+250-AUTH NTLM LOGIN
+250-8BITMIME
+250-BINARYMIME
+250 CHUNKING
+mail from: <root@vm-vol-nag01t.tcsbank.ru>
+530 5.7.1 Client was not authenticated
+Connection closed by foreign host.
+[root@vm-vol-nag01t ~]#
+
+
+[root@vm-vol-nag01t ~]# telnet smtp.tcsbank.ru 25
+Trying 10.219.0.2...
+Connected to smtp.tcsbank.ru.
+Escape character is '^]'.
+220 M1-MSK-MAIL20.tcsbank.ru Microsoft ESMTP MAIL Service ready at Fri, 18 Dec 2015 18:33:52 +0300
+ehlo vm-vol-nag01t.tcsbank.ru
+250-M1-MSK-MAIL20.tcsbank.ru Hello [10.219.0.235]
+250-SIZE 52428800
+250-PIPELINING
+250-DSN
+250-ENHANCEDSTATUSCODES
+250-AUTH
+250-8BITMIME
+250-BINARYMIME
+250 CHUNKING
+mail from: <root@vm-vol-nag01t.tcsbank.ru>
+250 2.1.0 Sender OK
+rcpt to: <s.belogrud@tcsbank.ru>
+250 2.1.5 Recipient OK
+data
+354 Start mail input; end with <CRLF>.<CRLF>
+test
+.
+250 2.6.0 <d9513849-bf79-41b5-9d3f-b19db87d3b8b@M1-MSK-MAIL20.tcsbank.ru> [InternalId=47925013] Queued mail for delivery
+quit
+221 2.0.0 Service closing transmission channel
+Connection closed by foreign host.
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t ~]# vim /etc/postfix/transport
+...
+s.belogrud@tinkoff.ru smtp:smtp.tcsbank.ru
+* error:destination prohibited
+#* a.leonov
+
+[root@vm-vol-nag01t ~]# vim /etc/postfix/main.cf
+...
+transport_maps = hash:/etc/postfix/transport
+
+#   Now we should update hashed transport.db.
+#   This is old one transport.db - today is 18th of december.
+[root@vm-vol-nag01t ~]# ls -Alh /etc/postfix/
+total 152K
+-rw-r--r-- 1 root root  20K Feb 13  2014 access
+-rw-r--r-- 1 root root  12K Feb 13  2014 canonical
+-rw-r--r-- 1 root root 9.7K Feb 13  2014 generic
+-rw-r--r-- 1 root root  18K Feb 13  2014 header_checks
+-rw-r--r-- 1 root root  27K Dec 18 18:51 main.cf
+-rw-r--r-- 1 root root 5.0K Feb 13  2014 master.cf
+-rw-r--r-- 1 root root 6.7K Feb 13  2014 relocated
+-rw-r--r-- 1 root root  13K Dec 18 18:48 transport
+-rw-r--r-- 1 root root  12K Oct  7 15:12 transport.db
+-rw-r--r-- 1 root root  13K Feb 13  2014 virtual
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# postmap /etc/postfix/transport
+[root@vm-vol-nag01t ~]# ls -Alh /etc/postfix/
+total 152K
+-rw-r--r-- 1 root root  20K Feb 13  2014 access
+-rw-r--r-- 1 root root  12K Feb 13  2014 canonical
+-rw-r--r-- 1 root root 9.7K Feb 13  2014 generic
+-rw-r--r-- 1 root root  18K Feb 13  2014 header_checks
+-rw-r--r-- 1 root root  27K Dec 18 18:51 main.cf
+-rw-r--r-- 1 root root 5.0K Feb 13  2014 master.cf
+-rw-r--r-- 1 root root 6.7K Feb 13  2014 relocated
+-rw-r--r-- 1 root root  13K Dec 18 18:48 transport
+-rw-r--r-- 1 root root  12K Dec 18 19:02 transport.db
+-rw-r--r-- 1 root root  13K Feb 13  2014 virtual
+[root@vm-vol-nag01t ~]#
+
+#   If file was not updated - we receive warning like follow.
+...
+    Dec 18 18:59:07 vm-vol-nag01t postfix/pickup[446]: CBDB71C07F7: uid=0 from=<root>
+!   Dec 18 18:59:07 vm-vol-nag01t postfix/trivial-rewrite[2347]: warning: database /etc/postfix/transport.db is older than source file /etc/postfix/transport
+    Dec 18 18:59:07 vm-vol-nag01t postfix/cleanup[25752]: CBDB71C07F7: message-id=<20151218155907.CBDB71C07F7@nag-tst.tcsbank.ru>
+    Dec 18 18:59:07 vm-vol-nag01t postfix/qmgr[448]: CBDB71C07F7: from=<root@nag-tst.tcsbank.ru>, size=542, nrcpt=1 (queue active)
+    Dec 18 18:59:07 vm-vol-nag01t postfix/qmgr[448]: warning: connect to transport private/a.leonov: No such file or directory
+    Dec 18 18:59:07 vm-vol-nag01t postfix/error[25785]: CBDB71C07F7: to=<s.belogrud@tinkoff.ru>, relay=none, delay=0.03, delays=0.03/0/0/0, dsn=4.3.0, status=deferred (mail transport unavailable)
+
+................................................................................
+
+[root@vm-vol-nag01t ~]# service postfix restart
+Shutting down postfix:                                     [  OK  ]
+Starting postfix:                                          [  OK  ]
+[root@vm-vol-nag01t ~]#
+
+#   Now it starts working!
+...
+Dec 18 19:06:47 vm-vol-nag01t postfix/postfix-script[13454]: stopping the Postfix mail system
+Dec 18 19:06:47 vm-vol-nag01t postfix/master[437]: terminating on signal 15
+Dec 18 19:06:48 vm-vol-nag01t postfix/postfix-script[13637]: starting the Postfix mail system
+Dec 18 19:06:48 vm-vol-nag01t postfix/master[13639]: daemon started -- version 2.6.6, configuration /etc/postfix
+Dec 18 19:06:48 vm-vol-nag01t postfix/qmgr[13645]: CBDB71C07F7: from=<root@nag-tst.tcsbank.ru>, size=542, nrcpt=1 (queue active)
+Dec 18 19:06:49 vm-vol-nag01t postfix/smtp[13647]: CBDB71C07F7: to=<s.belogrud@tinkoff.ru>, relay=smtp.tcsbank.ru[10.219.0.2]:25, delay=461, delays=461/0.04/0.03/0.37, dsn=2.6.0, status=sent (250 2.6.0 <20151218155907.CBDB71C07F7@nag-tst.tcsbank.ru> [InternalId=47927476] Queued mail for delivery)
+Dec 18 19:06:49 vm-vol-nag01t postfix/qmgr[13645]: CBDB71C07F7: removed
+
+................................................................................
+
+#   Here is test to send email to unallowed email address.
+#
+[root@vm-vol-nag01t ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" belogrud@tinkoff.ru
+[root@vm-vol-nag01t ~]#
+
+Dec 18 19:14:50 vm-vol-nag01t postfix/postfix-script[26310]: refreshing the Postfix mail system
+Dec 18 19:14:50 vm-vol-nag01t postfix/master[13639]: reload -- version 2.6.6, configuration /etc/postfix
+Dec 18 19:18:05 vm-vol-nag01t postfix/pickup[26320]: 605FA1C07F0: uid=0 from=<root>
+Dec 18 19:18:05 vm-vol-nag01t postfix/cleanup[12341]: 605FA1C07F0: message-id=<20151218161805.605FA1C07F0@nag-tst.tcsbank.ru>
+Dec 18 19:18:05 vm-vol-nag01t postfix/qmgr[26321]: 605FA1C07F0: from=<root@nag-tst.tcsbank.ru>, size=540, nrcpt=1 (queue active)
+Dec 18 19:18:05 vm-vol-nag01t postfix/error[12375]: 605FA1C07F0: to=<belogrud@tinkoff.ru>, relay=none, delay=0.28, delays=0.17/0.06/0/0.05, dsn=5.0.0, status=bounced (destination prohibited)
+Dec 18 19:18:05 vm-vol-nag01t postfix/cleanup[12341]: 96C841C07F3: message-id=<20151218161805.96C841C07F3@nag-tst.tcsbank.ru>
+Dec 18 19:18:05 vm-vol-nag01t postfix/qmgr[26321]: 96C841C07F3: from=<>, size=2304, nrcpt=1 (queue active)
+Dec 18 19:18:05 vm-vol-nag01t postfix/bounce[12392]: 605FA1C07F0: sender non-delivery notification: 96C841C07F3
+Dec 18 19:18:05 vm-vol-nag01t postfix/qmgr[26321]: 605FA1C07F0: removed
+Dec 18 19:18:05 vm-vol-nag01t postfix/error[12375]: 96C841C07F3: to=<root@nag-tst.tcsbank.ru>, relay=none, delay=0.04, delays=0.01/0/0/0.03, dsn=5.0.0, status=bounced (destination prohibited)
+Dec 18 19:18:05 vm-vol-nag01t postfix/qmgr[26321]: 96C841C07F3: removed
+
+................................................................................
+
+#   I don't like this fakes...
+[root@vm-vol-nag01t ~]# grep nag-tst /etc/postfix/main.cf
+myhostname = nag-tst.tcsbank.ru
+#mydestination = nag-tst
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 vm-vol-nag01t
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+172.16.1.11     mon3 mon3.tcsbank.ru nag4 nag4.tcsbank.ru
+[root@vm-vol-nag01t ~]# cat /etc/sysconfig/network
+NETWORKING=yes
+HOSTNAME=vm-vol-nag01t.tcsbank.ru
+GATEWAY=172.16.1.254
+NETWORKING_IPV6=no
+[root@vm-vol-nag01t ~]#
+
+#   I have replaced old shit to normal thing.
+[root@vm-vol-nag01t ~]# vim +/nag-tst /etc/postfix/main.cf
+...
+myhostname = vm-vol-nag01t.tcsbank.ru
+...
+
+[root@vm-vol-nag01t ~]# grep -e "^myhostname" -e "^mydomain" -e "^myorigin" -e "^inet_protocols" -e "^relayhost" /etc/postfix/main.cf
+myhostname = vm-vol-nag01t.tcsbank.ru
+mydomain = tcsbank.ru
+myorigin = $myhostname
+inet_protocols = ipv4
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+................................................................................
+
+#   Here is link, that helped me lot.
+http://postfix.1071664.n5.nabble.com/how-to-restrict-mail-to-only-one-recipient-td47213.html
+
+#   Follow are what I did.
+[root@vm-vol-nag01t ~]# tail -n 3 /etc/postfix/main.cf
+
+transport_maps = hash:/etc/postfix/transport
+
+[root@vm-vol-nag01t ~]#
+
+
+
+[root@vm-vol-nag01t ~]# tail -n 11 /etc/postfix/transport
+
+# Allow delivery email to defined addresses via our relay.
+s.belogrud@tinkoff.ru smtp:smtp.tcsbank.ru
+s.belogrud@tcsbank.ru smtp:smtp.tcsbank.ru
+
+# Allow delivery emails to all local recipients.
+vm-vol-nag01t.tcsbank.ru :
+
+# Emails to recipients, that not listed here will be prohibited.
+* error:destination recipient not allowed in /etc/postfix/transport
+
+[root@vm-vol-nag01t ~]#
+
+#   Here is how to update hash and create new transport.db file.
+[root@vm-vol-nag01t ~]# postmap /etc/postfix/transport
+
+#   Or restart.
+[root@vm-vol-nag01t ~]# service postfix reload
+#   Here is how I tested it.
+[root@vm-vol-nag01t ~]# echo "This is testing email from host `hostname` on `date`" | mailx -s "`date +%Y%m%d-%H%M` Test mail" belogrud@tinkoff.ru
+#   Here I watched mail logs.
+[root@vm-vol-nag01t ~]# less /var/log/maillog-20151214
+
+#   This way I have seen email about non delivery status, that sent to root and then relay to a.leonov.
+[root@vm-vol-nag01t ~]# mailx -f ~a.leonov/Mailbox
+#   Retransmission from root to local user a.leonov because of we have follow definition.
+[root@vm-vol-nag01t ~]# tail -n 4 /etc/aliases
+
+root: a.leonov
+bsv:    bsv
+
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# tail -n 3 /etc/aliases
+
+notification_via_nagios_livestatus_broker_module:       s.belogrud@tinkoff.ru
+
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# tail -n 4 /var/spool/cron/root
+
+# This is for test purposes.
+01 11 * * * /opt/TCS/scripts/nagios/email_notification_for_nagios_find_services_with_critical_state_more_then_10_days.sh
+
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+
+#   Mon Dec 21 20:04:07 MSK 2015
+#   Getting information about GreenPlum hosts.
+#
+[root@vm-vol-nag01t nagios]# echo -e "GET hosts\nFilter: name ~~ -gp-prd-mdw\nFilter: name ~~ -gp-prd-smdw\nFilter: name ~~ -gp-prd-sdw\nFilter: name ~~ -gp-tst-\nFilter: name ~~ -gp-dev-\nOr: 5\nColumns: name" | unixcat /var/spool/nagios/cmd/live
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag01t ~]# echo -e "GET services\nFilter: host_name ~~ -gp-prd-mdw\nFilter: host_name ~~ -gp-prd-smdw\nFilter: host_name ~~ -gp-prd-sdw\nFilter: host_name ~~ -gp-tst-\nFilter: host_name ~~ -gp-dev-\nOr: 5\nFilter: description ~~ HP System Health Application\nAnd: 2\nColumns: host_name description" | unixcat /var/spool/nagios/cmd/live
+ds-gp-dev-mdw;HP System Health Application
+ds-gp-dev-sdw1;HP System Health Application
+ds-gp-dev-sdw2;HP System Health Application
+ds-gp-dev-sdw3;HP System Health Application
+ds-gp-dev-sdw4;HP System Health Application
+ds-gp-dev-sdw5;HP System Health Application
+ds-gp-dev-sdw6;HP System Health Application
+ds-gp-dev-sdw7;HP System Health Application
+ds-gp-dev-sdw8;HP System Health Application
+ds-gp-dev-smdw;HP System Health Application
+ds-gp-prd-mdw;HP System Health Application
+ds-gp-prd-smdw;HP System Health Application
+m1-gp-prd-mdw;HP System Health Application
+m1-gp-prd-sdw1;HP System Health Application
+m1-gp-prd-sdw10;HP System Health Application
+m1-gp-prd-sdw11;HP System Health Application
+m1-gp-prd-sdw12;HP System Health Application
+m1-gp-prd-sdw13;HP System Health Application
+m1-gp-prd-sdw14;HP System Health Application
+m1-gp-prd-sdw15;HP System Health Application
+m1-gp-prd-sdw16;HP System Health Application
+m1-gp-prd-sdw17;HP System Health Application
+m1-gp-prd-sdw18;HP System Health Application
+m1-gp-prd-sdw19;HP System Health Application
+m1-gp-prd-sdw2;HP System Health Application
+m1-gp-prd-sdw20;HP System Health Application
+m1-gp-prd-sdw21;HP System Health Application
+m1-gp-prd-sdw22;HP System Health Application
+m1-gp-prd-sdw23;HP System Health Application
+m1-gp-prd-sdw24;HP System Health Application
+m1-gp-prd-sdw3;HP System Health Application
+m1-gp-prd-sdw4;HP System Health Application
+m1-gp-prd-sdw5;HP System Health Application
+m1-gp-prd-sdw6;HP System Health Application
+m1-gp-prd-sdw7;HP System Health Application
+m1-gp-prd-sdw8;HP System Health Application
+m1-gp-prd-sdw9;HP System Health Application
+m1-gp-prd-smdw;HP System Health Application
+m1-gp-tst-mdw;HP System Health Application
+m1-gp-tst-sdw1;HP System Health Application
+m1-gp-tst-sdw10;HP System Health Application
+m1-gp-tst-sdw11;HP System Health Application
+m1-gp-tst-sdw12;HP System Health Application
+m1-gp-tst-sdw13;HP System Health Application
+m1-gp-tst-sdw14;HP System Health Application
+m1-gp-tst-sdw15;HP System Health Application
+m1-gp-tst-sdw16;HP System Health Application
+m1-gp-tst-sdw2;HP System Health Application
+m1-gp-tst-sdw3;HP System Health Application
+m1-gp-tst-sdw4;HP System Health Application
+m1-gp-tst-sdw5;HP System Health Application
+m1-gp-tst-sdw6;HP System Health Application
+m1-gp-tst-sdw7;HP System Health Application
+m1-gp-tst-sdw8;HP System Health Application
+m1-gp-tst-sdw9;HP System Health Application
+m1-gp-tst-smdw;HP System Health Application
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# echo -e "GET services\nFilter: host_name ~~ -gp-prd-mdw\nFilter: host_name ~~ -gp-prd-smdw\nFilter: host_name ~~ -gp-prd-sdw\nFilter: host_name ~~ -gp-tst-\nFilter: host_name ~~ -gp-dev-\nOr: 5\nFilter: description ~~ Server Health\nAnd: 2\nColumns: host_name description" | unixcat /var/spool/nagios/cmd/live
+ds-gp-prd-sdw1;Server Health
+ds-gp-prd-sdw10;Server Health
+ds-gp-prd-sdw11;Server Health
+ds-gp-prd-sdw12;Server Health
+ds-gp-prd-sdw13;Server Health
+ds-gp-prd-sdw14;Server Health
+ds-gp-prd-sdw15;Server Health
+ds-gp-prd-sdw16;Server Health
+ds-gp-prd-sdw17;Server Health
+ds-gp-prd-sdw18;Server Health
+ds-gp-prd-sdw19;Server Health
+ds-gp-prd-sdw2;Server Health
+ds-gp-prd-sdw20;Server Health
+ds-gp-prd-sdw21;Server Health
+ds-gp-prd-sdw22;Server Health
+ds-gp-prd-sdw23;Server Health
+ds-gp-prd-sdw24;Server Health
+ds-gp-prd-sdw3;Server Health
+ds-gp-prd-sdw4;Server Health
+ds-gp-prd-sdw5;Server Health
+ds-gp-prd-sdw6;Server Health
+ds-gp-prd-sdw7;Server Health
+ds-gp-prd-sdw8;Server Health
+ds-gp-prd-sdw9;Server Health
+[root@vm-vol-nag01t ~]#
+
+#   Here we can add filter, that find not acknowledged serveces...
+[root@vm-vol-nag01t ~]# echo -e "GET services\nFilter: host_name ~~ -gp-prd-mdw\nFilter: host_name ~~ -gp-prd-smdw\nFilter: host_name ~~ -gp-prd-sdw\nFilter: host_name ~~ -gp-tst-\nFilter: host_name ~~ -gp-dev-\nOr: 5\nFilter: description ~~ HP System Health Application\nFilter: state != 0\nAnd: 2\nColumns: host_name description" | unixcat /var/spool/nagios/cmd/live
+[root@vm-vol-nag01t ~]#
+
+................................................................................
+
+#   Tue Dec 29 12:31:35 MSK 2015
+#   Here is states for service.
+
+last_time_critical
+last_time_ok
+last_time_unknown
+last_time_warning
+
+
+................................................................................
+  386  2015-12-17 19:43:33 pynag livestatus --get services --filter "state = 2" --filter "notifications_enabled = 0" --columns "host_name description"
+  387  2015-12-17 19:46:17 pynag livestatus --get statehist --filter "host_name = AT2-PDU-OF3-L" --filter "service_description = AT2:Humidity" --filter "time >= $(expr $(date "+%s") - 4 \* 60 \* 60)" --columns "host_name service_desc
+ription duration_critical"
+  388  2015-12-17 19:50:02 pyang config --get event_broker_options
+  389  2015-12-17 19:50:11 pynag config --get event_broker_options
+  390  2015-12-17 20:11:05 echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description\nColumnHeaders: on\nLimit: 10" | unixcat /var/spool/nagios/cmd/live
+  391  2015-12-17 20:11:35 echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description" | unixcat /var/spool/nagios/cmd/live
+
+  768  2015-12-21 19:05:00 pynag livestatus "get services" "filter: state = 1" "columns: host_name description" "limit: 10"
+  769  2015-12-21 19:05:34 pynag livestatus "GET services" "filter: state = 1" "columns: host_name description" "limit: 10"
+  770  2015-12-21 19:05:50 pynag livestatus "GET services" "Filter: state = 1" "Columns: host_name description" "Limit: 10"
+  771  2015-12-21 19:06:08 pynag livestatus "GET services" "Filter: state = 2" "Columns: host_name description" "Limit: 10"
+  772  2015-12-21 19:06:32 pynag livestatus "GET services" "Filter: state = 0" "Columns: host_name description" "Limit: 10"
+  773  2015-12-21 19:08:02 pynag livestatus --get services --filter "state = 0" --columns "host_name description" --limit 10
+  774  2015-12-21 19:08:09 pynag livestatus --get services --filter "state = 1" --columns "host_name description" --limit 10
+  775  2015-12-21 19:20:54 pynag livestatus --get services --filter "state = 1" --columns "host_name description state_type" --limit 10
+  776  2015-12-21 19:21:28 pynag livestatus --get services --filter "state = 1" --columns "host_name description state_type last_time_critical" --limit 10
+  777  2015-12-21 19:23:22 pynag livestatus --get services --filter "state = 1" --columns "host_name description state_type last_time_critical last_time_warning" --limit 10
+  778  2015-12-21 19:23:50 expr 1450714730 / 60 / 60 / 24
+  779  2015-12-21 19:41:15 pynag livestatus --get services --filter "state = 0" --filter "host_name = ~~ -gp-" --columns "host_name description state_type last_time_critical last_time_warning" --limit 10
+  780  2015-12-21 19:41:39 pynag livestatus --get services --filter "state = 0" --filter "host_name ~~ -gp-" --columns "host_name description state_type last_time_critical last_time_warning" --limit 10
+  781  2015-12-21 19:42:11 pynag livestatus --get services --filter "state = 0" --filter "host_name ~~ -gp-" --columns "host_name" --limit 10
+  782  2015-12-21 19:42:40 pynag livestatus --get hosts --filter "host_name ~~ -gp-" --columns "host_name" --limit 10
+  783  2015-12-21 19:42:44 pynag livestatus --get host --filter "host_name ~~ -gp-" --columns "host_name" --limit 10
+  784  2015-12-21 19:43:55 pynag livestatus --get hosts --filter "name ~~ -gp-" --columns "host_name" --limit 10
+  785  2015-12-21 19:44:11 pynag livestatus --get hosts --filter "name ~~ -gp-" --columns "name" --limit 10
+  786  2015-12-21 19:44:17 pynag livestatus --get hosts --filter "name ~~ -gp-" --columns "name"
+................................................................................
+
+
+#   Fri Jan 22 12:25:30 MSK 2016
+
+[root@vm-vol-nag01t ~]# cp /etc/nagios/cgi.cfg{,.20160122-1224.backup}
+
+# SYSTEM/PROCESS COMMAND ACCESS
+# This option is a comma-delimited list of all usernames that
+# can issue shutdown and restart commands to Nagios via the
+# command CGI (cmd.cgi).  Users in this list can also change
+# the program mode to active or standby. By default, *no one*
+# has access to this unless you choose to not use authorization.
+# You may use an asterisk (*) to authorize any user who has
+# authenticated to the web server.
+
+authorized_for_system_commands=nagiosadmin,tan,guest,avk,mdu,solomkin,zbir,che,a.leonov,s.khokhlachev,s.barkov,p.begizardov,ash
+
+# GLOBAL HOST/SERVICE COMMAND ACCESS
+# These two options are comma-delimited lists of all usernames that
+# can issue host or service related commands via the command
+# CGI (cmd.cgi) for all hosts and services that are being monitored.
+# By default, users can only issue commands for hosts or services
+# that they are contacts for (unless you you choose to not use
+# authorization).  You may use an asterisk (*) to authorize any
+# user who has authenticated to the web server.
+
+authorized_for_all_service_commands=nagiosadmin,tan,guest,avk,mdu,solomkin,zbir,che,a.leonov,s.khokhlachev,s.barkov,p.begizardov,ash
+authorized_for_all_host_commands=nagiosadmin,tan,guest,avk,mdu,solomkin,zbir,che,a.leonov,s.khokhlachev,s.barkov,p.begizardov,ash
+
+................................................................................
+
+[root@vm-vol-nag01t ~]# grep support /etc/nagios/cgi.cfg
+authorized_for_system_information=nagiosadmin,support,tan,guest,avk,mdu,solomkin,bsv,zbir,che,a.leonov,s.khokhlachev,s.barkov,p.begizardov,ash
+authorized_for_configuration_information=nagiosadmin,support,tan,guest,avk,mdu,solomkin,bsv,zbir,che,a.leonov,s.khokhlachev,s.barkov,p.begizardov,ash
+authorized_for_all_services=nagiosadmin,support,tan,guest,avk,mdu,solomkin,bsv,zbir,che,a.leonov,s.khokhlachev,s.barkov,p.begizardov,check,ash
+authorized_for_all_hosts=nagiosadmin,support,tan,guest,avk,mdu,solomkin,bsv,zbir,che,a.leonov,s.khokhlachev,s.barkov,p.begizardov,check,ash
+[root@vm-vol-nag01t ~]#
+
+[root@vm-vol-nag01t ~]# ls /etc/nagios/cgi.cfg*
+/etc/nagios/cgi.cfg  /etc/nagios/cgi.cfg.20160122-1224.backup
+[root@vm-vol-nag01t ~]# cp /etc/nagios/cgi.cfg.20160122-1224.backup /etc/nagios/cgi.cfg
+cp: overwrite `/etc/nagios/cgi.cfg'? y
+[root@vm-vol-nag01t ~]#
+
+#   Warning!!!!!
+#   This command not safe! It destroy previous file /etc/nagios/passwd !!!
+#
+[root@vm-vol-nag01t ~]# htpasswd -c /etc/nagios/passwd support
+New password:
+Re-type new password:
+Adding password for user support
+[root@vm-vol-nag01t ~]#
+
+#   Password for user "support" had been set as "support".
+#
+[root@vm-vol-nag01t ~]# cat /etc/nagios/passwd.20160122-1733.support.pass.changed
+support:he7/xC6jGKFNQ
+[root@vm-vol-nag01t ~]#
+
+#   Here is an example of unsuccessed login under user support. Here I have tested password "support" for user "support".
+[root@vm-vol-nag01t ~]# less /var/log/httpd/access_log
+...
+172.16.28.74 - support [22/Jan/2016:17:25:08 +0300] "GET /nagios/ HTTP/1.1" 401 481 "-" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.307
+29; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - - [22/Jan/2016:17:25:09 +0300] "GET /favicon.ico HTTP/1.1" 404 289 "-" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729
+; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+...
+#   Here are successful login and followed other requests.
+...
+172.16.28.74 - support [22/Jan/2016:17:36:19 +0300] "GET /nagios/ HTTP/1.1" 200 874 "-" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - support [22/Jan/2016:17:36:19 +0300] "GET /nagios/side.php HTTP/1.1" 200 5473 "http://vm-vol-nag01t/nagios/" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - support [22/Jan/2016:17:36:19 +0300] "GET /nagios/main.php HTTP/1.1" 200 5123 "http://vm-vol-nag01t/nagios/" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - support [22/Jan/2016:17:36:19 +0300] "GET /nagios/rss-corefeed.php HTTP/1.1" 200 1093 "http://vm-vol-nag01t/nagios/main.php" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - support [22/Jan/2016:17:36:19 +0300] "GET /nagios/rss-newsfeed.php HTTP/1.1" 200 97 "http://vm-vol-nag01t/nagios/main.php" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - support [22/Jan/2016:17:36:23 +0300] "GET /nagios/cgi-bin//tac.cgi HTTP/1.1" 200 13648 "http://vm-vol-nag01t/nagios/side.php" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - support [22/Jan/2016:17:36:27 +0300] "GET /nagios/cgi-bin//status.cgi?host=all&style=detail&servicestatustypes=16 HTTP/1.1" 200 142594 "http://vm-vol-nag01t/nagios/cgi-bin//tac.cgi" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+172.16.28.74 - support [22/Jan/2016:17:36:39 +0300] "GET /nagios/cgi-bin//extinfo.cgi?type=1&host=AT2-PDU-OF3-L HTTP/1.1" 200 15174 "http://vm-vol-nag01t/nagios/cgi-bin//status.cgi?host=all&style=detail&servicestatustypes=16" "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; MANM; .NET4.0C; .NET4.0E; Media Center PC 6.0; InfoPath.3)"
+...
+
+................................................................................
+
+[root@vm-vol-nag4 ~]# cp /etc/nagios/passwd{,.20160122-1803.backup}
+[root@vm-vol-nag4 ~]#
+
+[root@vm-vol-nag4 ~]# vim /etc/nagios/passwd
+
+#   There are not found information about someone login as user "support".
+[root@vm-vol-nag3 ~]# less /var/log/httpd/access_log* | grep support | tee -a /tmp/20160122-1759.grep.support.user.txt
+[root@vm-vol-nag3 ~]# cat /tmp/20160122-1759.grep.support.user.txt
+172.16.1.65 - - [18/Jan/2016:23:08:00 +0300] "GET /support/data/ HTTP/1.1" 404 297 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:02 +0300] "GET /ticketsupport/Tickets.asp?ID=1 HTTP/1.0" 404 301 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:10 +0300] "GET /support/ HTTP/1.1" 404 292 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:24 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 377 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:24 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 386 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:25 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 401 487 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:25 +0300] "GET /features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 369 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:25 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 401 487 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:25 +0300] "GET /features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 378 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:26 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 375 "-" "-"
+172.16.1.65 - - [18/Jan/2016:23:08:26 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 384 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:07 +0300] "GET /support/data/ HTTP/1.1" 404 300 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:08 +0300] "GET /support/ HTTP/1.1" 404 295 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:18 +0300] "GET /ticketsupport/Tickets.asp?ID=1 HTTP/1.0" 404 301 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:34 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 380 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:34 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 389 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:35 +0300] "GET /features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 372 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:35 +0300] "GET /features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 381 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:37 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 401 490 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:37 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 401 490 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:37 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 378 "-" "-"
+172.16.1.65 - - [21/Dec/2015:23:10:37 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 387 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:21 +0300] "GET /support/ HTTP/1.1" 404 292 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:30 +0300] "GET /support/data/ HTTP/1.1" 404 297 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:32 +0300] "GET /ticketsupport/Tickets.asp?ID=1 HTTP/1.0" 404 301 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:56 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 377 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:56 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 386 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:57 +0300] "GET /features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 369 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:57 +0300] "GET /features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 378 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:58 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 375 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:58 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 384 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:58 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 401 487 "-" "-"
+172.16.1.65 - - [28/Dec/2015:23:08:58 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 401 487 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:09 +0300] "GET /support/ HTTP/1.1" 404 295 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:14 +0300] "GET /support/data/ HTTP/1.1" 404 300 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:18 +0300] "GET /ticketsupport/Tickets.asp?ID=1 HTTP/1.0" 404 301 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:48 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 380 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:48 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 389 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:50 +0300] "GET /features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 372 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:50 +0300] "GET /features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 381 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:53 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 378 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:54 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 387 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:59 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 401 490 "-" "-"
+172.16.1.65 - - [04/Jan/2016:23:10:59 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 401 490 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:08:49 +0300] "GET /support/ HTTP/1.1" 404 292 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:01 +0300] "GET /support/data/ HTTP/1.1" 404 297 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:02 +0300] "GET /ticketsupport/Tickets.asp?ID=1 HTTP/1.0" 404 301 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:21 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 377 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:21 +0300] "GET /cgi-bin/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 386 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:23 +0300] "GET /features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 369 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:23 +0300] "GET /features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 378 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:25 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 404 375 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:25 +0300] "GET /error/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 404 384 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:26 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/account/delete/index.tpl HTTP/1.1" 401 487 "-" "-"
+172.16.1.65 - - [11/Jan/2016:23:09:26 +0300] "GET /nagios/features/cerberusweb.support_center/templates/support_center/login/openid/register_confirm.tpl HTTP/1.1" 401 487 "-" "-"
+172.16.1.65 - - [23/Mar/2015:23:03:39 +0300] "GET /support/ HTTP/1.1" 404 277 "-" "-"
+172.16.1.65 - - [23/Mar/2015:23:03:42 +0300] "GET /support/data/ HTTP/1.1" 404 282 "-" "-"
+172.16.1.65 - - [23/Mar/2015:23:03:43 +0300] "GET /ticketsupport/Tickets.asp?ID=1 HTTP/1.0" 404 301 "-" "-"
+[root@vm-vol-nag3 ~]#
+
+................................................................................
+
+
+#   Mon Jan 25 16:37:12 MSK 2016
+#   Leonov have said that before implementing this rules on production nagios we should try it on pre-production nagios.
+#   Then it should be tested latency on pre-production nagios server.
+#
+
+[root@vm-vol-nag4 ~]# grep -e "^retain_state_information" -e "^broker_module=/usr/lib64/check_mk/livestatus.o" /etc/nagios/nagios.cfg
+broker_module=/usr/lib64/check_mk/livestatus.o /var/spool/nagios/cmd/live
+retain_state_information=1
+[root@vm-vol-nag4 ~]#
+
+#   Here I have written wrong path to socket for livestatus module.
+...
+[1453729214] Caught SIGTERM, shutting down...
+[1453729214] Successfully shutdown... (PID=15455)
+[1453729214] ndomod: Shutdown complete.
+[1453729214] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' deinitialized successfully.
+[1453729228] Nagios 3.5.1 starting... (PID=4110)
+[1453729228] Local time is Mon Jan 25 16:40:28 MSK 2016
+[1453729228] LOG VERSION: 2.0
+[1453729229] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/lib/nagios/rw/live'
+[1453729229] livestatus: Please visit us at http://mathias-kettner.de/
+[1453729229] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+[1453729229] livestatus: Please visit OMD at http://omdistro.org
+[1453729229] livestatus: Unable to bind adress /var/lib/nagios/rw/live to UNIX socket: No such file or directory
+[1453729229] Error: Function nebmodule_init() in module '/usr/lib64/check_mk/livestatus.o' returned an error.  Module will be unloaded.
+[1453729229] Event broker module '/usr/lib64/check_mk/livestatus.o' deinitialized successfully.
+[1453729229] ndomod: NDOMOD 1.5.2 (06-08-2012) Copyright (c) 2009 Nagios Core Development Team and Community Contributors
+[1453729229] ndomod: Successfully connected to data sink.  0 queued items to flush.
+[1453729229] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' initialized successfully.
+...
+
+
+#   Here is ater was written correct path to socket.
+...
+[1453729670] Caught SIGTERM, shutting down...
+[1453729670] Caught SIGTERM, shutting down...
+[1453729671] Successfully shutdown... (PID=23768)
+[1453729671] ndomod: Shutdown complete.
+[1453729671] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' deinitialized successfully.
+[1453729675] Nagios 3.5.1 starting... (PID=32260)
+[1453729675] Local time is Mon Jan 25 16:47:55 MSK 2016
+[1453729675] LOG VERSION: 2.0
+[1453729675] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/spool/nagios/cmd/live'
+[1453729675] livestatus: Please visit us at http://mathias-kettner.de/
+[1453729675] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+[1453729675] livestatus: Please visit OMD at http://omdistro.org
+[1453729675] livestatus: Warning: environment_macros are enabled. This might decrease the overall nagios performance
+[1453729686] livestatus: Finished initialization. Further log messages go to /var/log/nagios/livestatus.log
+[1453729686] Event broker module '/usr/lib64/check_mk/livestatus.o' initialized successfully.
+[1453729686] ndomod: NDOMOD 1.5.2 (06-08-2012) Copyright (c) 2009 Nagios Core Development Team and Community Contributors
+[1453729686] ndomod: Successfully connected to data sink.  0 queued items to flush.
+[1453729686] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' initialized successfully.
+...
+
+
+[root@vm-vol-nag4 ~]# ls -Alh /var/spool/nagios/cmd/
+total 0
+srw-rw---- 1 nagios nagios 0 Jan 25 16:47 live
+prw-rw---- 1 nagios nagios 0 Jan 25 16:16 nagios.cmd
+[root@vm-vol-nag4 ~]# ls -Alh /usr/lib64/check_mk/
+total 480K
+-rwxr-xr-x 1 root root 477K Sep 30  2014 livestatus.o
+[root@vm-vol-nag4 ~]#
+
+#   Here we can see - livestatus module working.
+[root@vm-vol-nag4 ~]# echo -e "GET contacts\nColumns: name alias" | unixcat /var/spool/nagios/cmd/live | head
+Michal.Yosifon_email;Michal Yosifon
+Naumen_nag_request_email;Integration converter log
+Naumen_nag_request_email-warning;Integration converter log
+Naumen_request_email;Integration converter log
+Naumen_request_email-warning;Integration converter log
+Rauf.Nasibov_email;Rauf Nasibov
+a.akolzin_email;Akolzin Aleksandr
+a.akolzin_sms;Akolzin Aleksandr
+a.aleksandrov1_email;Aleksandrov Aleksandr Vladimirovich
+a.aleksandrov_email;Aleksey Aleksandrov
+[root@vm-vol-nag4 ~]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description last_hard_state_change\nColumnHeaders: on\nLimit: 10" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change
+AT2-PDU-OF3-L;AT2:Humidity;1451107011
+D1-PDU-OF2-L;D1:Humidity;1451062477
+HT3-PDU-R3-L;HT:Humidity;1451159084
+HT4-PDU-R2-R;HT:Humidity;1450943164
+vm-dmz-app16;Current Load;1426517952
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# echo $(( $(expr $(date "+%s") - 1451107011)/60/60/24 )) days
+30 days
+[root@vm-vol-nag01t nagios]#
+
+#   This is not good method.
+[root@vm-vol-nag01t nagios]# date -d@$(( $(expr $(date "+%s") - 1426517952) )) +'%m months %d days %H hours %M minutes %S seconds'
+11 months 12 days 03 hours 53 minutes 51 seconds
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# bc <<<  "scale=2;($(date "+%s") - 1426517952) / 60 / 60 / 24 "
+315.89
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+#   Tue Jan 26 15:27:21 MSK 2016
+
+scheduled_downtime_depth    int The number of scheduled downtimes the service is currently in
+# should_be_scheduled int Whether Naemon still tries to run checks on this service (0/1)
+# 2016-01-26 16:56:30 error: Table 'services' has no column 'should_be_scheduled'
+
+downtimes   list    A list of all downtime ids of the service
+downtimes_with_info list    A list of all downtimes of the service with id, author and comment
+
+comments    list    A list of all comment ids of the service
+comments_with_info  list    A list of all comments of the service with id, author and comment
+
+acknowledged    int Whether the current service problem has been acknowledged (0/1)
+acknowledgement_type    int The type of the acknowledgement (0: none, 1: normal, 2: sticky)
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description last_hard_state_change comments comments_with_info\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change;comments;comments_with_info
+AT2-PDU-OF3-L;AT2:Humidity;1451107011;258442;258442|bsv|Test comment number 1
+D1-PDU-OF2-L;D1:Humidity;1451062477;;
+HT3-PDU-R3-L;HT:Humidity;1451159084;;
+HT4-PDU-R2-R;HT:Humidity;1450943164;;
+vm-dmz-app16;Current Load;1426517952;;
+[root@vm-vol-nag01t nagios]#
+
+
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description last_hard_state_change comments_with_info downtimes_with_info\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change;comments_with_info;downtimes_with_info
+AT2-PDU-OF3-L;AT2:Humidity;1451107011;258465|bsv|This service has been scheduled for fixed downtime from 26-01-2016 16:06:40 to 26-01-2016 16:10:40.  Notifications for the service will not be sent out during that time period.;2207|bsv|Тестовый комментарий 1
+D1-PDU-OF2-L;D1:Humidity;1451062477;;
+HT3-PDU-R3-L;HT:Humidity;1451159084;;
+HT4-PDU-R2-R;HT:Humidity;1450943164;;
+vm-dmz-app16;Current Load;1426517952;;
+[root@vm-vol-nag01t nagios]#
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description last_hard_state_change downtimes_with_info\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change;downtimes_with_info
+AT2-PDU-OF3-L;AT2:Humidity;1451107011;2207|bsv|Тестовый комментарий 1
+D1-PDU-OF2-L;D1:Humidity;1451062477;
+HT3-PDU-R3-L;HT:Humidity;1451159084;
+HT4-PDU-R2-R;HT:Humidity;1450943164;
+vm-dmz-app16;Current Load;1426517952;
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description last_hard_state_change comments_with_info\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change;comments_with_info
+AT2-PDU-OF3-L;AT2:Humidity;1451107011;258465|bsv|This service has been scheduled for fixed downtime from 26-01-2016 16:06:40 to 26-01-2016 16:10:40.  Notifications for the service will not be sent out during that time period.
+D1-PDU-OF2-L;D1:Humidity;1451062477;
+HT3-PDU-R3-L;HT:Humidity;1451159084;
+HT4-PDU-R2-R;HT:Humidity;1450943164;
+vm-dmz-app16;Current Load;1426517952;
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nColumns: host_name description last_hard_state_change acknowledged\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change;acknowledged
+AT2-PDU-OF3-L;AT2:Humidity;1451107011;1
+D1-PDU-OF2-L;D1:Humidity;1451062477;0
+HT3-PDU-R3-L;HT:Humidity;1451159084;0
+HT4-PDU-R2-R;HT:Humidity;1450943164;0
+vm-dmz-app16;Current Load;1426517952;0
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nFilter: acknowledged = 0\nFilter: downtimes =\nColumns: host_name description last_hard_state_change \nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change
+D1-PDU-OF2-L;D1:Humidity;1451062477
+HT3-PDU-R3-L;HT:Humidity;1451159084
+HT4-PDU-R2-R;HT:Humidity;1450943164
+vm-dmz-app16;Current Load;1426517952
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nFilter: acknowledged = 0\nFilter: scheduled_downtime_depth = 0\nColumns: host_name description last_hard_state_change scheduled_downtime_depth\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change;scheduled_downtime_depth
+D1-PDU-OF2-L;D1:Humidity;1451062477;0
+HT3-PDU-R3-L;HT:Humidity;1451159084;0
+HT4-PDU-R2-R;HT:Humidity;1450943164;0
+vm-dmz-app16;Current Load;1426517952;0
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nFilter: acknowledged = 0\nFilter: acknowledged = 0\nFilter: scheduled_downtime_depth = 0\nFilter: comments =\nColumns: host_name description last_hard_state_change\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change
+D1-PDU-OF2-L;D1:Humidity;1451062477
+HT3-PDU-R3-L;HT:Humidity;1451159084
+HT4-PDU-R2-R;HT:Humidity;1450943164
+vm-dmz-app16;Current Load;1426517952
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+#   Here I'm filtering critical state on GreenPlum servers.
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name ~~ -gp-prd-mdw\nFilter: host_name ~~ -gp-prd-smdw\nFilter: host_name ~~ -gp-prd-sdw\nFilter: host_name ~~ -gp-tst-\nFilter: host_name ~~ -gp-dev-\nOr: 5\nFilter: description ~~ HP System Health Application\nAnd: 2\nFilter: state = 2\nFilter: acknowledged = 0\nFilter: scheduled_downtime_depth = 0\nFilter: comments =\nColumns: host_name description" | unixcat /var/spool/nagios/cmd/live
+ds-gp-dev-mdw;HP System Health Application
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+#   Wed Jan 27 15:06:27 MSK 2016
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name ~~ -hadoop-cs\nFilter: host_name ~~ -hadoop-wk\nOr: 2\nFilter: description ~~ HP System Health Application\nAnd: 2\nColumns: host_name description last_hard_state_change" | unixcat /var/spool/nagios/cmd/live
+ds-hadoop-cs01p;HP System Health Application;1443512980
+ds-hadoop-wk01p;HP System Health Application;1443518960
+ds-hadoop-wk02p;HP System Health Application;1443522133
+ds-hadoop-wk03p;HP System Health Application;1443520601
+ds-hadoop-wk04p;HP System Health Application;1443520853
+ds-hadoop-wk05p;HP System Health Application;1453300507
+ds-hadoop-wk06p;HP System Health Application;1443512032
+ds-hadoop-wk07p;HP System Health Application;1443506651
+ds-hadoop-wk08p;HP System Health Application;1443521755
+m1-hadoop-cs01t;HP System Health Application;1443694892
+m1-hadoop-wk03t;HP System Health Application;1443452332
+m1-hadoop-wk04t;HP System Health Application;1452675205
+m1-hadoop-wk05t;HP System Health Application;1443694977
+m1-hadoop-wk06t;HP System Health Application;1443694569
+[root@vm-vol-nag01t nagios]#
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name ~~ -hadoop-cs\nFilter: host_name ~~ -hadoop-wk\nOr: 2\nFilter: description ~~ Server Health\nAnd: 2\nColumns: host_name description last_hard_state_change" | unixcat /var/spool/nagios/cmd/live
+ds-hadoop-cs02p;Server Health;1442577681
+ds-hadoop-wk09p;Server Health;1452671938
+ds-hadoop-wk10p;Server Health;1442577933
+ds-hadoop-wk11p;Server Health;1442577826
+ds-hadoop-wk12p;Server Health;1446751944
+ds-hadoop-wk13p;Server Health;1452671855
+ds-hadoop-wk14p;Server Health;1452671904
+ds-hadoop-wk15p;Server Health;1452671942
+ds-hadoop-wk16p;Server Health;1452671878
+ds-hadoop-wk17p;Server Health;1442577838
+ds-hadoop-wk18p;Server Health;1452671886
+ds-hadoop-wk19p;Server Health;1452671776
+ds-hadoop-wk20p;Server Health;1442577800
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: description ~~ Dells Health\nAnd: 2\nColumns: host_name" | unixcat /var/spool/nagios/cmd/live
+m1-hadoop-wk01t
+m1-hadoop-wk02t
+m1-hadoop-wk07t
+m1-hadoop-wk08t
+m1-hadoop-wk09t
+m1-hadoop-wk10t
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description check_command where host_name="m1-hadoop-wk01t"
+host_name            service_description  check_command
+--------------------------------------------------------------------------------
+m1-hadoop-wk01t      null                 check-host-alive
+m1-hadoop-wk01t      /Opt Partition       check_nrpe!check_opt_fs
+m1-hadoop-wk01t      /Root Partition      check_nrpe!check_root_fs
+m1-hadoop-wk01t      /Var Partition       check_nrpe!check_var_fs
+m1-hadoop-wk01t      /disk1 Partition     check_nrpe!check_disk1_fs
+m1-hadoop-wk01t      /disk10 Partition    check_nrpe!check_disk10_fs
+m1-hadoop-wk01t      /disk11 Partition    check_nrpe!check_disk11_fs
+m1-hadoop-wk01t      /disk12 Partition    check_nrpe!check_disk12_fs
+m1-hadoop-wk01t      /disk2 Partition     check_nrpe!check_disk2_fs
+m1-hadoop-wk01t      /disk3 Partition     check_nrpe!check_disk3_fs
+m1-hadoop-wk01t      /disk4 Partition     check_nrpe!check_disk4_fs
+m1-hadoop-wk01t      /disk5 Partition     check_nrpe!check_disk5_fs
+m1-hadoop-wk01t      /disk6 Partition     check_nrpe!check_disk6_fs
+m1-hadoop-wk01t      /disk7 Partition     check_nrpe!check_disk7_fs
+m1-hadoop-wk01t      /disk8 Partition     check_nrpe!check_disk8_fs
+m1-hadoop-wk01t      /disk9 Partition     check_nrpe!check_disk9_fs
+m1-hadoop-wk01t      Check Total Procs    check_nrpe!check_total_procs
+m1-hadoop-wk01t      Clock offset         check_nrpe!check_ntp_time
+m1-hadoop-wk01t      Current Load         check_nrpe!check_load
+m1-hadoop-wk01t      Dells Health         check_dell_heavy
+m1-hadoop-wk01t      PING                 check_ping!100.0,20%!500.0,60%
+----------21 objects matches search condition-----------------------------------
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do pynag update set service_description="Server Health" where object_type=service and service_description="Dells Health" and host_name="${var1}" ; done
+m1-hadoop-wk01t
+object_type          shortname            filename
+--------------------------------------------------------------------------------
+service              m1-hadoop-wk01t/Dells Health /etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk01t.cfg
+----------1 objects matches search condition------------------------------------
+Update these 1 objects ? (y/N) Error occured, use --debug to see full traceback:
+
+EOFError: EOF when reading a line
+[root@vm-vol-nag01t nagios]# pynag list host_name service_description check_command where object_type=service and service_description="Dells Health" and host_name="m1-hadoop-wk01t"
+host_name            service_description  check_command
+--------------------------------------------------------------------------------
+m1-hadoop-wk01t      Dells Health         check_dell_heavy
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# cp /etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk01t.cfg /tmp/20160127-1522.tmp
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do pynag update set service_description="Server Health" where object_type=service and service_description="Dells Health" and host_name="${var1}" --force ; done
+m1-hadoop-wk01t
+/etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk01t.cfg (m1-hadoop-wk01t/Server Health): changed service_description to Server Health
+Updated 1 objects
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# diff -Nuar /tmp/20160127-1522.tmp /etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk01t.cfg
+--- /tmp/20160127-1522.tmp      2016-01-27 15:23:05.545866712 +0300
++++ /etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk01t.cfg  2016-01-27 15:23:53.761715242 +0300
+@@ -143,7 +143,7 @@
+ define service{
+     use                      generic-service
+     host_name                m1-hadoop-wk01t
+-    service_description      Dells Health
++       service_description           Server Health
+     check_command            check_dell_heavy
+ }
+ define service{
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# cat | tee | while read var1 ; do pynag update set service_description="Server Health" where object_type=service and service_description="Dells Health" and host_name="${var1}" --force ; done
+m1-hadoop-wk02t
+m1-hadoop-wk07t
+m1-hadoop-wk08t
+m1-hadoop-wk09t
+m1-hadoop-wk10t
+/etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk02t.cfg (m1-hadoop-wk02t/Server Health): changed service_description to Server Health
+Updated 1 objects
+/etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk07t.cfg (m1-hadoop-wk07t/Server Health): changed service_description to Server Health
+Updated 1 objects
+/etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk08t.cfg (m1-hadoop-wk08t/Server Health): changed service_description to Server Health
+Updated 1 objects
+/etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk09t.cfg (m1-hadoop-wk09t/Server Health): changed service_description to Server Health
+Updated 1 objects
+/etc/nagios/objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk10t.cfg (m1-hadoop-wk10t/Server Health): changed service_description to Server Health
+Updated 1 objects
+[root@vm-vol-nag01t nagios]#
+
+
+[root@vm-vol-nag01t nagios]# git commit --author=author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "To make all checks with similar name was made this changes. Service description\"Dells Health\" was changed to \"Server Health\". This changes was made for six servers m1-hadoop-wk01t, m1-hadoop-wk02t, m1-hadoop-wk07t, m1-hadoop-wk08t, m1-hadoop-wk09t, m1-hadoop-wk10t." objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk01t.cfg objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk02t.cfg objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk07t.cfg objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk08t.cfg objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk09t.cfg objects/servers/dc-m1/linux/hadoop/m1-hadoop-wk10t.cfg
+[master 405d6b6] To make all checks with similar name was made this changes. Service description"Dells Health" was changed to "Server Health". This changes was made for six servers m1-hadoop-wk01t, m1-hadoop-wk02t, m1-hadoop-wk07t, m1-hadoop-wk08t, m1-hadoop-wk09t, m1-hadoop-wk10t.
+ Author: author=Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+[root@vm-vol-nag01t nagios]
+
+................................................................................
+
+[root@vm-vol-nag01t nagios]# echo -e "GET services\nFilter: host_name ~~ -hadoop-cs\nFilter: host_name ~~ -hadoop-wk\nOr: 2\nFilter: description ~~ Server Health\nAnd: 2\nColumns: host_name description" | unixcat /var/spool/nagios/cmd/live
+ds-hadoop-cs02p;Server Health
+ds-hadoop-wk09p;Server Health
+ds-hadoop-wk10p;Server Health
+ds-hadoop-wk11p;Server Health
+ds-hadoop-wk12p;Server Health
+ds-hadoop-wk13p;Server Health
+ds-hadoop-wk14p;Server Health
+ds-hadoop-wk15p;Server Health
+ds-hadoop-wk16p;Server Health
+ds-hadoop-wk17p;Server Health
+ds-hadoop-wk18p;Server Health
+ds-hadoop-wk19p;Server Health
+ds-hadoop-wk20p;Server Health
+m1-hadoop-wk01t;Server Health
+m1-hadoop-wk02t;Server Health
+m1-hadoop-wk07t;Server Health
+m1-hadoop-wk08t;Server Health
+m1-hadoop-wk09t;Server Health
+m1-hadoop-wk10t;Server Health
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+
+
+[root@vm-vol-nag3 ~]# grep -i livestatus /var/log/nagios/nagios.log
+[1454590804] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/spool/nagios/cmd/live'
+[1454590804] livestatus: Please visit us at http://mathias-kettner.de/
+[1454590804] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+[1454590804] livestatus: Please visit OMD at http://omdistro.org
+[1454590804] livestatus: Warning: environment_macros are enabled. This might decrease the overall nagios performance
+[1454590806] livestatus: Finished initialization. Further log messages go to /var/log/nagios/livestatus.log
+[1454590806] Event broker module '/usr/lib64/check_mk/livestatus.o' initialized successfully.
+[1454607531] livestatus: Socket thread has terminated
+[1454607531] Event broker module '/usr/lib64/check_mk/livestatus.o' deinitialized successfully.
+[1454607531] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/spool/nagios/cmd/live'
+[1454607531] livestatus: Please visit us at http://mathias-kettner.de/
+[1454607531] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+[1454607531] livestatus: Please visit OMD at http://omdistro.org
+[1454607531] livestatus: Warning: environment_macros are enabled. This might decrease the overall nagios performance
+[1454607531] livestatus: Finished initialization. Further log messages go to /var/log/nagios/livestatus.log
+[1454607531] Event broker module '/usr/lib64/check_mk/livestatus.o' initialized successfully.
+[root@vm-vol-nag3 ~]#
+
+[root@vm-vol-nag3 ~]# echo -e "GET services\nFilter: state = 2\nFilter: notifications_enabled = 0\nFilter: acknowledged = 0\nFilter: acknowledged = 0\nFilter: scheduled_downtime_depth = 0\nFilter: comments =\nColumns: host_name description last_hard_state_change\nColumnHeaders: on\nLimit: 20" | unixcat /var/spool/nagios/cmd/live
+host_name;description;last_hard_state_change
+nice-log06;C:\ Drive Space;1453269866
+nice-log06;CPU Load;1453269751
+nice-log06;D:\ Drive Space;1453269743
+nice-log06;HP System Health Application;1453270923
+nice-log06;Memory Usage;1453269744
+nice-log06;NSClient++ version;1453269913
+nice-log06;PING;1453269612
+nice-log06;Service: Windows Time;1453269872
+nice-log06;Uptime;1453269925
+[root@vm-vol-nag3 ~]#
+
+[root@vm-vol-nag3 ~]# date -d@1454590806
+Thu Feb  4 16:00:06 MSK 2016
+[root@vm-vol-nag3 ~]# date -d@1454607531
+Thu Feb  4 20:38:51 MSK 2016
+[root@vm-vol-nag3 ~]#
+
+................................................................................
+................................................................................
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Friday, February 05, 2016 11:27 AM
+To: Leonov Aleksey Vladimirovich
+Cc: unix-admins
+Subject: RE: сбой сервиса мониторинга nagios
+
+Добрый день.
+
+Возможно связанное.
+
+Вчера проводились работы по подключению модуля LiveStatus к production-nagios. Модуль LiveStatus работает на testing nagios с конца прошлого года и подключен к preprod nagios две недели назад.
+https://jira.tcsbank.ru/browse/ITP-1344
+
+Необходимая для работы модуля строчка была добавлена в /etc/nagios/nagios.cfg днём, после согласования change из jira.
+Во время регулярного reload в 16.00 настройки применились и модуль подключился.
+
+В районе 19.00 был запланирован restart nagios.
+Однако время рестарта было пропущено. Соответственно в 20:38 я сделал service nagios reload и проверил, не подключится-ли модуль по reload’у, то есть без restart’а.
+Поскольку для подключения модуля оказалось достаточно reload’а, делать restart не понадобилось.
+
+[root@vm-vol-nag3 ~]# grep -i livestatus /var/log/nagios/nagios.log
+[1454590804] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/spool/nagios/cmd/live'
+[1454590804] livestatus: Please visit us at http://mathias-kettner.de/
+[1454590804] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+[1454590804] livestatus: Please visit OMD at http://omdistro.org
+[1454590804] livestatus: Warning: environment_macros are enabled. This might decrease the overall nagios performance
+[1454590806] livestatus: Finished initialization. Further log messages go to /var/log/nagios/livestatus.log
+[1454590806] Event broker module '/usr/lib64/check_mk/livestatus.o' initialized successfully.
+[1454607531] livestatus: Socket thread has terminated
+[1454607531] Event broker module '/usr/lib64/check_mk/livestatus.o' deinitialized successfully.
+[1454607531] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/spool/nagios/cmd/live'
+[1454607531] livestatus: Please visit us at http://mathias-kettner.de/
+[1454607531] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+[1454607531] livestatus: Please visit OMD at http://omdistro.org
+[1454607531] livestatus: Warning: environment_macros are enabled. This might decrease the overall nagios performance
+[1454607531] livestatus: Finished initialization. Further log messages go to /var/log/nagios/livestatus.log
+[1454607531] Event broker module '/usr/lib64/check_mk/livestatus.o' initialized successfully.
+[root@vm-vol-nag3 ~]#
+
+[root@vm-vol-nag3 ~]# date -d@1454590806
+Thu Feb  4 16:00:06 MSK 2016
+[root@vm-vol-nag3 ~]# date -d@1454607531
+Thu Feb  4 20:38:51 MSK 2016
+[root@vm-vol-nag3 ~]#
+
+Иного с production nagios не производилось.
+
+Если!…, если это как-то связано с подключением модуля, то возможно нужен принудительный restart сервиса nagios даже если модуль подключился по reload.
+
+................................................................................
+
+https://jira.tcsbank.ru/browse/ITP-1328
+
+Permalink Edit Delete
+s.belogrud Belogrud Sergey Vladimirovich added a comment - 16 minutes ago
+Вкраце - вероятная причина в том, что использующаяся на production nagios версия имеет баг, который вызывает уничтожение процесса nagios ровно в полночь и этот баг проявляется при использованиии downtime для сервисов или хостов и если подключен модуль LiveStatus.
+Баг исправляется патчем исходников данной версии nagios.
+На текущий момент модуль LiveStatus отключен.
+https://support.nagios.com/forum/viewtopic.php?f=7&t=26168
+Caught SIGSEGV, shutting down... nagios 3.5.1
+Postby klajosh2 » Wed Mar 19, 2014 3:00 am
+Hi,
+I am using nagios 3.5.1 on RedHat 6.5 (Santiago).
+I am using the following NEBs:
+mod_gearman.o
+livestatus.o
+It is a distributed environment. One of my colleague setup a downtime period for 2 hosts.
+Since then, nagios has given SIGSEGV error every midnight.
+I found this:
+http://tracker.nagios.org/view.php?id=516
+but I cannot open this link:
+viewtopic.php?f=16&t=24172
+Does anybody know any solution for this problem?
+Thanks in advance,
+klajosh
+klajosh2
+Posts: 36
+Joined: Thu Jan 16, 2014 5:22 am
+Top
+Re: Caught SIGSEGV, shutting down... nagios 3.5.1
+Postby prandal » Wed Mar 19, 2014 4:18 am
+If you're using Nagios 3.5.1 with mk-livestatus you need this patch for Nagios:
+http://git.mathias-kettner.de/git/?p=om ... 10;hb=HEAD
+Cheers,
+Phil
+
+
+................................................................................
+
+[root@vm-vol-nag3 ~]# less /var/log/nagios/nagios.log
+...
+[1454619600] SERVICE DOWNTIME ALERT: vm-dmz-app111;443 http;STARTED;No comment
+[1454619600] Caught SIGSEGV, shutting down...
+[1454651052] Nagios 3.5.1 starting... (PID=16437)
+[1454651052] Local time is Fri Feb 05 08:44:12 MSK 2016
+[1454651052] LOG VERSION: 2.0
+[1454651052] livestatus: Livestatus 1.2.4p5 by Mathias Kettner. Socket: '/var/spool/nagios/cmd/live'
+[1454651052] livestatus: Please visit us at http://mathias-kettner.de/
+[1454651052] livestatus: Hint: please try out OMD - the Open Monitoring Distribution
+[1454651052] livestatus: Please visit OMD at http://omdistro.org
+[1454651052] livestatus: Removed old left over socket file /var/spool/nagios/cmd/live
+[1454651052] livestatus: Warning: environment_macros are enabled. This might decrease the overall nagios performance
+[1454651052] livestatus: Finished initialization. Further log messages go to /var/log/nagios/livestatus.log
+[1454651052] Event broker module '/usr/lib64/check_mk/livestatus.o' initialized successfully.
+[1454651052] ndomod: NDOMOD 1.5.2 (06-08-2012) Copyright (c) 2009 Nagios Core Development Team and Community Contributors
+[1454651052] ndomod: Successfully connected to data sink.  0 queued items to flush.
+[1454651052] Event broker module '/usr/lib64/nagios/brokers/ndomod.so' initialized successfully.
+...
+
+[root@vm-vol-nag3 ~]# date -d@1454619600
+Fri Feb  5 00:00:00 MSK 2016
+[root@vm-vol-nag3 ~]# date -d@1454651052
+Fri Feb  5 08:44:12 MSK 2016
+[root@vm-vol-nag3 ~]#
+
+................................................................................
+
+#   Wed Feb 10 16:53:01 MSK 2016
+
+[root@vm-vol-nag01t nagios]# git config user.name "s.belogrud"
+[root@vm-vol-nag01t nagios]# git config user.email "s.belogrud@tcsbank.ru"
+
+
+[root@vm-vol-nag01t nagios]# git config core.editor vim
+[root@vm-vol-nag01t nagios]# cat >> README
+Some scripts were produced by Sergey Belogrud.
+Details of works can be found in Jira tasks: https://jira.tcsbank.ru/browse/ITP-1326
+And https://jira.tcsbank.ru/browse/ITP-1328
+And https://jira.tcsbank.ru/browse/ITP-1344
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git remote add origin git@gitlab.tcsbank.ru:~/repositories/s.belogrud/nagios-livestatus-usage.git
+[root@vm-vol-nag01t nagios]# git push -u origin master
+Counting objects: 44, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (44/44), done.
+Writing objects: 100% (44/44), 6.62 KiB, done.
+Total 44 (delta 25), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/s.belogrud/nagios-livestatus-usage.git
+ * [new branch]      master -> master
+Branch master set up to track remote branch master from origin.
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# ssh -t git@gitlab.tcsbank.ru "( cd ~/repositories/s.belogrud/nagios-livestatus-usage.git/ ; git config --bool core.bare true )"
+Connection to gitlab.tcsbank.ru closed.
+[root@vm-vol-nag01t nagios]#
+
+[root@vm-vol-nag01t nagios]# git add nagstatus.sh
+[root@vm-vol-nag01t nagios]# git commit -m "This is modern script, that made by Leonov Aleksey. It appears after we found bug in nagios, that works with LiveStatus plugin. Nagios is crushing time to time at midnight." nagstatus.sh
+[master f24c9a3] This is modern script, that made by Leonov Aleksey. It appears after we found bug in nagios, that works with LiveStatus plugin. Nagios is crushing time to time at midnight.
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+ create mode 100755 nagstatus.sh
+[root@vm-vol-nag01t nagios]# git status
+# On branch master
+# Your branch is ahead of 'origin/master' by 2 commits.
+#
+nothing to commit (working directory clean)
+[root@vm-vol-nag01t nagios]# git push
+Counting objects: 7, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 1.08 KiB, done.
+Total 6 (delta 2), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/s.belogrud/nagios-livestatus-usage.git
+   9207089..f24c9a3  master -> master
+[root@vm-vol-nag01t nagios]# git pull
+Already up-to-date.
+[root@vm-vol-nag01t nagios]#
+
+................................................................................
+................................................................................
+
+
+
+

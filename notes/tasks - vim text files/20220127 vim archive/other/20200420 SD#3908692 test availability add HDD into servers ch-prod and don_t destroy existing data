@@ -1,0 +1,484 @@
+
+................................................................................
+
+https://fsd.tcsbank.ru/case/3908692/info
+
+@Ушаков Никита
+Проверьте пожалуйста возможность физического добавления в перечисленные серверы, как минимум двух HDD дисков. То есть посмотреть - есть-ли свободные слоты на серверах для вставки как минимум 2-х дисков.
+
+
+Из найденных источников следует, что можно добавить в существующие raid10-массивы диски без потери данных.
+Функционал называется Array Expantion.
+Для HPE Smart Array P408i-a такой функционал заявлен: Array configuration features: Expand Array ( https://support.hpe.com/hpesc/public/docDisplay?docId=emr_na-a00019076en_us ).
+
+Здесь как обсуждался как раз вопрос расширения raid-массива двумя или несколькими дисками.
+https://community.spiceworks.com/topic/2157791-expand-raid-10-on-dl380-gen10
+
+
+................................................................................
+
+[root@ds-ch-prod01 ~]# dmidecode -t system
+# dmidecode 3.2
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2 present.
+
+Handle 0x0089, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL380 Gen10
+        Version: Not Specified
+        Serial Number: CZ20031027
+        UUID: 37393150-3032-5a43-3230-303331303237
+        Wake-up Type: Power Switch
+        SKU Number: P19720-B21
+        Family: ProLiant
+
+Handle 0x00AF, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-ch-prod01 ~]#
+
+[root@ds-ch-prod01 ~]# cat /etc/os-release
+NAME="CentOS Linux"
+VERSION="7 (Core)"
+ID="centos"
+ID_LIKE="rhel fedora"
+VERSION_ID="7"
+PRETTY_NAME="CentOS Linux 7 (Core)"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:centos:centos:7"
+HOME_URL="https://www.centos.org/"
+BUG_REPORT_URL="https://bugs.centos.org/"
+
+CENTOS_MANTISBT_PROJECT="CentOS-7"
+CENTOS_MANTISBT_PROJECT_VERSION="7"
+REDHAT_SUPPORT_PRODUCT="centos"
+REDHAT_SUPPORT_PRODUCT_VERSION="7"
+
+[root@ds-ch-prod01 ~]# cat > /etc/yum.repos.d/tcs-nexus-hp-mcp.repo
+[tcs-nexus-hp-mcp]
+name=Management Component Pack
+baseurl=http://repo-linux.tcsbank.ru/repository/hp/repo/mcp/centos/7/x86_64/current
+enabled=1
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/GPG-KEY-mcp
+[root@ds-ch-prod01 ~]# 
+
+[root@ds-ch-prod01 ~]# yum repolist
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+tcs-nexus-hp-mcp                                                                                                                                                             | 2.4 kB  00:00:00
+tcs-nexus-hp-mcp/primary_db                                                                                                                                                  | 6.0 kB  00:00:00
+repo id                                                                            repo name                                                                                                  status
+CentOS-Base/7/x86_64                                                               CentOS-7 - Base                                                                                            10,097
+CentOS-Base-centosplus/7/x86_64                                                    CentOS-7 - Plus                                                                                                91
+CentOS-Base-extras/7/x86_64                                                        CentOS-7 - Extras                                                                                             341
+CentOS-Base-updates/7/x86_64                                                       CentOS-7 - Updates                                                                                          1,787
+clickhouse                                                                         Clickhouse repo                                                                                               630
+epel/7/x86_64                                                                      Extra Packages for Enterprise Linux 7                                                                      13,249
+ius                                                                                IUS Community Packages for Enterprise Linux 7 - x86_64                                                        713
+tcs-nexus-hp-mcp                                                                   Management Component Pack                                                                                       6
+repolist: 26,914
+[root@ds-ch-prod01 ~]#
+
+[root@ds-ch-prod01 ~]# yum install ssacli
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+Resolving Dependencies
+--> Running transaction check
+---> Package ssacli.x86_64 0:4.15-6.0 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+====================================================================================================================================================================================================
+ Package                                     Arch                                        Version                                        Repository                                             Size
+====================================================================================================================================================================================================
+Installing:
+ ssacli                                      x86_64                                      4.15-6.0                                       tcs-nexus-hp-mcp                                       15 M
+
+Transaction Summary
+====================================================================================================================================================================================================
+Install  1 Package
+
+Total download size: 15 M
+Installed size: 40 M
+Is this ok [y/d/N]: y
+Downloading packages:
+ssacli-4.15-6.0.x86_64.rpm     FAILED
+http://repo-linux.tcsbank.ru/repository/hp/repo/mcp/centos/7/x86_64/current/ssacli-4.15-6.0.x86_64.rpm: [Errno 12] Timeout on http://repo-linux.tcsbank.ru/repository/hp/repo/mcp/centos/7/x86_64/current/ssacli-4.15-6.0.x86_64.rpm: (28, 'Operation too slow. Less than 1000 bytes/sec transferred the last 30 seconds')
+Trying other mirror.
+ssacli-4.15-6.0.x86_64.rpm                                                                                                                                                   |  15 MB  00:00:18
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : ssacli-4.15-6.0.x86_64                                                                                                                                                           1/1
+
+  Verifying  : ssacli-4.15-6.0.x86_64                                                                                                                                                           1/1
+
+Installed:
+  ssacli.x86_64 0:4.15-6.0
+
+Complete!
+[root@ds-ch-prod01 ~]#
+
+[root@ds-ch-prod01 ~]# ssacli controller all show config
+
+HPE Smart Array P408i-a SR Gen10 in Slot 0 (Embedded)  (sn: PEYHC0DRHD46U5)
+
+
+
+   12G SAS Exp Card at Port 1I, Box 1, OK
+
+
+   Port Name: 1I (Mixed)
+
+   Port Name: 2I (Mixed)
+
+   Array A (SAS, Unused Space: 0  MB)
+
+      logicaldrive 1 (558.88 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 600 GB, OK)
+
+
+   Array B (Solid State SAS, Unused Space: 1  MB)
+
+      logicaldrive 2 (1.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS SSD, 800 GB, OK)
+
+
+   Array C (SATA, Unused Space: 5  MB)
+
+      logicaldrive 3 (5.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:9 (port 1I:box 1:bay 9, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:10 (port 1I:box 1:bay 10, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:11 (port 1I:box 1:bay 11, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:12 (port 1I:box 1:bay 12, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:13 (port 1I:box 1:bay 13, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:14 (port 1I:box 1:bay 14, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:15 (port 1I:box 1:bay 15, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:16 (port 1I:box 1:bay 16, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:17 (port 1I:box 1:bay 17, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:18 (port 1I:box 1:bay 18, SATA HDD, 1 TB, OK)
+
+   Enclosure SEP (Vendor ID HPE, Model 12G SAS Exp Card) 377  (WWID: 51402EC014224F3C, Port: 1I, Box: 1)
+
+   Expander 378  (WWID: 51402EC014224F3D, Port: 1I, Box: 1)
+
+   SEP (Vendor ID HPE, Model Smart Adapter) 379  (WWID: 51402EC0146CA268, Port: Unknown)
+
+[root@ds-ch-prod01 ~]#
+
+................................................................................
+................................................................................
+
+
+[root@m1-ch-prod01 ~]# dmidecode -t system
+# dmidecode 3.2
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2 present.
+
+Handle 0x0089, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL380 Gen10
+        Version: Not Specified
+        Serial Number: CZ20031029
+        UUID: 37393150-3032-5a43-3230-303331303239
+        Wake-up Type: Power Switch
+        SKU Number: P19720-B21
+        Family: ProLiant
+
+Handle 0x00AF, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-ch-prod01 ~]#
+
+[root@m1-ch-prod01 ~]# ssacli controller all show config
+
+HPE Smart Array P408i-a SR Gen10 in Slot 0 (Embedded)  (sn: PEYHC0DRHD46V9)
+
+
+
+   12G SAS Exp Card at Port 1I, Box 1, OK
+
+
+   Port Name: 1I (Mixed)
+
+   Port Name: 2I (Mixed)
+
+   Array A (SAS, Unused Space: 0  MB)
+
+      logicaldrive 1 (558.88 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 600 GB, OK)
+
+
+   Array B (Solid State SAS, Unused Space: 1  MB)
+
+      logicaldrive 2 (1.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS SSD, 800 GB, OK)
+
+
+   Array C (SATA, Unused Space: 5  MB)
+
+      logicaldrive 3 (5.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:9 (port 1I:box 1:bay 9, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:10 (port 1I:box 1:bay 10, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:11 (port 1I:box 1:bay 11, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:12 (port 1I:box 1:bay 12, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:13 (port 1I:box 1:bay 13, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:14 (port 1I:box 1:bay 14, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:15 (port 1I:box 1:bay 15, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:16 (port 1I:box 1:bay 16, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:17 (port 1I:box 1:bay 17, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:18 (port 1I:box 1:bay 18, SATA HDD, 1 TB, OK)
+
+   Enclosure SEP (Vendor ID HPE, Model 12G SAS Exp Card) 377  (WWID: 51402EC01421F4BC, Port: 1I, Box: 1)
+
+   Expander 378  (WWID: 51402EC01421F4BD, Port: 1I, Box: 1)
+
+   SEP (Vendor ID HPE, Model Smart Adapter) 379  (WWID: 51402EC0146CA518, Port: Unknown)
+
+[root@m1-ch-prod01 ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-ch-prod02 ~]# dmidecode -t system
+# dmidecode 3.2
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2 present.
+
+Handle 0x0089, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL380 Gen10
+        Version: Not Specified
+        Serial Number: CZ20031028
+        UUID: 37393150-3032-5a43-3230-303331303238
+        Wake-up Type: Power Switch
+        SKU Number: P19720-B21
+        Family: ProLiant
+
+Handle 0x00AF, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-ch-prod02 ~]#
+[root@ds-ch-prod02 ~]# ssacli controller all show config
+
+HPE Smart Array P408i-a SR Gen10 in Slot 0 (Embedded)  (sn: PEYHC0DRHD46S7)
+
+
+
+   12G SAS Exp Card at Port 1I, Box 1, OK
+
+
+   Port Name: 1I (Mixed)
+
+   Port Name: 2I (Mixed)
+
+   Array A (SAS, Unused Space: 0  MB)
+
+      logicaldrive 1 (558.88 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 600 GB, OK)
+
+
+   Array B (Solid State SAS, Unused Space: 1  MB)
+
+      logicaldrive 2 (1.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS SSD, 800 GB, OK)
+
+
+   Array C (SATA, Unused Space: 5  MB)
+
+      logicaldrive 3 (5.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:9 (port 1I:box 1:bay 9, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:10 (port 1I:box 1:bay 10, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:11 (port 1I:box 1:bay 11, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:12 (port 1I:box 1:bay 12, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:13 (port 1I:box 1:bay 13, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:14 (port 1I:box 1:bay 14, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:15 (port 1I:box 1:bay 15, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:16 (port 1I:box 1:bay 16, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:17 (port 1I:box 1:bay 17, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:18 (port 1I:box 1:bay 18, SATA HDD, 1 TB, OK)
+
+   Enclosure SEP (Vendor ID HPE, Model 12G SAS Exp Card) 377  (WWID: 51402EC0142271FC, Port: 1I, Box: 1)
+
+   Expander 378  (WWID: 51402EC0142271FD, Port: 1I, Box: 1)
+
+   SEP (Vendor ID HPE, Model Smart Adapter) 379  (WWID: 51402EC0146C9E18, Port: Unknown)
+
+[root@ds-ch-prod02 ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-ch-prod02 ~]# dmidecode -t system
+# dmidecode 3.2
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2 present.
+
+Handle 0x0089, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL380 Gen10
+        Version: Not Specified
+        Serial Number: CZ2003102B
+        UUID: 37393150-3032-5a43-3230-303331303242
+        Wake-up Type: Power Switch
+        SKU Number: P19720-B21
+        Family: ProLiant
+
+Handle 0x00AF, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-ch-prod02 ~]#
+
+[root@m1-ch-prod02 ~]# ssacli controller all show config
+
+HPE Smart Array P408i-a SR Gen10 in Slot 0 (Embedded)  (sn: PEYHC0DRHD46ZL)
+
+
+
+   12G SAS Exp Card at Port 1I, Box 1, OK
+
+
+   Port Name: 1I (Mixed)
+
+   Port Name: 2I (Mixed)
+
+   Array A (SAS, Unused Space: 0  MB)
+
+      logicaldrive 1 (558.88 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 600 GB, OK)
+
+
+   Array B (Solid State SAS, Unused Space: 1  MB)
+
+      logicaldrive 2 (1.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS SSD, 800 GB, OK)
+
+
+   Array C (SATA, Unused Space: 5  MB)
+
+      logicaldrive 3 (5.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:9 (port 1I:box 1:bay 9, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:10 (port 1I:box 1:bay 10, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:11 (port 1I:box 1:bay 11, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:12 (port 1I:box 1:bay 12, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:13 (port 1I:box 1:bay 13, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:14 (port 1I:box 1:bay 14, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:15 (port 1I:box 1:bay 15, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:16 (port 1I:box 1:bay 16, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:17 (port 1I:box 1:bay 17, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:18 (port 1I:box 1:bay 18, SATA HDD, 1 TB, OK)
+
+   Enclosure SEP (Vendor ID HPE, Model 12G SAS Exp Card) 377  (WWID: 51402EC0141EF4FC, Port: 1I, Box: 1)
+
+   Expander 378  (WWID: 51402EC0141EF4FD, Port: 1I, Box: 1)
+
+   SEP (Vendor ID HPE, Model Smart Adapter) 379  (WWID: 51402EC0146CAED8, Port: Unknown)
+
+[root@m1-ch-prod02 ~]#
+
+
+................................................................................
+
+https://community.spiceworks.com/topic/2157791-expand-raid-10-on-dl380-gen10
+
+It does support array expansion
+
+
+https://support.hpe.com/hpesc/public/docDisplay?docId=emr_na-a00019076en_us
+
+Array configuration features	 Expand Array
+
+
+#
+#	Here is an explanagion how to expand HP array with CLI utility. It was differ type of server, but for example - it's not bad.
+#
+https://community.hpe.com/t5/ProLiant-Servers-ML-DL-SL/Add-Drives-to-Raid-10/td-p/6875621#.Xp2xOcgzaiw
+
+ Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (838.1 GB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 300 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 300 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 300 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 300 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 300 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 300 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 300 GB, OK, spare)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 300 GB, OK, spare)
+
+Then run this command to remove the spares from the array allocation:
+
+    /opt/hp/hpssacli/bin/hpssacli ctrl slot=0 array all remove spares=1I:1:4,2I:1:8
+
+The spares should now be unassigned in the controller status ie: first command
+
+Then run this command to add the drives to the array:
+
+    /opt/hp/hpssacli/bin/hpssacli ctrl slot=0 ld 1 add drives=1I:1:4,2I:1:8
+
+Then in the controller status it will show Transforming, ESXi will also display the yellow status, also Transforming, which too about 4 Hrs to finish
+
+Then run this command to resize the logical drive to maximum available
+
+    /opt/hp/hpssacli/bin/hpssacli ctrl slot=0 ld 1 modify size=max forced
+
+Go to vSphere Client, Rescan Storage adapter to check the new expanded volume mine was 1.1TB
+
+Right click on the datastore and increase size just follow the wizard!
+
+I didn't have to turn off any machine, nor reboot the server, just backed up the VMs just in case
+
+................................................................................
+

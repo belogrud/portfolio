@@ -1,0 +1,373 @@
+
+
+................................................................................
+
+#
+#	20200715
+#
+#	https://jira.tcsbank.ru/browse/DCT-60
+#	докупить диски в сервера ClickHouse
+#
+#	#clickhouse_upgrade
+#
+................................................................................
+
+[root@m1-ch-prod01 ~]# dmidecode -t system
+# dmidecode 3.2
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2 present.
+
+Handle 0x0089, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HPE
+        Product Name: ProLiant DL380 Gen10
+        Version: Not Specified
+        Serial Number: CZ20031029
+        UUID: 37393150-3032-5a43-3230-303331303239
+        Wake-up Type: Power Switch
+        SKU Number: P19720-B21
+        Family: ProLiant
+
+Handle 0x00AF, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-ch-prod01 ~]#
+
+
+[root@m1-ch-prod01 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        558.9G
+├─sda1          part /boot      xfs             1G
+└─sda2          part            LVM2_member   204G
+  ├─centos-root lvm  /          xfs           100G
+  ├─centos-swap lvm  [SWAP]     swap            4G
+  └─centos-var  lvm  /var       xfs           100G
+sdb             disk                          1.5T
+└─sdb1          part /ssd       ext4          1.5T
+sdc             disk                          5.5T
+└─sdc1          part /hdd       ext4          5.5T
+[root@m1-ch-prod01 ~]#
+
+[root@m1-ch-prod01 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Mon Mar  2 17:20:31 2020
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/centos-root /                       xfs     defaults        0 0
+UUID=69be7619-ab57-4cb2-a656-1880482c646b /boot                   xfs     defaults        0 0
+/dev/mapper/centos-var  /var                    xfs     defaults        0 0
+/dev/mapper/centos-swap swap                    swap    defaults        0 0
+UUID="7808154a-52dc-4ec7-add6-5d5764835e32" /hdd ext4 defaults        0 0
+UUID="6833e6ea-532a-4d86-b7c2-9cc560c85f12" /ssd ext4 defaults        0 0
+
+[root@m1-ch-prod01 ~]#
+
+
+[root@m1-ch-prod01 ~]# df -hT
+Filesystem              Type      Size  Used Avail Use% Mounted on
+devtmpfs                devtmpfs   63G     0   63G   0% /dev
+tmpfs                   tmpfs      63G  4.0K   63G   1% /dev/shm
+tmpfs                   tmpfs      63G  4.1G   59G   7% /run
+tmpfs                   tmpfs      63G     0   63G   0% /sys/fs/cgroup
+/dev/mapper/centos-root xfs       100G  2.5G   98G   3% /
+/dev/sda1               xfs      1014M  150M  865M  15% /boot
+/dev/mapper/centos-var  xfs       100G  6.6G   94G   7% /var
+tmpfs                   tmpfs      13G     0   13G   0% /run/user/4628
+/dev/sdc1               ext4      5.5T  5.0T  348G  94% /hdd
+/dev/sdb1               ext4      1.5T  464G  974G  33% /ssd
+tmpfs                   tmpfs      13G     0   13G   0% /run/user/200368
+tmpfs                   tmpfs      13G     0   13G   0% /run/user/7525
+[root@m1-ch-prod01 ~]#
+
+[root@m1-ch-prod01 ~]# df -hT /hdd
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/sdc1      ext4  5.5T  5.0T  348G  94% /hdd
+[root@m1-ch-prod01 ~]#
+
+
+#
+# /etc/fstab
+# Created by anaconda on Mon Mar  2 17:20:31 2020
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/centos-root /                       xfs     defaults        0 0
+UUID=69be7619-ab57-4cb2-a656-1880482c646b /boot                   xfs     defaults        0 0
+/dev/mapper/centos-var  /var                    xfs     defaults        0 0
+/dev/mapper/centos-swap swap                    swap    defaults        0 0
+UUID="7808154a-52dc-4ec7-add6-5d5764835e32" /hdd ext4 defaults        0 0
+UUID="6833e6ea-532a-4d86-b7c2-9cc560c85f12" /ssd ext4 defaults        0 0
+
+[root@m1-ch-prod01 ~]#
+
+[root@m1-ch-prod01 ~]# yum install ssacli
+
+[root@m1-ch-prod01 ~]# ssacli controller all show config
+
+HPE Smart Array P408i-a SR Gen10 in Slot 0 (Embedded)  (sn: PEYHC0DRHD46V9)
+
+
+
+   12G SAS Exp Card at Port 1I, Box 1, OK
+
+
+   Port Name: 1I (Mixed)
+
+   Port Name: 2I (Mixed)
+
+   Array A (SAS, Unused Space: 0  MB)
+
+      logicaldrive 1 (558.88 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 600 GB, OK)
+
+
+   Array B (Solid State SAS, Unused Space: 1  MB)
+
+      logicaldrive 2 (1.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS SSD, 800 GB, OK)
+
+
+   Array C (SATA, Unused Space: 5  MB)
+
+      logicaldrive 3 (5.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:9 (port 1I:box 1:bay 9, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:10 (port 1I:box 1:bay 10, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:11 (port 1I:box 1:bay 11, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:12 (port 1I:box 1:bay 12, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:13 (port 1I:box 1:bay 13, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:14 (port 1I:box 1:bay 14, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:15 (port 1I:box 1:bay 15, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:16 (port 1I:box 1:bay 16, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:17 (port 1I:box 1:bay 17, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:18 (port 1I:box 1:bay 18, SATA HDD, 1 TB, OK)
+
+   Enclosure SEP (Vendor ID HPE, Model 12G SAS Exp Card) 377  (WWID: 51402EC01421F4BC, Port: 1I, Box: 1)
+
+   Expander 378  (WWID: 51402EC01421F4BD, Port: 1I, Box: 1)
+
+   SEP (Vendor ID HPE, Model Smart Adapter) 379  (WWID: 51402EC0146CA518, Port: Unknown)
+
+[root@m1-ch-prod01 ~]#
+
+
+................................................................................
+#
+#	16.07.2020
+#
+[root@m1-ch-prod01 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        931.5G
+sdb             disk                        931.5G
+sdc             disk                        931.5G
+sdd             disk                        931.5G
+sde             disk                        931.5G
+sdf             disk                        931.5G
+sdg             disk                        931.5G
+sdh             disk                        931.5G
+sdi             disk                        931.5G
+sdj             disk                        931.5G
+sdl             disk                        931.5G
+sdm             disk                        931.5G
+sdn             disk                        558.9G
+├─sdn1          part /boot      xfs             1G
+└─sdn2          part            LVM2_member   204G
+  ├─centos-root lvm  /          xfs           100G
+  ├─centos-swap lvm  [SWAP]     swap            4G
+  └─centos-var  lvm  /var       xfs           100G
+sdo             disk                          1.5T
+└─sdo1          part /ssd       ext4          1.5T
+sdp             disk                          5.5T
+└─sdp1          part /hdd       ext4          5.5T
+[root@m1-ch-prod01 ~]#
+
+[root@m1-ch-prod01 ~]# ssacli controller all show config
+
+HPE Smart Array P816i-a SR Gen10 in Slot 0 (Embedded)  (sn: PWXLA0BRHDR17I)
+
+
+
+   12G SAS Exp Card at Port 1I, Box 1, OK
+
+
+
+   Internal Drive Cage at Port 3I, Box 6, OK
+
+
+
+   Internal Drive Cage at Port 4I, Box 5, OK
+
+
+   Port Name: 1I (Mixed)
+
+   Port Name: 2I (Mixed)
+
+   Port Name: 3I (Mixed)
+
+   Port Name: 4I (Mixed)
+
+   Array A (SAS, Unused Space: 0  MB)
+
+      logicaldrive 1 (558.88 GB, RAID 1, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS HDD, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS HDD, 600 GB, OK)
+
+
+   Array B (Solid State SAS, Unused Space: 1  MB)
+
+      logicaldrive 2 (1.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:5 (port 1I:box 1:bay 5, SAS SSD, 800 GB, OK)
+      physicaldrive 1I:1:6 (port 1I:box 1:bay 6, SAS SSD, 800 GB, OK)
+
+
+   Array C (SATA, Unused Space: 5  MB)
+
+      logicaldrive 3 (5.46 TB, RAID 1+0, OK)
+
+      physicaldrive 1I:1:7 (port 1I:box 1:bay 7, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:8 (port 1I:box 1:bay 8, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:9 (port 1I:box 1:bay 9, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:10 (port 1I:box 1:bay 10, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:17 (port 1I:box 1:bay 17, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:18 (port 1I:box 1:bay 18, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:19 (port 1I:box 1:bay 19, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:20 (port 1I:box 1:bay 20, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:21 (port 1I:box 1:bay 21, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:22 (port 1I:box 1:bay 22, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:23 (port 1I:box 1:bay 23, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:24 (port 1I:box 1:bay 24, SATA HDD, 1 TB, OK)
+
+   Unassigned
+
+      physicaldrive 1I:1:11 (port 1I:box 1:bay 11, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:12 (port 1I:box 1:bay 12, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:13 (port 1I:box 1:bay 13, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:14 (port 1I:box 1:bay 14, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:15 (port 1I:box 1:bay 15, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:16 (port 1I:box 1:bay 16, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:25 (port 1I:box 1:bay 25, SATA HDD, 1 TB, OK)
+      physicaldrive 1I:1:27 (port 1I:box 1:bay 27, SATA HDD, 1 TB, OK)
+      physicaldrive 3I:6:1 (port 3I:box 6:bay 1, SATA HDD, 1 TB, OK)
+      physicaldrive 3I:6:2 (port 3I:box 6:bay 2, SATA HDD, 1 TB, OK)
+      physicaldrive 4I:5:1 (port 4I:box 5:bay 1, SATA HDD, 1 TB, OK)
+      physicaldrive 4I:5:2 (port 4I:box 5:bay 2, SATA HDD, 1 TB, OK)
+
+   Enclosure SEP (Vendor ID HPE, Model 12G SAS Exp Card) 377  (WWID: 51402EC01421F4BC, Port: 1I, Box: 1)
+
+   Expander 378  (WWID: 51402EC01421F4BD, Port: 1I, Box: 1)
+
+   SEP (Vendor ID HPE, Model Smart Adapter) 379  (WWID: 51402EC015493B10, Port: Unknown)
+
+[root@m1-ch-prod01 ~]#
+
+
+
+................................................................................
+
+[root@m1-ch-prod01 ~]# lsblk
+NAME            MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda               8:0    0 558.9G  0 disk
+├─sda1            8:1    0     1G  0 part /boot
+└─sda2            8:2    0   204G  0 part
+  ├─centos-root 253:0    0   100G  0 lvm  /
+  ├─centos-swap 253:1    0     4G  0 lvm  [SWAP]
+  └─centos-var  253:2    0   100G  0 lvm  /var
+sdb               8:16   0   1.5T  0 disk
+└─sdb1            8:17   0   1.5T  0 part /ssd
+sdc               8:32   0  10.9T  0 disk
+[root@m1-ch-prod01 ~]# parted -a optimal /dev/sdc mklabel GPT print mkpart primary ext4 0% 100% print
+Model: HPE LOGICAL VOLUME (scsi)
+Disk /dev/sdc: 12.0TB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: HPE LOGICAL VOLUME (scsi)
+Disk /dev/sdc: 12.0TB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End     Size    File system  Name     Flags
+ 1      3146kB  12.0TB  12.0TB               primary
+
+Information: You may need to update /etc/fstab.
+
+[root@m1-ch-prod01 ~]#
+
+[root@m1-ch-prod01 ~]# mkfs.ext4 /dev/sdc1
+mke2fs 1.42.9 (28-Dec-2013)
+Filesystem label=
+OS type: Linux
+Block size=4096 (log=2)
+Fragment size=4096 (log=2)
+Stride=64 blocks, Stripe width=768 blocks
+366276608 inodes, 2930186496 blocks
+146509324 blocks (5.00%) reserved for the super user
+First data block=0
+Maximum filesystem blocks=4294967296
+89423 block groups
+32768 blocks per group, 32768 fragments per group
+4096 inodes per group
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848, 512000000, 550731776, 644972544, 1934917632,
+        2560000000
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+(reverse-i-search)`lslbk': lslbk
+[root@m1-ch-prod01 ~]# 
+
+[root@m1-ch-prod01 ~]# blkid
+/dev/mapper/centos-var: UUID="3f7fe947-5dad-418f-aa3e-5574fb899784" TYPE="xfs"
+/dev/sda2: UUID="jlMfoX-qCOE-VwZz-RHTK-kzm4-5G3B-WOCQO4" TYPE="LVM2_member"
+/dev/sda1: UUID="69be7619-ab57-4cb2-a656-1880482c646b" TYPE="xfs"
+/dev/sdc1: UUID="89a7ecee-5239-415d-abe7-4470c73a0004" TYPE="ext4" PARTLABEL="primary" PARTUUID="b0f30eb2-c2db-4219-b0dc-cd95e21876be"
+/dev/sdb1: UUID="6833e6ea-532a-4d86-b7c2-9cc560c85f12" TYPE="ext4" PARTLABEL="primary" PARTUUID="cb76e5a6-41c3-49bc-b5f6-f5a89b0b1c67"
+/dev/mapper/centos-root: UUID="9079fda8-04f8-4261-8cd2-41f4c4e2785a" TYPE="xfs"
+/dev/mapper/centos-swap: UUID="c209b8db-4244-4503-a504-64f2ef56fe2e" TYPE="swap"
+[root@m1-ch-prod01 ~]# vim /etc/fstab
+[root@m1-ch-prod01 ~]# mount /hdd
+
+
+[root@m1-ch-prod01 ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME            TYPE MOUNTPOINT FSTYPE        SIZE
+sda             disk                        558.9G
+├─sda1          part /boot      xfs             1G
+└─sda2          part            LVM2_member   204G
+  ├─centos-root lvm  /          xfs           100G
+  ├─centos-swap lvm  [SWAP]     swap            4G
+  └─centos-var  lvm  /var       xfs           100G
+sdb             disk                          1.5T
+└─sdb1          part /ssd       ext4          1.5T
+sdc             disk                         10.9T
+└─sdc1          part /hdd       ext4         10.9T
+[root@m1-ch-prod01 ~]#
+
+................................................................................
+

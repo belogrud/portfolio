@@ -1,0 +1,145 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   833019
+Название    №833019
+Приоритет   Низкий
+Класс обслуживания  9x5
+Дата и время обращения  18.04.2016 15:06
+Дата регистрации    18.04.2016 15:06
+Тип запроса Nagios запрос
+Категория
+Критичность 3 - Высокая
+Срочность   Высокая
+Описание запроса
+** PROBLEM Service Alert: ds-aerospike02t/HP System Health Application is CRITICAL **
+
+***** Nagios *****
+
+Notification Type: PROBLEM
+
+Service: HP System Health Application
+Host: ds-aerospike02t
+Address: 10.218.13.132
+State: CRITICAL
+
+Date/Time: Mon Apr 18 15:05:02 MSK 2016
+
+Additional Info:
+
+CRITICAL - could not contact snmp agent, wrong device
+
+................................................................................
+
+Дата
+Комментарий Автор
+18.04.2016 20:07    Работы по заявке проведены. Белогруд Сергей В
+18.04.2016 20:04    Внёс небольшие модификации в настройку /etc/snmp/snmpd.conf.
+За основу был взять этот же файл с сервера ds-aerospike02p (правда это Dell сервер).
+
+[root@ds-aerospike02t ~]# etckeeper vcs diff
+diff --git a/snmp/snmpd.conf b/snmp/snmpd.conf
+index 23c325a..3167ea1 100644
+--- a/snmp/snmpd.conf
++++ b/snmp/snmpd.conf
+@@ -3,6 +3,17 @@
+dlmod cmaX /usr/lib64/libcmaX64.so
+rwcommunity tcspub 127.0.0.1
+rocommunity tcspub 127.0.0.1
++rocommunity tcspub nag2.tcsbank.ru
++rocommunity tcspub sim.tcsbank.ru
++rocommunity tcspub cacti.tcsbank.ru
++rocommunity tcspub mon1.tcsbank.ru
++rocommunity tcspub mon2.tcsbank.ru
++rocommunity tcspub mon3.tcsbank.ru
++rocommunity tcspub mon4.tcsbank.ru
++rocommunity tcspub mon5.tcsbank.ru
++rocommunity tcspub mon6.tcsbank.ru
++rocommunity tcspub 172.16.1.115
++rocommunity tcspub 172.16.1.117
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+
+@@ -61,6 +72,7 @@ group notConfigGroup v2c notConfigUser
+
+[root@ds-aerospike02t ~]#
+
+Хотелось бы отметить, что текущий сервер - это 7-ое устаревшее поколение и у них и прочими полезными опциями (типа iLO) всё как-то не "слава богу" бывает.
+Manufacturer: HP
+Product Name: ProLiant DL380 G7
+
+На текущий момент все сервисы зелёные.
+Прикрываю заявку.   Белогруд Сергей В
+18.04.2016 19:40    Даже версии пакетов и то последние.
+
+[root@ds-aerospike02t ~]# yum install hp-health
+Loaded plugins: etckeeper, product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Setting up Install Process
+Package hp-health-10.30-1752.18.rhel6.x86_64 already installed and latest version
+Nothing to do
+[root@ds-aerospike02t ~]#
+
+[root@ds-aerospike02t ~]# yum install net-snmp
+Loaded plugins: etckeeper, product-id, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+Setting up Install Process
+Package 1:net-snmp-5.5-54.el6_7.1.x86_64 already installed and latest version
+Nothing to do
+[root@ds-aerospike02t ~]#
+Белогруд Сергей В
+18.04.2016 19:37    Проприетарный софт.
+Такое с ним не редкость.
+
+[root@ds-aerospike02t ~]# service hp-health restart
+Using Proliant Standard
+IPMI based System Health Monitor
+
+Shutting down NIC Agent Daemon (cmanicd): [FAILED]
+Shutting down Storage Event Logger (cmaeventd): [ OK ]
+Shutting down FCA agent (cmafcad): [ OK ]
+Shutting down SAS agent (cmasasd): [ OK ]
+Shutting down IDA agent (cmaidad): [ OK ]
+Shutting down IDE agent (cmaided): [ OK ]
+Shutting down SCSI agent (cmascsid): [ OK ]
+Shutting down Health agent (cmahealthd): [ OK ]
+Shutting down Standard Equipment agent (cmastdeqd): [ OK ]
+Shutting down Host agent (cmahostd): [ OK ]
+Shutting down Threshold agent (cmathreshd): [ OK ]
+Shutting down RIB agent (cmasm2d): [ OK ]
+Shutting down Performance agent (cmaperfd): [ OK ]
+Shutting down SNMP Peer (cmapeerd): [ OK ]
+Shutting down Proliant Standard
+IPMI based System Health Monitor (hpasmlited): [ OK ]
+Starting Proliant Standard
+IPMI based System Health Monitor (hpasmlited):
+Starting Health agent (cmahealthd): [ OK ]
+Starting Standard Equipment agent (cmastdeqd): [ OK ]
+Starting Host agent (cmahostd): [ OK ]
+Starting Threshold agent (cmathreshd): [ OK ]
+Starting RIB agent (cmasm2d): [ OK ]
+Starting Performance agent (cmaperfd): [ OK ]
+Starting SNMP Peer (cmapeerd): [ OK ]
+Starting Storage Event Logger (cmaeventd): [ OK ]
+Starting FCA agent (cmafcad): [ OK ]
+Starting SAS agent (cmasasd): [ OK ]
+Starting IDA agent (cmaidad): [ OK ]
+Starting IDE agent (cmaided): [ OK ]
+Starting SCSI agent (cmascsid): [ OK ]
+Starting NIC Agent Daemon (cmanicd): [ OK ]
+
+
+[root@ds-aerospike02t ~]# service snmpd status
+snmpd (pid 21181) is running...
+[root@ds-aerospike02t ~]# service snmpd restart
+Stopping snmpd: [ OK ]
+Starting snmpd: [ OK ]
+[root@ds-aerospike02t ~]#   Белогруд Сергей В
+18.04.2016 18:59    Коллеги, это сервис hp-snmp-agents сбоит уже третий раз. Посмотрите, пожалуйста.    Безруких Георгий
+
+................................................................................
+
+
+

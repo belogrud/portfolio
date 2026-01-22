@@ -1,0 +1,389 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   950168
+Название    №950168
+Приоритет   Средний
+Класс обслуживания  24x7
+Дата и время обращения  25.07.2016 16:24
+Дата регистрации    25.07.2016 16:24
+Тип запроса Управление доступами
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+добрый день, нужен доступ для тестовой виртуалки http://vm-additional-services02t:8089 с моей станции:
+
+· i.ivanov2
+
+· 172.16.53.12
+
+· tcs820a
+
+доступ нужен для тестирования задачи https://jira.tcsbank.ru/browse/DMP-3105
+
+Игорь
+
+................................................................................
+
+Основная привязка
+[изменить привязку]
+Организация/ФИО Иванов Игорь
+Соглашение  - Каталог сервисов
+Сервис  00. Внутренние сервисы - Управление доступами и у/з
+Контактное лицо Иванов Игорь
+Контактный e-mail   i.o.ivanov@tinkoff.ru
+Контактные телефоны 79629119347, 2078
+
+................................................................................
+
+Дата
+Комментарий Автор
+26.07.2016 19:10    теперь всё ok, спасибо  Иванов Игорь
+26.07.2016 19:09    Проверьте доступность порта 8089.
+Белогруд Сергей В
+26.07.2016 19:08    Отключил firewall на сервере. И убрал его авто-включение при загрузке сервера.
+
+Если нужно чтобы firewall был включен разрешал доступ лишь по определённым портам, то пожалуйста сообщите их список.
+
+[root@vm-additional-services02t ~]# netstat -nlptu | grep 8089
+tcp 0 0 0.0.0.0:8089 0.0.0.0:* LISTEN 23544/jsvc.exec
+[root@vm-additional-services02t ~]#
+Белогруд Сергей В
+26.07.2016 18:46    Коллеги, помогите пожалуйста, нужно разрешить порт 8089 на сервере  Сакалкин Владислав
+26.07.2016 16:00    в сервисах нет firewall вообще  Иванов Игорь
+26.07.2016 15:51    Проверяйте firewall на сервере, доступ по сети открыт   Сакалкин Владислав
+26.07.2016 15:48    Иванов И. добавил в запрос файл: "screen.png".  system
+26.07.2016 15:46    sudo netstat -anp | grep 8089
+tcp 0 0 0.0.0.0:8089 0.0.0.0:* LISTEN   Иванов Игорь
+26.07.2016 15:35    Этот сервер не слушает порт 8089, нужно проверить firewall на сервере и запушен ли сервис   Сакалкин Владислав
+26.07.2016 15:07    нет доступа
+*перезагружался Иванов Игорь
+26.07.2016 13:23    Открыл, проверяй    Никоненко Андрей
+26.07.2016 13:17    зафиксен    Барков Семен В
+26.07.2016 10:52    просьба зафиксить адрес и предоставить доступы.
+
+PS это вопрос к ОПП.    Романов Константин
+26.07.2016 10:47    вот что тут согласовывать с СБ?
+доступ к тестовой виртуалке, что при этом вообще проверяется?
+это просто для галочки делается или что?    Иванов Игорь
+25.07.2016 20:43    _   Иванов Игорь
+25.07.2016 18:30    172.16.53.112
+TCS 7817    Иванов Игорь
+25.07.2016 17:56    > + доступ для a.orazbaev@tinkoff.ru
+
+откуда?
+
+Романов Константин
+25.07.2016 17:44    + доступ для a.orazbaev@tinkoff.ru  Иванов Игорь
+
+
+................................................................................
+
+[root@vm-additional-services02t ~]# service firewalld status
+Redirecting to /bin/systemctl status  firewalld.service
+● firewalld.service - firewalld - dynamic firewall daemon
+   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; enabled; vendor preset: enabled)
+   Active: active (running) since Thu 2016-06-09 12:52:46 MSK; 1 months 16 days ago
+ Main PID: 631 (firewalld)
+   CGroup: /system.slice/firewalld.service
+           └─631 /usr/bin/python -Es /usr/sbin/firewalld --nofork --nopid
+
+Warning: Journal has been rotated since unit was started. Log output is incomplete or unavailable.
+[root@vm-additional-services02t ~]# iptables -n -L -t filter ; iptables -n -L -t nat ; iptables -n -L -t  mangle
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+INPUT_direct  all  --  0.0.0.0/0            0.0.0.0/0
+INPUT_ZONES_SOURCE  all  --  0.0.0.0/0            0.0.0.0/0
+INPUT_ZONES  all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+REJECT     all  --  0.0.0.0/0            0.0.0.0/0            reject-with icmp-host-prohibited
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+DOCKER     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+FORWARD_direct  all  --  0.0.0.0/0            0.0.0.0/0
+FORWARD_IN_ZONES_SOURCE  all  --  0.0.0.0/0            0.0.0.0/0
+FORWARD_IN_ZONES  all  --  0.0.0.0/0            0.0.0.0/0
+FORWARD_OUT_ZONES_SOURCE  all  --  0.0.0.0/0            0.0.0.0/0
+FORWARD_OUT_ZONES  all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+REJECT     all  --  0.0.0.0/0            0.0.0.0/0            reject-with icmp-host-prohibited
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+OUTPUT_direct  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain DOCKER (1 references)
+target     prot opt source               destination
+
+Chain FORWARD_IN_ZONES (1 references)
+target     prot opt source               destination
+FWDI_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+FWDI_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+
+Chain FORWARD_IN_ZONES_SOURCE (1 references)
+target     prot opt source               destination
+
+Chain FORWARD_OUT_ZONES (1 references)
+target     prot opt source               destination
+FWDO_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+FWDO_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+
+Chain FORWARD_OUT_ZONES_SOURCE (1 references)
+target     prot opt source               destination
+
+Chain FORWARD_direct (1 references)
+target     prot opt source               destination
+
+Chain FWDI_public (2 references)
+target     prot opt source               destination
+FWDI_public_log  all  --  0.0.0.0/0            0.0.0.0/0
+FWDI_public_deny  all  --  0.0.0.0/0            0.0.0.0/0
+FWDI_public_allow  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain FWDI_public_allow (1 references)
+target     prot opt source               destination
+
+Chain FWDI_public_deny (1 references)
+target     prot opt source               destination
+
+Chain FWDI_public_log (1 references)
+target     prot opt source               destination
+
+Chain FWDO_public (2 references)
+target     prot opt source               destination
+FWDO_public_log  all  --  0.0.0.0/0            0.0.0.0/0
+FWDO_public_deny  all  --  0.0.0.0/0            0.0.0.0/0
+FWDO_public_allow  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain FWDO_public_allow (1 references)
+target     prot opt source               destination
+
+Chain FWDO_public_deny (1 references)
+target     prot opt source               destination
+
+Chain FWDO_public_log (1 references)
+target     prot opt source               destination
+
+Chain INPUT_ZONES (1 references)
+target     prot opt source               destination
+IN_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+IN_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+
+Chain INPUT_ZONES_SOURCE (1 references)
+target     prot opt source               destination
+
+Chain INPUT_direct (1 references)
+target     prot opt source               destination
+
+Chain IN_public (2 references)
+target     prot opt source               destination
+IN_public_log  all  --  0.0.0.0/0            0.0.0.0/0
+IN_public_deny  all  --  0.0.0.0/0            0.0.0.0/0
+IN_public_allow  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain IN_public_allow (1 references)
+target     prot opt source               destination
+ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:22 ctstate NEW
+
+Chain IN_public_deny (1 references)
+target     prot opt source               destination
+
+Chain IN_public_log (1 references)
+target     prot opt source               destination
+
+Chain OUTPUT_direct (1 references)
+target     prot opt source               destination
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+PREROUTING_direct  all  --  0.0.0.0/0            0.0.0.0/0
+PREROUTING_ZONES_SOURCE  all  --  0.0.0.0/0            0.0.0.0/0
+PREROUTING_ZONES  all  --  0.0.0.0/0            0.0.0.0/0
+DOCKER     all  --  0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+OUTPUT_direct  all  --  0.0.0.0/0            0.0.0.0/0
+DOCKER     all  --  0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+MASQUERADE  all  --  172.17.0.0/16        0.0.0.0/0
+POSTROUTING_direct  all  --  0.0.0.0/0            0.0.0.0/0
+POSTROUTING_ZONES_SOURCE  all  --  0.0.0.0/0            0.0.0.0/0
+POSTROUTING_ZONES  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain DOCKER (2 references)
+target     prot opt source               destination
+
+Chain OUTPUT_direct (1 references)
+target     prot opt source               destination
+
+Chain POSTROUTING_ZONES (1 references)
+target     prot opt source               destination
+POST_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+POST_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+
+Chain POSTROUTING_ZONES_SOURCE (1 references)
+target     prot opt source               destination
+
+Chain POSTROUTING_direct (1 references)
+target     prot opt source               destination
+
+Chain POST_public (2 references)
+target     prot opt source               destination
+POST_public_log  all  --  0.0.0.0/0            0.0.0.0/0
+POST_public_deny  all  --  0.0.0.0/0            0.0.0.0/0
+POST_public_allow  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain POST_public_allow (1 references)
+target     prot opt source               destination
+
+Chain POST_public_deny (1 references)
+target     prot opt source               destination
+
+Chain POST_public_log (1 references)
+target     prot opt source               destination
+
+Chain PREROUTING_ZONES (1 references)
+target     prot opt source               destination
+PRE_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+PRE_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+
+Chain PREROUTING_ZONES_SOURCE (1 references)
+target     prot opt source               destination
+
+Chain PREROUTING_direct (1 references)
+target     prot opt source               destination
+
+Chain PRE_public (2 references)
+target     prot opt source               destination
+PRE_public_log  all  --  0.0.0.0/0            0.0.0.0/0
+PRE_public_deny  all  --  0.0.0.0/0            0.0.0.0/0
+PRE_public_allow  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain PRE_public_allow (1 references)
+target     prot opt source               destination
+
+Chain PRE_public_deny (1 references)
+target     prot opt source               destination
+
+Chain PRE_public_log (1 references)
+target     prot opt source               destination
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+PREROUTING_direct  all  --  0.0.0.0/0            0.0.0.0/0
+PREROUTING_ZONES_SOURCE  all  --  0.0.0.0/0            0.0.0.0/0
+PREROUTING_ZONES  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination
+INPUT_direct  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+FORWARD_direct  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+OUTPUT_direct  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+POSTROUTING_direct  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain FORWARD_direct (1 references)
+target     prot opt source               destination
+
+Chain INPUT_direct (1 references)
+target     prot opt source               destination
+
+Chain OUTPUT_direct (1 references)
+target     prot opt source               destination
+
+Chain POSTROUTING_direct (1 references)
+target     prot opt source               destination
+
+Chain PREROUTING_ZONES (1 references)
+target     prot opt source               destination
+PRE_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+PRE_public  all  --  0.0.0.0/0            0.0.0.0/0           [goto]
+
+Chain PREROUTING_ZONES_SOURCE (1 references)
+target     prot opt source               destination
+
+Chain PREROUTING_direct (1 references)
+target     prot opt source               destination
+
+Chain PRE_public (2 references)
+target     prot opt source               destination
+PRE_public_log  all  --  0.0.0.0/0            0.0.0.0/0
+PRE_public_deny  all  --  0.0.0.0/0            0.0.0.0/0
+PRE_public_allow  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain PRE_public_allow (1 references)
+target     prot opt source               destination
+
+Chain PRE_public_deny (1 references)
+target     prot opt source               destination
+
+Chain PRE_public_log (1 references)
+target     prot opt source               destination
+[root@vm-additional-services02t ~]#
+
+
+[root@vm-additional-services02t ~]# systemctl disable firewalld
+Removed symlink /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service.
+Removed symlink /etc/systemd/system/basic.target.wants/firewalld.service.
+[root@vm-additional-services02t ~]# service firewalld stop
+Redirecting to /bin/systemctl stop  firewalld.service
+[root@vm-additional-services02t ~]#
+
+[root@vm-additional-services02t ~]# netstat -nlptu
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:60426           0.0.0.0:*               LISTEN      -
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1215/rpcbind
+tcp        0      0 0.0.0.0:49078           0.0.0.0:*               LISTEN      1352/rpc.statd
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      1223/sshd
+tcp        0      0 0.0.0.0:8089            0.0.0.0:*               LISTEN      23544/jsvc.exec
+tcp        0      0 0.0.0.0:5666            0.0.0.0:*               LISTEN      3893/nrpe
+tcp6       0      0 :::111                  :::*                    LISTEN      1215/rpcbind
+tcp6       0      0 :::45457                :::*                    LISTEN      1352/rpc.statd
+tcp6       0      0 :::5666                 :::*                    LISTEN      3893/nrpe
+tcp6       0      0 :::52294                :::*                    LISTEN      -
+udp        0      0 0.0.0.0:39308           0.0.0.0:*                           -
+udp        0      0 0.0.0.0:111             0.0.0.0:*                           1215/rpcbind
+udp        0      0 172.17.0.1:123          0.0.0.0:*                           3243/ntpd
+udp        0      0 10.216.33.72:123        0.0.0.0:*                           3243/ntpd
+udp        0      0 127.0.0.1:123           0.0.0.0:*                           3243/ntpd
+udp        0      0 0.0.0.0:123             0.0.0.0:*                           3243/ntpd
+udp        0      0 0.0.0.0:37322           0.0.0.0:*                           1352/rpc.statd
+udp        0      0 127.0.0.1:703           0.0.0.0:*                           1352/rpc.statd
+udp        0      0 0.0.0.0:966             0.0.0.0:*                           1215/rpcbind
+udp6       0      0 :::47255                :::*                                1352/rpc.statd
+udp6       0      0 :::39753                :::*                                -
+udp6       0      0 :::111                  :::*                                1215/rpcbind
+udp6       0      0 :::123                  :::*                                3243/ntpd
+udp6       0      0 :::966                  :::*                                1215/rpcbind
+[root@vm-additional-services02t ~]# netstat -nlptu | grep 8089
+tcp        0      0 0.0.0.0:8089            0.0.0.0:*               LISTEN      23544/jsvc.exec
+[root@vm-additional-services02t ~]#
+
+
+
+
+

@@ -1,0 +1,70 @@
+
+................................................................................
+
+define service{
+    use                             generic-service
+    host_name                       vm-dbamon01
+    service_description             OPS - Requests from partners
+    check_interval                  1
+    first_notification_delay        0
+    contacts                        s.belyakov_email, s.morozkin_sms, s.morozkin_email, processing_duty_sms, n.yatsishena_email, a.chumikanov_email, a.chumikanov_sms, v.bushuev_sms, v.bushuev_email, pss_24x7_email, servicedesk_duty_sms_critical, servicedesk_duty_khutor_sms_critical,i.s.baranov_email,i.s.baranov_sms,i.s.baranov_telegram,k.s.dereshev_email,k.s.dereshev_sms,k.s.dereshev_telegram,a.kosyrev_email,a.kosyrev_sms
+    contact_groups                  empty-group
+    notification_options            w,u,c,r
+    flap_detection_enabled          0
+    max_check_attempts              1
+    check_command                   check_nrpe!check_tcs_mon_ops_payment_partners
+    notification_interval           5
+}
+
+................................................................................
+
+[root@vm-dbamon01 ~]# awk '/check_tcs_mon_ops_payment_partners/{print FILENAME,"\t",$0}' /etc/nrpe.d/*
+/etc/nrpe.d/check_db_ops.cfg     command[check_tcs_mon_ops_payment_partners]=/opt/TCS/scripts/nagios/plugins/ops/ops-check_tcs_mon_ops_payment_partners.sh
+[root@vm-dbamon01 ~]#
+
+
+[root@vm-dbamon01 ops]# cp ops-check_tcs_mon_ops_payment_partners.sh check-ops_tcs_mon_ops_fin_online_delays.sh
+[root@vm-dbamon01 ops]# cp ops-check_tcs_mon_ops_payment_partners.sql check-ops_tcs_mon_ops_fin_online_delays.sql
+
+[root@vm-dbamon01 ops]# vim -o check-ops_tcs_mon_ops_fin_online_delays.sh check-ops_tcs_mon_ops_fin_online_delays.sql
+2 files to edit
+[root@vm-dbamon01 ops]#
+
+[root@vm-dbamon01 ops]# ./check-ops_tcs_mon_ops_fin_online_delays.sh
+Connection OK. Result=0
+[root@vm-dbamon01 ops]#
+
+
+[root@vm-dbamon01 ~]# vim -c "/check_tcs_mon_ops_payment_partners" /etc/nrpe.d/check_db_ops.cfg
+[root@vm-dbamon01 ~]# tail -n 1 !$
+tail -n 1 /etc/nrpe.d/check_db_ops.cfg
+command[check_ops_tcs_mon_ops_fin_online_delays]=/opt/TCS/scripts/nagios/plugins/ops/check-ops_tcs_mon_ops_fin_online_delays.sh
+[root@vm-dbamon01 ~]#
+
+[root@vm-dbamon01 ~]# service nrpe reload
+Reloading nrpe                                             [  OK  ]
+[root@vm-dbamon01 ~]#
+
+................................................................................
+
+# SD#1011721
+define service{
+    use                             generic-service
+    host_name                       vm-dbamon01
+    service_description             OPS - Payments waiting for Online
+    check_interval                  15
+    first_notification_delay        0
+    contacts                        paym_ops_email
+    contact_groups                  empty-group
+    notification_options            w,u,c,r
+    flap_detection_enabled          0
+    max_check_attempts              1
+    check_command                   check_nrpe!check_ops_tcs_mon_ops_fin_online_delays
+    notification_interval           5
+}
+
+
+
+
+
+

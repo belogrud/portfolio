@@ -1,0 +1,335 @@
+
+
+
+
+
+................................................................................
+
+[root@m1-gp-prd-sdw23 20161212-1612]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 6.6 (Santiago)
+[root@m1-gp-prd-sdw23 20161212-1612]#
+
+[root@m1-gp-prd-sdw23 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BN9
+        UUID: 32333536-3030-5A43-3233-323930424E39
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-gp-prd-sdw23 ~]#
+
+[root@m1-gp-prd-sdw23 ~]# hpssacli controller slot=0 show config
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 00143802645C150)
+
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (2.2 TB, RAID 1+0, Interim Recovery Mode)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, Failed)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 500143802645C15F)
+
+[root@m1-gp-prd-sdw23 ~]#
+
+[root@m1-gp-prd-sdw23 ~]# hpssacli controller slot=0 physicaldrive 2I:2:7 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+   array A
+
+      physicaldrive 2I:2:7
+         Port: 2I
+         Box: 2
+         Bay: 7
+         Status: Failed
+         Last Failure Reason: Aborted Command
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPDC
+         Serial Number: KNHA9SKF
+         Model: HP      EG0600FBVFP
+         Maximum Temperature (C): 40
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Drive Authentication Status: Not Applicable
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-prd-sdw23 ~]#
+
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw23 ~]# hpssacli controller all diag file=$(pwd)/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip
+
+   Generating diagnostic report...done
+
+[root@m1-gp-prd-sdw23 ~]# logout
+
+................................................................................
+................................................................................
+
+[root@centos00 hp-scripting-toolkit-linux-9.60-30]# scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no scripts/hponcfg.ribcl.gen8.ilo_greenplum_config.xml bsv@m1-gp-prd-sdw23:/tmp
+bsv@m1-gp-prd-sdw23's password:
+hponcfg.ribcl.gen8.ilo_greenplum_config.xml                                                                                                                                   100% 5984     5.8KB/s   00:00
+[root@centos00 hp-scripting-toolkit-linux-9.60-30]#
+
+[root@m1-gp-prd-sdw23 20161212-1612]# cp /tmp/hponcfg.ribcl.gen8.ilo_greenplum_config.xml .                                                                                                                     [root@m1-gp-prd-sdw23 20161212-1612]# cp hponcfg.ribcl.gen8.ilo_greenplum_config.xml hponcfg.ribcl.gen8.ilo_greenplum_config.sdw23.xml
+
+
+
+[root@m1-gp-prd-sdw23 20161212-1612]# hponcfg -f $(pwd)/hponcfg.ribcl.gen8.ilo_greenplum_config.sdw23.xml
+HP Lights-Out Online Configuration utility
+Version 4.5.0 Date 07/17/2015 (c) Hewlett-Packard Company, 2015
+Firmware Revision = 2.20 Device type = iLO 4 Driver name = hpilo
+<INFORM> DHCP is currently disabled, enable DHCP to use any DHCP setting.</INFORM>
+<INFORM>Integrated Lights-Out will reset at the end of the script.</INFORM>
+<INFORM>Integrated Lights-Out will reset at the end of the script.</INFORM>
+
+Please wait while the firmware is reset. This might take a minute
+Script succeeded
+[root@m1-gp-prd-sdw23 20161212-1612]#
+
+[root@m1-gp-prd-sdw23 20161212-1612]# diff -Nuar hponcfg.ribcl.gen8.ilo_greenplum_config{,.sdw23}.xml
+--- hponcfg.ribcl.gen8.ilo_greenplum_config.xml 2016-12-12 16:41:04.047143357 +0300
++++ hponcfg.ribcl.gen8.ilo_greenplum_config.sdw23.xml   2016-12-12 16:47:16.044659694 +0300
+@@ -3,9 +3,9 @@
+  <LOGIN USER_LOGIN="Administrator" PASSWORD="password">
+
+   <SERVER_INFO MODE="write" >
+-    <SERVER_NAME VALUE = "ds-gp-prd-sdw5" />
+-    <SERVER_FQDN value="CZ23290BNC.mgmt.tcsbank.ru" />
+-    <SMH_FQDN value="CZ23290BNC.mgmt.tcsbank.ru" />
++    <SERVER_NAME VALUE = "m1-gp-prd-sdw23" />
++    <SERVER_FQDN value="CZ23290BN9.mgmt.tcsbank.ru" />
++    <SMH_FQDN value="CZ23290BN9.mgmt.tcsbank.ru" />
+   </SERVER_INFO>
+
+   <DIR_INFO MODE="write">
+@@ -46,10 +46,10 @@
+     <REG_WINS_SERVER VALUE="N"/>
+     <REG_DDNS_SERVER VALUE="N"/>
+     <PING_GATEWAY VALUE="Y"/>
+-    <IP_ADDRESS VALUE = "10.219.10.139"/>
++    <IP_ADDRESS VALUE = "10.219.8.202"/>
+     <SUBNET_MASK VALUE = "255.255.255.0"/>
+-    <GATEWAY_IP_ADDRESS VALUE = "10.219.10.254"/>
+-    <DNS_NAME VALUE = "CZ23290BNC"/>
++    <GATEWAY_IP_ADDRESS VALUE = "10.219.8.254"/>
++    <DNS_NAME VALUE = "CZ23290BN9"/>
+     <DOMAIN_NAME VALUE = "mgmt.tcsbank.ru"/>
+     <PRIM_DNS_SERVER VALUE="10.216.40.4"/>
+     <SEC_DNS_SERVER VALUE="10.216.42.5"/>
+@@ -91,7 +91,7 @@
+     <SNMP_ADDRESS_1 VALUE="ilo-trap01.tcsbank.ru"/>
+     <SNMP_ADDRESS_2 VALUE="ilo-trap02.tcsbank.ru"/>
+     <SNMP_ADDRESS_3 VALUE="ilo-trap03.tcsbank.ru"/>
+-    <WEB_AGENT_IP_ADDRESS VALUE="ds-gp-prd-sdw6"/>
++    <WEB_AGENT_IP_ADDRESS VALUE="m1-gp-prd-sdw23"/>
+    </MOD_SNMP_IM_SETTINGS>
+    </RIB_INFO>
+
+[root@m1-gp-prd-sdw23 20161212-1612]#
+
+................................................................................
+................................................................................
+
+
+a.leonov@tcsbank.ru
++79096319617
++7495648100 2536
+
+................................................................................
+................................................................................
+
+Your case was successfully submitted. Please note your Case ID: 5315662667 for future reference.
+An email confirmation will be sent to the case contact. Hewlett Packard Enterprise will contact you to begin work on your problem based on your contract or warranty coverage.    Clicking image will open a new window displaying help information.
+Add attachments to case:    Clicking image will open a new window displaying help information.
+Click this link to send attachment to gsd_csc_case_mngmt@hpe.com(Maximum size is 10 MB)
+Case information
+Case ID:    5315662667
+Case title:
+Hard drive failure
+Severity    2-Critical Degraded
+Service Agreement ID:   107857825291
+Product serial number:  CZ23290BN9
+Product number: 653200-B21
+Submitted:  12/12/2016 2:05:27 PM
+Last updated:   12/12/2016 2:05:27 PM
+Source: Web
+Case status:    An email confirmation will be sent to the case contact. Hewlett Packard Enterprise will contact you to begin work on your problem based on your contract or warranty coverage.
+Case details
+Operating system/version:   Red Hat Enterprise Linux Server release 6.6 (Santiago)
+Product:    ProLiant DL Servers
+Product vendor:
+Problem description:
+Здравствуйте.
+Необходимо заменить неисправный HDD на новый.
+При необходимости выгрузки дополнительных данных, пожалуйста сообщите реквизиты доступа к Вашему ftp-порталу.
+
+Присутствие инженера HP для замены детали не требуется.
+
+Доставить новую деталь можно по адресу:
+123060, г. Москва, ул. 1-й Волоколамский проезд, д.10, стр.1. (бизнес-центр Диапазон).
+Troubleshooting steps taken:
+[root@m1-gp-prd-sdw23 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+Manufacturer: HP
+Product Name: ProLiant DL380p Gen8
+Version: Not Specified
+Serial Number: CZ23290BN9
+UUID: 32333536-3030-5A43-3233-323930424E39
+Wake-up Type: Power Switch
+SKU Number: 653200-B21
+Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+Status: No errors detected
+
+[root@m1-gp-prd-sdw23 ~]#
+
+[root@m1-gp-prd-sdw23 ~]# hpssacli controller slot=0 show config
+
+Smart Array P420i in Slot 0 (Embedded) (sn: 00143802645C150)
+
+
+Internal Drive Cage at Port 1I, Box 2, OK
+
+Internal Drive Cage at Port 2I, Box 2, OK
+array A (SAS, Unused Space: 0 MB)
+
+
+logicaldrive 1 (2.2 TB, RAID 1+0, Interim Recovery Mode)
+
+physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, Failed)
+physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380 (WWID: 500143802645C15F)
+
+[root@m1-gp-prd-sdw23 ~]#
+
+[root@m1-gp-prd-sdw23 ~]# hpssacli controller slot=0 physicaldrive 2I:2:7 show detail
+
+Smart Array P420i in Slot 0 (Embedded)
+
+array A
+
+physicaldrive 2I:2:7
+Port: 2I
+Box: 2
+Bay: 7
+Status: Failed
+Last Failure Reason: Aborted Command
+Drive Type: Data Drive
+Interface Type: SAS
+Size: 600 GB
+Drive exposed to OS: False
+Native Block Size: 512
+Rotational Speed: 10000
+Firmware Revision: HPDC
+Serial Number: KNHA9SKF
+Model: HP EG0600FBVFP
+Maximum Temperature (C): 40
+PHY Count: 2
+PHY Transfer Rate: 6.0Gbps, Unknown
+Drive Authentication Status: Not Applicable
+Sanitize Erase Supported: False
+
+
+[root@m1-gp-prd-sdw23 ~]#
+Contact & equipment location information
+Contact
+Equipment
+First name: Sergey
+Last name:  Belogrud
+Phone number:   +74956481000 2173   Company name:   TCS Bank
+Alternate Phone:
++79150464278    Address line 1: 1-ый Волоколамский пр-д, д.10, к.1
+Email address:  s.belogrud@tcsbank.ru
+City/Town:  Москва
+State/Province: Москва
+Zip/Postal code:    123040
+Country/Region: RUSSIA
+
+Contact (2)
+First name: Aleksey
+Last name:  Leonov
+Phone number:   +7495648100 2536
+Alternate Phone:
++79096319617
+Email address:  a.leonov@tcsbank.ru
+
+................................................................................
+................................................................................
+
+[root@m1-gp-prd-sdw23 20161212-1612]# at 10:00 tomorrow <<< 'hpssacli controller slot=0 array A physicaldrive 2I:2:7 modify led=on duration=7200'
+job 1 at 2016-12-13 10:00
+[root@m1-gp-prd-sdw23 20161212-1612]# atq
+1       2016-12-13 10:00 a root
+[root@m1-gp-prd-sdw23 20161212-1612]#
+
+................................................................................
+................................................................................
+
+[root@centos00 hp-scripting-toolkit-linux-9.60-30]# scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-gp-prd-sdw23:/tmp/20161212-1552.hpssacli.diag.m1-gp-prd-sdw23.zip /home/support/mnt/share/greenplum/m1-gp-prd/20161212-1710.m1-gp-prd-sdw23/
+bsv@m1-gp-prd-sdw23's password:
+20161212-1552.hpssacli.diag.m1-gp-prd-sdw23.zip                                                                                                                               100%  362KB 362.0KB/s   00:00
+[root@centos00 hp-scripting-toolkit-linux-9.60-30]#
+
+[2016-12-12 18:54.22]  ~
+[s.belogrud.tcs4500] ➤ lftp -e "ls -Alh ; mput /drives/d/share/greenplum/m1-gp-prd/20161212-1710.m1-gp-prd-sdw23/* ; ls -Alh ; bye" -u 'tinkof01','i+XH9ix{' ftp.ext.hpe.com
+drwxr-xr-x   2 tinkof01 ftpuser        96 Dec 12 15:43 .
+drwxr-xr-x   2 tinkof01 ftpuser        96 Dec 12 15:43 ..
+47919255 bytes transferred in 440 seconds (106.3K/s)
+Total 2 files transferred
+drwxr-xr-x   2 tinkof01 ftpuser      8.0k Dec 12 15:54 .
+drwxr-xr-x   2 tinkof01 ftpuser      8.0k Dec 12 15:54 ..
+-rw-r--r--   1 tinkof01 ftpuser    362.0k Dec 12 15:54 20161212-1552.hpssacli.diag.m1-gp-prd-sdw23.zip
+-rw-r--r--   1 tinkof01 ftpuser     44.9M Dec 12 16:01 HP_CZ23290BN9_20161212.ahs
+
+................................................................................
+................................................................................
+
+
+

@@ -1,0 +1,99 @@
+
+................................................................................
+
+[s.belogrud@TCS4357]# ssh bsv@api-test.tinkoffinsurance.ru
+Warning: Permanently added 'api-test.tinkoffinsurance.ru' (RSA) to the list of known hosts.
+Last login: Mon Aug 10 13:47:13 2020 from tcs4357.tcsbank.ru
+[bsv@vm-ins-api-rproxy ~]$ sudo -i
+[sudo] password for bsv:
+[root@vm-ins-api-rproxy ~]# vim -R /etc/nginx/nginx.conf
+[root@vm-ins-api-rproxy ~]# grep -irle "443" /etc/nginx/
+/etc/nginx/conf.d/sitecore-api.conf
+/etc/nginx/nginx.conf
+[root@vm-ins-api-rproxy ~]# vim -R /etc/nginx/conf.d/sitecore-api.conf
+[root@vm-ins-api-rproxy ~]# grep -irle "sc_preprod" /etc/nginx/
+/etc/nginx/conf.d/sitecore-api.conf
+[root@vm-ins-api-rproxy ~]# host sc_preprod
+Host sc_preprod not found: 2(SERVFAIL)
+[root@vm-ins-api-rproxy ~]# grep -ire "sc_preprod" /etc/nginx/
+/etc/nginx/conf.d/sitecore-api.conf:upstream sc_preprod {
+/etc/nginx/conf.d/sitecore-api.conf:        proxy_pass              http://sc_preprod;
+/etc/nginx/conf.d/sitecore-api.conf:        proxy_pass              http://sc_preprod;
+[root@vm-ins-api-rproxy ~]#
+
+................................................................................
+#
+#	vim "/etc/nginx/conf.d/sitecore-api.conf"
+#
+
+# API Test
+upstream sc_preprod {
+  server ins-api-pre-1.tcsbank.ru;
+ # server ins-api-pre-2.tcsbank.ru;
+}
+...
+server {
+    listen 0.0.0.0:443 rcvbuf=32k sndbuf=32k ssl;
+    #ssl_certificate            ssl_keys/tstrp/tstrp_d.crt;
+    #ssl_certificate_key        ssl_keys/tstrp/tstrp_d.key;
+#   ssl_certificate             ssl_keys/api-test_tinkoffinsurance_ru/api-test_tinkoffinsurance_ru.crt;
+#   ssl_certificate_key         ssl_keys/api-test_tinkoffinsurance_ru/private.pem;
+    ssl_certificate             ssl_keys/api-test_tinkoffinsurance_ru/ext_api-test_tinkoffinsurance_ru.crt;
+    ssl_certificate_key         ssl_keys/api-test_tinkoffinsurance_ru/ext_private.pem;
+    ssl_session_timeout         5m;
+    #ssl_protocols               TLSv1 TLSv1.2;
+    ssl_protocols               TLSv1.2;
+    ssl_ciphers                 HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers   on;
+
+    location / {
+#        proxy_pass              http://10.218.49.29:7777;
+        proxy_pass              http://sc_preprod;
+        proxy_set_header        Host $http_host;
+        proxy_set_header        X-Forwarded-For $remote_addr;
+        proxy_set_header        X-Real-IP $remote_addr;
+        proxy_redirect          default;
+    }
+}
+
+................................................................................
+
+...
+    location / {
+
+    header_filter_by_lua '
+    local val = ngx.header["X-secure-key"]
+    if val then
+            if (val ~= "ZYP9zK1ZzbLPzoMLOBo4R3gQ5aH1il7OpkPm1Fr80IEE1UgRluGTt9hqXkqaeQ7q7E5lf1AJFoNJclK76ae0Pw") then
+                return ngx.exit(400)
+            end
+    end
+    ';
+
+#        proxy_pass              http://10.218.49.29:7777;
+        proxy_pass              http://sc_preprod;
+        proxy_set_header        Host $http_host;
+        proxy_set_header        X-Forwarded-For $remote_addr;
+        proxy_set_header        X-Real-IP $remote_addr;
+        proxy_redirect          default;
+    }
+
+................................................................................
+#
+#	20200812
+#
+[root@vm-ins-api-rproxy ~]# tar -cvzf /tmp/20200812-1421.nginx.vm-ins-api-rproxy.tgz /etc/nginx/
+
+[root@vm-ins-api-rproxy ~]# ls -Alh /tmp/20200812-1421.nginx.vm-ins-api-rproxy.tgz
+-rw-r--r-- 1 root root 60K Aug 12 14:22 /tmp/20200812-1421.nginx.vm-ins-api-rproxy.tgz
+[root@vm-ins-api-rproxy ~]#
+[root@vm-ins-api-rproxy ~]# logout
+[bsv@vm-ins-api-rproxy ~]$ logout
+Connection to api-test.tinkoffinsurance.ru closed.
+[s.belogrud@TCS4357]# scp bsv@api-test.tinkoffinsurance.ru:/tmp/20200812-1421.nginx.vm-ins-api-rproxy.tgz /drives/c/Users/s.belogrud/Downloads/
+20200812-1421.nginx.vm-ins-api-rproxy.tgz                                                                                 100%   60KB  58.7KB/s   00:01
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+

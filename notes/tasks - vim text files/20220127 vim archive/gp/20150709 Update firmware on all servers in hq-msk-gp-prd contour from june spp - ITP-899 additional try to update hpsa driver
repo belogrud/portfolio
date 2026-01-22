@@ -1,0 +1,3679 @@
+
+
+
+
+
+m: Nemchin Dmitriy Yuryevich
+Sent: Thursday, July 09, 2015 1:16 PM
+To: Belogrud Sergey Vladimirovich
+Cc: Ovchinnikov Dmitriy Sergeevich; Pavlov Dmitriy Stanislavovich; unix-admins; greenplum_admins
+Subject: RE: Ремонт серверов hq-msk-gp-prd-sdw5, hq-msk-gp-prd-sdw8, hq-msk-gp-tst-sdw2 по заявкам SD#503238, SD#499153, SD#499262
+
+Коллеги,
+
+Со стороны greenplum-admins подготовку к работам буду проводить я.
+
+From: Belogrud Sergey Vladimirovich
+Sent: Thursday, July 09, 2015 12:08 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: Ovchinnikov Dmitriy Sergeevich; Pavlov Dmitriy Stanislavovich; unix-admins; greenplum_admins
+Subject: RE: Ремонт серверов hq-msk-gp-prd-sdw5, hq-msk-gp-prd-sdw8, hq-msk-gp-tst-sdw2 по заявкам SD#503238, SD#499153, SD#499262
+
+Добрый день.
+
+Предлагается на завтра на 10.00 запланировать двухчасовые работы на контуре hq-msk-gp-prd по обновлению firmware на всех серверах контура с последнего июньского SPP.
+И дополнительно обновление драйвера raid-контроллера сначала последовательлно на серверах hq-msk-gp-prd-sdw5, sdw8 и при удачном обновлении позже и на всех серверах контура.
+Выполнение этих работ решит следующие пункты общего плана работ по заявкам SD#503238, SD#499153.
+
+Этап 4.
+В разрешенный интервал времени провести работы:
+1.2. Сервер hq-msk-gp-prd-sdw8
+1.2.3. Обновление hpsa-драйвера raid-контроллера и обновление firmware с последнего июньского SPP.
+
+
+Этап 5.
+В разрешенный интервал времени провести работы:
+1.1. Сервер hq-msk-gp-prd-sdw5
+1.1.5. Обновление hpsa-драйвера raid-контроллера и обновление firmware с последнего июньского SPP.
+
+
+С нашей стороны работы по обновлению firmware начнёт Леонов Алексей примерно в 10.00 и продолжу их я с 11.00 (как раз со времени, когда на серверах будет заканчивать свою работу по обновлению firmware диск SPP).
+
+................................................................................
+................................................................................
+
+
+[root@hq-msk-gp-prd-sdw5 ~]# mkdir -p ~/work/20150709-1453
+[root@hq-msk-gp-prd-sdw5 ~]# cd !$
+cd ~/work/20150709-1453
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# cp -r /boot/ .
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# rpm -q kernel kernel-firmware kmod-hpsa
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.8.1.el6.x86_64
+kernel-firmware-2.6.32-504.8.1.el6.noarch
+kmod-hpsa-3.4.4-125.rhel6u1.x86_64
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# lsb_release -a
+LSB Version:    :core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch
+Distributor ID: RedHatEnterpriseServer
+Description:    Red Hat Enterprise Linux Server release 6.1 (Santiago)
+Release:        6.1
+Codename:       Santiago
+[root@hq-msk-gp-prd-sdw5 20150709-1453]#
+
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.1 (Santiago)
+[root@hq-msk-gp-prd-sdw5 20150709-1453]#
+
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# mkdir current.kernel.kernel-firmware.kmod-hpsa
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# cd !$
+cd current.kernel.kernel-firmware.kmod-hpsa
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# uname -a
+Linux sdw5 2.6.32-504.8.1.el6.x86_64 #1 SMP Fri Dec 19 12:09:25 EST 2014 x86_64 x86_64 x86_64 GNU/Linux
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]#
+
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# yum list installed kmod-hpsa-3.4.4-125.rhel6u1.x86_64
+Loaded plugins: product-id, rhnplugin, subscription-manager
+Updating Red Hat repositories.
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+Installed Packages
+kmod-hpsa.x86_64                                                                                 3.4.4-125.rhel6u1                                                                                 installed
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kmod-hpsa-3.4.4-125.rhel6u1.x86_64
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kmod-hpsa.x86_64 0:3.4.4-125.rhel6u1 will be reinstalled
+--> Finished Dependency Resolution
+kmod-hpsa-3.4.4-125.rhel6u1.x86_64.rpm                                                                                                                                               |  53 kB     00:00
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# ll
+total 56
+-rw-r--r-- 1 root root 54220 Jul  3  2014 kmod-hpsa-3.4.4-125.rhel6u1.x86_64.rpm
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel-2.6.32-504.8.1.el6.x86_64
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-504.8.1.el6 will be installed
+--> Finished Dependency Resolution
+kernel-2.6.32-504.8.1.el6.x86_64.rpm                                                                                                                                                 |  29 MB     00:00
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel-firmware-2.6.32-504.8.1.el6.noarch
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kernel-firmware.noarch 0:2.6.32-504.8.1.el6 will be reinstalled
+--> Finished Dependency Resolution
+kernel-firmware-2.6.32-504.8.1.el6.noarch.rpm                                                                                                                                        |  14 MB     00:00
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# ll
+total 44636
+-rw-r--r-- 1 root root 30514976 Jan 27 21:41 kernel-2.6.32-504.8.1.el6.x86_64.rpm
+-rw-r--r-- 1 root root 15131072 Jan 27 21:40 kernel-firmware-2.6.32-504.8.1.el6.noarch.rpm
+-rw-r--r-- 1 root root    54220 Jul  3  2014 kmod-hpsa-3.4.4-125.rhel6u1.x86_64.rpm
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]#
+
+................................................................................
+
+
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# yum --showduplicates list kmod-hpsa
+Loaded plugins: product-id, rhnplugin, subscription-manager
+Updating Red Hat repositories.
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+Installed Packages
+kmod-hpsa.x86_64                                                                        3.4.4-125.rhel6u1                                                                           installed
+Available Packages
+kmod-hpsa.x86_64                                                                        3.0.0-2.el6                                                                                 tcs-hp-spp
+kmod-hpsa.x86_64                                                                        3.0.0-4.el6                                                                                 tcs-hp-spp
+kmod-hpsa.x86_64                                                                        3.0.0-4.el6                                                                                 tcs-hp-spp
+...
+kmod-hpsa.x86_64                                                                        3.4.10-120.rhel6u1                                                                          tcs-hp-spp
+kmod-hpsa.x86_64                                                                        3.4.10-120.rhel6u2                                                                          tcs-hp-spp
+kmod-hpsa.x86_64                                                                        3.4.10-120.rhel6u3                                                                          tcs-hp-spp
+kmod-hpsa.x86_64                                                                        3.4.10-120.rhel6u4                                                                          tcs-hp-spp
+kmod-hpsa.x86_64                                                                        3.4.10-120.rhel6u5                                                                          tcs-hp-spp
+kmod-hpsa.x86_64                                                                        3.4.10-120.rhel6u6                                                                          tcs-hp-spp
+[root@hq-msk-gp-prd-sdw5 20150709-1453]#
+
+
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# yum info kmod-hpsa-3.4.10-120.rhel6u1.x86_64
+Loaded plugins: product-id, rhnplugin, subscription-manager
+Updating Red Hat repositories.
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+Available Packages
+Name        : kmod-hpsa
+Arch        : x86_64
+Version     : 3.4.10
+Release     : 120.rhel6u1
+Size        : 57 k
+Repo        : tcs-hp-spp
+Summary     : hpsa kernel module(s) for rhel6u1 x86_64 (d38/s216)
+URL         : http://www.hp.com/go/proliantlinux
+License     : GPLv2
+Description : This package provides the hpsa kernel modules built for
+            : the Linux kernel 2.6.32-131.0.15.el6.x86_64 for the x86_64
+            : family of processors.
+            : Source code available at http://sourceforge.net/projects/cciss/files/
+
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# yumdownloader --resolve kmod-hpsa-3.4.10-120.rhel6u1.x86_64
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kmod-hpsa.x86_64 0:3.4.10-120.rhel6u1 will be installed
+--> Finished Dependency Resolution
+kmod-hpsa-3.4.10-120.rhel6u1.x86_64.rpm                                                                                                                                              |  57 kB     00:00
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# ll
+total 68
+dr-xr-xr-x 5 root root  4096 Jul  9 14:55 boot
+drwxr-xr-x 2 root root  4096 Jul  9 15:02 current.kernel.kernel-firmware.kmod-hpsa
+-rw-r--r-- 1 root root 58676 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u1.x86_64.rpm
+[root@hq-msk-gp-prd-sdw5 20150709-1453]#
+
+................................................................................
+
+[root@hq-msk-gp-prd-sdw5 new.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-504.23.4.el6 will be installed
+--> Processing Dependency: kernel-firmware >= 2.6.32-504.23.4.el6 for package: kernel-2.6.32-504.23.4.el6.x86_64
+--> Running transaction check
+---> Package kernel-firmware.noarch 0:2.6.32-504.8.1.el6 will be updated
+---> Package kernel-firmware.noarch 0:2.6.32-504.23.4.el6 will be an update
+--> Finished Dependency Resolution
+kernel-2.6.32-504.23.4.el6.x86_64.rpm                                                                                                                                                |  29 MB     00:00
+kernel-firmware-2.6.32-504.8.1.el6.noarch.rpm                                                                                                                                        |  14 MB     00:00
+./kernel-firmware-2.6.32-504.23.4.el6.noarch.rpm already exists and appears to be complete
+[root@hq-msk-gp-prd-sdw5 new.kernel.kernel-firmware.kmod-hpsa]# ll
+total 59412
+-rw-r--r-- 1 root root 30546128 Jun  9 17:11 kernel-2.6.32-504.23.4.el6.x86_64.rpm
+-rw-r--r-- 1 root root 15154360 Jun  9 17:20 kernel-firmware-2.6.32-504.23.4.el6.noarch.rpm
+-rw-r--r-- 1 root root 15131072 Jan 27 21:40 kernel-firmware-2.6.32-504.8.1.el6.noarch.rpm
+[root@hq-msk-gp-prd-sdw5 new.kernel.kernel-firmware.kmod-hpsa]#
+
+................................................................................
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# ssh sdw8
+Last login: Tue Jul  7 11:13:14 2015 from smdw
+[root@hq-msk-gp-prd-sdw8 ~]# mkdir -p ~/work/20150709-1453
+[root@hq-msk-gp-prd-sdw8 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.1 (Santiago)
+[root@hq-msk-gp-prd-sdw8 ~]# lsb_release
+LSB Version:    :core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch
+[root@hq-msk-gp-prd-sdw8 ~]# lsb_release -a
+LSB Version:    :core-4.0-amd64:core-4.0-noarch:graphics-4.0-amd64:graphics-4.0-noarch:printing-4.0-amd64:printing-4.0-noarch
+Distributor ID: RedHatEnterpriseServer
+Description:    Red Hat Enterprise Linux Server release 6.1 (Santiago)
+Release:        6.1
+Codename:       Santiago
+[root@hq-msk-gp-prd-sdw8 ~]# uname -a
+Linux sdw8 2.6.32-358.23.2.el6.x86_64 #1 SMP Sat Sep 14 05:32:37 EDT 2013 x86_64 x86_64 x86_64 GNU/Linux
+[root@hq-msk-gp-prd-sdw8 ~]#
+
+
+[root@hq-msk-gp-prd-sdw8 ~]# rpm -q kernel kernel-firmware kmod-hpsa
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-firmware-2.6.32-358.23.2.el6.noarch
+kmod-hpsa-3.4.4-125.rhel6u1.x86_64
+[root@hq-msk-gp-prd-sdw8 ~]# mkdir current.kernel.kernel-firmware.kmod-hpsa
+[root@hq-msk-gp-prd-sdw8 ~]# cd !$
+cd current.kernel.kernel-firmware.kmod-hpsa
+[root@hq-msk-gp-prd-sdw8 current.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kmod-hpsa-3.4.4-125.rhel6u1.x86_64
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+tcs-epel-6-x86_64                                                                                                                                                                    | 3.0 kB     00:00
+tcs-epel-6-x86_64/primary_db                                                                                                                                                         | 8.5 MB     00:00
+tcs-hp-hpsum                                                                                                                                                                         | 2.9 kB     00:00
+tcs-hp-spp                                                                                                                                                                           | 2.9 kB     00:00
+tcs-hp-spp/primary_db                                                                                                                                                                | 902 kB     00:00
+tcs-hp-stk                                                                                                                                                                           | 2.9 kB     00:00
+tcs-lldpad                                                                                                                                                                           | 2.9 kB     00:00
+tcs-ossec-2.7-x86_64                                                                                                                                                                 | 2.9 kB     00:00
+tcs-puppetlabs-el-6-dependencies-x86_64                                                                                                                                              | 2.9 kB     00:00
+tcs-puppetlabs-el-6-products-x86_64                                                                                                                                                  | 2.9 kB     00:00
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+tcs-remi-enterprise-6-remi-x86_64                                                                                                                                                    | 2.9 kB     00:00
+tcs-rhel-6.1-x86_64-iso                                                                                                                                                              | 3.8 kB     00:00
+tcs-rhel-x86_64-server-6                                                                                                                                                             | 3.0 kB     00:00
+tcs-rhel-x86_64-server-6/primary_db                                                                                                                                                  |  32 MB     00:00
+tcs-rhel-x86_64-server-optional-6                                                                                                                                                    | 3.0 kB     00:00
+tcs-rpmforge-redhat-el6-en-x86_64                                                                                                                                                    | 2.9 kB     00:00
+--> Running transaction check
+---> Package kmod-hpsa.x86_64 0:3.4.4-125.rhel6u1 will be reinstalled
+--> Finished Dependency Resolution
+kmod-hpsa-3.4.4-125.rhel6u1.x86_64.rpm                                                                                                                                               |  53 kB     00:00
+[root@hq-msk-gp-prd-sdw8 current.kernel.kernel-firmware.kmod-hpsa]#
+
+[root@hq-msk-gp-prd-sdw8 current.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel-2.6.32-358.23.2.el6.x86_64
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-358.23.2.el6 will be installed
+--> Finished Dependency Resolution
+kernel-2.6.32-358.23.2.el6.x86_64.rpm                                                                                                                                                |  26 MB     00:03
+[root@hq-msk-gp-prd-sdw8 current.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel-firmware-2.6.32-358.23.2.el6.noarch
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kernel-firmware.noarch 0:2.6.32-358.23.2.el6 will be reinstalled
+--> Finished Dependency Resolution
+kernel-firmware-2.6.32-358.23.2.el6.noarch.rpm                                                                                                                                       |  11 MB     00:01
+[root@hq-msk-gp-prd-sdw8 current.kernel.kernel-firmware.kmod-hpsa]#
+
+[root@hq-msk-gp-prd-sdw8 20150709-1453]# yumdownloader --resolve kmod-hpsa-3.4.10-120.rhel6u1.x86_64
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kmod-hpsa.x86_64 0:3.4.10-120.rhel6u1 will be installed
+--> Finished Dependency Resolution
+kmod-hpsa-3.4.10-120.rhel6u1.x86_64.rpm                                                                                                                                              |  57 kB     00:00
+[root@hq-msk-gp-prd-sdw8 20150709-1453]# ll
+total 68
+drwxr-xr-x 3 root root  4096 Jul  9 15:31 boot.backup
+drwxr-xr-x 2 root root  4096 Jul  9 15:28 current.kernel.kernel-firmware.kmod-hpsa
+-rw-r--r-- 1 root root 58676 Jun 11 17:08 kmod-hpsa-3.4.10-120.rhel6u1.x86_64.rpm
+[root@hq-msk-gp-prd-sdw8 20150709-1453]#
+
+................................................................................
+
+[root@hq-msk-gp-prd-sdw8 20150709-1453]# mkdir new.kernel.kernel-firmware.kmod-hpsa
+[root@hq-msk-gp-prd-sdw8 20150709-1453]# cd !$
+cd new.kernel.kernel-firmware.kmod-hpsa
+[root@hq-msk-gp-prd-sdw8 new.kernel.kernel-firmware.kmod-hpsa]# yumdownloader --resolve kernel
+Loaded plugins: product-id, rhnplugin
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+--> Running transaction check
+---> Package kernel.x86_64 0:2.6.32-504.23.4.el6 will be installed
+--> Processing Dependency: kernel-firmware >= 2.6.32-504.23.4.el6 for package: kernel-2.6.32-504.23.4.el6.x86_64
+--> Running transaction check
+---> Package kernel-firmware.noarch 0:2.6.32-358.23.2.el6 will be updated
+---> Package kernel-firmware.noarch 0:2.6.32-504.23.4.el6 will be an update
+--> Finished Dependency Resolution
+kernel-2.6.32-504.23.4.el6.x86_64.rpm                                                                                                                                                |  29 MB     00:02
+kernel-firmware-2.6.32-358.23.2.el6.noarch.rpm                                                                                                                                       |  11 MB     00:00
+kernel-firmware-2.6.32-504.23.4.el6.noarch.rpm                                                                                                                                       |  14 MB     00:01
+[root@hq-msk-gp-prd-sdw8 new.kernel.kernel-firmware.kmod-hpsa]# ll
+total 55844
+-rw-r--r-- 1 root root 30546128 Jun  9 17:11 kernel-2.6.32-504.23.4.el6.x86_64.rpm
+-rw-r--r-- 1 root root 11479544 Oct 16  2013 kernel-firmware-2.6.32-358.23.2.el6.noarch.rpm
+-rw-r--r-- 1 root root 15154360 Jun  9 17:20 kernel-firmware-2.6.32-504.23.4.el6.noarch.rpm
+[root@hq-msk-gp-prd-sdw8 new.kernel.kernel-firmware.kmod-hpsa]#
+
+................................................................................
+................................................................................
+................................................................................
+
+
+Thu Jul  9 16:28:28 MSK 2015
+[root@hq-msk-gp-prd-smdw ~]# for var1 in smdw ; do ssh ${var1} "( hostname ; echo -e '<RIBCL VERSION=\"2.0\"> <LOGIN USER_LOGIN=\"adminname\" PASSWORD=\"password\"> <RIB_INFO MODE=\"read\"> <GET_VM_STATUS DEVICE=\"CDROM\"/> </RIB_INFO> </LOGIN> </RIBCL>' | hponcfg -i )" ; done
+smdw
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; echo -e '<RIBCL VERSION=\"2.0\"> <LOGIN USER_LOGIN=\"adminname\" PASSWORD=\"password\"> <RIB_INFO MODE=\"read\"> <GET_VM_STATUS DEVICE=\"CDROM\"/> </RIB_INFO> </LOGIN> </RIBCL>' | hponcfg -i )" ; done
+mdw
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+smdw
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw1
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw2
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.85 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw3
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw4
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw5
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.85 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw6
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw7
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw8
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw9
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw10
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw11
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw12
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw13
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw14
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw15
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+sdw16
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="NO_BOOT"
+    WRITE_PROTECT="NO"
+    IMAGE_INSERTED="NO"
+    IMAGE_URL=""
+    />
+Script succeeded
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in smdw ; do ssh ${var1} "( hostname ; at 17:21 today <<< 'hponcfg -f /opt/TCS/scripts/hponcfg/hponcfg.ribcl.insert.spp.iso.image.xml' )" ; done
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; if \[ -f /opt/TCS/scripts/hponcfg/hponcfg.ribcl.insert.spp.iso.image.xml \] ; then at 9:30 tomorrow <<< 'hponcfg -f /opt/TCS/scripts/hponcfg/hponcfg.ribcl.insert.spp.iso.image.xml' ; else echo 'Error: File is absent.' ; fi )" ; done
+mdw
+job 1 at 2015-07-10 09:30
+smdw
+job 4 at 2015-07-10 09:30
+sdw1
+job 1 at 2015-07-10 09:30
+sdw2
+job 3 at 2015-07-10 09:30
+sdw3
+job 1 at 2015-07-10 09:30
+sdw4
+job 1 at 2015-07-10 09:30
+sdw5
+job 11 at 2015-07-10 09:30
+sdw6
+job 1 at 2015-07-10 09:30
+sdw7
+job 1 at 2015-07-10 09:30
+sdw8
+job 7 at 2015-07-10 09:30
+sdw9
+job 1 at 2015-07-10 09:30
+sdw10
+job 2 at 2015-07-10 09:30
+sdw11
+job 1 at 2015-07-10 09:30
+sdw12
+job 1 at 2015-07-10 09:30
+sdw13
+job 1 at 2015-07-10 09:30
+sdw14
+job 1 at 2015-07-10 09:30
+sdw15
+job 1 at 2015-07-10 09:30
+sdw16
+job 1 at 2015-07-10 09:30
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+
+
+Fri Jul 10 09:20:08 MSK 2015
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; dmidecode -t system | grep Serial\ Number | awk '{print \$3}'  )" ; done
+mdw
+CZ314824F5
+smdw
+CZ314824F9
+sdw1
+CZ31450H63
+sdw2
+CZ31450H6M
+sdw3
+CZ31450H6B
+sdw4
+CZ31450H5Y
+sdw5
+CZ31450H6V
+sdw6
+CZ23290BMZ
+sdw7
+CZ31450H6J
+sdw8
+CZ31450H6D
+sdw9
+CZ23290BN7
+sdw10
+CZ23290BNF
+sdw11
+CZ23290BNM
+sdw12
+CZ23290BND
+sdw13
+CZ23290BN5
+sdw14
+CZ23290BNB
+sdw15
+CZ23290BN3
+sdw16
+CZ31450H67
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; echo -e '<RIBCL VERSION=\"2.0\"> <LOGIN USER_LOGIN=\"adminname\" PASSWORD=\"password\"> <RIB_INFO MODE=\"read\"> <GET_VM_STATUS DEVICE=\"CDROM\"/> </RIB_INFO> </LOGIN> </RIBCL>' | hponcfg -i )" ; done
+mdw
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+smdw
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw1
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw2
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.85 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw3
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw4
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw5
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.85 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw6
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw7
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw8
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw9
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw10
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw11
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw12
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw13
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw14
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw15
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+sdw16
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 1.82 Device type = iLO 3 Driver name = hpilo
+<GET_VM_STATUS
+    VM_APPLET="DISCONNECTED"
+    DEVICE="CDROM"
+    BOOT_OPTION="BOOT_ONCE"
+    WRITE_PROTECT="YES"
+    IMAGE_INSERTED="YES"
+    IMAGE_URL="http://repo-linux.tcsbank.ru/others/hp.com/spp/current_hp_spp.iso"
+    />
+Script succeeded
+You have new mail in /var/spool/mail/root
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; mkdir -p /root/work/20150710-0938 )" ; done                                                                     mdw
+smdw
+sdw1
+sdw2
+sdw3
+sdw4
+sdw5
+sdw6
+sdw7
+sdw8
+sdw9
+sdw10
+sdw11
+sdw12
+sdw13
+sdw14
+sdw15
+sdw16
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; /opt/hp/hpdiags/hpdiags -v 5 -p -o /root/work/20150710-0938/20150710-0940.hpdiag.\$(hostname).txt )" ; done     mdw
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+smdw
+HP Insight Diagnostics Version 9.4.0.4710A (x86_64)
+Copyright (c) 2002, 2012 Hewlett-Packard Development Company, L.P.
+System configuration capture completed (100%)
+sdw1
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw2
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System co^CKilled by signal 2.unning (93%)
+sdw3
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw4
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw5
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configurati^CKilled by signal 2.3%)
+sdw6
+HP Insight Diagnostics Version 9.1.0.4458A (x86_64)
+Copyright (c) 2002, 2012 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+^CKilled by signal 2.
+sdw7
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw8
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw9
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+^CKilled by signal 2.
+sdw10
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw11
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw12
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw13
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+sdw14
+bash: /opt/hp/hpdiags/hpdiags: No such file or directory
+^C
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; yum install hpdiags )" ; done
+mdw
+Loaded plugins: downloadonly, product-id, subscription-manager
+Updating Red Hat repositories.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package hpdiags.x86_64 0:10.14.1575-1559 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+================================================================================
+ Package        Arch          Version                   Repository         Size
+================================================================================
+Installing:
+ hpdiags        x86_64        10.14.1575-1559           tcs-hp-spp         17 M
+
+Transaction Summary
+================================================================================
+Install       1 Package(s)
+
+Total download size: 17 M
+Installed size: 86 M
+y
+Is this ok [y/N]: Downloading Packages:
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : hpdiags-10.14.1575-1559.x86_64                               1/1
+
+Stopping hpsmhd: [  OK  ]
+Starting hpsmhd: AH00558: hpsmhd: Could not reliably determine the server's fully qualified domain name, using 192.168.251.10. Set the 'ServerName' directive globally to suppress this message
+[  OK  ]
+Installed products updated.
+duration: 412(ms)
+
+Installed:
+  hpdiags.x86_64 0:10.14.1575-1559
+
+Complete!
+smdw
+Loaded plugins: product-id, rhnplugin, subscription-manager
+Updating Red Hat repositories.
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package hpdiags.x86_64 0:9.4.0-562 will be updated
+---> Package hpdiags.x86_64 0:10.14.1575-1559 will be an update
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+================================================================================
+ Package        Arch          Version                   Repository         Size
+================================================================================
+Updating:
+ hpdiags        x86_64        10.14.1575-1559           tcs-hp-spp         17 M
+
+Transaction Summary
+================================================================================
+Upgrade       1 Package(s)
+
+Total download size: 17 M
+y
+Is this ok [y/N]: Downloading Packages:
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Updating   : hpdiags-10.14.1575-1559.x86_64                               1/2
+
+Stopping hpsmhd: [  OK  ]
+Starting hpsmhd: AH00558: hpsmhd: Could not reliably determine the server's fully qualified domain name, using 192.168.251.9. Set the 'ServerName' directive globally to suppress this message
+[  OK  ]
+  Cleanup    : hpdiags-9.4.0-562.x86_64                                     2/2Installed products updated.
+
+duration: 1481(ms)
+
+Updated:
+  hpdiags.x86_64 0:10.14.1575-1559
+
+Complete!
+sdw1
+Loaded plugins: product-id, rhnplugin, subscription-manager
+Updating Red Hat repositories.
+This system is not registered with RHN.
+RHN Satellite or RHN Classic support will be disabled.
+Not using downloaded repomd.xml because it is older than what we have:
+  Current   : Thu Oct 16 17:51:53 2014
+  Downloaded: Tue Aug 19 12:48:55 2014
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package hpdiags.x86_64 0:10.14.1575-1559 will be installed
+--> Processing Dependency: hpsmh for package: hpdiags-10.14.1575-1559.x86_64
+--> Running transaction check
+---> Package hpsmh.x86_64 0:7.4.0-13 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+================================================================================
+ Package        Arch          Version                   Repository         Size
+================================================================================
+Installing:
+ hpdiags        x86_64        10.14.1575-1559           tcs-hp-spp         17 M
+Installing for dependencies:
+ hpsmh          x86_64        7.4.0-13                  tcs-hp-spp         12 M
+
+Transaction Summary
+================================================================================
+Install       2 Package(s)
+
+Total download size: 29 M
+Installed size: 131 M
+y
+Is this ok [y/N]: Downloading Packages:
+--------------------------------------------------------------------------------
+Total                                            70 MB/s |  29 MB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing : hpsmh-7.4.0-13.x86_64                                        1/2^CKilled by signal 2.
+sdw2
+^CKilled by signal 2.
+sdw3
+^CKilled by signal 2.
+sdw4
+^CKilled by signal 2.
+^CKilled by signal 2.
+sdw6
+^CKilled by signal 2.
+sdw7
+^CKilled by signal 2.
+sdw8
+^CKilled by signal 2.
+sdw9
+^CKilled by signal 2.
+^CKilled by signal 2.
+^C
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; yum -y install hpdiags )" ; done
+
+................................................................................
+
+
+Fri Jul 10 12:14:41 MSK 2015
+
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; uptime )" ; done
+mdw
+ 11:52:43 up 2 min,  1 user,  load average: 0.40, 0.21, 0.08
+Connection to mdw closed.
+smdw
+ 11:52:43 up 3 min,  2 users,  load average: 0.24, 0.22, 0.10
+Connection to smdw closed.
+sdw1
+ 11:52:43 up 3 min,  1 user,  load average: 0.09, 0.14, 0.06
+Connection to sdw1 closed.
+sdw2
+ 11:52:44 up 9 min,  1 user,  load average: 0.12, 0.44, 0.31
+Connection to sdw2 closed.
+sdw3
+ 11:52:44 up 2 min,  1 user,  load average: 0.05, 0.07, 0.02
+Connection to sdw3 closed.
+sdw4
+ 11:52:44 up 2 min,  1 user,  load average: 0.18, 0.10, 0.04
+Connection to sdw4 closed.
+sdw5
+ 11:52:44 up 10 min,  1 user,  load average: 0.08, 0.50, 0.36
+Connection to sdw5 closed.
+sdw6
+ 11:52:44 up 7 min,  1 user,  load average: 0.12, 0.58, 0.47
+Connection to sdw6 closed.
+sdw7
+ 11:52:44 up 5 min,  1 user,  load average: 0.01, 0.12, 0.07
+Connection to sdw7 closed.
+sdw8
+ 11:52:44 up 2 min,  1 user,  load average: 0.16, 0.14, 0.06
+Connection to sdw8 closed.
+sdw9
+ 11:52:45 up 7 min,  1 user,  load average: 0.02, 1.08, 0.91
+Connection to sdw9 closed.
+sdw10
+ 11:52:45 up 7 min,  1 user,  load average: 0.06, 0.09, 0.06
+Connection to sdw10 closed.
+sdw11
+ 11:52:45 up 15 min,  1 user,  load average: 0.05, 0.11, 0.25
+Connection to sdw11 closed.
+sdw12
+ 11:52:45 up 7 min,  1 user,  load average: 0.16, 0.88, 0.72
+Connection to sdw12 closed.
+sdw13
+ 11:52:45 up 19 min,  1 user,  load average: 0.03, 0.03, 0.00
+Connection to sdw13 closed.
+sdw14
+ 11:52:45 up 7 min,  1 user,  load average: 0.04, 0.09, 0.07
+Connection to sdw14 closed.
+sdw15
+ 11:52:45 up 16 min,  1 user,  load average: 0.07, 0.04, 0.01
+Connection to sdw15 closed.
+sdw16
+ 11:52:45 up 2 min,  1 user,  load average: 0.07, 0.08, 0.03
+Connection to sdw16 closed.
+[root@hq-msk-gp-prd-smdw ~]#
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; /opt/hp/hpdiags/hpdiags -v 5 -p -o /root/work/20150710-0938/20150710-1155.hpdiag.\$(hostname).txt )" ; done
+mdw
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+smdw
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw1
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw2
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw3
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw4
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw5
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw6
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw7
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw8
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw9
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw10
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw11
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw12
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw13
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw14
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw15
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw16
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+You have new mail in /var/spool/mail/root
+[root@hq-msk-gp-prd-smdw ~]#
+
+
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; /usr/sbin/hpssacli ctrl all diag file=/var/log/hpssacli.diag.zip )" ; done
+mdw
+
+   Generating diagnostic report...done
+
+smdw
+
+   Generating diagnostic report...done
+
+sdw1
+
+   Generating diagnostic report...done
+
+sdw2
+
+   Generating diagnostic report...done
+
+sdw3
+
+   Generating diagnostic report...done
+
+sdw4
+
+   Generating diagnostic report...done
+
+sdw5
+
+   Generating diagnostic report...done
+
+sdw6
+
+   Generating diagnostic report...done
+
+sdw7
+
+   Generating diagnostic report...done
+
+sdw8
+
+   Generating diagnostic report...done
+
+sdw9
+
+   Generating diagnostic report...done
+
+sdw10
+
+   Generating diagnostic report...done
+
+sdw11
+
+   Generating diagnostic report...done
+
+sdw12
+
+   Generating diagnostic report...done
+
+sdw13
+
+   Generating diagnostic report...done
+
+sdw14
+
+   Generating diagnostic report...done
+
+sdw15
+
+   Generating diagnostic report...done
+
+sdw16
+
+   Generating diagnostic report...done
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; unzip -p /var/log/hpssacli.diag.zip ADUReport.xml | grep -E -e 'Device deviceType=\"ArrayController\"' -e 'id=\"RAM Firmware Revision\"' -e 'id=\"ROM Firmwar Revision\"' )" ; done
+mdw
+   <Device deviceType="ArrayController" id="AC:5001438014D67030" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+smdw
+   <Device deviceType="ArrayController" id="AC:500143801690FBA0" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw1
+   <Device deviceType="ArrayController" id="AC:PACCRID11320D4X" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:5001438014D78910" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw2
+   <Device deviceType="ArrayController" id="AC:PACCRID11320CYJ" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:50014380168FC460" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw3
+   <Device deviceType="ArrayController" id="AC:PACCRID11320D0W" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:5001438014D73D40" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw4
+   <Device deviceType="ArrayController" id="AC:PACCRID11320CZD" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:5001438014D73190" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw5
+   <Device deviceType="ArrayController" id="AC:PACCRID11320D24" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:5001438014D78F00" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw6
+   <Device deviceType="ArrayController" id="AC:0014380264479B0" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0ARH4W2FM" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw7
+   <Device deviceType="ArrayController" id="AC:PACCRID10381DPX" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:5001438016901880" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw8
+   <Device deviceType="ArrayController" id="AC:PACCRID11122CQ8" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:5001438014D78990" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw9
+   <Device deviceType="ArrayController" id="AC:00143803239E7F0" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0ARH4W2UC" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw10
+   <Device deviceType="ArrayController" id="AC:0014380264941B0" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0ARH5K03G" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw11
+   <Device deviceType="ArrayController" id="AC:001438026447430" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.34"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0ARH4W29Z" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw12
+   <Device deviceType="ArrayController" id="AC:001438025C29B70" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0ARH4W2TW" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw13
+   <Device deviceType="ArrayController" id="AC:0014380264FBFD0" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.34"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0BRH6B0NA" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.34"/>
+sdw14
+   <Device deviceType="ArrayController" id="AC:001438026489870" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0ARH4W2U4" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+sdw15
+   <Device deviceType="ArrayController" id="AC:00143802643E3D0" marketingName="Smart Array P420i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.34"/>
+   <Device deviceType="ArrayController" id="AC:PDSXK0ARH4W3MG" marketingName="Smart Array P420 in slot 2">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.34"/>
+sdw16
+   <Device deviceType="ArrayController" id="AC:PACCR9SZ0KJ4" marketingName="Smart Array P410 in slot 1">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+   <Device deviceType="ArrayController" id="AC:5001438014D7A9C0" marketingName="Smart Array P410i in Embedded Slot">
+         <MetaProperty id="RAM Firmware Revision" size="4" type="char []" value="6.64"/>
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in sdw11 sdw13 sdw15 ; do ssh ${var1} "( hostname ; hponcfg -f /opt/TCS/scripts/hponcfg/hponcfg.ribcl.insert.spp.iso.image.xml )" ; done                                   sdw11
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+Script succeeded
+sdw13
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+Script succeeded
+sdw15
+HP Lights-Out Online Configuration utility
+Version 4.3.0 Date 12/10/2013 (c) Hewlett-Packard Company, 2014
+Firmware Revision = 2.10 Device type = iLO 4 Driver name = hpilo
+Script succeeded
+[root@hq-msk-gp-prd-smdw ~]#
+
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in sdw11 sdw13 sdw15 ; do ssh ${var1} "( hostname ; shutdown -r now )" ; done
+sdw11
+sdw13
+sdw15
+[root@hq-msk-gp-prd-smdw ~]#
+
+
+
+[root@hq-msk-gp-prd-smdw ~]# ssh sdw11
+Last login: Fri Jul 10 11:52:45 2015 from smdw
+[root@hq-msk-gp-prd-sdw11 ~]# exit
+logout
+Connection to sdw11 closed.
+[root@hq-msk-gp-prd-smdw ~]# ssh sdw13
+Last login: Fri Jul 10 11:52:45 2015 from smdw
+[root@hq-msk-gp-prd-sdw13 ~]# exit
+logout
+Connection to sdw13 closed.
+[root@hq-msk-gp-prd-smdw ~]# ssh sdw15
+Last login: Fri Jul 10 11:52:45 2015 from smdw
+[root@hq-msk-gp-prd-sdw15 ~]# exit
+logout
+Connection to sdw15 closed.
+[root@hq-msk-gp-prd-smdw ~]# for var1 in sdw11 sdw13 sdw15 ; do ssh ${var1} "( hostname ; hpssacli controller all show detail | grep -i firmware )" ; done
+sdw11
+   Firmware Version: 6.64
+   Firmware Version: 6.64
+sdw13
+   Firmware Version: 6.64
+   Firmware Version: 6.64
+sdw15
+   Firmware Version: 6.64
+   Firmware Version: 6.64
+[root@hq-msk-gp-prd-smdw ~]#
+
+
+................................................................................
+
+#	Updating hpsa on sdw5.
+
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# rpm -Uvh kmod-hpsa-3.4.10-120.rhel6u1.x86_64.rpm
+warning: kmod-hpsa-3.4.10-120.rhel6u1.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID b1275ea3: NOKEY
+Preparing...                ########################################### [100%]
+   1:kmod-hpsa              ########################################### [100%]
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# mkdir initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# cd !$
+cd initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236]# cp /boot/initramfs-2.6.32-504.8.1.el6.x86_64.img .
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236]#
+
+
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236]# uname -a
+Linux sdw5 2.6.32-504.8.1.el6.x86_64 #1 SMP Fri Dec 19 12:09:25 EST 2014 x86_64 x86_64 x86_64 GNU/Linux
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236]# zcat ./initramfs-2.6.32-504.8.1.el6.x86_64.img | cpio -idm
+94594 blocks
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236]# find . -name hpsa*
+./lib/modules/2.6.32-504.8.1.el6.x86_64/weak-updates/hpsa
+./lib/modules/2.6.32-504.8.1.el6.x86_64/weak-updates/hpsa/hpsa.ko
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236]#
+
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1236]# cd ..
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# cd current.kernel.kernel-firmware.kmod-hpsa/
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# rpm -ivh --replacepkgs kernel-2.6.32-504.8.1.el6.x86_64.rpm
+Preparing...                ########################################### [100%]
+   1:kernel                 ########################################### [100%]
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]#
+
+[root@hq-msk-gp-prd-sdw5 current.kernel.kernel-firmware.kmod-hpsa]# cd ..
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# mkdir initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1240
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# cd !$
+cd initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1240
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1240]# cp /boot/initramfs-2.6.32-504.8.1.el6.x86_64.img .
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1240]# zcat ./initramfs-2.6.32-504.8.1.el6.x86_64.img | cpio -idm
+94594 blocks
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1240]# find . -name hpsa*
+./lib/modules/2.6.32-504.8.1.el6.x86_64/weak-updates/hpsa
+./lib/modules/2.6.32-504.8.1.el6.x86_64/weak-updates/hpsa/hpsa.ko
+[root@hq-msk-gp-prd-sdw5 initramfs-2.6.32-504.8.1.el6.x86_64.img.20150710-1240]#
+
+
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# ls -Alh /boot
+total 54M
+-rw-r--r--  1 root root 102K Sep 14  2013 config-2.6.32-358.23.2.el6.x86_64
+-rw-r--r--  1 root root 104K Dec 19  2014 config-2.6.32-504.8.1.el6.x86_64
+drwxr-xr-x. 3 root root 4.0K Sep  5  2011 efi
+drwxr-xr-x. 2 root root 4.0K Jul 10 12:39 grub
+-rw-r--r--  1 root root  16M Jul 10 12:33 initramfs-2.6.32-358.23.2.el6.x86_64.img
+-rw-r--r--  1 root root  16M Jul 10 12:39 initramfs-2.6.32-504.8.1.el6.x86_64.img
+-rw-r--r--  1 root root 4.7M Aug  3  2014 initrd-2.6.32-358.23.2.el6.x86_64kdump.img
+-rw-r--r--  1 root root 5.0M Mar  5 12:08 initrd-2.6.32-504.8.1.el6.x86_64kdump.img
+drwx------. 2 root root  16K Sep  5  2011 lost+found
+-rw-r--r--  1 root root 182K Sep 14  2013 symvers-2.6.32-358.23.2.el6.x86_64.gz
+-rw-r--r--  1 root root 196K Dec 19  2014 symvers-2.6.32-504.8.1.el6.x86_64.gz
+-rw-r--r--  1 root root 2.3M Sep 14  2013 System.map-2.6.32-358.23.2.el6.x86_64
+-rw-r--r--  1 root root 2.5M Dec 19  2014 System.map-2.6.32-504.8.1.el6.x86_64
+-rwxr-xr-x  1 root root 3.9M Sep 14  2013 vmlinuz-2.6.32-358.23.2.el6.x86_64
+-rw-r--r--  1 root root  171 Sep 14  2013 .vmlinuz-2.6.32-358.23.2.el6.x86_64.hmac
+-rwxr-xr-x  1 root root 4.0M Dec 19  2014 vmlinuz-2.6.32-504.8.1.el6.x86_64
+-rw-r--r--  1 root root  170 Dec 19  2014 .vmlinuz-2.6.32-504.8.1.el6.x86_64.hmac
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# ls -Alh ./boot
+total 54M
+-rw-r--r-- 1 root root 102K Jul  9 14:55 config-2.6.32-358.23.2.el6.x86_64
+-rw-r--r-- 1 root root 104K Jul  9 14:55 config-2.6.32-504.8.1.el6.x86_64
+drwxr-xr-x 3 root root 4.0K Jul  9 14:55 efi
+drwxr-xr-x 2 root root 4.0K Jul  9 14:55 grub
+-rw-r--r-- 1 root root  16M Jul  9 14:55 initramfs-2.6.32-358.23.2.el6.x86_64.img
+-rw-r--r-- 1 root root  16M Jul  9 14:55 initramfs-2.6.32-504.8.1.el6.x86_64.img
+-rw-r--r-- 1 root root 4.7M Jul  9 14:55 initrd-2.6.32-358.23.2.el6.x86_64kdump.img
+-rw-r--r-- 1 root root 5.0M Jul  9 14:55 initrd-2.6.32-504.8.1.el6.x86_64kdump.img
+drwx------ 2 root root 4.0K Jul  9 14:55 lost+found
+-rw-r--r-- 1 root root 182K Jul  9 14:55 symvers-2.6.32-358.23.2.el6.x86_64.gz
+-rw-r--r-- 1 root root 196K Jul  9 14:55 symvers-2.6.32-504.8.1.el6.x86_64.gz
+-rw-r--r-- 1 root root 2.3M Jul  9 14:55 System.map-2.6.32-358.23.2.el6.x86_64
+-rw-r--r-- 1 root root 2.5M Jul  9 14:55 System.map-2.6.32-504.8.1.el6.x86_64
+-rwxr-xr-x 1 root root 3.9M Jul  9 14:55 vmlinuz-2.6.32-358.23.2.el6.x86_64
+-rw-r--r-- 1 root root  171 Jul  9 14:55 .vmlinuz-2.6.32-358.23.2.el6.x86_64.hmac
+-rwxr-xr-x 1 root root 4.0M Jul  9 14:55 vmlinuz-2.6.32-504.8.1.el6.x86_64
+-rw-r--r-- 1 root root  170 Jul  9 14:55 .vmlinuz-2.6.32-504.8.1.el6.x86_64.hmac
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# rpm -q kernel kernel-firmware kmod-hpsa
+kernel-2.6.32-358.23.2.el6.x86_64
+kernel-2.6.32-504.8.1.el6.x86_64
+kernel-firmware-2.6.32-504.8.1.el6.noarch
+kmod-hpsa-3.4.10-120.rhel6u1.x86_64
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.1 (Santiago)
+[root@hq-msk-gp-prd-sdw5 20150709-1453]# uname -a
+Linux sdw5 2.6.32-504.8.1.el6.x86_64 #1 SMP Fri Dec 19 12:09:25 EST 2014 x86_64 x86_64 x86_64 GNU/Linux
+[root@hq-msk-gp-prd-sdw5 20150709-1453]#
+
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; date )" ; done                                                                                                       mdw
+Fri Jul 10 13:27:28 MSK 2015
+smdw
+Fri Jul 10 13:27:28 MSK 2015
+sdw1
+Fri Jul 10 13:27:28 MSK 2015
+sdw2
+Fri Jul 10 13:27:28 MSK 2015
+sdw3
+Fri Jul 10 13:27:28 MSK 2015
+sdw4
+Fri Jul 10 13:27:28 MSK 2015
+sdw5
+Fri Jul 10 13:27:28 MSK 2015
+sdw6
+Fri Jul 10 13:27:28 MSK 2015
+sdw7
+Fri Jul 10 13:27:28 MSK 2015
+sdw8
+Fri Jul 10 13:27:28 MSK 2015
+sdw9
+Fri Jul 10 13:27:28 MSK 2015
+sdw10
+Fri Jul 10 13:27:28 MSK 2015
+sdw11
+Fri Jul 10 13:27:28 MSK 2015
+sdw12
+Fri Jul 10 13:27:29 MSK 2015
+sdw13
+Fri Jul 10 13:27:29 MSK 2015
+sdw14
+Fri Jul 10 13:27:29 MSK 2015
+sdw15
+Fri Jul 10 13:27:29 MSK 2015
+sdw16
+Fri Jul 10 13:27:29 MSK 2015
+[root@hq-msk-gp-prd-smdw ~]#
+[root@hq-msk-gp-prd-smdw ~]#
+[root@hq-msk-gp-prd-smdw ~]# for var1 in sdw11 sdw13 sdw15 ; do ssh ${var1} "( hostname ; /opt/hp/hpdiags/hpdiags -v 5 -p -o /root/work/20150710-0938/20150710-1332.hpdiag.\$(hostname).txt )" ; done
+sdw11
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw13
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+sdw15
+HP Insight Diagnostics Version 10.14.1575A (x86_64)
+Copyright (c) 2002, 2013 Hewlett-Packard Development Company, L.P.
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 386), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+Cannot open /etc/hba.conf
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+hpdiagstc: /opt/boost_1_38_0/include/boost/shared_ptr.hpp:419: T* boost::shared_ptr< <template-parameter-1-1> >::operator->() const [with T = dbg::DebugStreamer]: Assertion `px != 0' failed.
+System configuration capture completed (100%)
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+
+................................................................................
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in sdw11 sdw13 sdw15 ; do ssh ${var1} "( hostname ;  sed -n '/^Firmware/,/^Operating System/p' /root/work/20150710-0938/20150710-1332.hpdiag.\$(hostname).txt > /root/work/20150710-0938/20150710-1332.hpdiag.\$(hostname).firmware.txt  )" ; done
+sdw15
+[root@hq-msk-gp-prd-smdw ~]#
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..10} sdw12 sdw14 sdw16 ; do ssh ${var1} "( hostname ; sed -n '/^Firmware/,/^Operating System/p' /root/work/20150710-0938/20150710-0940.hpdiag.\$(hostname).txt > /root/work/20150710-0938/20150710-0940.hpdiag.\$(hostname).firmware.txt  )" ; done
+mdw
+smdw
+sdw1
+sdw2
+sdw3
+sdw4
+sdw5
+sdw6
+sdw7
+sdw8
+sdw9
+sdw10
+sdw12
+sdw14
+sdw16
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..10} sdw12 sdw14 sdw16 ; do ssh ${var1} "( hostname ; sed -n '/^Firmware/,/^Operating System/p' /root/work/20150710-0938/20150710-1155.hpdiag.\$(hostname).txt > /root/work/20150710-0938/20150710-1155.hpdiag.\$(hostname).firmware.txt  )" ; done
+mdw
+smdw
+sdw1
+sdw2
+sdw3
+sdw4
+sdw5
+sdw6
+sdw7
+sdw8
+sdw9
+sdw10
+sdw12
+sdw14
+sdw16
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh ${var1} "( hostname ; ls -A1 /root/work/20150710-0938/  )" ; done                                                                          mdw
+20150710-0940.hpdiag.mdw.firmware.txt
+20150710-0940.hpdiag.mdw.txt
+20150710-1155.hpdiag.mdw.firmware.txt
+20150710-1155.hpdiag.mdw.txt
+smdw
+20150710-0940.hpdiag.smdw.firmware.txt
+20150710-0940.hpdiag.smdw.txt
+20150710-1155.hpdiag.smdw.firmware.txt
+20150710-1155.hpdiag.smdw.txt
+sdw1
+20150710-0940.hpdiag.sdw1.firmware.txt
+20150710-0940.hpdiag.sdw1.txt
+20150710-1155.hpdiag.sdw1.firmware.txt
+20150710-1155.hpdiag.sdw1.txt
+sdw2
+20150710-0940.hpdiag.sdw2.firmware.txt
+20150710-0940.hpdiag.sdw2.txt
+20150710-1155.hpdiag.sdw2.firmware.txt
+20150710-1155.hpdiag.sdw2.txt
+sdw3
+20150710-0940.hpdiag.sdw3.firmware.txt
+20150710-0940.hpdiag.sdw3.txt
+20150710-1155.hpdiag.sdw3.firmware.txt
+20150710-1155.hpdiag.sdw3.txt
+sdw4
+20150710-0940.hpdiag.sdw4.firmware.txt
+20150710-0940.hpdiag.sdw4.txt
+20150710-1155.hpdiag.sdw4.firmware.txt
+20150710-1155.hpdiag.sdw4.txt
+sdw5
+20150710-0940.hpdiag.sdw5.firmware.txt
+20150710-0940.hpdiag.sdw5.txt
+20150710-1155.hpdiag.sdw5.firmware.txt
+20150710-1155.hpdiag.sdw5.txt
+sdw6
+20150710-0940.hpdiag.sdw6.firmware.txt
+20150710-0940.hpdiag.sdw6.txt
+20150710-1155.hpdiag.sdw6.firmware.txt
+20150710-1155.hpdiag.sdw6.txt
+sdw7
+20150710-0940.hpdiag.sdw7.firmware.txt
+20150710-0940.hpdiag.sdw7.txt
+20150710-1155.hpdiag.sdw7.firmware.txt
+20150710-1155.hpdiag.sdw7.txt
+sdw8
+20150710-0940.hpdiag.sdw8.firmware.txt
+20150710-0940.hpdiag.sdw8.txt
+20150710-1155.hpdiag.sdw8.firmware.txt
+20150710-1155.hpdiag.sdw8.txt
+sdw9
+20150710-0940.hpdiag.sdw9.firmware.txt
+20150710-0940.hpdiag.sdw9.txt
+20150710-1155.hpdiag.sdw9.firmware.txt
+20150710-1155.hpdiag.sdw9.txt
+sdw10
+20150710-0940.hpdiag.sdw10.firmware.txt
+20150710-0940.hpdiag.sdw10.txt
+20150710-1155.hpdiag.sdw10.firmware.txt
+20150710-1155.hpdiag.sdw10.txt
+sdw11
+20150710-0940.hpdiag.sdw11.txt
+20150710-1155.hpdiag.sdw11.txt
+20150710-1332.hpdiag.sdw11.firmware.txt
+20150710-1332.hpdiag.sdw11.txt
+sdw12
+20150710-0940.hpdiag.sdw12.firmware.txt
+20150710-0940.hpdiag.sdw12.txt
+20150710-1155.hpdiag.sdw12.firmware.txt
+20150710-1155.hpdiag.sdw12.txt
+sdw13
+20150710-0940.hpdiag.sdw13.txt
+20150710-1155.hpdiag.sdw13.txt
+20150710-1332.hpdiag.sdw13.firmware.txt
+20150710-1332.hpdiag.sdw13.txt
+sdw14
+20150710-0940.hpdiag.sdw14.firmware.txt
+20150710-0940.hpdiag.sdw14.txt
+20150710-1155.hpdiag.sdw14.firmware.txt
+20150710-1155.hpdiag.sdw14.txt
+sdw15
+20150710-0940.hpdiag.sdw15.txt
+20150710-1155.hpdiag.sdw15.txt
+20150710-1332.hpdiag.sdw15.firmware.txt
+20150710-1332.hpdiag.sdw15.txt
+sdw16
+20150710-0940.hpdiag.sdw16.firmware.txt
+20150710-0940.hpdiag.sdw16.txt
+20150710-1155.hpdiag.sdw16.firmware.txt
+20150710-1155.hpdiag.sdw16.txt
+[root@hq-msk-gp-prd-smdw ~]# for var1 in sdw11 sdw13 sdw15 ; do ssh ${var1} "( hostname ;  sed -n '/^Firmware/,/^Operating System/p' /root/work/20150710-0938/20150710-0940.hpdiag.\$(hostname).txt > /root/work/20150710-0938/20150710-0940.hpdiag.\$(hostname).firmware.txt  )" ; done
+sdw11
+sdw13
+sdw15
+[root@hq-msk-gp-prd-smdw ~]#
+
+
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in sdw11 sdw13 sdw15 ; do ssh ${var1} "( hostname ; sdiff -l -a -w 100 /root/work/20150710-0938/20150710-0940.hpdiag.\$(hostname).firmware.txt /root/work/20150710-0938/20150710-1332.hpdiag.\$(hostname).firmware.txt )" ; done
+sdw11
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD5              (
+Operating System                              (
+sdw13
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/05/2013        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/05/13       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD5              (
+Operating System                              (
+sdw15
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD5              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@hq-msk-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..10} sdw12 sdw14 sdw16 ; do ssh ${var1} "( hostname ; sdiff -l -a -w 100 /root/work/20150710-0938/20150710-0940.hpdiag.\$(hostname).firmware.txt /root/work/20150710-0938/20150710-1155.hpdiag.\$(hostname).firmware.txt  )" ; done
+mdw
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 1: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 1: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 6, Slot 3: HP Ethern (
+         Firmware revision: 7.10.72           (
+      Network Controller 7, Slot 3: HP Ethern (
+         Firmware revision: 7.10.72           (
+   Integrated Lights Out                      <
+      Firmware Version: 1.82                  <
+      Firmware Date: 1/15/2015                <
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+Operating System                              (
+smdw
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 6, Slot 1: HP NC550S |       Network Controller 4, Slot 1: HP NC550S
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 7, Slot 1: HP NC550S |       Network Controller 5, Slot 1: HP NC550S
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 4, Slot 3: HP CN1000 |       Network Controller 6, Slot 3: HP CN1000
+         Firmware revision: 4.18.4            (
+      Network Controller 5, Slot 3: HP CN1000 |       Network Controller 7, Slot 3: HP CN1000
+         Firmware revision: 4.18.4            (
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+Operating System                              (
+sdw1
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+sdw2
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+   Integrated Lights Out                      (
+      Firmware Version: 1.85                  (
+      Firmware Date: 5/13/2015                (
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.64              (
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.64              (
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD8              (
+Operating System                              (
+sdw3
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+sdw4
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD0              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD7              |          Firmware Revision: HPD8
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+Operating System                              (
+sdw5
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+   Integrated Lights Out                      (
+      Firmware Version: 1.85                  (
+      Firmware Date: 5/13/2015                (
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.64              (
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.64              (
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD8              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD0              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+Operating System                              (
+sdw6
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw7
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 |       Power Management Controller Firmware: N
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+sdw8
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD7              |          Firmware Revision: HPDA
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD0              (
+Operating System                              (
+sdw9
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 08/02/2014        (
+      System ROM Bootblock: 03/05/2013        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/05/13       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw10
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw12
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/05/2013        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/05/13       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw14
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD5              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw16
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+[root@hq-msk-gp-prd-smdw ~]#
+
+................................................................................
+
+mdw
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 1: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 1: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 6, Slot 3: HP Ethern (
+         Firmware revision: 7.10.72           (
+      Network Controller 7, Slot 3: HP Ethern (
+         Firmware revision: 7.10.72           (
+   Integrated Lights Out                      <
+      Firmware Version: 1.82                  <
+      Firmware Date: 1/15/2015                <
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+Operating System                              (
+smdw
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 6, Slot 1: HP NC550S |       Network Controller 4, Slot 1: HP NC550S
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 7, Slot 1: HP NC550S |       Network Controller 5, Slot 1: HP NC550S
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 4, Slot 3: HP CN1000 |       Network Controller 6, Slot 3: HP CN1000
+         Firmware revision: 4.18.4            (
+      Network Controller 5, Slot 3: HP CN1000 |       Network Controller 7, Slot 3: HP CN1000
+         Firmware revision: 4.18.4            (
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+Operating System                              (
+sdw1
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+sdw2
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+   Integrated Lights Out                      (
+      Firmware Version: 1.85                  (
+      Firmware Date: 5/13/2015                (
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.64              (
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.64              (
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD8              (
+Operating System                              (
+sdw3
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, St HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+sdw4
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD0              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD7              |          Firmware Revision: HPD8
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+Operating System                              (
+sdw5
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.7         (
+   Integrated Lights Out                      (
+      Firmware Version: 1.85                  (
+      Firmware Date: 5/13/2015                (
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.64              (
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.64              (
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD8              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDA              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD0              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDA              (
+Operating System                              (
+sdw6
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+          (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+sdw8
+Firmware                                      (
+   System                                     (
+      BIOS Version: P67                       (
+      BIOS Release Date: 07/02/2013           (
+      Redundant System ROM: 12/02/2012        (
+      Power Management Controller Firmware: 1 (
+      System ROM Bootblock: 02/18/2010        (
+      Redundant ROM Bootblock: 02/18/10       (
+   Communication                              (
+      Network Controller 0, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 1, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 2, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 3, Slot 0: NC382i In (
+         Firmware revision: 5.2.3             (
+      Network Controller 4, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+      Network Controller 5, Slot 3: HP NC550S (
+         Firmware revision: 4.9.416.2         |          Firmware revision: 4.9.416.7
+   Integrated Lights Out                      (
+      Firmware Version: 1.82                  |       Firmware Version: 1.85
+      Firmware Date: 1/15/2015                |       Firmware Date: 5/13/2015
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 1: HP P (
+         FirmDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw10
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw11
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |     evision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw13
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/05/2013        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/05/13       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD0              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Fie Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD5              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD5              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System                              (
+sdw15
+Firmware                                      (
+   System                                     (
+      BIOS Version: P70                       (
+      BIOS Release Date: 08/02/2014           (
+      Redundant System ROM: 02/10/2014        (
+      System ROM Bootblock: 03/11/2012        (
+      Power Management Controller Firmware: 3 (
+      Power Management Controller Firmware Bo (
+      System Programmable Logic Device: 0x32  (
+      SAS Programmable Logic Device: 0xc      (
+      Server Platform Services (SPS) Firmware (
+      Redundant ROM Bootblock: 03/11/12       (
+   Communication                              (
+      Network Controller 0, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+      Network Controller 1, Slot 0: HP FlexFa (
+         Firmware revision: 10.2.477.10       |          Firmware revision: 10.5.65.21
+   Storage                                    (
+      HP Smart Array Controller, Slot 0: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      HP Smart Array Controller, Slot 2: HP P (
+         Firmware Revision: 6.34              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPDC              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD5              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPDC              (
+Operating System
+sd64
+      HP Smart Array Controller, Slot 1: HP P (
+         Firmware Revision: 6.62              |          Firmware Revision: 6.64
+      Hard Drive 1, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 2, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 3, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 4, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 5, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 6, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 7, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 8, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 9, Storage Controller in Slo (
+         Firmware Revision: HPD6              (
+      Hard Drive 10, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 11, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 12, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 13, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 14, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 15, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+      Hard Drive 16, Storage Controller in Sl (
+         Firmware Revision: HPD6              (
+Operating System                              (
+
+................................................................................
+................................................................................
+
+
+
+
+
+
+
+
+
+
+
+

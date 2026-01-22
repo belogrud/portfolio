@@ -1,0 +1,554 @@
+
+
+................................................................................
+
+
+
+From: Belogrud Sergey Vladimirovich
+Sent: Thursday, September 03, 2015 4:26 PM
+To: Nemchin Dmitriy Yuryevich
+Cc: unix-admins
+Subject: RE: Умирающий диск в дев Гринпламе
+
+Добрый день.
+
+На текущий момент вообще никаких ошибок на дисках не зафиксировано.
+
+
+
+
+[root@ds-gp-tst-sdw7 ~]# hpssacli controller all show config
+
+Smart Array P420 in Slot 2                (sn: PDSXK0ARH4W382)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 50014380276338EF)
+
+Smart Array P420i in Slot 0 (Embedded)    (sn: 001438026479FC0)
+
+
+   Internal Drive Cage at Port 1I, Box 2, OK
+
+   Internal Drive Cage at Port 2I, Box 2, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:2:1 (port 1I:box 2:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:2:2 (port 1I:box 2:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:2:3 (port 1I:box 2:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:2:4 (port 1I:box 2:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:2:5 (port 2I:box 2:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:2:6 (port 2I:box 2:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:2:7 (port 2I:box 2:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:2:8 (port 2I:box 2:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 5001438026479FCF)
+
+[root@ds-gp-tst-sdw7 ~]#
+
+Получается, что HP можно показать лишь картинку с горизонтальной линией…
+
+From: Nemchin Dmitriy Yuryevich
+Sent: Thursday, September 03, 2015 2:46 PM
+To: unix-admins
+Subject: Умирающий диск в дев Гринпламе
+
+Коллеги,
+
+У нас в дев контуре ГП на машине sdw7 есть подозрение на умирающий диск в массиве sdb.
+
+Можете глянуть?
+
+
+
+С уважением,
+
+Дмитрий Немчин
+Администратор DWH
+
+
+
+Ленинградское шоссе, дом 39А, стр. 1
+Москва, 125212, Россия
+Тел.: +7 (495) 648 1000 (вн. 2758)
+Моб.: +7 (926) 424 9974
+Факс: +7 (495) 645 5909
+E-mail: d.nemchin@tinkoff.ru
+www.tinkoff.ru
+
+This e-mail (including attachments) is confidential and is intended for the addressee(s) only. Unless you are the addressee, you may not read, copy, use or store this e-mail in any way, and delete immediately.  If you have received it in error, please contact ‘Tinkoff Credit Systems’ (Bank ‘TCS’ ZAO) on +7 495 648 1000.
+
+Это электронное письмо строго конфиденциально (включая все вложения). Данная информация предназначена только для получателя(ей). Если Вы не являетесь получателем, Вы не вправе каким бы то ни было образом читать, копировать, использовать или хранить данное сообщение. Просьба немедленно его удалить. Если Вы получили его по ошибке, пожалуйста свяжитесь с нашей компанией «Тинькофф Кредитные Системы» Банк (закрытое акционерное общество) по т. +7 495 648 1000.
+
+
+
+................................................................................
+
+
+
+[root@ds-gp-tst-sdw7 ~]# lsscsi -g
+[2:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sda   /dev/sg1
+[2:3:0:0]    storage HP       P420i            6.64  -         /dev/sg0
+[3:0:0:0]    disk    HP       LOGICAL VOLUME   6.64  /dev/sdb   /dev/sg3
+[3:3:0:0]    storage HP       P420             6.64  -         /dev/sg2
+[root@ds-gp-tst-sdw7 ~]#
+
+[root@ds-gp-tst-sdw7 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg2 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:        S0M2QE6Q0000B4459TAZ
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1712997914
+  Number of read and write commands whose size > segment size = 6341028
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     419035.722           0
+write:         0        0         0         0          0     311689.685           0
+Non-medium error count:       25
+
+Count: 1
+Serial number:                KNH8JB6F
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      699         0         0          0     433219.243           0
+write:         0        0         0         0          0     525315.196           0
+Non-medium error count:      753
+
+Count: 2
+Serial number:                KNH8JPLF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        2         0         0          0     469681.365           0
+write:         0        0         0         0          0     538614.919           0
+Non-medium error count:      754
+
+Count: 3
+Serial number:                KNHBWSVF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    38690         0         0          0     477324.532           0
+write:         0        0         0         0          0     524169.900           0
+Non-medium error count:      753
+
+Count: 4
+Serial number:                KNHBX3MF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    14603         0         0          0     508814.842           0
+write:         0        0         0         0          0     549240.494           0
+Non-medium error count:      753
+
+Count: 5
+Serial number:                KNHASPTF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       13         0         0          0     458109.912           0
+write:         0        0         0         0          0     519021.562           0
+Non-medium error count:      752
+
+Count: 6
+Serial number:                KNH9X5AF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     6443         0         0          0     439192.602           0
+write:         0        0         0         0          0     522308.282           0
+Non-medium error count:      753
+
+Count: 7
+Serial number:                KNH9JUWF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    12287         0         1          0     419013.627           0
+write:         0        0         0         0          0     520487.481           0
+Non-medium error count:      753
+[root@ds-gp-tst-sdw7 ~]#
+
+................................................................................
+
+[root@ds-gp-tst-sdw7 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+[root@ds-gp-tst-sdw7 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380p Gen8
+        Version: Not Specified
+        Serial Number: CZ23290BN6
+        UUID: 32333536-3030-5A43-3233-323930424E36
+        Wake-up Type: Power Switch
+        SKU Number: 653200-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-gp-tst-sdw7 ~]#
+
+................................................................................
+
+Degraded productivity on one server due to hard drive error
+Red Hat Enterprise Linux Server release 6.5 (Santiago)
+
+Здравствуйте.
+Наблюдается критичное ухудшение производительности прикладного ПО, работающего на сервере по причине ошибок на одном из HDD сервера.
+Необходимо заменить неисправный HDD на новый.
+При необходимости выгрузки дополнительных данных, пожалуйста сообщите реквизиты доступа к Вашему ftp-порталу.
+
+Присутствие инженера HP для замены детали не требуется.
+
+Доставить новую деталь можно по адресу:
+123060, г. Москва, ул. 1-й Волоколамский проезд, д.10, стр.1. (бизнес-центр Диапазон).
+
+................................................................................
+................................................................................
+
+Your case was successfully submitted. Please note your Case ID: 4652291076 for future reference.
+An email confirmation will be sent to the case contact. HP will contact you to begin work on your problem based on your contract or warranty coverage.    Clicking image will open a new window displaying help information.
+Add attachments to case:    Clicking image will open a new window displaying help information.
+Click this link to send attachment to hpsupport_global@hp.com(Maximum size is 5 MB)
+Case information
+Case ID:    4652291076
+Case title:
+Degraded productivity on one server due to hard drive error
+Severity    2-Critical Degraded
+Service Agreement ID:   107857825291
+Product serial number:  CZ23290BN6
+Product number: 653200-B21
+Submitted:  9/3/2015 4:08:17 PM
+Last updated:   9/3/2015 4:08:17 PM
+Source: Web
+Case status:    Received by HP
+Case details
+Operating system/version:   Red Hat Enterprise Linux Server release 6.5 (Santiago)
+Product:    HP ProLiant DL Servers
+Product vendor:
+Problem description:
+Здравствуйте.
+Наблюдается критичное ухудшение производительности прикладного ПО, работающего на сервере по причине ошибок на одном из HDD сервера.
+Необходимо заменить неисправный HDD на новый.
+При необходимости выгрузки дополнительных данных, пожалуйста сообщите реквизиты доступа к Вашему ftp-порталу.
+
+Присутствие инженера HP для замены детали не требуется.
+
+Доставить новую деталь можно по адресу:
+123060, г. Москва, ул. 1-й Волоколамский проезд, д.10, стр.1. (бизнес-центр Диапазон).
+Troubleshooting steps taken:
+[root@ds-gp-tst-sdw7 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+Manufacturer: HP
+Product Name: ProLiant DL380p Gen8
+Version: Not Specified
+Serial Number: CZ23290BN6
+UUID: 32333536-3030-5A43-3233-323930424E36
+Wake-up Type: Power Switch
+SKU Number: 653200-B21
+Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+Status: No errors detected
+
+[root@ds-gp-tst-sdw7 ~]#
+
+К сожалению, однозначно идентифицировать диск с ошибкой пока не удалось.
+Известно, что проблемный диск находится во втором слоте.
+[root@ds-gp-tst-sdw7 ~]# hpssacli controller slot=2 show status
+
+Smart Array P420 in Slot 2
+Controller Status: OK
+Cache Status: OK
+Battery/Capacitor Status: OK
+
+
+[root@ds-gp-tst-sdw7 ~]#
+
+Пожалуйста проанализируйте ADUReport и предложите диск на замену.
+Contact & equipment location information
+Contact
+Equipment
+First name: Sergey
+Last name:  Belogrud    Equipment contact phone:    +79150464278
+Phone number:   +74956481000 2173   Company name:   TCS Bank
+Alternate Phone:
++79150464278    Address line 1: 1-ый Волоколамский пр-д, д.10, к.1
+Email address:  belogrud@gmail.com  Address line 2: 16 building, 1 apartment
+City/Town:  Москва
+State/Province: Moscow region
+Zip/Postal code:    123040
+Country/Region: RUSSIA
+
+Contact (2)
+First name: Alexey
+Last name:  Leonov
+Phone number:   +74956481000 2536
+Alternate Phone:
++79096319617
+Email address:  a.leonov@tinkoff.ru
+
+................................................................................
+................................................................................
+
+
+#   Fri Sep  4 15:55:42 MSK 2015
+
+[root@ds-gp-tst-sdw7 ~]# hpacucli controller all show config detail | grep -e Slot -e Array -e physicaldrive -e Serial\ Number
+Smart Array P420 in Slot 2
+   Slot: 2
+   Serial Number: PDSXK0ARH4W382
+   Cache Serial Number: PBKUC0BRH4W2GN
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:1:1
+         Serial Number:         KNHBX3MF
+      physicaldrive 1I:1:2
+         Serial Number:         KNHASPTF
+      physicaldrive 1I:1:3
+         Serial Number:         KNH9X5AF
+      physicaldrive 1I:1:4
+         Serial Number:         KNH9JUWF
+      physicaldrive 2I:1:5
+         Serial Number: S0M2QE6Q0000B4459TAZ
+      physicaldrive 2I:1:6
+         Serial Number:         KNH8JB6F
+      physicaldrive 2I:1:7
+         Serial Number:         KNH8JPLF
+      physicaldrive 2I:1:8
+         Serial Number:         KNHBWSVF
+Smart Array P420i in Slot 0 (Embedded)
+   Slot: 0
+   Serial Number: 001438026479FC0
+   Cache Serial Number: PBKUC0BRH4W2RU
+   Array: A
+      Array Type: Data
+      physicaldrive 1I:2:1
+         Serial Number:         KNHBX67F
+      physicaldrive 1I:2:2
+         Serial Number:         KNHBH0BF
+      physicaldrive 1I:2:3
+         Serial Number:         KNHBX66F
+      physicaldrive 1I:2:4
+         Serial Number:         KNHBWSTF
+      physicaldrive 2I:2:5
+         Serial Number:         KNHBWZLF
+      physicaldrive 2I:2:6
+         Serial Number:         KNHBX0SF
+      physicaldrive 2I:2:7
+         Serial Number:         KNGXD62F
+      physicaldrive 2I:2:8
+         Serial Number:         KNHBX80F
+You have new mail in /var/spool/mail/root
+[root@ds-gp-tst-sdw7 ~]#
+
+[root@ds-gp-tst-sdw7 ~]# for var1 in {0..7} ; do echo -e "\nCount: ${var1}" ; smartctl -a -d cciss,${var1} /dev/sg2 | grep -e "Serial number:" -e "Elements in grown defect list:" -e "read:" -e        "write" -e "Non-medium error count:" ; done
+
+Count: 0
+Serial number:        S0M2QE6Q0000B4459TAZ
+Elements in grown defect list: 0
+  Number of read and write commands whose size <= segment size = 1721629255
+  Number of read and write commands whose size > segment size = 6342384
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        0         0         0          0     420406.750           0
+write:         0        0         0         0          0     312633.698           0
+Non-medium error count:       25
+
+Count: 1
+Serial number:                KNH8JB6F
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0      701         0         0          0     434015.989           0
+write:         0        0         0         0          0     526180.549           0
+Non-medium error count:      753
+
+Count: 2
+Serial number:                KNH8JPLF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0        2         0         0          0     470543.327           0
+write:         0        0         0         0          0     539489.562           0
+Non-medium error count:      754
+
+Count: 3
+Serial number:                KNHBWSVF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    38906         0         0          0     478220.027           0
+write:         0        0         0         0          0     525024.193           0
+Non-medium error count:      753
+
+Count: 4
+Serial number:                KNHBX3MF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    14694         0         0          0     509770.916           0
+write:         0        0         0         0          0     550124.465           0
+Non-medium error count:      753
+
+Count: 5
+Serial number:                KNHASPTF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0       14         0         0          0     458987.103           0
+write:         0        0         0         0          0     519879.200           0
+Non-medium error count:      752
+
+Count: 6
+Serial number:                KNH9X5AF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0     6497         0         0          0     440013.668           0
+write:         0        0         0         0          0     523161.079           0
+Non-medium error count:      753
+
+Count: 7
+Serial number:                KNH9JUWF
+Elements in grown defect list: 0
+           fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+read:          0    12332         0         1          0     419795.052           0
+write:         0        0         0         0          0     521348.934           0
+Non-medium error count:      753
+[root@ds-gp-tst-sdw7 ~]#
+
+
+[root@ds-gp-tst-sdw7 ~]# hpssacli controller slot=2 physicaldrive 2I:1:5 show detail
+Smart Array P420 in Slot 2
+
+   array A
+
+      physicaldrive 2I:1:5
+         Port: 2I
+         Box: 1
+         Bay: 5
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Native Block Size: 512
+         Rotational Speed: 10500
+         Firmware Revision: HPD5
+         Serial Number: S0M2QE6Q0000B4459TAZ
+         Model: HP      EG0600FCVBK
+         Current Temperature (C): 31
+         Maximum Temperature (C): 35
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Drive Authentication Status: OK
+         Carrier Application Version: 11
+         Carrier Bootloader Version: 6
+
+
+[root@ds-gp-tst-sdw7 ~]#
+
+................................................................................
+
+[root@ds-gp-tst-sdw7 ~]# at 19:00 today <<< 'hpuid -e'
+job 1 at 2015-09-04 19:00
+[root@ds-gp-tst-sdw7 ~]# at 21:00 today <<< 'hpuid -d'
+job 2 at 2015-09-04 21:00
+[root@ds-gp-tst-sdw7 ~]# at 19:00 today <<< 'hpssacli controller slot=2 physicaldrive 2I:1:5 modify led=on duration=7200'
+job 3 at 2015-09-04 19:00
+[root@ds-gp-tst-sdw7 ~]# atq
+2       2015-09-04 21:00 a root
+3       2015-09-04 19:00 a root
+1       2015-09-04 19:00 a root
+[root@ds-gp-tst-sdw7 ~]#
+
+................................................................................
+
+[root@ds-gp-tst-sdw7 ~]# hpssacli controller slot=2 show config
+
+Smart Array P420 in Slot 2                (sn: PDSXK0ARH4W382)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 50014380276338EF)
+
+[root@ds-gp-tst-sdw7 ~]#
+
+
+................................................................................
+
+
+#   Fri Sep  4 19:22:27 MSK 2015
+#   Hard disk drive was replaced to new one.
+
+[root@ds-gp-tst-sdw7 ~]# watch -n 2 hpssacli controller slot=2 show config
+
+Every 2.0s: hpssacli controller slot=2 show config                                                                                                                              Fri Sep  4 19:22:10 2015
+
+
+Smart Array P420 in Slot 2                (sn: PDSXK0ARH4W382)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, Recovering, 1% complete)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, Rebuilding)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model SRCv8x6G) 380  (WWID: 50014380276338EF)
+
+
+
+
+
+[root@ds-gp-tst-sdw7 ~]#
+
+................................................................................
+
+
+
+
+

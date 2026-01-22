@@ -1,0 +1,1809 @@
+
+
+
+................................................................................
+
+
+From: Smirnov Evgeniy Aleksandrovich (2738) 
+Sent: Monday, December 11, 2017 2:47 PM
+To: Belogrud Sergey Vladimirovich <s.belogrud@tinkoff.ru>
+Subject: Re: SD#839354
+
+ubuntu
+сделайте как hq-gpu02 или m1-gpu01
+
+................................................................................
+
+root@m1-gpu01:~# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R730
+        Version: Not Specified
+        Serial Number: D888RG2
+        UUID: 4C4C4544-0038-3810-8038-C4C04F524732
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R730
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+root@m1-gpu01:~#
+
+
+root@m1-gpu01:~# lsblk
+NAME                     MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda                        8:0    0   1.3T  0 disk
+├─sda1                     8:1    0   487M  0 part /boot
+├─sda2                     8:2    0     1K  0 part
+└─sda5                     8:5    0   1.3T  0 part
+  ├─m1--gpu01--vg-root   252:0    0     1T  0 lvm  /
+  └─m1--gpu01--vg-swap_1 252:1    0 255.9G  0 lvm  [SWAP]
+sdb                        8:16   0   1.1T  0 disk
+└─m1--gpu01--raid0-data  252:2    0   1.1T  0 lvm  /data/raid0
+root@m1-gpu01:~#
+
+
+root@m1-gpu01:~# uname -a
+Linux m1-gpu01 4.4.0-103-generic #126-Ubuntu SMP Mon Dec 4 16:23:28 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# cat /etc/os-release
+NAME="Ubuntu"
+VERSION="16.04.2 LTS (Xenial Xerus)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 16.04.2 LTS"
+VERSION_ID="16.04"
+HOME_URL="http://www.ubuntu.com/"
+SUPPORT_URL="http://help.ubuntu.com/"
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+VERSION_CODENAME=xenial
+UBUNTU_CODENAME=xenial
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.218.71.10/24 brd 10.218.71.255 scope global bond0.1871
+    inet 10.217.65.50/24 brd 10.217.65.255 scope global bond0.1765
+    inet 172.17.0.1/16 scope global docker0
+root@m1-gpu01:~#
+
+................................................................................
+
+root@hq-gpu02:~# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 3.0 present.
+
+Handle 0x0001, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Gigabyte Technology Co., Ltd.
+        Product Name: Default string
+        Version: Default string
+        Serial Number: Default string
+        UUID: 031B021C-040D-056F-E806-990700080009
+        Wake-up Type: Power Switch
+        SKU Number: Default string
+        Family: Default string
+
+Handle 0x0025, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: Default string
+
+Handle 0x0026, DMI type 32, 20 bytes
+System Boot Information
+        Status: No errors detected
+
+Invalid entry length (16). Fixed up to 11.
+root@hq-gpu02:~#
+
+root@hq-gpu02:~# lsblk
+NAME                     MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda                        8:0    0 465,8G  0 disk
+├─sda1                     8:1    0   487M  0 part /boot
+├─sda2                     8:2    0     1K  0 part
+└─sda5                     8:5    0 465,3G  0 part
+  ├─VD--GPU01--vg-root   252:0    0 401,4G  0 lvm  /
+  └─VD--GPU01--vg-swap_1 252:1    0  63,9G  0 lvm  [SWAP]
+sdb                        8:16   0 931,5G  0 disk
+└─sdb1                     8:17   0 931,5G  0 part /data
+root@hq-gpu02:~#
+
+root@hq-gpu02:~# cat /etc/os-release
+NAME="Ubuntu"
+VERSION="16.04.2 LTS (Xenial Xerus)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 16.04.2 LTS"
+VERSION_ID="16.04"
+HOME_URL="http://www.ubuntu.com/"
+SUPPORT_URL="http://help.ubuntu.com/"
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+VERSION_CODENAME=xenial
+UBUNTU_CODENAME=xenial
+root@hq-gpu02:~#
+
+
+................................................................................
+
+
+root@m1-ts01:~# echo 'deb http://linux.dell.com/repo/community/ubuntu xenial openmanage' | sudo tee -a /etc/apt/sources.list.d/linux.dell.com.sources.list
+deb http://linux.dell.com/repo/community/ubuntu xenial openmanage
+root@m1-ts01:~# 
+
+
+................................................................................
+
+root@m1-ts01:~# groupadd -g 4164 e.smirnov6 && useradd -u 4164 -g e.smirnov6 -c "SD#839354 Smirnov Evgeniy Aleksandro
+vich" -m -G wheel,sudo -s /bin/bash e.smirnov6
+root@m1-ts01:~# passwd !$
+passwd e.smirnov6
+Enter new UNIX password:
+Retype new UNIX password:
+passwd: password updated successfully
+root@m1-ts01:~# chage -d 0 !$
+chage -d 0 e.smirnov6
+root@m1-ts01:~# sudo -l -U !$
+sudo -l -U e.smirnov6
+Matching Defaults entries for e.smirnov6 on m1-ts01.tcsbank.ru:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User e.smirnov6 may run the following commands on m1-ts01.tcsbank.ru:
+    (ALL : ALL) ALL
+root@m1-ts01:~#
+
+................................................................................
+
+
+root@m1-ts01:~# cat /etc/os-release
+NAME="Ubuntu"
+VERSION="16.04 LTS (Xenial Xerus)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 16.04 LTS"
+VERSION_ID="16.04"
+HOME_URL="http://www.ubuntu.com/"
+SUPPORT_URL="http://help.ubuntu.com/"
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+UBUNTU_CODENAME=xenial
+root@m1-ts01:~#
+
+................................................................................
+
+root@m1-ts01:~# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+7: bond0.1871@bond0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.218.71.11/24 brd 10.218.71.255 scope global bond0.1871
+       valid_lft forever preferred_lft forever
+8: bond0.1765@bond0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.217.65.30/24 brd 10.217.65.255 scope global bond0.1765
+       valid_lft forever preferred_lft forever
+root@m1-ts01:~# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.218.71.11/24 brd 10.218.71.255 scope global bond0.1871
+    inet 10.217.65.30/24 brd 10.217.65.255 scope global bond0.1765
+root@m1-ts01:~#
+
+................................................................................
+
+root@m1-ts01:~# lsblk
+NAME                    MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda                       8:0    0 279.4G  0 disk
+├─sda1                    8:1    0   487M  0 part /boot
+├─sda2                    8:2    0     1K  0 part
+└─sda5                    8:5    0 278.9G  0 part
+  ├─m1--ts01--vg-root   252:0    0 214.9G  0 lvm  /
+  └─m1--ts01--vg-swap_1 252:1    0    64G  0 lvm  [SWAP]
+sdb                       8:16   0 136.7G  0 disk
+├─sdb1                    8:17   0     4M  0 part
+├─sdb2                    8:18   0     4G  0 part
+├─sdb3                    8:19   0 129.3G  0 part
+├─sdb5                    8:21   0   250M  0 part
+├─sdb6                    8:22   0   250M  0 part
+├─sdb7                    8:23   0   110M  0 part
+├─sdb8                    8:24   0   286M  0 part
+└─sdb9                    8:25   0   2.5G  0 part
+root@m1-ts01:~#
+
+................................................................................
+
+root@m1-ts01:~# apt-get install xfsprogs
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+Suggested packages:
+  xfsdump attr quota
+The following packages will be upgraded:
+  xfsprogs
+1 upgraded, 0 newly installed, 0 to remove and 206 not upgraded.
+Need to get 597 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+Get:1 http://repo-linux.tcsbank.ru/ubuntu xenial-updates/main amd64 xfsprogs amd64 4.3.0+nmu1ubuntu1.1 [597 kB]
+Fetched 597 kB in 0s (3,026 kB/s)
+[master 06e1499] saving uncommitted changes in /etc prior to apt run
+ 16 files changed, 36 insertions(+), 4 deletions(-)
+ create mode 100644 apt/sources.list.d/linux.dell.com.sources.list
+ create mode 100644 snmp/config.d/rocomm.conf
+ create mode 100755 snmp/includer.sh
+(Reading database ... 63979 files and directories currently installed.)
+Preparing to unpack .../xfsprogs_4.3.0+nmu1ubuntu1.1_amd64.deb ...
+Unpacking xfsprogs (4.3.0+nmu1ubuntu1.1) over (4.3.0+nmu1ubuntu1) ...
+Processing triggers for libc-bin (2.23-0ubuntu3) ...
+Processing triggers for man-db (2.7.5-1) ...
+Setting up xfsprogs (4.3.0+nmu1ubuntu1.1) ...
+update-initramfs: deferring update (trigger activated)
+Processing triggers for libc-bin (2.23-0ubuntu3) ...
+Processing triggers for initramfs-tools (0.122ubuntu8) ...
+update-initramfs: Generating /boot/initrd.img-4.4.0-21-generic
+W: plymouth: The plugin label.so is missing, the selected theme might not work as expected.
+W: plymouth: You might want to install the plymouth-themes and plymouth-label package to fix this.
+W: mdadm: /etc/mdadm/mdadm.conf defines no arrays.
+root@m1-ts01:~#
+
+................................................................................
+
+root@m1-ts01:~# parted -s -a optimal /dev/sdb mklabel GPT print mkpart primary xfs 0% 100% print
+Model: HP LOGICAL VOLUME (scsi)
+Disk /dev/sdb: 147GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start  End  Size  File system  Name  Flags
+
+Model: HP LOGICAL VOLUME (scsi)
+Disk /dev/sdb: 147GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+
+Number  Start   End    Size   File system  Name     Flags
+ 1      1049kB  147GB  147GB  xfs          primary
+
+root@m1-ts01:~# lsblk
+NAME                    MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+sda                       8:0    0 279.4G  0 disk
+├─sda1                    8:1    0   487M  0 part /boot
+├─sda2                    8:2    0     1K  0 part
+└─sda5                    8:5    0 278.9G  0 part
+  ├─m1--ts01--vg-root   252:0    0 214.9G  0 lvm  /
+  └─m1--ts01--vg-swap_1 252:1    0    64G  0 lvm  [SWAP]
+sdb                       8:16   0 136.7G  0 disk
+└─sdb1                    8:17   0 136.7G  0 part
+root@m1-ts01:~#
+
+................................................................................
+
+root@m1-ts01:~# mkfs.xfs /dev/sdb1
+meta-data=/dev/sdb1              isize=512    agcount=4, agsize=8958592 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=0
+data     =                       bsize=4096   blocks=35834368, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=17497, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+root@m1-ts01:~#
+
+................................................................................
+
+root@m1-ts01:~# blkid
+/dev/sdb1: UUID="6f31d24b-dc3d-4d64-bab4-e832ea2b8b99" TYPE="xfs" PARTLABEL="primary" PARTUUID="a0387dd2-b423-4660-9aeb-08a5b53496fa"
+/dev/sda1: UUID="69aeb440-dbc5-49fd-a901-f6ab0d44f8c5" TYPE="ext2" PARTUUID="7a944b4b-01"
+/dev/sda5: UUID="MqJaUN-NxC7-kWVY-6GPx-926w-WSBe-Y0eFpt" TYPE="LVM2_member" PARTUUID="7a944b4b-05"
+/dev/mapper/m1--ts01--vg-root: UUID="87a914c8-77d1-41a0-9b16-6ad2b38a7c4d" TYPE="ext4"
+/dev/mapper/m1--ts01--vg-swap_1: UUID="78cf88c3-4d7e-40ec-9906-95892fefedec" TYPE="swap"
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# vim /etc/fstab
+root@m1-ts01:~# mount /opt
+root@m1-ts01:~# df -hT
+Filesystem                    Type      Size  Used Avail Use% Mounted on
+udev                          devtmpfs   32G     0   32G   0% /dev
+tmpfs                         tmpfs     6.3G  9.1M  6.3G   1% /run
+/dev/mapper/m1--ts01--vg-root ext4      212G  1.5G  200G   1% /
+tmpfs                         tmpfs      32G     0   32G   0% /dev/shm
+tmpfs                         tmpfs     5.0M     0  5.0M   0% /run/lock
+tmpfs                         tmpfs      32G     0   32G   0% /sys/fs/cgroup
+/dev/sda1                     ext2      472M   55M  393M  13% /boot
+tmpfs                         tmpfs     100K     0  100K   0% /run/lxcfs/controllers
+tmpfs                         tmpfs     6.3G     0  6.3G   0% /run/user/0
+/dev/sdb1                     xfs       137G   33M  137G   1% /opt
+root@m1-ts01:~# tail -n 1 /etc/fstab
+UUID=6f31d24b-dc3d-4d64-bab4-e832ea2b8b99       /opt    xfs     defaults 0 2
+root@m1-ts01:~#
+
+
+................................................................................
+
+#
+#	20171219
+#
+
+root@m1-ts01:~# curl -x http://repo-linux:80 http://linux.dell.com/repo/community/ubuntu/dists/xenial/ | w3m -dump -T text/html
+
+root@m1-ts01:~# gpg --keyserver-options http-proxy=http://repo-linux.tcsbank.ru:80 --keyserver hkp://pool.sks-keyservers.net:80 --recv-key 1285491434D8786F
+
+root@m1-ts01:~# sudo gpg --keyserver pool.sks-keyservers.net --recv-key 1285491434D8786F
+
+root@m1-ts01:~# vim /etc/apt/sources.list.d/linux.dell.com.sources.list
+
+
+root@m1-ts01:~# echo 'deb http://linux.dell.com/repo/community/ubuntu xenial openmanage' | sudo tee -a /etc/apt/sources.list.d/linux.dell.com.sources.list
+
+
+................................................................................
+
+#
+#	Белогруд Сергей Владимирович
+#	@net-admins.
+#	Для установки пакетов Dell Openmanage для мониторинга оборудования сервера.
+#	Требуется предоставить доступ с сервера m1-ts01.tcsbank.ru (10.218.71.11) к интернет.
+#	Согласно описанию установки пакетов ( http://linux.dell.com/repo/community/ubuntu/ ) доступ требуется как минимум к хостам:​
+#	linux.dell.com:80
+#	pool.sks-keyservers.net:80
+#
+
+root@m1-ts01:~# cat /etc/apt/apt.conf
+#Acquire::http::Proxy "http://repo-linux.tcsbank.ru:80";
+root@m1-ts01:~#
+
+root@m1-ts01:~# apt-get install w3m
+
+root@m1-ts01:~# curl http://linux.dell.com/repo/community/ubuntu/dists/xenial/ | w3m -dump -T text/html
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  3294  100  3294    0     0   3671      0 --:--:-- --:--:-- --:--:--  3668
+Index of /repo/community/ubuntu/dists/xenial
+
+   [ICO]           Name         Last modified   Size Description
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[PARENTDIR] Parent Directory                       -
+[ ]         Contents-amd64     2016-11-10 14:30 1.3M
+[ ]         Contents-amd64.bz2 2016-11-10 14:30  70K
+[ ]         Contents-amd64.gz  2016-11-10 14:30 143K
+[ ]         Contents-i386      2016-11-10 14:30 3.5K
+[ ]         Contents-i386.bz2  2016-11-10 14:30  690
+[ ]         Contents-i386.gz   2016-11-10 14:30  595
+[ ]         Release            2016-11-10 14:30  11K
+[ ]         Release.gpg        2016-11-10 14:34  836
+[DIR]       openmanage/        2016-11-10 14:30    -
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+root@m1-ts01:~#
+
+................................................................................
+
+
+#
+#	This command does not work for me.
+#
+root@m1-ts01:~# gpg --keyserver pool.sks-keyservers.net --recv-key 1285491434D8786F
+gpg: requesting key 34D8786F from hkp server pool.sks-keyservers.net
+
+gpg: Interrupt caught ... exiting
+
+
+#
+#	But this one - is working well.
+#
+root@m1-ts01:~# gpg --keyserver hkp://pool.sks-keyservers.net:80 --recv-key 1285491434D8786F
+gpg: requesting key 34D8786F from hkp server pool.sks-keyservers.net
+gpg: /root/.gnupg/trustdb.gpg: trustdb created
+gpg: key 34D8786F: public key "Dell Inc., PGRE 2012 (PG Release Engineering Build Group 2012) <PG_Release_Engineering@Dell.com>" imported
+gpg: no ultimately trusted keys found
+gpg: Total number processed: 1
+gpg:               imported: 1  (RSA: 1)
+root@m1-ts01:~#
+
+root@m1-ts01:~# aptitude update
+
+root@m1-ts01:~# apt-get install srvadmin-all
+
+................................................................................
+
+root@m1-ts01:~# apt-get install snmp snmpd snmp-mibs-downloader libsnmp-base ipmitool
+
+root@m1-ts01:~# apt-get install srvadmin-deng-snmp srvadmin-idrac-snmp srvadmin-isvc-snmp srvadmin-server-snmp srvadmin-storage-snmp srvadmin-storageservices-snmp
+
+root@m1-ts01:~# update-rc.d snmpd enable
+
+root@m1-ts01:~# cp /etc/snmp/snmpd.conf{,.20171219-1514}
+
+
+root@m1-ts01:~# cat > /etc/snmp/snmpd.conf
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser  default       tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# service snmpd stop
+root@m1-ts01:~# service snmpd start
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux m1-ts01 4.4.0-21-generic #37-Ubuntu SMP Mon Apr 18 18:33:37 UTC 2016 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (416) 0:00:04.16
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "m1-ts01"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (1) 0:00:00.01
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# shutdown -r now
+Connection to 10.218.71.11 closed by remote host.
+Connection to 10.218.71.11 closed.
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+#
+#	No! If I do this. This bitch don't write dns servers into /etc/resolv.conf.
+#
+		#
+		#	Strong condition!
+		#	The string "post-up route add default gw 10.218.71.254" must be last line in the file!
+		#	Instead we will have not default route and we cannot connect to server via ssh.
+		#
+		root@m1-ts01:~# cat /etc/network/interfaces
+		# This file describes the network interfaces available on your system
+		# and how to activate them. For more information, see interfaces(5).
+		
+		source /etc/network/interfaces.d/*
+		
+		# The loopback network interface
+		auto lo
+		iface lo inet loopback
+		
+		# The primary network interface
+		#auto enp3s0f0
+		#iface enp3s0f0 inet static
+		#       address 10.218.71.11
+		#       netmask 255.255.255.0
+		#       network 10.218.71.0
+		#       broadcast 10.218.71.255
+		#       gateway 10.218.71.254
+		#       # dns-* options are implemented by the resolvconf package, if installed
+		#       dns-search tcsbank.ru
+		
+		auto enp3s0f0
+		iface enp3s0f0 inet manual
+		bond-master bond0
+		bond-primary enp3s0f0
+		
+		auto enp3s0f1
+		iface enp3s0f1 inet manual
+		bond-master bond0
+		
+		auto bond0
+		iface bond0 inet manual
+		bond-mode 1
+		bond-miimon 100
+		bond-slaves none
+		
+		auto bond0.1871
+		iface bond0.1871 inet static
+		address 10.218.71.11
+		netmask 255.255.255.0
+		gateway 10.218.71.254
+		vlan-raw-device bond0
+		
+		auto bond0.1765
+		iface bond0.1765 inet static
+		address 10.217.65.30
+		netmask 255.255.255.0
+		vlan-raw-device bond0
+		
+		dns-search tcsbank.ru
+		dns-nameservers 10.216.42.5 10.216.40.4
+		
+		post-up route add default gw 10.218.71.254
+		
+		root@m1-ts01:~#
+
+#
+#	Below is what work in this bitch!!!
+#
+root@m1-ts01:~# cat /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+#auto enp3s0f0
+#iface enp3s0f0 inet static
+#       address 10.218.71.11
+#       netmask 255.255.255.0
+#       network 10.218.71.0
+#       broadcast 10.218.71.255
+#       gateway 10.218.71.254
+#       # dns-* options are implemented by the resolvconf package, if installed
+#       dns-search tcsbank.ru
+
+auto enp3s0f0
+iface enp3s0f0 inet manual
+bond-master bond0
+bond-primary enp3s0f0
+
+auto enp3s0f1
+iface enp3s0f1 inet manual
+bond-master bond0
+
+auto bond0
+iface bond0 inet manual
+bond-mode 1
+bond-miimon 100
+bond-slaves none
+
+auto bond0.1765
+iface bond0.1765 inet static
+address 10.217.65.30
+netmask 255.255.255.0
+
+auto bond0.1871
+iface bond0.1871 inet static
+address 10.218.71.11
+netmask 255.255.255.0
+gateway 10.218.71.254
+
+dns-search tcsbank.ru
+dns-nameservers 10.216.42.5 10.216.40.4
+root@m1-ts01:~#
+
+#
+#	If in this bitch not restart network - we have not default route...
+#
+root@m1-ts01:~# tail -n 4 /etc/rc.local
+
+systemctl restart networking.service
+
+exit 0
+root@m1-ts01:~#
+
+
+
+
+
+
+................................................................................
+
+
+root@m1-ts01:~# service dataeng start
+Job for dataeng.service failed because the control process exited with error code. See "systemctl status dataeng.service" and "journalctl -xe" for details.
+root@m1-ts01:~# systemctl status dataeng.service
+● dataeng.service - LSB: Systems Management Data Engine
+   Loaded: loaded (/etc/init.d/dataeng; bad; vendor preset: enabled)
+   Active: failed (Result: exit-code) since Tue 2017-12-19 07:44:08 EST; 10s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 2647 ExecStart=/etc/init.d/dataeng start (code=exited, status=252)
+
+Dec 19 07:44:07 m1-ts01 systemd[1]: Starting LSB: Systems Management Data Engine...
+Dec 19 07:44:07 m1-ts01 dataeng[2647]: /etc/init.d/dataeng: 1: printf: unknown: expected numeric value
+Dec 19 07:44:07 m1-ts01 dataeng[2647]: /etc/init.d/dataeng: 1: printf: error.: expected numeric value
+Dec 19 07:44:08 m1-ts01 dataeng[2647]: Starting Systems Management Data Engine:
+Dec 19 07:44:08 m1-ts01 dataeng[2647]: Failed to start because system is not supported
+Dec 19 07:44:08 m1-ts01 systemd[1]: dataeng.service: Control process exited, code=exited status=252
+Dec 19 07:44:08 m1-ts01 systemd[1]: Failed to start LSB: Systems Management Data Engine.
+Dec 19 07:44:08 m1-ts01 systemd[1]: dataeng.service: Unit entered failed state.
+Dec 19 07:44:08 m1-ts01 systemd[1]: dataeng.service: Failed with result 'exit-code'.
+root@m1-ts01:~#
+
+................................................................................
+
+
+root@m1-ts01:~# apt-get upgrade
+
+
+root@m1-ts01:~# vim /etc/apt/sources.list.d/linux.dell.com.sources.list
+root@m1-ts01:~# cat !$
+cat /etc/apt/sources.list.d/linux.dell.com.sources.list
+deb http://repo-linux.tcsbank.ru/dell/dsu/community/ubuntu xenial openmanage
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 10.218.71.11 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux m1-ts01 4.4.0-104-generic #127-Ubuntu SMP Mon Dec 11 12:16:42 UTC 2017 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (176473) 0:29:24.73
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "m1-ts01"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (4) 0:00:00.04
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@m1-ts01:~#
+
+................................................................................
+
+root@vm-vol-nag4-tst etc]# /usr/lib64/nagios/plugins/check_openmanage -H 10.218.71.11 -C tcspub -P 2c -p
+ERROR: (SNMP) OpenManage is not installed or is not working correctly
+[root@vm-vol-nag4-tst etc]#
+
+
+root@m1-ts01:~# omreport system summary
+sh: 1: /bin/rpm: not found
+System Summary
+
+------------------
+Software Profile
+------------------
+Systems Management
+Name            : Server Administrator
+Version         : 8.4.0
+Description     : Systems Management Software
+
+--------
+System
+--------
+System
+Host Name       : m1-ts01
+System Location :
+
+root@m1-ts01:~# cat /etc/os-release
+NAME="Ubuntu"
+VERSION="16.04.3 LTS (Xenial Xerus)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 16.04.3 LTS"
+VERSION_ID="16.04"
+HOME_URL="http://www.ubuntu.com/"
+SUPPORT_URL="http://help.ubuntu.com/"
+BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
+VERSION_CODENAME=xenial
+UBUNTU_CODENAME=xenial
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# omconfig about
+sh: 1: /bin/rpm: not found
+
+Product name : Server Administrator
+Version      : 8.4.0
+Copyright    : Copyright (C) Dell Inc. 1995-2015 All rights reserved.
+Company      : Dell Inc.
+
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# vim /etc/default/snmpd
+root@m1-ts01:~# cat !$
+cat /etc/default/snmpd
+# This file controls the activity of snmpd
+
+# Don't load any MIBs by default.
+# You might comment this lines once you have the MIBs downloaded.
+export MIBS=
+
+# snmpd control (yes means start daemon).
+SNMPDRUN=yes
+
+# snmpd options (use syslog, close stdin/out/err).
+#SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -I -smux,mteTrigger,mteTriggerConf -p /run/snmpd.pid'
+SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid'
+root@m1-ts01:~#
+
+
+................................................................................
+
+root@m1-ts01:~# systemctl status snmpd.service
+● snmpd.service - LSB: SNMP agents
+   Loaded: loaded (/etc/init.d/snmpd; bad; vendor preset: enabled)
+   Active: active (running) since Tue 2017-12-19 09:43:00 EST; 12min ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 17080 ExecStop=/etc/init.d/snmpd stop (code=exited, status=0/SUCCESS)
+  Process: 17088 ExecStart=/etc/init.d/snmpd start (code=exited, status=0/SUCCESS)
+    Tasks: 1
+   Memory: 4.4M
+      CPU: 356ms
+   CGroup: /system.slice/snmpd.service
+           └─17097 /usr/sbin/snmpd -Lsd -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid
+
+Dec 19 09:53:00 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:53:00 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:53:30 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:53:30 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:54:00 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:54:00 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:54:30 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:54:30 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:55:00 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+Dec 19 09:55:00 m1-ts01 snmpd[17097]: error on subcontainer 'ia_addr' insert (-1)
+root@m1-ts01:~#
+
+#
+#	Made follow edit to shut up snmp bitch.
+#	https://susorov.ru/snmpd-%D0%B8-%D0%BE%D1%88%D0%B8%D0%B1%D0%BA%D0%B0-error-on-subcontainer-ia_addr-insert-1-%D0%B2-%D0%BB%D0%BE%D0%B3%D0%B0%D1%85/
+#
+root@m1-ts01:~# vim /etc/default/snmpd
+
+root@m1-ts01:~# cat /etc/default/snmpd
+...
+# snmpd options (use syslog, close stdin/out/err).
+#SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -I -smux,mteTrigger,mteTriggerConf -p /run/snmpd.pid'
+#SNMPDOPTS='-Lsd -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid'
+SNMPDOPTS='-LS6d -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid'
+root@m1-ts01:~#
+
+
+
+root@m1-ts01:~# systemctl restart snmpd.service
+root@m1-ts01:~# systemctl status snmpd.service
+● snmpd.service - LSB: SNMP agents
+   Loaded: loaded (/etc/init.d/snmpd; bad; vendor preset: enabled)
+   Active: active (running) since Tue 2017-12-19 10:10:11 EST; 2s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 17951 ExecStop=/etc/init.d/snmpd stop (code=exited, status=0/SUCCESS)
+  Process: 17959 ExecStart=/etc/init.d/snmpd start (code=exited, status=0/SUCCESS)
+    Tasks: 1
+   Memory: 5.1M
+      CPU: 33ms
+   CGroup: /system.slice/snmpd.service
+           └─17968 /usr/sbin/snmpd -LS6d -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid
+
+Dec 19 10:10:11 m1-ts01 systemd[1]: Starting LSB: SNMP agents...
+Dec 19 10:10:11 m1-ts01 snmpd[17959]:  * Starting SNMP services:
+Dec 19 10:10:11 m1-ts01 snmpd[17966]: Turning on AgentX master support.
+Dec 19 10:10:11 m1-ts01 systemd[1]: Started LSB: SNMP agents.
+Dec 19 10:10:11 m1-ts01 snmpd[17968]: NET-SNMP version 5.7.3
+root@m1-ts01:~#
+
+
+
+................................................................................
+
+
+#
+#	20171221
+#
+root@m1-ts01:~# service dsm_om_connsvc start
+root@m1-ts01:~# service dataeng start
+Job for dataeng.service failed because the control process exited with error code. See "systemctl status dataeng.service" and "journalctl -xe" for details.
+root@m1-ts01:~# systemctl status dataeng.service
+● dataeng.service - LSB: Systems Management Data Engine
+   Loaded: loaded (/etc/init.d/dataeng; bad; vendor preset: enabled)
+   Active: failed (Result: exit-code) since Thu 2017-12-21 07:24:40 EST; 17s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 397 ExecStart=/etc/init.d/dataeng start (code=exited, status=252)
+
+Dec 21 07:24:40 m1-ts01 systemd[1]: Starting LSB: Systems Management Data Engine...
+Dec 21 07:24:40 m1-ts01 dataeng[397]: /etc/init.d/dataeng: 1: printf: unknown: expected numeric value
+Dec 21 07:24:40 m1-ts01 dataeng[397]: /etc/init.d/dataeng: 1: printf: error.: expected numeric value
+Dec 21 07:24:40 m1-ts01 dataeng[397]: Starting Systems Management Data Engine:
+Dec 21 07:24:40 m1-ts01 dataeng[397]: Failed to start because system is not supported
+Dec 21 07:24:40 m1-ts01 systemd[1]: dataeng.service: Control process exited, code=exited status=252
+Dec 21 07:24:40 m1-ts01 systemd[1]: Failed to start LSB: Systems Management Data Engine.
+Dec 21 07:24:40 m1-ts01 systemd[1]: dataeng.service: Unit entered failed state.
+Dec 21 07:24:40 m1-ts01 systemd[1]: dataeng.service: Failed with result 'exit-code'.
+root@m1-ts01:~#
+
+root@m1-ts01:~# apt-get install --reinstall srvadmin-all
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+0 upgraded, 0 newly installed, 1 reinstalled, 0 to remove and 0 not upgraded.
+Need to get 0 B/1,930 B of archives.
+After this operation, 0 B of additional disk space will be used.
+WARNING: The following packages cannot be authenticated!
+  srvadmin-all
+Install these packages without verification? [y/N] y
+(Reading database ... 109978 files and directories currently installed.)
+Preparing to unpack .../srvadmin-all_8.4.0_amd64.deb ...
+Unpacking srvadmin-all (8.4.0) over (8.4.0) ...
+Setting up srvadmin-all (8.4.0) ...
+root@m1-ts01:~#
+
+#
+#	Nothing was changed.
+#
+root@m1-ts01:~# vim /opt/dell/srvadmin/etc/omarolemap
+
+root@m1-ts01:~# aptitude versions srvadmin-all
+Package srvadmin-all:
+i   8.4.0                                                           <NULL>                                       500
+root@m1-ts01:~#
+
+root@m1-ts01:~# vim /etc/apt/apt.conf
+
+root@m1-ts01:~# cat /etc/apt/sources.list.d/linux.dell.com.sources.list
+deb http://repo-linux.tcsbank.ru/dell/dsu/community/ubuntu xenial openmanage
+root@m1-ts01:~#
+
+root@m1-ts01:~# vim /etc/apt/sources.list.d/linux.dell.com.sources.list
+root@m1-ts01:~# cat !$
+cat /etc/apt/sources.list.d/linux.dell.com.sources.list
+deb http://linux.dell.com/repo/community/ubuntu xenial openmanage
+root@m1-ts01:~#
+
+root@m1-ts01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu xenial InRelease
+Hit:2 http://repo-linux.tcsbank.ru/ubuntu xenial-updates InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu xenial-backports InRelease
+Hit:4 http://repo-linux.tcsbank.ru/ubuntu xenial-security InRelease
+Ign:5 http://repo-linux/puppetlabs/apt xenial InRelease
+Hit:6 http://repo-linux/puppetlabs/apt xenial Release
+Ign:8 http://linux.dell.com/repo/community/ubuntu xenial InRelease
+Get:9 http://linux.dell.com/repo/community/ubuntu xenial Release [11.7 kB]
+Get:10 http://linux.dell.com/repo/community/ubuntu xenial Release.gpg [836 B]
+Ign:10 http://linux.dell.com/repo/community/ubuntu xenial Release.gpg
+Get:11 http://linux.dell.com/repo/community/ubuntu xenial/openmanage amd64 Packages [9,542 B]
+Get:12 http://linux.dell.com/repo/community/ubuntu xenial/openmanage i386 Packages [2,127 B]
+Fetched 24.2 kB in 1s (18.8 kB/s)
+Reading package lists... Done
+W: GPG error: http://linux.dell.com/repo/community/ubuntu xenial Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 1285491434D8786F
+W: The repository 'http://linux.dell.com/repo/community/ubuntu xenial Release' is not signed.
+N: Data from such a repository can't be authenticated and is therefore potentially dangerous to use.
+N: See apt-secure(8) manpage for repository creation and user configuration details.
+root@m1-ts01:~# gpg --keyserver hkp://pool.sks-keyservers.net:80 --recv-key 1285491434D8786F
+gpg: requesting key 34D8786F from hkp server pool.sks-keyservers.net
+gpg: key 34D8786F: "Dell Inc., PGRE 2012 (PG Release Engineering Build Group 2012) <PG_Release_Engineering@Dell.com>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+root@m1-ts01:~# gpg -a --export 1285491434D8786F | sudo apt-key add -
+OK
+root@m1-ts01:~#
+
+root@m1-ts01:~# apt-get update
+Hit:1 http://repo-linux.tcsbank.ru/ubuntu xenial InRelease
+Ign:2 http://repo-linux/puppetlabs/apt xenial InRelease
+Hit:3 http://repo-linux.tcsbank.ru/ubuntu xenial-updates InRelease
+Hit:4 http://repo-linux/puppetlabs/apt xenial Release
+Hit:5 http://repo-linux.tcsbank.ru/ubuntu xenial-backports InRelease
+Hit:6 http://repo-linux.tcsbank.ru/ubuntu xenial-security InRelease
+Ign:8 http://linux.dell.com/repo/community/ubuntu xenial InRelease
+Hit:9 http://linux.dell.com/repo/community/ubuntu xenial Release
+Get:10 http://linux.dell.com/repo/community/ubuntu xenial Release.gpg [836 B]
+Fetched 836 B in 0s (1,123 B/s)
+Reading package lists... Done
+root@m1-ts01:~#
+
+root@m1-ts01:~# apt-get install srvadmin-all
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+srvadmin-all is already the newest version (8.4.0).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+root@m1-ts01:~#
+
+
+
+root@m1-ts01:~# apt-get --auto-remove purge srvadmin-all
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following packages will be REMOVED:
+  cim-schema* libargtable2-0* libcimcclient0* libcmpicppimpl0* libcurl3* libsfcutil0* libslp1* libwsman-client2*
+  libwsman-curl-client-transport1* libwsman-server1* libwsman1* openwsman* sfcb* srvadmin-all*
+  srvadmin-idrac-ivmcli* srvadmin-idrac-vmcli* srvadmin-idracadm7* srvadmin-idracadm8* srvadmin-itunnelprovider*
+  srvadmin-jre* srvadmin-omcommon* srvadmin-oslog* srvadmin-rac-components* srvadmin-racdrsc* srvadmin-smweb*
+  srvadmin-storage-cli* srvadmin-tomcat* srvadmin-webserver* syscfg*
+0 upgraded, 0 newly installed, 29 to remove and 0 not upgraded.
+After this operation, 293 MB disk space will be freed.
+Do you want to continue? [Y/n] Y
+[master 6a6328e] saving uncommitted changes in /etc prior to apt run
+ Author: bsv <bsv@m1-ts01.tcsbank.ru>
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+(Reading database ... 109978 files and directories currently installed.)
+Removing srvadmin-all (8.4.0) ...
+Removing srvadmin-itunnelprovider (8.4.0-1) ...
+Removing sfcb (1.4.8-0ubuntu2) ...
+...
+ delete mode 120000 rc5.d/S01sfcb
+ delete mode 120000 rc5.d/S04dsm_om_connsvc
+ rename rc2.d/S05grub-common => rc5.d/S04grub-common (100%)
+ rename rc2.d/S05ondemand => rc5.d/S04ondemand (100%)
+ rename rc2.d/S05plymouth => rc5.d/S04plymouth (100%)
+ rename rc2.d/S05rc.local => rc5.d/S04rc.local (100%)
+ delete mode 120000 rc6.d/K01dsm_om_connsvc
+ delete mode 100644 sfcb/sfcb.cfg
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# apt-get install srvadmin-all
+
+root@m1-ts01:~# service dataeng start
+Job for dataeng.service failed because the control process exited with error code. See "systemctl status dataeng.service" and "journalctl -xe" for details.
+root@m1-ts01:~# systemctl status dataeng.service
+● dataeng.service - LSB: Systems Management Data Engine
+   Loaded: loaded (/etc/init.d/dataeng; bad; vendor preset: enabled)
+   Active: failed (Result: exit-code) since Thu 2017-12-21 07:55:57 EST; 11s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 4961 ExecStart=/etc/init.d/dataeng start (code=exited, status=252)
+
+Dec 21 07:55:57 m1-ts01 systemd[1]: Starting LSB: Systems Management Data Engine...
+Dec 21 07:55:57 m1-ts01 dataeng[4961]: /etc/init.d/dataeng: 1: printf: unknown: expected numeric value
+Dec 21 07:55:57 m1-ts01 dataeng[4961]: /etc/init.d/dataeng: 1: printf: error.: expected numeric value
+Dec 21 07:55:57 m1-ts01 dataeng[4961]: Starting Systems Management Data Engine:
+Dec 21 07:55:57 m1-ts01 dataeng[4961]: Failed to start because system is not supported
+Dec 21 07:55:57 m1-ts01 systemd[1]: dataeng.service: Control process exited, code=exited status=252
+Dec 21 07:55:57 m1-ts01 systemd[1]: Failed to start LSB: Systems Management Data Engine.
+Dec 21 07:55:57 m1-ts01 systemd[1]: dataeng.service: Unit entered failed state.
+Dec 21 07:55:57 m1-ts01 systemd[1]: dataeng.service: Failed with result 'exit-code'.
+root@m1-ts01:~#
+
+root@m1-ts01:~# dmidecode -t system
+# dmidecode 3.0
+Getting SMBIOS data from sysfs.
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL360 G7
+        Version: Not Specified
+        Serial Number: GB8108F15M
+        UUID: 32393735-3733-4247-3831-30384631354D
+        Wake-up Type: Power Switch
+        SKU Number: 579237-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# apt-get --auto-remove purge srvadmin-all
+
+................................................................................
+
+root@m1-ts01:~# rm /etc/apt/sources.list.d/linux.dell.com.sources.list
+root@m1-ts01:~# aptitude update
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-updates InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-backports InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-security InRelease
+Ign http://repo-linux/puppetlabs/apt xenial InRelease
+Hit http://repo-linux/puppetlabs/apt xenial Release
+
+root@m1-ts01:~#
+
+................................................................................
+
+[root@puppet puppet]# for var1 in m1-ts01.tcsbank.ru ; do echo -e "\n${var1}" ; rake -f /usr/share/puppet-dashboard/Rakefile RAILS_ENV=production node:classes name=${var1} classes="etckeeper,tcs_repos::ubuntu,tcs_repos::hp_deb" ; done
+
+
+m1-ts01.tcsbank.ru
+Node classes successfully edited for m1-ts01.tcsbank.ru!
+[root@puppet puppet]#
+
+
+root@m1-ts01:~# aptitude update
+Ign http://repo-linux/puppetlabs/apt xenial InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-updates InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-backports InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-security InRelease
+Hit http://repo-linux/puppetlabs/apt xenial Release
+Ign http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current InRelease
+Get: 1 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current Release [6,049 B]
+Get: 2 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current Release.gpg [482 B]
+Get: 3 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free amd64 Packages [10.4 kB]
+Get: 4 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free i386 Packages [6,784 B]
+Fetched 23.7 kB in 0s (35.8 kB/s)
+W: http://repo-linux.tcsbank.ru/hp/mcp/ubuntu/dists/xenial/current/Release.gpg: Signature by key 882F7199B20F94BD7E3E690EFADD8D64B1275EA3 uses weak digest algorithm (SHA1)
+
+Current status: 85 (+18) new.
+root@m1-ts01:~#
+
+root@m1-ts01:~# apt-get install hponcfg hp-health hpssacli
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following additional packages will be installed:
+  binutils lib32gcc1 libc6-i386 xsltproc
+Suggested packages:
+  binutils-doc
+The following NEW packages will be installed:
+  binutils hp-health hponcfg hpssacli lib32gcc1 libc6-i386 xsltproc
+0 upgraded, 7 newly installed, 0 to remove and 0 not upgraded.
+Need to get 13.4 MB of archives.
+After this operation, 26.8 MB of additional disk space will be used.
+Do you want to continue? [Y/n] Y
+Get:1 http://repo-linux.tcsbank.ru/ubuntu xenial-updates/main amd64 binutils amd64 2.26.1-1ubuntu1~16.04.5 [2,311 kB]
+Get:2 http://repo-linux.tcsbank.ru/ubuntu xenial-updates/main amd64 libc6-i386 amd64 2.23-0ubuntu9 [2,333 kB]
+Get:3 http://repo-linux.tcsbank.ru/ubuntu xenial/main amd64 lib32gcc1 amd64 1:6.0.1-0ubuntu1 [46.6 kB]
+Get:4 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free amd64 hp-health amd64 10.40-1815.49 [459 kB]
+Get:5 http://repo-linux.tcsbank.ru/ubuntu xenial-updates/main amd64 xsltproc amd64 1.1.28-2.1ubuntu0.1 [13.4 kB]
+Get:6 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free amd64 hponcfg amd64 4.6.0.5-23. [46.2 kB]
+Get:7 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free amd64 hpssacli amd64 2.40-13.0 [8,237 kB]
+Fetched 13.4 MB in 2s (5,210 kB/s)
+[master e33f8e9] saving uncommitted changes in /etc prior to apt run
+ Author: bsv <bsv@m1-ts01.tcsbank.ru>
+ 4 files changed, 2 insertions(+), 2 deletions(-)
+ delete mode 100644 apt/sources.list.d/linux.dell.com.sources.list
+ create mode 100644 apt/sources.list.d/tcs-hp.list
+Selecting previously unselected package binutils.
+(Reading database ... 98950 files and directories currently installed.)
+Preparing to unpack .../binutils_2.26.1-1ubuntu1~16.04.5_amd64.deb ...
+Unpacking binutils (2.26.1-1ubuntu1~16.04.5) ...
+Selecting previously unselected package libc6-i386.
+Preparing to unpack .../libc6-i386_2.23-0ubuntu9_amd64.deb ...
+Unpacking libc6-i386 (2.23-0ubuntu9) ...
+Selecting previously unselected package lib32gcc1.
+Preparing to unpack .../lib32gcc1_1%3a6.0.1-0ubuntu1_amd64.deb ...
+Unpacking lib32gcc1 (1:6.0.1-0ubuntu1) ...
+Selecting previously unselected package hp-health.
+Preparing to unpack .../hp-health_10.40-1815.49_amd64.deb ...
+Unpacking hp-health (10.40-1815.49) ...
+Selecting previously unselected package xsltproc.
+Preparing to unpack .../xsltproc_1.1.28-2.1ubuntu0.1_amd64.deb ...
+Unpacking xsltproc (1.1.28-2.1ubuntu0.1) ...
+Selecting previously unselected package hponcfg.
+Preparing to unpack .../hponcfg_4.6.0.5-23._amd64.deb ...
+Unpacking hponcfg (4.6.0.5-23.) ...
+Selecting previously unselected package hpssacli.
+Preparing to unpack .../hpssacli_2.40-13.0_amd64.deb ...
+Unpacking hpssacli (2.40-13.0) ...
+Processing triggers for libc-bin (2.23-0ubuntu9) ...
+Processing triggers for man-db (2.7.5-1) ...
+Processing triggers for systemd (229-4ubuntu21) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Setting up binutils (2.26.1-1ubuntu1~16.04.5) ...
+Setting up libc6-i386 (2.23-0ubuntu9) ...
+Setting up lib32gcc1 (1:6.0.1-0ubuntu1) ...
+Setting up hp-health (10.40-1815.49) ...
+Setting up xsltproc (1.1.28-2.1ubuntu0.1) ...
+Setting up hponcfg (4.6.0.5-23.) ...
+Setting up hpssacli (2.40-13.0) ...
+Processing triggers for libc-bin (2.23-0ubuntu9) ...
+Processing triggers for systemd (229-4ubuntu21) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+[master 8eea1af] committing changes in /etc after apt run
+ Author: bsv <bsv@m1-ts01.tcsbank.ru>
+ 19 files changed, 1133 insertions(+)
+ create mode 100755 init.d/hp-asrd
+ create mode 100755 init.d/hp-health
+ create mode 100644 ld.so.conf.d/zz_i386-biarch-compat.conf
+ create mode 100644 logrotate.d/hp-health
+ create mode 120000 rc0.d/K01hp-asrd
+ create mode 120000 rc0.d/K01hp-health
+ create mode 120000 rc1.d/K01hp-asrd
+ create mode 120000 rc1.d/K01hp-health
+ create mode 120000 rc2.d/S01hp-health
+ create mode 120000 rc2.d/S02hp-asrd
+ create mode 120000 rc3.d/S01hp-health
+ create mode 120000 rc3.d/S02hp-asrd
+ create mode 120000 rc4.d/S01hp-health
+ create mode 120000 rc4.d/S02hp-asrd
+ create mode 120000 rc5.d/S01hp-health
+ create mode 120000 rc5.d/S02hp-asrd
+ create mode 120000 rc6.d/K01hp-asrd
+ create mode 120000 rc6.d/K01hp-health
+root@m1-ts01:~#
+
+root@m1-ts01:~# apt-get install hp-snmp-agents
+Reading package lists... Done
+Building dependency tree
+Reading state information... Done
+The following NEW packages will be installed:
+  hp-snmp-agents
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Need to get 875 kB of archives.
+After this operation, 4,831 kB of additional disk space will be used.
+Get:1 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free amd64 hp-snmp-agents amd64 10.40-2909.34 [875 kB]
+Fetched 875 kB in 0s (10.4 MB/s)
+Selecting previously unselected package hp-snmp-agents.
+(Reading database ... 99542 files and directories currently installed.)
+Preparing to unpack .../hp-snmp-agents_10.40-2909.34_amd64.deb ...
+Unpacking hp-snmp-agents (10.40-2909.34) ...
+Processing triggers for systemd (229-4ubuntu21) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Processing triggers for man-db (2.7.5-1) ...
+Setting up hp-snmp-agents (10.40-2909.34) ...
+Processing triggers for systemd (229-4ubuntu21) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Processing triggers for libc-bin (2.23-0ubuntu9) ...
+[master dd87a83] committing changes in /etc after apt run
+ Author: bsv <bsv@m1-ts01.tcsbank.ru>
+ 10 files changed, 133 insertions(+)
+ create mode 100755 init.d/hp-snmp-agents
+ create mode 100644 logrotate.d/hp-snmp-agents
+ create mode 120000 rc0.d/K01hp-snmp-agents
+ create mode 120000 rc1.d/K01hp-snmp-agents
+ create mode 120000 rc2.d/S03hp-snmp-agents
+ create mode 120000 rc3.d/S03hp-snmp-agents
+ create mode 120000 rc4.d/S03hp-snmp-agents
+ create mode 120000 rc5.d/S03hp-snmp-agents
+ create mode 120000 rc6.d/K01hp-snmp-agents
+root@m1-ts01:~#
+
+root@m1-ts01:~# service hp-snmp-agents status
+● hp-snmp-agents.service - LSB: hpe SNMP Agents.
+   Loaded: loaded (/etc/init.d/hp-snmp-agents; bad; vendor preset: enabled)
+   Active: active (running) since Thu 2017-12-21 08:59:06 EST; 55s ago
+     Docs: man:systemd-sysv-generator(8)
+   CGroup: /system.slice/hp-snmp-agents.service
+           ├─ 9975 cmahealthd -p 30 -s OK -t OK -i -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9996 cmastdeqd -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─10017 cmahostd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─10036 cmathreshd -p 5 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─10071 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─10073 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─10112 cmaperfd -p 30 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─10133 cmapeerd -l /var/log/hp-snmp-agents/cma.log
+           ├─10152 cmaeventd -p 15 -l /var/log/hp-snmp-agents/cma.log
+           ├─10174 cmafcad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─10195 cmasasd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─10215 cmaidad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─10236 cmaided -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─10258 cmascsid -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           └─10286 cmanicd -l /var/log/hp-snmp-agents/cma.log
+
+Dec 21 08:59:01 m1-ts01 hp-snmp-agents[9956]:   Starting IDA agent (cmaidad):                 [ SUCCESS ]
+Dec 21 08:59:01 m1-ts01 hp-snmp-agents[9956]:
+Dec 21 08:59:01 m1-ts01 hp-snmp-agents[9956]:   Starting IDE agent (cmaided):                 [ SUCCESS ]
+Dec 21 08:59:01 m1-ts01 hp-snmp-agents[9956]:
+Dec 21 08:59:01 m1-ts01 hp-snmp-agents[9956]:   Starting SCSI agent (cmascsid):                 [ SUCCESS ]
+Dec 21 08:59:01 m1-ts01 hp-snmp-agents[9956]:
+Dec 21 08:59:06 m1-ts01 hp-snmp-agents[9956]:   Starting NIC Agent Daemon (cmanicd):                 [ SUCCESS ]
+root@m1-ts01:~#
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# check_hpasm --hostname m1-ts01 --community tcspub -v --perfdata=short
+CRITICAL - snmpwalk returns no product name (cpqsinfo-mib), wrong device
+
+You have new mail in /var/spool/mail/root
+[root@vm-vol-nag4-tst etc]#
+
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub localhost  1.3.6.1.4.1.232 | head
+iso.3.6.1.4.1.232 = No Such Object available on this agent at this OID
+root@m1-ts01:~#
+
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub localhost  1.3.6.1.4.1.232 | head
+iso.3.6.1.4.1.232 = No Such Object available on this agent at this OID
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 10.218.71.11 1 | head
+Timeout: No Response from 10.218.71.11
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub localhost 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux m1-ts01 4.4.0-104-generic #127-Ubuntu SMP Mon Dec 11 12:16:42 UTC 2017 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (16921736) 1 day, 23:00:17.36
+iso.3.6.1.2.1.1.4.0 = STRING: "Me <me@example.org>"
+iso.3.6.1.2.1.1.5.0 = STRING: "m1-ts01"
+iso.3.6.1.2.1.1.6.0 = STRING: "Sitting on the Dock of the Bay"
+iso.3.6.1.2.1.1.7.0 = INTEGER: 72
+iso.3.6.1.2.1.1.8.0 = Timeticks: (1) 0:00:00.01
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+root@m1-ts01:~# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.217.65.30/24 brd 10.217.65.255 scope global bond0.1765
+    inet 10.218.71.11/24 brd 10.218.71.255 scope global bond0.1871
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# service snmpd stop
+root@m1-ts01:~# service snmpd start
+root@m1-ts01:~# service snmpd status
+● snmpd.service - LSB: SNMP agents
+   Loaded: loaded (/etc/init.d/snmpd; bad; vendor preset: enabled)
+   Active: active (running) since Thu 2017-12-21 09:14:14 EST; 3s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 12135 ExecStop=/etc/init.d/snmpd stop (code=exited, status=0/SUCCESS)
+  Process: 12174 ExecStart=/etc/init.d/snmpd start (code=exited, status=0/SUCCESS)
+    Tasks: 1
+   Memory: 4.9M
+      CPU: 35ms
+   CGroup: /system.slice/snmpd.service
+           └─12181 /usr/sbin/snmpd -LS6d -Lf /dev/null -u snmp -g snmp -p /var/run/snmpd.pid
+
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: NET-SNMP version 5.7.3
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:37838->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:37838->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:56330->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:33344->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:33344->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:51470->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:53610->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:53610->[127.0.0.1]:161
+Dec 21 09:14:14 m1-ts01 snmpd[12181]: Connection from UDP: [127.0.0.1]:52740->[127.0.0.1]:161
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 10.218.71.11 1 | head
+Timeout: No Response from 10.218.71.11
+root@m1-ts01:~#
+
+root@m1-ts01:~# systemctl stop snmpd.service
+
+root@m1-ts01:~# mkdir -p ~/work/20171221-1716
+root@m1-ts01:~# cp /etc/snmp/snmpd.conf !$
+cp /etc/snmp/snmpd.conf ~/work/20171221-1716
+root@m1-ts01:~#
+
+root@m1-ts01:~# systemctl stop hp-snmp-agents.service
+root@m1-ts01:~#
+
+root@m1-ts01:~# cat > /etc/snmp/snmpd.conf
+group   notConfigGroup v1           notConfigUsergroup   notConfigGroup v2c         notConfigUser
+rocommunity tcspub nag2.tcsbank.rurocommunity tcspub sim.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.rurocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.rurocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.rurocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 10.217.50.167
+view    all            included      .1
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  all    none   none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+smuxpeer .1.3.6.1.4.1.674.10892.1
+com2sec notConfigUser  default       tcspub
+Trapsink 10.216.43.159 tcspub
+rocommunity tcspub 10.216.43.159
+includeDir /etc/snmp/config.d
+root@m1-ts01:~#
+
+root@m1-ts01:~# systemctl start snmpd.service
+root@m1-ts01:~# systemctl status snmpd.service
+● snmpd.service - LSB: SNMP agents
+   Loaded: loaded (/etc/init.d/snmpd; bad; vendor preset: enabled)
+   Active: active (running) since Thu 2017-12-21 09:20:57 EST; 5s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 12227 ExecStop=/etc/init.d/snmpd stop (code=exited, status=0/SUCCE
+  Process: 13560 ExecStart=/etc/init.d/snmpd start (code=exited, status=0/SUC
+    Tasks: 1
+   Memory: 5.3M
+      CPU: 35ms
+   CGroup: /system.slice/snmpd.service
+           └─13567 /usr/sbin/snmpd -LS6d -Lf /dev/null -u snmp -g snmp -p /va
+
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: /etc/snmp/snmpd.conf: line 3: Error: ca
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: /etc/snmp/snmpd.conf: line 3: Error: ba
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: /etc/snmp/snmpd.conf: line 4: Error: ca
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: /etc/snmp/snmpd.conf: line 4: Error: ba
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: /etc/snmp/snmpd.conf: line 5: Error: ca
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: /etc/snmp/snmpd.conf: line 5: Error: ba
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: /etc/snmp/snmpd.conf: line 6: Error: ca
+Dec 21 09:20:57 m1-ts01 snmpd[13565]: net-snmp: 9 error(s) in config file(s)
+Dec 21 09:20:57 m1-ts01 systemd[1]: Started LSB: SNMP agents.
+Dec 21 09:20:57 m1-ts01 snmpd[13567]: NET-SNMP version 5.7.3
+root@m1-ts01:~#
+
+root@m1-ts01:~# systemctl start hp-snmp-agents.service
+root@m1-ts01:~# systemctl status hp-snmp-agents.service
+● hp-snmp-agents.service - LSB: hpe SNMP Agents.
+   Loaded: loaded (/etc/init.d/hp-snmp-agents; bad; vendor preset: enabled)
+   Active: active (running) since Thu 2017-12-21 09:22:33 EST; 5s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 12323 ExecStop=/etc/init.d/hp-snmp-agents stop (code=exited, statu
+  Process: 13577 ExecStart=/etc/init.d/hp-snmp-agents start (code=exited, sta
+    Tasks: 18
+   Memory: 12.7M
+      CPU: 2.628s
+   CGroup: /system.slice/hp-snmp-agents.service
+           ├─13596 cmahealthd -p 30 -s OK -t OK -i -l /var/log/hp-snmp-agents
+           ├─13617 cmastdeqd -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─13638 cmahostd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─13657 cmathreshd -p 5 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─13692 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─13694 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─13731 cmaperfd -p 30 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─13754 cmapeerd -l /var/log/hp-snmp-agents/cma.log
+           ├─13773 cmaeventd -p 15 -l /var/log/hp-snmp-agents/cma.log
+           ├─13795 cmafcad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─13816 cmasasd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─13837 cmaidad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─13857 cmaided -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─13879 cmascsid -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           └─13905 cmanicd -l /var/log/hp-snmp-agents/cma.log
+
+Dec 21 09:22:28 m1-ts01 hp-snmp-agents[13577]:   Starting IDA agent (cmaidad)
+Dec 21 09:22:28 m1-ts01 hp-snmp-agents[13577]:
+Dec 21 09:22:28 m1-ts01 hp-snmp-agents[13577]:   Starting IDE agent (cmaided)
+Dec 21 09:22:28 m1-ts01 hp-snmp-agents[13577]:
+Dec 21 09:22:28 m1-ts01 hp-snmp-agents[13577]:   Starting SCSI agent (cmascsi
+Dec 21 09:22:28 m1-ts01 hp-snmp-agents[13577]:
+Dec 21 09:22:33 m1-ts01 hp-snmp-agents[13577]:   Starting NIC Agent Daemon (c
+Dec 21 09:22:33 m1-ts01 hp-snmp-agents[13577]: WARNING:hp-snmp-agents is not
+Dec 21 09:22:33 m1-ts01 hp-snmp-agents[13577]: You must type '/sbin/hpsnmpcon
+Dec 21 09:22:33 m1-ts01 systemd[1]: Started LSB: hpe SNMP Agents..
+lines 1-36/36 (END)
+
+................................................................................
+
+root@m1-ts01:~# netstat -nlptu | grep 161
+udp        0      0 0.0.0.0:161             0.0.0.0:*                           18705/snmpd
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 127.0.0.1 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux m1-ts01 4.4.0-104-generic #127-Ubuntu SMP Mon Dec 11 12:16:42 UTC 2017 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (4190) 0:00:41.90
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "m1-ts01"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (1) 0:00:00.01
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 10.218.71.11 1 | head
+Timeout: No Response from 10.218.71.11
+root@m1-ts01:~#
+
+................................................................................
+
+#
+#	I've added ip address of this server.
+#
+root@m1-ts01:~# head -n 3 /etc/snmp/snmpd.conf
+agentAddress udp:161
+group   notConfigGroup v1           notConfigUsergroup   notConfigGroup v2c           notConfigUser
+rwcommunity tcspub 10.218.71.11
+root@m1-ts01:~#
+
+root@m1-ts01:~# systemctl restart snmpd.service
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 10.218.71.11 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux m1-ts01 4.4.0-104-generic #127-Ubuntu SMP Mon Dec 11 12:16:42 UTC 2017 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (322) 0:00:03.22
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "m1-ts01"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (1) 0:00:00.01
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@m1-ts01:~# systemctl restart hp-snmp-agents.service
+root@m1-ts01:~#
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# find / -iname CPQSINFO-MIB.mib
+/home/spa/.snmp/mibs/CPQSINFO-MIB.mib
+/home/spa/Affirmed/CPQSINFO-MIB.mib
+/root/work/20171113-1456/common.mvno.mibs/CPQSINFO-MIB.mib
+/root/work/20171113-1456/affirmed_mib_v7.2/CPQSINFO-MIB.mib
+/etc/snmp/mibs/CPQSINFO-MIB.mib
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# scp /etc/snmp/mibs/CPQSINFO-MIB.mib m1-ts01:/tmp/
+The authenticity of host 'm1-ts01 (10.218.71.11)' can't be established.
+RSA key fingerprint is 51:f0:95:f4:2b:e9:5e:e7:15:27:54:1f:c4:ec:ca:f6.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'm1-ts01,10.218.71.11' (RSA) to the list of known hosts.
+root@m1-ts01's password:
+CPQSINFO-MIB.mib                                                                  100%  142KB 142.3KB/s   00:00
+[root@vm-vol-nag4-tst etc]#
+
+root@m1-ts01:~# cp /tmp/CPQSINFO-MIB.mib /usr/share/snmp/mibs/
+
+root@m1-ts01:~# systemctl restart hp-snmp-agents.service
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub m1-ts01 1.3.6.1.4.1.232 | head
+SNMPv2-SMI::enterprises.232 = No Such Object available on this agent at this OID
+[root@vm-vol-nag4-tst etc]# snmpwalk -v 2c -c tcspub m1-ts01 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-ts01 4.4.0-104-generic #127-Ubuntu SMP Mon Dec 11 12:16:42 UTC 2017 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (79645) 0:13:16.45
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-ts01
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (1) 0:00:00.01
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+
+#
+#	20171222
+#
+
+root@m1-ts01:~# vim /etc/apt/sources.list.d/HP-mcp.list
+root@m1-ts01:~# cat /etc/apt/sources.list.d/HP-mcp.list
+deb http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current non-free
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# curl http://downloads.linux.hpe.com/SDR/hpPublicKey1024.pub | apt-key add -
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1713  100  1713    0     0   1847      0 --:--:-- --:--:-- --:--:--  1845
+OK
+root@m1-ts01:~# curl http://downloads.linux.hpe.com/SDR/hpPublicKey2048.pub | apt-key add -
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   990  100   990    0     0   1648      0 --:--:-- --:--:-- --:--:--  1650
+OK
+root@m1-ts01:~# curl http://downloads.linux.hpe.com/SDR/hpPublicKey2048_key1.pub | apt-key add -
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   994  100   994    0     0    541      0  0:00:01  0:00:01 --:--:--   541
+OK
+root@m1-ts01:~# curl http://downloads.linux.hpe.com/SDR/hpePublicKey2048_key1.pub | apt-key add -
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1004  100  1004    0     0   1715      0 --:--:-- --:--:-- --:--:--  1713
+OK
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# aptitude update
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-updates InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-backports InRelease
+Hit http://repo-linux.tcsbank.ru/ubuntu xenial-security InRelease
+Ign http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current InRelease
+Hit http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current Release
+Ign http://repo-linux/puppetlabs/apt xenial InRelease
+Hit http://repo-linux/puppetlabs/apt xenial Release
+Ign http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current InRelease
+Get: 1 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current Release [6,049 B]
+Get: 2 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current Release.gpg [490 B]
+Get: 3 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current/non-free amd64 Packages [3,255 B]
+Get: 4 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current/non-free i386 Packages [579 B]
+Fetched 10.4 kB in 2s (3,762 B/s)
+W: http://repo-linux.tcsbank.ru/hp/mcp/ubuntu/dists/xenial/current/Release.gpg: Signature by key 882F7199B20F94BD7E3E690EFADD8D64B1275EA3 uses weak digest algorithm (SHA1)
+
+Current status: 2 (+2) upgradable, 88 (+3) new.
+root@m1-ts01:~#
+
+root@m1-ts01:~# aptitude install hp-health hponcfg hp-snmp-agents hpsmh hp-smh-templates hpssacli hp-ams hpssa hpssacli hpssaducli
+hponcfg is already installed at the requested version (4.6.0.5-23.)
+hpssacli is already installed at the requested version (2.40-13.0)
+hpssacli is already installed at the requested version (2.40-13.0)
+hponcfg is already installed at the requested version (4.6.0.5-23.)
+hpssacli is already installed at the requested version (2.40-13.0)
+hpssacli is already installed at the requested version (2.40-13.0)
+The following NEW packages will be installed:
+  hp-ams hp-smh-templates hpsmh hpssa hpssaducli
+The following packages will be REMOVED:
+  lib32gcc1{u} libc6-i386{u}
+The following packages will be upgraded:
+  hp-health hp-snmp-agents
+2 packages upgraded, 5 newly installed, 2 to remove and 0 not upgraded.
+Need to get 28.7 MB of archives. After unpacking 48.5 MB will be used.
+Do you want to continue? [Y/n/?] Y
+Get: 1 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free amd64 hpssa amd64 2.40-13.0 [6,808 kB]
+Get: 2 http://repo-linux.tcsbank.ru/hp/mcp/ubuntu xenial/current/non-free amd64 hpssaducli amd64 2.40-13.0 [2,005 kB]
+Get: 3 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current/non-free amd64 hp-health amd64 10.61-1-0 [497 kB]
+Get: 4 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current/non-free amd64 hp-ams amd64 2.6.2-2551.13 [703 kB]
+Get: 5 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current/non-free amd64 hp-snmp-agents amd64 10.60-2953.16 [876 kB]
+Get: 6 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current/non-free amd64 hpsmh amd64 7.6.1-9.1-1. [13.7 MB]
+Get: 7 http://downloads.linux.hpe.com/SDR/repo/mcp xenial/current/non-free amd64 hp-smh-templates all 10.60.2-2. [4,068 kB]
+Fetched 28.7 MB in 56s (508 kB/s)
+[master 7bc6f18] saving uncommitted changes in /etc prior to apt run
+ Author: bsv <bsv@m1-ts01.tcsbank.ru>
+ 4 files changed, 23 insertions(+), 210 deletions(-)
+ create mode 100644 apt/sources.list.d/HP-mcp.list
+ rewrite snmp/snmpd.conf (97%)
+(Reading database ... 99638 files and directories currently installed.)
+Preparing to unpack .../hp-health_10.61-1-0_amd64.deb ...
+Unpacking hp-health (10.61-1-0) over (10.40-1815.49) ...
+Processing triggers for libc-bin (2.23-0ubuntu9) ...
+Processing triggers for systemd (229-4ubuntu21) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Processing triggers for man-db (2.7.5-1) ...
+(Reading database ... 99638 files and directories currently installed.)
+Removing lib32gcc1 (1:6.0.1-0ubuntu1) ...
+Removing libc6-i386 (2.23-0ubuntu9) ...
+Processing triggers for libc-bin (2.23-0ubuntu9) ...
+Selecting previously unselected package hp-ams.
+(Reading database ... 99331 files and directories currently installed.)
+Preparing to unpack .../hp-ams_2.6.2-2551.13_amd64.deb ...
+Unpacking hp-ams (2.6.2-2551.13) ...
+Preparing to unpack .../hp-snmp-agents_10.60-2953.16_amd64.deb ...
+Unpacking hp-snmp-agents (10.60-2953.16) over (10.40-2909.34) ...
+Selecting previously unselected package hpsmh.
+Preparing to unpack .../hpsmh_7.6.1-9.1-1._amd64.deb ...
+Unpacking hpsmh (7.6.1-9.1-1.) ...
+Selecting previously unselected package hp-smh-templates.
+Preparing to unpack .../hp-smh-templates_10.60.2-2._all.deb ...
+Unpacking hp-smh-templates (10.60.2-2.) ...
+Selecting previously unselected package hpssa.
+Preparing to unpack .../hpssa_2.40-13.0_amd64.deb ...
+Unpacking hpssa (2.40-13.0) ...
+Selecting previously unselected package hpssaducli.
+Preparing to unpack .../hpssaducli_2.40-13.0_amd64.deb ...
+Unpacking hpssaducli (2.40-13.0) ...
+Processing triggers for systemd (229-4ubuntu21) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Processing triggers for man-db (2.7.5-1) ...
+Setting up hp-health (10.61-1-0) ...
+Installing new version of config file /etc/init.d/hp-asrd ...
+Installing new version of config file /etc/init.d/hp-health ...
+Setting up hp-ams (2.6.2-2551.13) ...
+Job for hp-ams.service failed because the control process exited with error code. See "systemctl status hp-ams.service" and "journalctl -xe" for details.
+invoke-rc.d: initscript hp-ams, action "start" failed.
+● hp-ams.service - LSB: HP AMS helper
+   Loaded: loaded (/etc/init.d/hp-ams; bad; vendor preset: enabled)
+   Active: failed (Result: exit-code) since Fri 2017-12-22 04:43:44 EST; 7ms ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 370 ExecStart=/etc/init.d/hp-ams start (code=exited, status=1/FAILURE)
+
+Dec 22 04:43:44 m1-ts01 systemd[1]: Starting LSB: HP AMS helper...
+Dec 22 04:43:44 m1-ts01 hp-ams[370]: This program requires the host to have a HP Integrated Lights Out 4 (iLO 4) BMC
+Dec 22 04:43:44 m1-ts01 systemd[1]: hp-ams.service: Control process exited, code=exited status=1
+Dec 22 04:43:44 m1-ts01 systemd[1]: Failed to start LSB: HP AMS helper.
+Dec 22 04:43:44 m1-ts01 systemd[1]: hp-ams.service: Unit entered failed state.
+Dec 22 04:43:44 m1-ts01 systemd[1]: hp-ams.service: Failed with result 'exit-code'.
+dpkg: error processing package hp-ams (--configure):
+ subprocess installed post-installation script returned error exit status 1
+Setting up hp-snmp-agents (10.60-2953.16) ...
+Installing new version of config file /etc/init.d/hp-snmp-agents ...
+Setting up hpsmh (7.6.1-9.1-1.) ...
+Adding group `hpsmh' (GID 121) ...
+Done.
+Setting up hp-smh-templates (10.60.2-2.) ...
+visudo: /etc/sudoers.tmp unchanged
+Setting up hpssa (2.40-13.0) ...
+Setting up hpssaducli (2.40-13.0) ...
+Processing triggers for libc-bin (2.23-0ubuntu9) ...
+Processing triggers for systemd (229-4ubuntu21) ...
+Processing triggers for ureadahead (0.100.0-19) ...
+Errors were encountered while processing:
+ hp-ams
+[master b96198c] committing changes in /etc after apt run
+ Author: bsv <bsv@m1-ts01.tcsbank.ru>
+ 38 files changed, 482 insertions(+), 9 deletions(-)
+ create mode 100755 init.d/hp-ams
+ create mode 100755 init.d/hpsmhd
+ create mode 100755 init.d/hpssad
+ create mode 100644 opt/hp/sslshare/cert.pem
+ create mode 100644 opt/hp/sslshare/file.pem
+ create mode 120000 rc0.d/K01hp-ams
+ create mode 120000 rc0.d/K01hpsmhd
+ create mode 120000 rc0.d/K01hpssad
+ create mode 120000 rc1.d/K01hp-ams
+ create mode 120000 rc1.d/K01hpsmhd
+ create mode 120000 rc1.d/K01hpssad
+ create mode 120000 rc2.d/S01hp-ams
+ create mode 120000 rc2.d/S01hpsmhd
+ create mode 120000 rc2.d/S02hpssad
+ create mode 120000 rc3.d/S01hp-ams
+ create mode 120000 rc3.d/S01hpsmhd
+ create mode 120000 rc3.d/S02hpssad
+ create mode 120000 rc4.d/S01hp-ams
+ create mode 120000 rc4.d/S01hpsmhd
+ create mode 120000 rc4.d/S02hpssad
+ create mode 120000 rc5.d/S01hp-ams
+ create mode 120000 rc5.d/S01hpsmhd
+ create mode 120000 rc5.d/S02hpssad
+ create mode 120000 rc6.d/K01hp-ams
+ create mode 120000 rc6.d/K01hpsmhd
+ create mode 120000 rc6.d/K01hpssad
+E: Sub-process /usr/bin/dpkg returned an error code (1)
+Failed to perform requested operation on package.  Trying to recover:
+Setting up hp-ams (2.6.2-2551.13) ...
+Job for hp-ams.service failed because the control process exited with error code. See "systemctl status hp-ams.service" and "journalctl -xe" for details.
+invoke-rc.d: initscript hp-ams, action "start" failed.
+● hp-ams.service - LSB: HP AMS helper
+   Loaded: loaded (/etc/init.d/hp-ams; bad; vendor preset: enabled)
+   Active: failed (Result: exit-code) since Fri 2017-12-22 04:43:53 EST; 8ms ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 2284 ExecStart=/etc/init.d/hp-ams start (code=exited, status=1/FAILURE)
+
+Dec 22 04:43:53 m1-ts01 systemd[1]: Starting LSB: HP AMS helper...
+Dec 22 04:43:53 m1-ts01 hp-ams[2284]: This program requires the host to have a HP Integrated Lights Out 4 (iLO 4) BMC
+Dec 22 04:43:53 m1-ts01 systemd[1]: hp-ams.service: Control process exited, code=exited status=1
+Dec 22 04:43:53 m1-ts01 systemd[1]: Failed to start LSB: HP AMS helper.
+Dec 22 04:43:53 m1-ts01 systemd[1]: hp-ams.service: Unit entered failed state.
+Dec 22 04:43:53 m1-ts01 systemd[1]: hp-ams.service: Failed with result 'exit-code'.
+dpkg: error processing package hp-ams (--configure):
+ subprocess installed post-installation script returned error exit status 1
+Errors were encountered while processing:
+ hp-ams
+
+Current status: 0 (-2) upgradable.
+root@m1-ts01:~#
+
+................................................................................
+
+root@m1-ts01:~# mkdir -p ~/work/20171222-1245
+root@m1-ts01:~# cp /etc/snmp/snmpd.conf !$/
+cp /etc/snmp/snmpd.conf ~/work/20171222-1245/
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# hpsnmpconfig
+
+This configuration script will configure SNMP to integrate with the HPE SIM and
+the HPE System Management Homepage by editting the snmpd.conf file. The HP-SNMP-Agents can also exist in a more secure
+SNMP environment (e.g. VACM) that you have previously configured. See the
+hp-snmp-agents(4) man page for specific details on how to configure the VACM entries
+in the 'snmpd.conf' file. You may press <ctrl+c> now to exit now if needed.
+
+Do you wish to use an existing snmpd.conf (y/n) (Blank is n): n
+
+You will now be asked a series of SNMP configuration questions.  How you answer
+these question will affect the way SNMP behaves.  Configuring SNMP could have
+security implications on your system. If you are not sure how to answer a
+question, you can abort by pressing <Ctrl-c> and no changes will be made to
+your SNMP configuration.
+
+Localhost SNMP Read/Write community strings are already known.
+Do you wish to change it (y/n) (Blank is n): n
+Enter localhost SNMP Read Only community string
+(one word, Blank to skip):
+Re-enter the same input to confirm:
+ACCEPTED: inputs match!
+
+SNMP Read/Write community strings are already set to
+rwcommunity tcspub 10.218.71.11
+Do you wish to change them (y/n) (Blank is n):
+SNMP Read Only community strings are already set to
+rocommunity tcspub 172.16.1.115
+rocommunity tcspub 172.16.1.117
+rocommunity tcspub 172.16.1.6
+rocommunity tcspub 172.16.1.11
+rocommunity tcspub 10.217.50.167
+rocommunity tcspub 10.216.43.159
+Do you wish to change them (y/n) (Blank is n): n
+Enter default SNMP trap community string
+(One word; Blank to skip): tcspub
+Enter SNMP trap destination IP or DNS name
+(One word; Blank to skip): tcspub
+Enter trap community string for trap destination "tcspub"
+(One word; Blank to skip): tcspub
+The system contact is set to
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+Do you wish to change it (y/n) (Blank is n): n
+The system location is set to
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+Do you wish to change it (y/n) (Blank is n): n
+
+==============================================================================
+NOTE: New snmpd.conf entries were added to the top of /etc/snmp/snmpd.conf
+==============================================================================
+snmpd.service is not a native service, redirecting to systemd-sysv-install
+Executing /lib/systemd/systemd-sysv-install enable snmpd
+snmpd is started
+
+root@m1-ts01:~#
+
+
+root@m1-ts01:~# netstat -nlptu | grep 161
+udp        0      0 0.0.0.0:161             0.0.0.0:*                           2728/snmpd
+root@m1-ts01:~# snmpwalk -v 2c -c tcspub 10.218.71.11 1 | head
+iso.3.6.1.2.1.1.1.0 = STRING: "Linux m1-ts01 4.4.0-104-generic #127-Ubuntu SMP Mon Dec 11 12:16:42 UTC 2017 x86_64"
+iso.3.6.1.2.1.1.2.0 = OID: iso.3.6.1.4.1.8072.3.2.10
+iso.3.6.1.2.1.1.3.0 = Timeticks: (4202) 0:00:42.02
+iso.3.6.1.2.1.1.4.0 = STRING: "Root <root@localhost> (configure /etc/snmp/snmp.local.conf)"
+iso.3.6.1.2.1.1.5.0 = STRING: "m1-ts01"
+iso.3.6.1.2.1.1.6.0 = STRING: "Unknown (edit /etc/snmp/snmpd.conf)"
+iso.3.6.1.2.1.1.8.0 = Timeticks: (1) 0:00:00.01
+iso.3.6.1.2.1.1.9.1.2.1 = OID: iso.3.6.1.6.3.11.3.1.1
+iso.3.6.1.2.1.1.9.1.2.2 = OID: iso.3.6.1.6.3.15.2.1.1
+iso.3.6.1.2.1.1.9.1.2.3 = OID: iso.3.6.1.6.3.10.3.1.1
+root@m1-ts01:~#
+
+[root@vm-vol-nag4-tst etc]# check_hpasm --hostname m1-ts01 --community tcspub -v --perfdata=short | head
+OK - System: 'proliant dl360 g7', S/N: 'GB8108F15M', ROM: 'P68 07/02/2013', hardware working fine, da: 2 logical drives, 4 physical drives
+checking cpus
+cpu 0 is ok
+cpu 1 is ok
+checking power supplies
+powersupply 1 is ok
+powersupply 2 is ok
+checking fans
+overall fan status: system=ok, cpu=ok
+fan 1 is present, speed is normal, pctmax is 50%, location is system, redundance is redundant, partner is 2
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+[root@vm-vol-nag4-tst etc]# git --no-pager log -n 1 -p objects/servers/dc-m1/linux/m1-ts01.cfg
+commit 2ef3bcbe531959e10740ff3e2ca506ddd01c318a
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Fri Dec 22 15:01:18 2017 +0300
+
+    SD#839354. Added hardware monitoring for this server.
+
+diff --git a/objects/servers/dc-m1/linux/m1-ts01.cfg b/objects/servers/dc-m1/linux/m1-ts01.cfg
+index db878a0..27e20d0 100644
+--- a/objects/servers/dc-m1/linux/m1-ts01.cfg
++++ b/objects/servers/dc-m1/linux/m1-ts01.cfg
+@@ -55,9 +55,9 @@ define service{
+     contact_groups                  linux-admins
+     check_command                   check_nrpe!check_ntp_time
+ }
+-#define service{
+-#    use                             generic-service
+-#    host_name                       m1-ts01
+-#    service_description             Server Health
+-#    check_command                   check_dell
+-#}
++define service{
++    use                             hp-health-service
++    host_name                       m1-ts01
++    service_description             HP System Health Application
++    check_command                   check_hpasm
++}
+[root@vm-vol-nag4-tst etc]#
+
+................................................................................
+
+root@m1-ts01:~# systemctl status hp-snmp-agents.service
+● hp-snmp-agents.service - LSB: hp SNMP Agents.
+   Loaded: loaded (/etc/init.d/hp-snmp-agents; bad; vendor preset: enabled)
+   Active: active (running) since Fri 2017-12-22 04:43:50 EST; 2h 21min ago
+     Docs: man:systemd-sysv-generator(8)
+    Tasks: 18
+   Memory: 18.5M
+      CPU: 2min 57.714s
+   CGroup: /system.slice/hp-snmp-agents.service
+           ├─ 490 cmahealthd -p 30 -s OK -t OK -i -l /var/log/hp-snmp-agents/cma.log
+           ├─ 513 cmastdeqd -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─ 535 cmahostd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 556 cmathreshd -p 5 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 599 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─ 618 cmaperfd -p 30 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 639 cmapeerd -l /var/log/hp-snmp-agents/cma.log
+           ├─ 658 cmaeventd -p 15 -l /var/log/hp-snmp-agents/cma.log
+           ├─ 680 cmafcad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 701 cmasasd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 722 cmaidad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 742 cmaided -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 764 cmascsid -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 791 cmanicd -l /var/log/hp-snmp-agents/cma.log
+           └─2310 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+
+Dec 22 04:43:45 m1-ts01 hp-snmp-agents[468]:   Starting IDA agent (cmaidad):                 [ SUCCESS ]
+Dec 22 04:43:45 m1-ts01 hp-snmp-agents[468]:
+Dec 22 04:43:45 m1-ts01 hp-snmp-agents[468]:   Starting IDE agent (cmaided):                 [ SUCCESS ]
+Dec 22 04:43:45 m1-ts01 hp-snmp-agents[468]:
+Dec 22 04:43:45 m1-ts01 hp-snmp-agents[468]:   Starting SCSI agent (cmascsid):                 [ SUCCESS ]
+Dec 22 04:43:45 m1-ts01 hp-snmp-agents[468]:
+Dec 22 04:43:50 m1-ts01 hp-snmp-agents[468]:   Starting NIC Agent Daemon (cmanicd):                 [ SUCCESS ]
+Dec 22 04:43:50 m1-ts01 hp-snmp-agents[468]: WARNING:hp-snmp-agents is not configured.
+Dec 22 04:43:50 m1-ts01 hp-snmp-agents[468]: You must type '/sbin/hpsnmpconfig' as 'root' user to configure agents.
+Dec 22 04:43:50 m1-ts01 systemd[1]: Started LSB: hp SNMP Agents..
+root@m1-ts01:~#
+
+................................................................................
+
+

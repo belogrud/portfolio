@@ -1,0 +1,185 @@
+
+
+
+[root@vm-vol-nag4-tst etc]# pynag list contact_name email address1 filename where address1__contains="79263107087"
+contact_name         email                address1             filename
+--------------------------------------------------------------------------------
+a.a.syachinov_sms    a.a.syachinov@tinkoff.ru 79263107087          /usr/local/nagios/etc/objects/contacts/a.a.syachinov.cfg
+----------1 objects matches search condition------------------------------------
+[root@vm-vol-nag4-tst etc]#
+
+[root@vm-vol-nag4-tst etc]# cat /usr/local/nagios/etc/objects/contacts/a.a.syachinov.cfg
+define contact{
+        contact_name            a.a.syachinov_email
+        use                     generic-contact
+        alias                   Syachinov Artem Andreevich
+        email                   a.a.syachinov@tinkoff.ru
+}
+
+define contact{
+        contact_name            a.a.syachinov_sms
+        use                     generic-contact-critical
+        alias                   Syachinov Artem Andreevich
+        email                   a.a.syachinov@tinkoff.ru
+        address1                79263107087
+}
+[root@vm-vol-nag4-tst etc]#
+
+...........................................................................
+
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Duplicates of CardIndex payments
+        check_command                   check_nrpe!check_tcs_sme_duplicates_cardindex_payments
+        check_interval                  20
+        retry_interval                  1
+        first_notification_delay        0
+        contacts                        paym_sme_email
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           60
+}
+
+PG_SME - Duplicates of CardIndex payments
+
+define service{
+    use                      generic-service
+    host_name                vm-dbamon01
+    service_description      PG_SME - Failed Cain Payments
+    check_command            check_nrpe!check_pf_cain_payments
+    check_interval           20
+    retry_interval           20
+    first_notification_delay 0
+    contact_groups           empty-group
+    contacts                 paym_sme_email,a.b.popov_sms,k.v.lepenkov_sms
+    notification_options     c
+    flap_detection_enabled   0
+    max_check_attempts       1
+    notification_interval    60
+}
+
+
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - GIS Notifications
+        check_command                   check_nrpe!check_tcs_sme_check_gis_notifications
+#        check_interval                  30
+#        retry_interval                  1
+        first_notification_delay        0
+        contacts                        paym_sme_email
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+#        notification_interval           60
+        check_period                    pg_170_171
+        notification_period             pg_170_171
+}
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Paused Cain Payments
+        check_command                   check_nrpe!check_tcs_sme_check_paused_cain
+        check_interval                  120
+        retry_interval                  1
+        first_notification_delay        0
+        contacts                        paym_sme_email
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+       notification_interval           120
+}
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Payments
+        check_command                   check_nrpe!check_tcs_sme_check_pmt_for_support
+        check_interval                  20
+        retry_interval                  1
+        first_notification_delay        0
+        contacts                        paym_sme_email,processing_duty_sms
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           60
+}
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Reversals
+        check_command                   check_nrpe!check_tcs_sme_check_fail_reverse
+        check_interval                  60
+        retry_interval                  1
+        first_notification_delay        0
+        contacts                        paym_sme_email,a.b.popov_sms,k.v.lepenkov_sms
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           60
+}
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Running Payments
+        check_command                   check_nrpe!check_tcs_sme_check_running_payments
+        check_interval                  30
+        retry_interval                  1
+        first_notification_delay        0
+        contacts                        paym_sme_email
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+        notification_interval           60
+}
+
+
+...........................................................................
+
+define service{
+        use                             generic-service
+        host_name                       vm-dbamon01
+        service_description             PG_SME - Jobs
+        check_command                   check_nrpe!check_tcs_mon_pg_sme_jobs
+        check_interval           1
+        first_notification_delay        0
+        contacts                      a.burin_sms, s.dergach_sms, n.yatsishena_sms, processing_duty_sms, cards_24x7_email, paym_infogate_email
+        contact_groups                  empty-group
+        flap_detection_enabled          0
+        max_check_attempts              1
+    notification_interval         5
+}
+
+...........................................................................
+
+[root@vm-vol-nag4-tst etc]# egrep -irle "a.a.syachinov_email|a.a.syachinov_sms" objects/groups/contact-group/
+
+[root@vm-vol-nag4-tst etc]# egrep -irle "a.a.syachinov_email|a.a.syachinov_sms" objects/servers/
+objects/servers/dc-ds/linux/processing/ds-pr-ig03.cfg
+objects/servers/dc-ds/linux/processing/ds-pr-sub04.cfg
+objects/servers/dc-ds/linux/processing/ds-pr-sub01.cfg
+objects/servers/dc-ds/linux/processing/ds-pr-ig02.cfg
+objects/servers/dc-ds/linux/processing/ds-pr-ig01.cfg
+objects/servers/dc-ds/linux/processing/ds-pr-sub03.cfg
+objects/servers/dc-ds/linux/processing/ds-pr-sub02.cfg
+objects/servers/dc-ds/linux/processing/ds-pr-sub05.cfg
+objects/servers/vmware/vm-dbamon01.cfg
+objects/servers/vmware/vm-pr-sme01.cfg
+objects/servers/vmware/vm-pr-sme02.cfg
+objects/servers/dc-m1/linux/processing/m1-pr-sub04.cfg
+objects/servers/dc-m1/linux/processing/m1-pr-ig02.cfg
+objects/servers/dc-m1/linux/processing/m1-pr-sub03.cfg
+objects/servers/dc-m1/linux/processing/m1-pr-ig03.cfg
+objects/servers/dc-m1/linux/processing/m1-pr-ig01.cfg
+objects/servers/dc-m1/linux/processing/m1-pr-sub01.cfg
+objects/servers/dc-m1/linux/processing/m1-pr-sub02.cfg
+[root@vm-vol-nag4-tst etc]#
+
+

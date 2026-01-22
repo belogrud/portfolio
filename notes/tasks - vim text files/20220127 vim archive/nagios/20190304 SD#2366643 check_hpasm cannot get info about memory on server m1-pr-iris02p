@@ -1,0 +1,1277 @@
+
+
+
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120
+WARNING - status of all 12 dimms is n/a (please upgrade firmware), System: 'proliant dl360 gen9', S/N: 'CZJ44804QH', ROM: 'P89 04/25/2017'
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# snmpwalk -v 2c -c tcspub 10.217.10.49 1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux m1-pr-iris02p 3.10.0-514.el7.x86_64 #1 SMP Wed Oct 19 11:24:13 EDT 2016 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (23956091) 2 days, 18:32:40.91
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: m1-pr-iris02p
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (5) 0:00:00.05
+SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDCompliance
+SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+[root@vm-vol-nag4-tst objects]#
+[root@vm-vol-nag4-tst objects]# snmpwalk -v 2c -c tcspub 10.217.10.49 HOST-RESOURCES-MIB::hrMemorySize
+HOST-RESOURCES-MIB::hrMemorySize.0 = INTEGER: 395952988 KBytes
+[root@vm-vol-nag4-tst objects]#
+
+...........................................................................
+
+#
+#	Unusual thing.
+#	On the server - I cannot get snmp info.
+#
+[root@m1-pr-iris02p ~]# snmpwalk -v 2c -c tcspub 10.217.10.49 1 | head
+Timeout: No Response from 10.217.10.49
+[root@m1-pr-iris02p ~]#
+
+[root@m1-pr-iris02p ~]# grep -v -e "^#.*" -e "^ *$" /etc/snmp/snmpd.conf
+dlmod cmaX /usr/lib64/libcmaX64.so
+rocommunity tcspub nag2.tcsbank.ru
+rocommunity tcspub nag-tst
+rocommunity tcspub nag-prep
+rocommunity tcspub zabbix-it.tcsbank.ru
+rocommunity tcspub cacti.tcsbank.ru
+rocommunity tcspub m1-sim.tcsbank.ru
+rocommunity tcspub mon1.tcsbank.ru
+rocommunity tcspub mon2.tcsbank.ru
+rocommunity tcspub mon3.tcsbank.ru
+rocommunity tcspub mon4.tcsbank.ru
+rocommunity tcspub mon5.tcsbank.ru
+rocommunity tcspub mon6.tcsbank.ru
+rocommunity tcspub vm-dbamon02.tcsbank.ru
+rocommunity tcspub 10.217.50.167
+com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  systemview none none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+dontLogTCPWrappersConnects yes
+[root@m1-pr-iris02p ~]#
+
+...........................................................................
+
+[root@m1-pr-iris02p ~]# hpasmcli -s "SHOW SERVER"
+
+System        : ProLiant DL360 Gen9
+Serial No.    : CZJ44804QH
+ROM version   : v2.42 (04/25/2017) P89
+UEFI Support  : Yes
+iLo present   : Yes
+Embedded NICs : 6
+        NIC1 MAC: 38:63:bb:43:d8:2c
+        NIC2 MAC: 38:63:bb:43:d8:2d
+        NIC3 MAC: 38:63:bb:43:d8:2e
+        NIC4 MAC: 38:63:bb:43:d8:2f
+        NIC5 MAC: 8c:dc:d4:00:13:40
+        NIC6 MAC: 8c:dc:d4:00:13:44
+
+Processor: 0
+        Name         : Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+        Stepping     : 2
+        Speed        : 2400 MHz
+        Bus          : 100 MHz
+        Core         : 8
+        Thread       : 16
+        Socket       : 1
+        Level1 Cache : 512 KBytes
+        Level2 Cache : 2048 KBytes
+        Level3 Cache : 20480 KBytes
+        Status       : Ok
+
+Processor: 1
+        Name         : Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+        Stepping     : 2
+        Speed        : 2400 MHz
+        Bus          : 100 MHz
+        Core         : 8
+        Thread       : 16
+        Socket       : 2
+        Level1 Cache : 512 KBytes
+        Level2 Cache : 2048 KBytes
+        Level3 Cache : 20480 KBytes
+        Status       : Ok
+
+Processor total  : 2
+
+Memory installed : 393216 MBytes
+ECC supported    : Yes
+
+[root@m1-pr-iris02p ~]#
+
+[root@m1-pr-iris02p ~]# hpasmcli -s "SHOW FAN"
+
+Fan  Location        Present Speed  of max  Redundant  Partner  Hot-pluggable
+---  --------        ------- -----  ------  ---------  -------  -------------
+#1   SYSTEM          Yes     NORMAL  19%     Yes        0        Yes
+#2   SYSTEM          Yes     NORMAL  19%     Yes        0        Yes
+#3   SYSTEM          Yes     NORMAL  19%     Yes        0        Yes
+#4   SYSTEM          Yes     NORMAL  19%     Yes        0        Yes
+#5   SYSTEM          Yes     NORMAL  19%     Yes        0        Yes
+#6   SYSTEM          Yes     NORMAL  19%     Yes        0        Yes
+#7   SYSTEM          Yes     NORMAL  19%     Yes        0        Yes
+
+
+[root@m1-pr-iris02p ~]#
+
+................................................................................
+
+
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120 -vvv
+snmp agent answered
+whoami: ProLiant DL360 Gen9
+using HP::Proliant::SNMP
+Protocol is 2c
+000 seconds for walk cpqSasComponent (4 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeMComponent (0 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeAsr (0 oids)
+001 seconds for walk cpqSiComponent (222 oids)
+000 seconds for walk system (37 oids)
+000 seconds for walk cpqSeRom (3 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeEventLog (0 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeThermal (0 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHePWSComponent (0 oids)
+000 seconds for walk cpqSeProcessor (83 oids)
+000 seconds for walk cpqIdeComponent (3 oids)
+000 seconds for walk cpqNic (383 oids)
+000 seconds for walk cpqDaComponent (854 oids)
+000 seconds for walk cpqFcaComponent (1 oids)
+000 seconds for get various (8 oids)
+overall si condition is undefined
+overall he condition is undefined
+SI: 12   HE: 00   H2: 00
+SI00-> 01 02 03 04 05 06 07 08 09 10 11 12
+TYP1 proliant dl360 gen9
+ALL: 12
+HP::Proliant::Component::DiskSubsystem::Da::SNMP controllers und platten zusammenfuehren
+has 1 controllers
+has 1 accelerators
+has 0 enclosures
+has 5 physical_drives
+has 2 logical_drives
+has 0 spare_drives
+HP::Proliant::Component::DiskSubsystem::Sas::SNMP controllers und platten zusammenfuehren
+has 0 controllers
+has 0 enclosures
+has 0 physical_drives
+has 0 logical_drives
+has 0 spare_drives
+HP::Proliant::Component::DiskSubsystem::Scsi::SNMP controllers und platten zusammenfuehren
+has 0 controllers
+has 0 enclosures
+has 0 physical_drives
+has 0 logical_drives
+has 0 spare_drives
+HP::Proliant::Component::DiskSubsystem::Ide::SNMP controllers und platten zusammenfuehren
+has 0 controllers
+has 0 enclosures
+has 0 physical_drives
+has 0 logical_drives
+has 0 spare_drives
+HP::Proliant::Component::DiskSubsystem::Fca::SNMP controllers und platten zusammenfuehren
+has 0 host controllers
+has 0 controllers
+has 0 physical_drives
+has 0 logical_drives
+has 0 spare_drives
+[CPU_0]
+cpqSeCpuSlot: 0
+cpqSeCpuUnitIndex: 0
+cpqSeCpuName: Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+cpqSeCpuStatus: ok
+info: cpu 0 is ok
+
+[CPU_1]
+cpqSeCpuSlot: 0
+cpqSeCpuUnitIndex: 1
+cpqSeCpuName: Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+cpqSeCpuStatus: ok
+info: cpu 1 is ok
+
+dimm module 0:1 (module 1 @ cartridge 0) needs attention (n/a)
+dimm module 0:10 (module 10 @ cartridge 0) needs attention (n/a)
+dimm module 0:11 (module 11 @ cartridge 0) needs attention (n/a)
+dimm module 0:12 (module 12 @ cartridge 0) needs attention (n/a)
+dimm module 0:2 (module 2 @ cartridge 0) needs attention (n/a)
+dimm module 0:3 (module 3 @ cartridge 0) needs attention (n/a)
+dimm module 0:4 (module 4 @ cartridge 0) needs attention (n/a)
+dimm module 0:5 (module 5 @ cartridge 0) needs attention (n/a)
+dimm module 0:6 (module 6 @ cartridge 0) needs attention (n/a)
+dimm module 0:7 (module 7 @ cartridge 0) needs attention (n/a)
+dimm module 0:8 (module 8 @ cartridge 0) needs attention (n/a)
+dimm module 0:9 (module 9 @ cartridge 0) needs attention (n/a)
+[SI]
+car 00  mod 01  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 10  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 11  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 12  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 02  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 03  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 04  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 05  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 06  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 07  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 08  siz 16777216  sta present       con n/a         typ value_19
+car 00  mod 09  siz 16777216  sta present       con n/a         typ value_19
+[HE]
+[H2]
+i dump the memory
+car 00  mod 01  siz 16777216  sta present       con n/a         typ
+car 00  mod 10  siz 16777216  sta present       con n/a         typ
+car 00  mod 11  siz 16777216  sta present       con n/a         typ
+car 00  mod 12  siz 16777216  sta present       con n/a         typ
+car 00  mod 02  siz 16777216  sta present       con n/a         typ
+car 00  mod 03  siz 16777216  sta present       con n/a         typ
+car 00  mod 04  siz 16777216  sta present       con n/a         typ
+car 00  mod 05  siz 16777216  sta present       con n/a         typ
+car 00  mod 06  siz 16777216  sta present       con n/a         typ
+car 00  mod 07  siz 16777216  sta present       con n/a         typ
+car 00  mod 08  siz 16777216  sta present       con n/a         typ
+car 00  mod 09  siz 16777216  sta present       con n/a         typ
+[DA_CONTROLLER_0]
+cpqDaCntlrSlot: 0
+cpqDaCntlrIndex: 0
+cpqDaCntlrCondition: ok
+cpqDaCntlrModel: value_75
+
+[ACCELERATOR]
+cpqDaAccelCntlrIndex: 0
+cpqDaAccelBattery: ok
+cpqDaAccelStatus: enabled
+cpqDaAccelCondition: ok
+cpqDaAccelErrCode: invalid
+
+[LOGICAL_DRIVE]
+cpqDaLogDrvCntlrIndex: 0
+cpqDaLogDrvIndex: 1
+cpqDaLogDrvSize: 139979
+cpqDaLogDrvFaultTol: mirroring
+cpqDaLogDrvStatus: ok
+cpqDaLogDrvCondition: ok
+cpqDaLogDrvPercentRebuild: 100
+cpqDaLogDrvPhyDrvIDs: 0x0001
+
+[LOGICAL_DRIVE]
+cpqDaLogDrvCntlrIndex: 0
+cpqDaLogDrvIndex: 2
+cpqDaLogDrvSize: 1907674
+cpqDaLogDrvFaultTol: distribDataGuard
+cpqDaLogDrvStatus: ok
+cpqDaLogDrvCondition: ok
+cpqDaLogDrvPercentRebuild: 100
+cpqDaLogDrvPhyDrvIDs: 0x020304
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 0
+cpqDaPhyDrvBay: 1
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 1
+cpqDaPhyDrvBay: 2
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 2
+cpqDaPhyDrvBay: 3
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 3
+cpqDaPhyDrvBay: 4
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 4
+cpqDaPhyDrvBay: 5
+cpqDaPhyDrvBusNumber: 1
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+WARNING - status of all 12 dimms is n/a (please upgrade firmware), System: 'proliant dl360 gen9', S/N: 'CZJ44804QH', ROM: 'P89 04/25/2017'
+checking cpus
+cpu 0 is ok
+cpu 1 is ok
+checking power supplies
+checking fans
+this system seems to be water-cooled. no fans found
+checking temperatures
+no temperatures found
+checking memory
+dimm module 0:1 (module 1 @ cartridge 0) needs attention (n/a)
+dimm module 0:10 (module 10 @ cartridge 0) needs attention (n/a)
+dimm module 0:11 (module 11 @ cartridge 0) needs attention (n/a)
+dimm module 0:12 (module 12 @ cartridge 0) needs attention (n/a)
+dimm module 0:2 (module 2 @ cartridge 0) needs attention (n/a)
+dimm module 0:3 (module 3 @ cartridge 0) needs attention (n/a)
+dimm module 0:4 (module 4 @ cartridge 0) needs attention (n/a)
+dimm module 0:5 (module 5 @ cartridge 0) needs attention (n/a)
+dimm module 0:6 (module 6 @ cartridge 0) needs attention (n/a)
+dimm module 0:7 (module 7 @ cartridge 0) needs attention (n/a)
+dimm module 0:8 (module 8 @ cartridge 0) needs attention (n/a)
+dimm module 0:9 (module 9 @ cartridge 0) needs attention (n/a)
+checking disk subsystem
+controller accelerator is ok
+controller accelerator battery is ok
+logical drive 0:1 is ok (mirroring)
+logical drive 0:2 is ok (distribDataGuard)
+physical drive 0:0 is ok
+physical drive 0:1 is ok
+physical drive 0:2 is ok
+physical drive 0:3 is ok
+physical drive 0:4 is ok
+da controller 0 in slot 0 is ok
+checking ASR
+This system does not have ASR.
+checking events
+no events found
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120 -vv
+Protocol is 2c
+000 seconds for walk cpqSasComponent (4 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeMComponent (0 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeAsr (0 oids)
+000 seconds for walk cpqSiComponent (222 oids)
+000 seconds for walk system (37 oids)
+000 seconds for walk cpqSeRom (3 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeEventLog (0 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHeThermal (0 oids)
+maxrepetitions failed. fallback
+000 seconds for walk cpqHePWSComponent (0 oids)
+000 seconds for walk cpqSeProcessor (83 oids)
+001 seconds for walk cpqIdeComponent (3 oids)
+000 seconds for walk cpqNic (383 oids)
+000 seconds for walk cpqDaComponent (854 oids)
+000 seconds for walk cpqFcaComponent (1 oids)
+000 seconds for get various (8 oids)
+overall si condition is undefined
+overall he condition is undefined
+SI: 12   HE: 00   H2: 00
+SI00-> 01 02 03 04 05 06 07 08 09 10 11 12
+TYP1 proliant dl360 gen9
+ALL: 12
+[CPU_0]
+cpqSeCpuSlot: 0
+cpqSeCpuUnitIndex: 0
+cpqSeCpuName: Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+cpqSeCpuStatus: ok
+info: cpu 0 is ok
+
+[CPU_1]
+cpqSeCpuSlot: 0
+cpqSeCpuUnitIndex: 1
+cpqSeCpuName: Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+cpqSeCpuStatus: ok
+info: cpu 1 is ok
+
+dimm module 0:1 (module 1 @ cartridge 0) needs attention (n/a)
+dimm module 0:10 (module 10 @ cartridge 0) needs attention (n/a)
+dimm module 0:11 (module 11 @ cartridge 0) needs attention (n/a)
+dimm module 0:12 (module 12 @ cartridge 0) needs attention (n/a)
+dimm module 0:2 (module 2 @ cartridge 0) needs attention (n/a)
+dimm module 0:3 (module 3 @ cartridge 0) needs attention (n/a)
+dimm module 0:4 (module 4 @ cartridge 0) needs attention (n/a)
+dimm module 0:5 (module 5 @ cartridge 0) needs attention (n/a)
+dimm module 0:6 (module 6 @ cartridge 0) needs attention (n/a)
+dimm module 0:7 (module 7 @ cartridge 0) needs attention (n/a)
+dimm module 0:8 (module 8 @ cartridge 0) needs attention (n/a)
+dimm module 0:9 (module 9 @ cartridge 0) needs attention (n/a)
+i dump the memory
+car 00  mod 01  siz 16777216  sta present       con n/a         typ
+car 00  mod 10  siz 16777216  sta present       con n/a         typ
+car 00  mod 11  siz 16777216  sta present       con n/a         typ
+car 00  mod 12  siz 16777216  sta present       con n/a         typ
+car 00  mod 02  siz 16777216  sta present       con n/a         typ
+car 00  mod 03  siz 16777216  sta present       con n/a         typ
+car 00  mod 04  siz 16777216  sta present       con n/a         typ
+car 00  mod 05  siz 16777216  sta present       con n/a         typ
+car 00  mod 06  siz 16777216  sta present       con n/a         typ
+car 00  mod 07  siz 16777216  sta present       con n/a         typ
+car 00  mod 08  siz 16777216  sta present       con n/a         typ
+car 00  mod 09  siz 16777216  sta present       con n/a         typ
+[DA_CONTROLLER_0]
+cpqDaCntlrSlot: 0
+cpqDaCntlrIndex: 0
+cpqDaCntlrCondition: ok
+cpqDaCntlrModel: value_75
+
+[ACCELERATOR]
+cpqDaAccelCntlrIndex: 0
+cpqDaAccelBattery: ok
+cpqDaAccelStatus: enabled
+cpqDaAccelCondition: ok
+cpqDaAccelErrCode: invalid
+
+[LOGICAL_DRIVE]
+cpqDaLogDrvCntlrIndex: 0
+cpqDaLogDrvIndex: 1
+cpqDaLogDrvSize: 139979
+cpqDaLogDrvFaultTol: mirroring
+cpqDaLogDrvStatus: ok
+cpqDaLogDrvCondition: ok
+cpqDaLogDrvPercentRebuild: 100
+cpqDaLogDrvPhyDrvIDs: 0x0001
+
+[LOGICAL_DRIVE]
+cpqDaLogDrvCntlrIndex: 0
+cpqDaLogDrvIndex: 2
+cpqDaLogDrvSize: 1907674
+cpqDaLogDrvFaultTol: distribDataGuard
+cpqDaLogDrvStatus: ok
+cpqDaLogDrvCondition: ok
+cpqDaLogDrvPercentRebuild: 100
+cpqDaLogDrvPhyDrvIDs: 0x020304
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 0
+cpqDaPhyDrvBay: 1
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 1
+cpqDaPhyDrvBay: 2
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 2
+cpqDaPhyDrvBay: 3
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 3
+cpqDaPhyDrvBay: 4
+cpqDaPhyDrvBusNumber: 0
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+[PHYSICAL_DRIVE]
+cpqDaPhyDrvCntlrIndex: 0
+cpqDaPhyDrvIndex: 4
+cpqDaPhyDrvBay: 5
+cpqDaPhyDrvBusNumber: 1
+cpqDaPhyDrvSize: 34362
+cpqDaPhyDrvStatus: ok
+cpqDaPhyDrvCondition: ok
+
+WARNING - status of all 12 dimms is n/a (please upgrade firmware), System: 'proliant dl360 gen9', S/N: 'CZJ44804QH', ROM: 'P89 04/25/2017'
+checking cpus
+cpu 0 is ok
+cpu 1 is ok
+checking power supplies
+checking fans
+this system seems to be water-cooled. no fans found
+checking temperatures
+no temperatures found
+checking memory
+dimm module 0:1 (module 1 @ cartridge 0) needs attention (n/a)
+dimm module 0:10 (module 10 @ cartridge 0) needs attention (n/a)
+dimm module 0:11 (module 11 @ cartridge 0) needs attention (n/a)
+dimm module 0:12 (module 12 @ cartridge 0) needs attention (n/a)
+dimm module 0:2 (module 2 @ cartridge 0) needs attention (n/a)
+dimm module 0:3 (module 3 @ cartridge 0) needs attention (n/a)
+dimm module 0:4 (module 4 @ cartridge 0) needs attention (n/a)
+dimm module 0:5 (module 5 @ cartridge 0) needs attention (n/a)
+dimm module 0:6 (module 6 @ cartridge 0) needs attention (n/a)
+dimm module 0:7 (module 7 @ cartridge 0) needs attention (n/a)
+dimm module 0:8 (module 8 @ cartridge 0) needs attention (n/a)
+dimm module 0:9 (module 9 @ cartridge 0) needs attention (n/a)
+checking disk subsystem
+controller accelerator is ok
+controller accelerator battery is ok
+logical drive 0:1 is ok (mirroring)
+logical drive 0:2 is ok (distribDataGuard)
+physical drive 0:0 is ok
+physical drive 0:1 is ok
+physical drive 0:2 is ok
+physical drive 0:3 is ok
+physical drive 0:4 is ok
+da controller 0 in slot 0 is ok
+checking ASR
+This system does not have ASR.
+checking events
+no events found
+[root@vm-vol-nag4-tst objects]#
+
+
+
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120 -v
+WARNING - status of all 12 dimms is n/a (please upgrade firmware), System: 'proliant dl360 gen9', S/N: 'CZJ44804QH', ROM: 'P89 04/25/2017'
+checking cpus
+cpu 0 is ok
+cpu 1 is ok
+checking power supplies
+checking fans
+this system seems to be water-cooled. no fans found
+checking temperatures
+no temperatures found
+checking memory
+dimm module 0:1 (module 1 @ cartridge 0) needs attention (n/a)
+dimm module 0:10 (module 10 @ cartridge 0) needs attention (n/a)
+dimm module 0:11 (module 11 @ cartridge 0) needs attention (n/a)
+dimm module 0:12 (module 12 @ cartridge 0) needs attention (n/a)
+dimm module 0:2 (module 2 @ cartridge 0) needs attention (n/a)
+dimm module 0:3 (module 3 @ cartridge 0) needs attention (n/a)
+dimm module 0:4 (module 4 @ cartridge 0) needs attention (n/a)
+dimm module 0:5 (module 5 @ cartridge 0) needs attention (n/a)
+dimm module 0:6 (module 6 @ cartridge 0) needs attention (n/a)
+dimm module 0:7 (module 7 @ cartridge 0) needs attention (n/a)
+dimm module 0:8 (module 8 @ cartridge 0) needs attention (n/a)
+dimm module 0:9 (module 9 @ cartridge 0) needs attention (n/a)
+checking disk subsystem
+controller accelerator is ok
+controller accelerator battery is ok
+logical drive 0:1 is ok (mirroring)
+logical drive 0:2 is ok (distribDataGuard)
+physical drive 0:0 is ok
+physical drive 0:1 is ok
+physical drive 0:2 is ok
+physical drive 0:3 is ok
+physical drive 0:4 is ok
+da controller 0 in slot 0 is ok
+checking ASR
+This system does not have ASR.
+checking events
+no events found
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@m1-pr-iris02p ~]# systemctl status hp-health
+● hp-health.service - HP System Health Monitor
+   Loaded: loaded (/usr/lib/systemd/system/hp-health.service; enabled; vendor preset: disabled)
+   Active: active (running) since Sun 2019-03-03 10:23:14 MSK; 1 day 5h ago
+  Process: 4094 ExecStop=/usr/lib/systemd/scripts/hp-health.sh stop (code=exited, status=0/SUCCESS)
+  Process: 4239 ExecStart=/usr/lib/systemd/scripts/hp-health.sh start (code=exited, status=0/SUCCESS)
+ Main PID: 4304 (hpasmlited)
+   CGroup: /system.slice/hp-health.service
+           └─4304 hpasmlited -f /dev/hpilo
+
+Mar 03 10:23:14 m1-pr-iris02p hp-health.sh[4239]: Starting Proliant Standard
+Mar 03 10:23:14 m1-pr-iris02p hp-health.sh[4239]: IPMI based System Health Monitor (hpasmlited):
+Mar 03 10:23:14 m1-pr-iris02p hpasmlited[4304]: StartIpmiRmqThread
+Mar 03 10:23:14 m1-pr-iris02p hpasmlited[4304]: StartIpmiRmqThread: Thread created (TID -216987904)
+Mar 03 10:23:14 m1-pr-iris02p hpasmlited[4304]: IpmiRmqThread: Entry
+Mar 03 10:23:14 m1-pr-iris02p hp-health.sh[4239]: [  OK  ]
+Mar 03 10:23:14 m1-pr-iris02p systemd[1]: Started HP System Health Monitor.
+Mar 03 10:23:43 m1-pr-iris02p hpasmlited[4304]: hpDeferSPDThread: Starting thread to collect DIMM SPD Data.
+Mar 03 10:23:43 m1-pr-iris02p hpasmlited[4304]: Initialize data structures successful
+Mar 03 10:25:40 m1-pr-iris02p hpasmlited[4304]: hpDeferSPDThread: End of Collecting DIMM SPD data.
+[root@m1-pr-iris02p ~]# systemctl restart hp-health
+[root@m1-pr-iris02p ~]# systemctl status hp-health
+● hp-health.service - HP System Health Monitor
+   Loaded: loaded (/usr/lib/systemd/system/hp-health.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2019-03-04 15:48:22 MSK; 10s ago
+  Process: 9348 ExecStop=/usr/lib/systemd/scripts/hp-health.sh stop (code=exited, status=0/SUCCESS)
+  Process: 9434 ExecStart=/usr/lib/systemd/scripts/hp-health.sh start (code=exited, status=0/SUCCESS)
+ Main PID: 9499 (hpasmlited)
+   CGroup: /system.slice/hp-health.service
+           └─9499 hpasmlited -f /dev/hpilo
+
+Mar 04 15:48:21 m1-pr-iris02p systemd[1]: Starting HP System Health Monitor...
+Mar 04 15:48:21 m1-pr-iris02p hp-health.sh[9434]: Using Proliant Standard
+Mar 04 15:48:21 m1-pr-iris02p hp-health.sh[9434]: IPMI based System Health Monitor
+Mar 04 15:48:22 m1-pr-iris02p hp-health.sh[9434]: Starting Proliant Standard
+Mar 04 15:48:22 m1-pr-iris02p hp-health.sh[9434]: IPMI based System Health Monitor (hpasmlited):
+Mar 04 15:48:22 m1-pr-iris02p hpasmlited[9499]: StartIpmiRmqThread
+Mar 04 15:48:22 m1-pr-iris02p hpasmlited[9499]: StartIpmiRmqThread: Thread created (TID -683444480)
+Mar 04 15:48:22 m1-pr-iris02p hpasmlited[9499]: IpmiRmqThread: Entry
+Mar 04 15:48:22 m1-pr-iris02p hp-health.sh[9434]: [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p systemd[1]: Started HP System Health Monitor.
+[root@m1-pr-iris02p ~]#
+
+#
+#	After service hp-health had been restarted, I received state "Ok". But that was only for several moments.
+#
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120 -v
+OK - System: '', S/N: '', ROM: '', hardware working fine
+checking disk subsystem
+[root@vm-vol-nag4-tst objects]#
+
+#
+#	I've restar the test - and received same error message.
+#
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120
+WARNING - status of all 12 dimms is n/a (please upgrade firmware), System: 'proliant dl360 gen9', S/N: 'CZJ44804QH', ROM: 'P89 04/25/2017'
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+[root@m1-pr-iris02p ~]# systemctl status hp-snmp-agents.service
+● hp-snmp-agents.service - HP SNMP Agents
+   Loaded: loaded (/usr/lib/systemd/system/hp-snmp-agents.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2019-03-04 15:48:27 MSK; 9min ago
+  Process: 8272 ExecStop=/usr/lib/systemd/scripts/hp-snmp-agents.sh stop (code=exited, status=0/SUCCESS)
+  Process: 9511 ExecStart=/usr/lib/systemd/scripts/hp-snmp-agents.sh start (code=exited, status=0/SUCCESS)
+   CGroup: /system.slice/hp-snmp-agents.service
+           ├─ 9572 cmastdeqd -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9595 cmahostd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9617 cmathreshd -p 5 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9656 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9678 cmaperfd -p 30 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9701 cmapeerd -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9727 cmaeventd -p 15 -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9752 cmafcad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9778 cmasasd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9805 cmaidad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9830 cmaided -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9859 cmascsid -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─ 9886 cmanicd -l /var/log/hp-snmp-agents/cma.log
+           └─11493 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting Performance agent (cmaperfd): [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting SNMP Peer (cmapeerd): [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting Storage Event Logger (cmaeventd): [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting FCA agent (cmafcad): [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting SAS agent (cmasasd): [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting IDA agent (cmaidad): [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting IDE agent (cmaided): [  OK  ]
+Mar 04 15:48:22 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting SCSI agent (cmascsid): [  OK  ]
+Mar 04 15:48:27 m1-pr-iris02p hp-snmp-agents.sh[9511]: Starting NIC Agent Daemon (cmanicd): [  OK  ]
+Mar 04 15:48:27 m1-pr-iris02p systemd[1]: Started HP SNMP Agents.
+[root@m1-pr-iris02p ~]# systemctl restart hp-snmp-agents.service
+[root@m1-pr-iris02p ~]# systemctl status hp-snmp-agents.service
+● hp-snmp-agents.service - HP SNMP Agents
+   Loaded: loaded (/usr/lib/systemd/system/hp-snmp-agents.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2019-03-04 15:58:32 MSK; 6s ago
+  Process: 19989 ExecStop=/usr/lib/systemd/scripts/hp-snmp-agents.sh stop (code=exited, status=0/SUCCESS)
+  Process: 20764 ExecStart=/usr/lib/systemd/scripts/hp-snmp-agents.sh start (code=exited, status=0/SUCCESS)
+   CGroup: /system.slice/hp-snmp-agents.service
+           ├─20809 cmastdeqd -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─20835 cmahostd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─20858 cmathreshd -p 5 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─20896 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─20898 cmasm2d -p 30 -l /var/log/hp-snmp-agents/cma.log
+           ├─20950 cmaperfd -p 30 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─20973 cmapeerd -l /var/log/hp-snmp-agents/cma.log
+           ├─20999 cmaeventd -p 15 -l /var/log/hp-snmp-agents/cma.log
+           ├─21026 cmafcad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─21052 cmasasd -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─21080 cmaidad -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─21382 cmaided -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           ├─21409 cmascsid -p 15 -s OK -l /var/log/hp-snmp-agents/cma.log
+           └─21436 cmanicd -l /var/log/hp-snmp-agents/cma.log
+
+Mar 04 15:58:26 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting Performance agent (cmaperfd): [  OK  ]
+Mar 04 15:58:26 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting SNMP Peer (cmapeerd): [  OK  ]
+Mar 04 15:58:26 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting Storage Event Logger (cmaeventd): [  OK  ]
+Mar 04 15:58:26 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting FCA agent (cmafcad): [  OK  ]
+Mar 04 15:58:27 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting SAS agent (cmasasd): [  OK  ]
+Mar 04 15:58:27 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting IDA agent (cmaidad): [  OK  ]
+Mar 04 15:58:27 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting IDE agent (cmaided): [  OK  ]
+Mar 04 15:58:27 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting SCSI agent (cmascsid): [  OK  ]
+Mar 04 15:58:32 m1-pr-iris02p hp-snmp-agents.sh[20764]: Starting NIC Agent Daemon (cmanicd): [  OK  ]
+Mar 04 15:58:32 m1-pr-iris02p systemd[1]: Started HP SNMP Agents.
+[root@m1-pr-iris02p ~]#
+
+
+#
+#	Unusual behavior.
+#
+[root@m1-pr-iris02p ~]# yum repolist
+Bus error (core dumped)
+[root@m1-pr-iris02p ~]#
+
+#	https://stackoverflow.com/questions/212466/what-is-a-bus-error
+#
+#	I'd like to add a simple explanation for both: Segmentation fault means that you are trying to access memory that you are not allowed to (e. g. it's not part of your program). However, on a bus error it usually means that you are trying to access memory that does not exist (e. g. you try to access an address at 12G but you only have 8G memory) or if you exceed the limit of usable memory
+#
+#	...
+#	A segfault is accessing memory that you're not allowed to access. It's read-only, you don't have permission, etc...
+#
+#	A bus error is trying to access memory that can't possibly be there. You've used an address that's meaningless to the system, or the wrong kind of address for that operation.
+#
+
+
+[root@m1-pr-iris02p ~]# hpasmcli -s "SHOW IML"
+
+
+Event: 0 Added: 11/27/2014 00:05
+INFO: Maintenance Note - Maintenance note: IML cleared through hpasmcli.
+
+Event: 1 Added: 03/19/2015 14:56
+CRITICAL: POST Messages - Option ROM POST Error: 1785-Slot 0 Drive Array Not Configured.
+
+Event: 2 Added: 03/19/2015 06:57
+CAUTION: Power Subsystem - System Power Supply: Input Power Loss or Unplugged Power Cord, Verify Power Supply Input (Power Supply 2).
+
+Event: 3 Added: 03/19/2015 06:57
+CAUTION: Power Subsystem - Smart Storage Battery has exceeded the maximum amount of devices supported (Battery 1, service information: 0x07). Action: 1. Remove additional devices. 2. Consult server troubleshooting guide. 3. Gather AHS log and contact Support.
+
+Event: 4 Added: 03/19/2015 14:56
+CAUTION: POST Messages - POST Error: 1623-Power Supply Failure - Power Supply 2 is failed. Action: Replace the power supply..
+
+Event: 5 Added: 03/31/2015 12:04
+CAUTION: Power Subsystem - System Power Supply: Input Power Loss or Unplugged Power Cord, Verify Power Supply Input (Power Supply 2).
+
+Event: 6 Added: 03/31/2015 12:04
+CAUTION: Power Subsystem - System Power Supplies Not Redundant.
+
+Event: 7 Added: 03/31/2015 09:04
+CRITICAL: Unrecoverable System Error - Server Critical Fault (Service Information: Input Power Loss, Power Supply,  Power Supply 1 (03h)  Power Supply 2 (03h)).
+
+Event: 8 Added: 05/17/2015 04:27
+REPAIRED: Network Adapter - Network Adapter Link Down (Slot 2, Port 2).
+
+Event: 9 Added: 05/17/2015 04:27
+REPAIRED: Network Adapter - Network Adapter Link Down (Slot 2, Port 1).
+
+Event: 10 Added: 06/20/2017 00:04
+REPAIRED: Power Subsystem - System Power Supply: Input Power Loss or Unplugged Power Cord, Verify PowerSupply Input (Power Supply 1).
+
+Event: 11 Added: 06/20/2017 00:04
+REPAIRED: Power Subsystem - System Power Supplies Not Redundant.
+
+Event: 12 Added: 11/22/2017 18:19
+CRITICAL: Drive Array Subsystem - Drive Array Controller Failure (Slot 0).
+
+Event: 13 Added: 12/20/2017 16:13
+INFO: Maintenance Note - Maintenance note: Starting F10 GUI.
+
+Event: 14 Added: 12/20/2017 16:21
+INFO: System Revision - Firmware flashed (System BIOS - P89 v2.42 (04/25/2017)).
+
+Event: 15 Added: 12/20/2017 16:22
+INFO: System Revision - Firmware flashed (Gen9 Power Management Controller Firmware Version 1.0.9).
+
+Event: 16 Added: 12/20/2017 16:35
+INFO: System Revision - Firmware flashed (iLO 4 2.50).
+
+Event: 17 Added: 12/20/2017 16:41
+CAUTION: Power Subsystem - Smart Storage Battery failure (Battery 1, service information: 0x0A). Action: Gather AHS log and contact Support.
+
+Event: 18 Added: 12/20/2017 17:07
+CAUTION: Power Subsystem - Smart Storage Battery failure (Battery 1, service information: 0x0A). Action: Gather AHS log and contact Support.
+
+Event: 19 Added: 12/21/2017 12:54
+CRITICAL: Network Adapter - Network Adapter Link Down (Slot 0, Port 4).
+
+Event: 20 Added: 12/21/2017 12:54
+CRITICAL: Network Adapter - Network Adapter Link Down (Slot 0, Port 3).
+
+Event: 21 Added: 12/21/2017 12:54
+CRITICAL: Network Adapter - Network Adapter Link Down (Slot 0, Port 2).
+
+Event: 22 Added: 12/21/2017 12:54
+CRITICAL: Network Adapter - Network Adapter Link Down (Slot 0, Port 1).
+
+Event: 23 Added: 09/27/2018 14:45
+INFO: System Revision - Firmware flashed (iLO 4 2.61).
+
+
+[root@m1-pr-iris02p ~]#
+
+
+[root@m1-pr-iris02p ~]# last -a -d -F -x -n 10
+bsv      pts/0        Mon Mar  4 15:45:15 2019   still logged in                       tcs4357.tcsbank.ru
+bsv      pts/2        Mon Mar  4 12:06:39 2019 - Mon Mar  4 12:56:30 2019  (00:49)     tcs4357.tcsbank.ru
+bsv      pts/2        Mon Mar  4 12:06:20 2019 - Mon Mar  4 12:06:30 2019  (00:00)     tcs4357.tcsbank.ru
+irisuser pts/0        Mon Mar  4 12:03:27 2019 - Mon Mar  4 13:08:54 2019  (01:05)     tcs6473.tcsbank.ru
+irisuser pts/0        Mon Mar  4 11:33:22 2019 - Mon Mar  4 11:49:34 2019  (00:16)     tcs6473.tcsbank.ru
+irisuser pts/0        Mon Mar  4 11:03:47 2019 - Mon Mar  4 11:19:26 2019  (00:15)     tcs6473.tcsbank.ru
+qom      pts/1        Mon Mar  4 10:11:27 2019 - Mon Mar  4 10:26:27 2019  (00:15)     tcs0002.tcsbank.ru
+qom      pts/0        Mon Mar  4 10:11:00 2019 - Mon Mar  4 10:26:42 2019  (00:15)     tcs0002.tcsbank.ru
+irisuser pts/0        Sun Mar  3 17:48:49 2019 - Sun Mar  3 17:49:18 2019  (00:00)     tcs6473.tcsbank.ru
+irisuser pts/0        Sun Mar  3 13:30:26 2019 - Sun Mar  3 13:37:27 2019  (00:07)     tcs6473.tcsbank.ru
+
+wtmp begins Wed Dec 20 20:07:57 2017
+[root@m1-pr-iris02p ~]#
+
+
+[root@m1-pr-iris02p ~]# uptime
+ 16:37:51 up 2 days, 22:59,  1 user,  load average: 0.27, 0.44, 0.47
+[root@m1-pr-iris02p ~]#
+
+[root@m1-pr-iris02p ~]# last reboot -a -d -F -x -n 10
+reboot   system boot  Fri Mar  1 17:38:19 2019 - Mon Mar  4 16:38:31 2019 (2+23:00)    0.0.0.0
+reboot   system boot  Wed Mar 21 16:28:20 2018 - Mon Mar  4 16:38:31 2019 (348+00:10)  0.0.0.0
+reboot   system boot  Wed Mar 14 18:20:40 2018 - Mon Mar  4 16:38:31 2019 (354+22:17)  0.0.0.0
+reboot   system boot  Wed Jan 24 18:17:07 2018 - Wed Mar 14 18:18:49 2018 (49+00:01)   0.0.0.0
+reboot   system boot  Wed Jan 24 12:45:17 2018 - Wed Mar 14 18:18:49 2018 (49+05:33)   0.0.0.0
+reboot   system boot  Fri Jan 12 17:50:35 2018 - Wed Jan 24 12:42:40 2018 (11+18:52)   0.0.0.0
+reboot   system boot  Wed Dec 20 20:07:57 2017 - Fri Jan 12 17:38:48 2018 (22+21:30)   0.0.0.0
+
+wtmp begins Wed Dec 20 20:07:57 2017
+[root@m1-pr-iris02p ~]#
+
+
+
+#
+#	This server was rebooted.
+#	I've contacted with Rodrigez Aleksandr. He very often login on this server from tcs6473.tcsbank.ru under irisuser.
+#
+
+
+
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120
+OK - System: '', S/N: '', ROM: '', hardware working fine
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.10.49 --community tcspub --perfdata=short -t 120
+OK - System: 'proliant dl360 gen9', S/N: 'CZJ44804QH', ROM: 'P89 04/25/2017', hardware working fine, da: 2 logical drives, 5 physical drives
+[root@vm-vol-nag4-tst objects]#
+
+
+
+
+
+
+
+................................................................................
+
+#
+#	Similar server, but located in DS.
+#
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_hpasm --hostname 10.217.11.49 --community tcspub --perfdata=short -t 120
+OK - System: 'proliant dl360 gen9', S/N: 'CZJ44804Q7', ROM: 'P89 04/25/2017', hardware working fine, da: 2 logical drives, 5 physical drives | pc_1=75;500;500 pc_2=90;500;500 fan_1=50% fan_2=50% fan_3=50% fan_4=50% fan_5=50% fan_6=50% fan_7=50% temp_1=21;42;42 temp_2=40;70;70 temp_3=40;70;70 temp_4=36;89;89 temp_5=35;89;89 temp_6=41;89;89 temp_7=41;89;89 temp_8=35;60;60 temp_10=43;105;105 temp_11=38 temp_12=39 temp_13=36;115;115 temp_14=42;115;115 temp_15=33;115;115 temp_16=31;115;115 temp_17=39;115;115 temp_18=37;115;115 temp_19=46 temp_20=58 temp_22=44;100;100 temp_24=61;100;100 temp_27=26;65;65 temp_28=38;75;75 temp_29=37;75;75 temp_30=41;90;90 temp_31=36;70;70 temp_32=37;70;70 temp_34=39;70;70 temp_35=33;75;75 temp_36=28;60;60 temp_37=38;100;100
+[root@vm-vol-nag4-tst objects]#
+
+[root@ds-pr-iris02p ~]# snmpwalk -v 2c -c tcspub 10.217.11.49 1 | head
+Timeout: No Response from 10.217.11.49
+[root@ds-pr-iris02p ~]#
+
+
+[root@ds-pr-iris02p ~]# hpasmcli -s "SHOW SERVER"
+
+System        : ProLiant DL360 Gen9
+Serial No.    : CZJ44804Q7
+ROM version   : v2.42 (04/25/2017) P89
+UEFI Support  : Yes
+iLo present   : Yes
+Embedded NICs : 6
+        NIC1 MAC: 38:63:bb:43:d8:c8
+        NIC2 MAC: 38:63:bb:43:d8:c9
+        NIC3 MAC: 38:63:bb:43:d8:ca
+        NIC4 MAC: 38:63:bb:43:d8:cb
+        NIC5 MAC: 8c:dc:d4:00:16:38
+        NIC6 MAC: 8c:dc:d4:00:16:3c
+
+Processor: 0
+        Name         : Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+        Stepping     : 2
+        Speed        : 2400 MHz
+        Bus          : 100 MHz
+        Core         : 8
+        Thread       : 16
+        Socket       : 1
+        Level1 Cache : 512 KBytes
+        Level2 Cache : 2048 KBytes
+        Level3 Cache : 20480 KBytes
+        Status       : Ok
+
+Processor: 1
+        Name         : Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+        Stepping     : 2
+        Speed        : 2400 MHz
+        Bus          : 100 MHz
+        Core         : 8
+        Thread       : 16
+        Socket       : 2
+        Level1 Cache : 512 KBytes
+        Level2 Cache : 2048 KBytes
+        Level3 Cache : 20480 KBytes
+        Status       : Ok
+
+Processor total  : 2
+
+Memory installed : 393216 MBytes
+ECC supported    : Yes
+
+[root@ds-pr-iris02p ~]#
+
+[root@ds-pr-iris02p ~]# yum clean all
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+Cleaning repos: graylog2 puppetlabs-deps puppetlabs-products tcs-epel tcs-hp tcs-rhel-base
+              : tcs-rhel-extras tcs-rhel-optional
+Cleaning up everything
+Maybe you want: rm -rf /var/cache/yum, to also free up space taken by orphaned data from disabled or removed repos
+[root@ds-pr-iris02p ~]# rm -rf /var/cache/yum
+[root@ds-pr-iris02p ~]# yum repolist
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+graylog2                                                                         | 2.9 kB  00:00:00
+puppetlabs-deps                                                                  | 2.5 kB  00:00:00
+puppetlabs-products                                                              | 2.5 kB  00:00:00
+tcs-epel                                                                         | 4.7 kB  00:00:00
+tcs-hp                                                                           | 2.5 kB  00:00:00
+tcs-rhel-base                                                                    | 3.0 kB  00:00:00
+tcs-rhel-extras                                                                  | 2.9 kB  00:00:00
+tcs-rhel-optional                                                                | 3.0 kB  00:00:00
+(1/10): graylog2/primary_db                                                      |  11 kB  00:00:00
+(2/10): puppetlabs-deps/7Server/x86_64/primary_db                                | 8.4 kB  00:00:00
+(3/10): puppetlabs-products/7Server/x86_64/primary_db                            |  69 kB  00:00:00
+(4/10): tcs-epel/7Server/x86_64/group_gz                                         |  88 kB  00:00:00
+(5/10): tcs-epel/7Server/x86_64/updateinfo                                       | 960 kB  00:00:00
+(6/10): tcs-rhel-extras/7Server/primary_db                                       | 434 kB  00:00:00
+(7/10): tcs-rhel-optional/7Server/primary_db                                     | 3.6 MB  00:00:00
+(8/10): tcs-hp/7Server/primary_db                                                | 1.2 MB  00:00:00
+(9/10): tcs-rhel-base/7Server/x86_64/primary_db                                  |  51 MB  00:00:00
+(10/10): tcs-epel/7Server/x86_64/primary_db                                      | 6.6 MB  00:00:00
+repo id                             repo name                                                     status
+graylog2                            graylog2 tcs repo (rpm)                                           34
+puppetlabs-deps/7Server/x86_64      Puppet Labs Dependencies El 7Server - x86_64                      17
+puppetlabs-products/7Server/x86_64  Puppet Labs Products El 7Server - x86_64                         225
+tcs-epel/7Server/x86_64             Extra Packages for Enterprise Linux (v. 6/7 for x86_64)       12,902
+tcs-hp/7Server                      HP SPP Repo                                                      954
+tcs-rhel-base/7Server/x86_64        Red Hat Enterprise Linux Server Base(v. 6/7 for x86_64)       22,997
+tcs-rhel-extras/7Server             Red Hat Enterprise Linux Server Extras(v. 6/7 for x86_64)        952
+tcs-rhel-optional/7Server           Red Hat Enterprise Linux Server Optional(v. 6/7 for x86_64)    9,144
+repolist: 47,225
+[root@ds-pr-iris02p ~]# yum install hpdiags
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+Resolving Dependencies
+--> Running transaction check
+---> Package hpdiags.x86_64 0:10.60.2199-2188 will be installed
+--> Processing Dependency: hpsmh for package: hpdiags-10.60.2199-2188.x86_64
+--> Running transaction check
+---> Package hpsmh.x86_64 0:7.6.1-9 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+========================================================================================================
+ Package               Arch                 Version                          Repository            Size
+========================================================================================================
+Installing:
+ hpdiags               x86_64               10.60.2199-2188                  tcs-hp                21 M
+Installing for dependencies:
+ hpsmh                 x86_64               7.6.1-9                          tcs-hp                14 M
+
+Transaction Summary
+========================================================================================================
+Install  1 Package (+1 Dependent package)
+
+Total download size: 35 M
+Installed size: 154 M
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/2): hpsmh-7.6.1-9.x86_64.rpm                                                  |  14 MB  00:00:00
+(2/2): hpdiags-10.60.2199-2188.linux.x86_64.rpm                                  |  21 MB  00:00:00
+--------------------------------------------------------------------------------------------------------
+Total                                                                   111 MB/s |  35 MB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+Detected Red Hat Enterprise Linux AS/ES/WS/SERVER 7
+Created hpsmh user and group...
+  Installing : hpsmh-7.6.1-9.x86_64                                                                 1/2
+
+**********************************************************
+* System Management Homepage installed successfully with *
+* default configuration values.   To change the default  *
+* configuration values,  type the following command at   *
+* the root prompt:                                       *
+*                                                        *
+* /opt/hp/hpsmh/sbin/smhconfig                           *
+*                                                        *
+**********************************************************
+
+  Installing : hpdiags-10.60.2199-2188.x86_64                                                       2/2
+
+Stopping hpsmhd: [  OK  ]
+Starting hpsmhd: [  OK  ]
+  Verifying  : hpsmh-7.6.1-9.x86_64                                                                 1/2
+  Verifying  : hpdiags-10.60.2199-2188.x86_64                                                       2/2
+
+Installed:
+  hpdiags.x86_64 0:10.60.2199-2188
+
+Dependency Installed:
+  hpsmh.x86_64 0:7.6.1-9
+
+Complete!
+[root@ds-pr-iris02p ~]# /opt/hp/hpdiags/hpdiags -v 5 -p -o $(pwd)/$(date +%Y%m%d-%H%M).hpdiag.$(hostname).txt
+Insight Diagnostics Version 10.60.2199A (x86_64)
+Copyright (c) 2002, 2016 Hewlett Packard Enterprise Development LP
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 225), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 225), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+>>>> powercooling::PowerSupplyDeviceOperations::getPowerSupplyNumber : label='Power Supply 1'
+>>>> powercooling::PowerSupplyDeviceOperations::getPowerSupplyNumber : label='Power Supply 2'
+Cannot open /etc/hba.conf
+
+Note: This output shows SysV services only and does not include native
+      systemd services. SysV configuration data might be overridden by native
+      systemd configuration.
+
+      If you want to list systemd services use 'systemctl list-unit-files'.
+      To see services enabled on particular target use
+      'systemctl list-dependencies [target]'.
+
+System configuration capture completed (100%)
+[root@ds-pr-iris02p ~]# ls 20190304-1708.hpdiag.ds-pr-iris02p.txt
+20190304-1708.hpdiag.ds-pr-iris02p.txt
+[root@ds-pr-iris02p ~]#
+[root@ds-pr-iris02p ~]# sed -n "/^Firmware/,/^Operating System/p" 20190304-1708.hpdiag.ds-pr-iris02p.txt
+Firmware
+   System
+      BIOS Version: P89
+      BIOS Release Date: 04/25/2017
+      Redundant System ROM: 03/05/2015
+      Redundant System ROM Version: 1.32
+      Power Management Controller Firmware: 1.0.9
+      Power Management Controller FW Bootloader: 1.0
+      System Programmable Logic Device: 0x30
+      SAS Programmable Logic Device: 0x2
+      Server Platform Services (SPS) Firmware: 3.0.6.267.1
+      Intelligent Platform Abstraction Data: 25.5
+      HPE Smart Storage Battery 1 Firmware: 1.0
+      Redundant ROM Bootblock
+   Communication
+      Network Controller 0, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 1, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 2, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 3, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 4, Slot 2: HP Ethernet 10Gb 2-port 530SFP+ Adapter
+         Firmware revision: 7.14.37
+      Network Controller 5, Slot 2: HP Ethernet 10Gb 2-port 530SFP+ Adapter
+         Firmware revision: 7.14.37
+   Storage
+      HP Smart Array Controller, Slot 0: HP P440ar
+         Firmware Revision: 5.52
+      Hard Drive 1, Storage Controller in Slot 0: 146.8 GB, 15k RPM, SAS, HP EH0146FCBVB
+         Firmware Revision: HPD4
+      Hard Drive 2, Storage Controller in Slot 0: 146.8 GB, 15k RPM, SAS, HP EH0146FCBVB
+         Firmware Revision: HPD4
+      Hard Drive 3, Storage Controller in Slot 0: 1.0 TB, 7k RPM, SAS, HP MM1000FBFVR
+         Firmware Revision: HPD8
+      Hard Drive 4, Storage Controller in Slot 0: 1.0 TB, 7k RPM, SAS, HP MM1000FBFVR
+         Firmware Revision: HPD8
+      Hard Drive 5, Storage Controller in Slot 0: 1.0 TB, 7k RPM, SAS, HP MM1000FBFVR
+         Firmware Revision: HPD8
+Operating System
+[root@ds-pr-iris02p ~]#
+
+[root@ds-pr-iris02p ~]# yum install hponcfg
+
+[root@ds-pr-iris02p ~]# hponcfg -g
+HP Lights-Out Online Configuration utility
+Version 5.1.0 Date 08/08/2017 (c) 2005,2017 Hewlett Packard Enterprise Development LP
+Firmware Revision = 2.50 Device type = iLO 4 Driver name = hpilo
+Host Information:
+                        Server Name: ds-pr-iris02p
+                        Server Serial Number:
+[root@ds-pr-iris02p ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+
+[root@m1-pr-iris02p ~]# yum clean all
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+Repodata is over 2 weeks old. Install yum-cron? Or run: yum makecache fast
+Cleaning repos: graylog2 puppetlabs-deps puppetlabs-products tcs-epel tcs-hp tcs-rhel-base
+              : tcs-rhel-extras tcs-rhel-optional
+Cleaning up everything
+Maybe you want: rm -rf /var/cache/yum, to also free up space taken by orphaned data from disabled or removed repos
+[root@m1-pr-iris02p ~]# rm -rf /var/cache/yum
+[root@m1-pr-iris02p ~]# yum repolist
+
+
+[root@m1-pr-iris02p ~]# yum install hpdiags
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+Resolving Dependencies
+--> Running transaction check
+---> Package hpdiags.x86_64 0:10.60.2199-2188 will be installed
+--> Processing Dependency: hpsmh for package: hpdiags-10.60.2199-2188.x86_64
+--> Running transaction check
+---> Package hpsmh.x86_64 0:7.6.1-9 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+========================================================================================================
+ Package               Arch                 Version                          Repository            Size
+========================================================================================================
+Installing:
+ hpdiags               x86_64               10.60.2199-2188                  tcs-hp                21 M
+Installing for dependencies:
+ hpsmh                 x86_64               7.6.1-9                          tcs-hp                14 M
+
+Transaction Summary
+========================================================================================================
+Install  1 Package (+1 Dependent package)
+
+Total download size: 35 M
+Installed size: 154 M
+Is this ok [y/d/N]: y
+Downloading packages:
+(1/2): hpsmh-7.6.1-9.x86_64.rpm                                                  |  14 MB  00:00:00
+(2/2): hpdiags-10.60.2199-2188.linux.x86_64.rpm                                  |  21 MB  00:00:00
+--------------------------------------------------------------------------------------------------------
+Total                                                                    51 MB/s |  35 MB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+Detected Red Hat Enterprise Linux AS/ES/WS/SERVER 7
+Created hpsmh user and group...
+  Installing : hpsmh-7.6.1-9.x86_64                                                                 1/2
+
+**********************************************************
+* System Management Homepage installed successfully with *
+* default configuration values.   To change the default  *
+* configuration values,  type the following command at   *
+* the root prompt:                                       *
+*                                                        *
+* /opt/hp/hpsmh/sbin/smhconfig                           *
+*                                                        *
+**********************************************************
+
+  Installing : hpdiags-10.60.2199-2188.x86_64                                                       2/2
+
+Stopping hpsmhd: [  OK  ]
+Starting hpsmhd: [  OK  ]
+  Verifying  : hpsmh-7.6.1-9.x86_64                                                                 1/2
+  Verifying  : hpdiags-10.60.2199-2188.x86_64                                                       2/2
+
+Installed:
+  hpdiags.x86_64 0:10.60.2199-2188
+
+Dependency Installed:
+  hpsmh.x86_64 0:7.6.1-9
+
+Complete!
+[root@m1-pr-iris02p ~]#
+
+[root@m1-pr-iris02p ~]# /opt/hp/hpdiags/hpdiags -v 5 -p -o $(pwd)/$(date +%Y%m%d-%H%M).hpdiag.$(hostname).txt
+Insight Diagnostics Version 10.60.2199A (x86_64)
+Copyright (c) 2002, 2016 Hewlett Packard Enterprise Development LP
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 225), OpenDynamicLib failed with /opt/hp/hpdiags/libtcrib.so
+../../src/frontend/hpdiagstc/hpdiagstc.cpp(line 225), OpenDynamicLib failed with /opt/hp/hpdiags/libtcvideo.so
+>>>> powercooling::PowerSupplyDeviceOperations::getPowerSupplyNumber : label='Power Supply 1'
+>>>> powercooling::PowerSupplyDeviceOperations::getPowerSupplyNumber : label='Power Supply 2'
+Cannot open /etc/hba.conf
+
+Note: This output shows SysV services only and does not include native
+      systemd services. SysV configuration data might be overridden by native
+      systemd configuration.
+
+      If you want to list systemd services use 'systemctl list-unit-files'.
+      To see services enabled on particular target use
+      'systemctl list-dependencies [target]'.
+
+System configuration capture completed (100%)
+[root@m1-pr-iris02p ~]#
+
+[root@m1-pr-iris02p ~]# ls 20190304-1702.hpdiag.m1-pr-iris02p.txt
+20190304-1702.hpdiag.m1-pr-iris02p.txt
+[root@m1-pr-iris02p ~]#
+
+[root@m1-pr-iris02p ~]# sed -n "/^Firmware/,/^Operating System/p" 20190304-1702.hpdiag.m1-pr-iris02p.txt
+
+Firmware
+   System
+      BIOS Version: P89
+      BIOS Release Date: 04/25/2017
+      Redundant System ROM: 08/26/2014
+      Redundant System ROM Version: 1.20
+      Power Management Controller Firmware: 1.0.9
+      Power Management Controller FW Bootloader: 1.0
+      System Programmable Logic Device: 0x30
+      SAS Programmable Logic Device: 0x2
+      Server Platform Services (SPS) Firmware: 3.0.6.267.1
+      Intelligent Platform Abstraction Data: 25.5
+      HPE Smart Storage Battery 1 Firmware: 0.60
+      Redundant ROM Bootblock
+   Communication
+      Network Controller 0, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 1, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 2, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 3, Slot 0: HP Ethernet 1Gb 4-port 331i Adapter
+         Firmware revision: 1.46
+      Network Controller 4, Slot 2: HP Ethernet 10Gb 2-port 530SFP+ Adapter
+         Firmware revision: 7.14.37
+      Network Controller 5, Slot 2: HP Ethernet 10Gb 2-port 530SFP+ Adapter
+         Firmware revision: 7.14.37
+   Storage
+      HP Smart Array Controller, Slot 0: HP P440ar
+         Firmware Revision: 5.52
+      Hard Drive 1, Storage Controller in Slot 0: 146.8 GB, 15k RPM, SAS, HP EH0146FCBVB
+         Firmware Revision: HPD4
+      Hard Drive 2, Storage Controller in Slot 0: 146.8 GB, 15k RPM, SAS, HP EH0146FCBVB
+         Firmware Revision: HPD4
+      Hard Drive 3, Storage Controller in Slot 0: 1.0 TB, 7k RPM, SAS, HP MM1000FBFVR
+         Firmware Revision: HPD8
+      Hard Drive 4, Storage Controller in Slot 0: 1.0 TB, 7k RPM, SAS, HP MM1000FBFVR
+         Firmware Revision: HPD8
+      Hard Drive 5, Storage Controller in Slot 0: 1.0 TB, 7k RPM, SAS, HP MM1000FBFVR
+         Firmware Revision: HPD8
+Operating System
+[root@m1-pr-iris02p ~]#
+
+[root@m1-pr-iris02p ~]# yum install hponcfg
+
+[root@m1-pr-iris02p ~]# hponcfg -g
+HP Lights-Out Online Configuration utility
+Version 5.1.0 Date 08/08/2017 (c) 2005,2017 Hewlett Packard Enterprise Development LP
+Firmware Revision = 2.61 Device type = iLO 4 Driver name = hpilo
+Host Information:
+                        Server Name: m1-pr-iris02p
+                        Server Serial Number:
+[root@m1-pr-iris02p ~]#
+
+................................................................................
+
+

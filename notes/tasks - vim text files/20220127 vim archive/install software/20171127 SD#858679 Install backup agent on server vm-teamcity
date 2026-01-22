@@ -1,0 +1,98 @@
+
+
+................................................................................
+
+root@vm-teamcity:~/work/20171127-1506# cat install.pp
+# install.pp
+
+class simpana::install{
+    $fileserver = 'repo-linux'
+    $pname = 'simpana'
+    $pversion = '11'
+    $archname = '11_simpana_custom_unix'
+
+package { 'wget':
+            ensure => present,
+}
+
+exec {
+      'get_archive':
+        command   => "/usr/bin/wget http://${fileserver}/${pname}/${pversion}/${archname}.tar -O /tmp/${archname}.tar",
+        logoutput => 'on_failure',
+        require   => [ Package['wget'], ],
+        unless    => ['test -f /usr/bin/simpana'],
+        path      => ['/usr/bin', '/usr/sbin',],
+}
+
+exec {
+      'extract_archive':
+        command   => "tar -xf /tmp/${archname}.tar",
+        logoutput => 'on_failure',
+        creates   => '/tmp/pkg',
+        cwd       => '/tmp',
+        require   => Exec['get_archive'],
+        unless    =>  ['test -f /usr/bin/simpana'],
+        path      => ['/bin',],
+}
+
+exec {
+      'install_simpana_agent':
+        command   => 'bash silent_install -silent',
+        logoutput => 'on_failure',
+        cwd       => '/tmp/pkg',
+        path      => ['/bin', '/usr/bin', '/usr/sbin', '/tmp/pkg',],
+        creates   => '/usr/bin/simpana',
+        require   => Exec['extract_archive'],
+}
+}
+root@vm-teamcity:~/work/20171127-1506#
+
+
+
+................................................................................
+
+#
+#	20171128
+#	After Eranov had configurd his simpana backup agent software, I've started it, as he asked me.
+#
+
+root@vm-teamcity:~# /opt/commvault/Base/simpana status
+--------------------------------- Instance001 ---------------------------------
+[ General ]
+ Version = 11(BUILD80) SP7
+ CommServe =
+ Home Directory = /opt/commvault/Base
+ Log Directory = /var/log/commvault/Log_Files
+ Core Directory = /opt/commvault
+ Temp Directory = /opt/commvault/Base/Temp
+ Platform Type = 4
+ Cvd Port Number = 8401
+[ Package ]
+ 1002/CVGxBase 11(BUILD80) = File System Core
+ 1101/CVGxIDA  = File System
+[ Physical Machine/Cluster Groups ]
+ Display Name = vm-teamcity
+  - Client Hostname = vm-teamcity.tcsbank.ru
+  - Job Results Directory = /opt/commvault/iDataAgent/jobResults
+root@vm-teamcity:~# /opt/commvault/Base/simpana start
+Created symlink from /etc/systemd/system/multi-user.target.wants/commvault.service to /etc/systemd/system/commvault.service.
+Successfully enabled commvault.service to Systemd
+Cleaning up /opt/commvault/Base/Temp ...
+Starting Commvault services for Instance001 ...
+root@vm-teamcity:~#
+
+root@vm-teamcity:~# ps aux | grep -ie commvaul[t]
+root      9489  0.0  0.0 117368 13508 ?        Ssl  15:48   0:00 /opt/commvault/Base/cvlaunchd
+root      9490  0.4  0.3 1596812 122828 ?      Ssl  15:48   0:01 /opt/commvault/Base/cvd
+root      9491  0.3  0.2 437196 67664 ?        Ssl  15:48   0:00 /opt/commvault/Base/ClMgrS
+root      9494  0.0  0.0  16140  2796 ?        Ss   15:48   0:00 /opt/commvault/Base/cvfwd
+root@vm-teamcity:~#
+
+................................................................................
+
+
+
+
+
+
+

@@ -1,0 +1,866 @@
+
+
+[root@m1-hadoop-cs01t ~]# auditctl -l
+No rules
+[root@m1-hadoop-cs01t ~]# cat > /etc/audit/audit.rules
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+[root@m1-hadoop-cs01t ~]# for var1 in m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do scp /etc/audit/audit.rules ${var1}:/etc/audit/audit.rules ; done
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+[root@m1-hadoop-cs01t ~]#
+
+[root@m1-hadoop-cs01t ~]# for var1 in m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do ssh -t ${var1} "( hostname ; service auditd restart )" ; done
+m1-hadoop-cs01t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-cs01t closed.
+m1-hadoop-wk01t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to m1-hadoop-wk10t closed.
+[root@m1-hadoop-cs01t ~]# for var1 in m1-hadoop-cs01t m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do ssh -t ${var1} "( hostname ; auditctl -l )" ; done
+m1-hadoop-cs01t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-cs01t closed.
+m1-hadoop-wk01t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to m1-hadoop-wk10t closed.
+[root@m1-hadoop-cs01t ~]#
+
+................................................................................
+................................................................................
+
+[root@ds-hadoop-cs01p ~]# auditctl -l
+No rules
+[root@ds-hadoop-cs01p ~]# cat > /etc/audit/audit.rules
+# This file contains the auditctl rules that are loaded
+# whenever the audit daemon is started via the initscripts.
+# The rules are simply the parameters that would be passed
+# to auditctl.
+
+# First rule - delete all
+-D
+
+# Increase the buffers to survive stress events.
+# Make this bigger for busy systems
+-b 320
+
+# Feel free to add below this line. See auditctl man page
+
+# Audit all changes in /etc/ and other directories.
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+# Too many messages generate follow line. Wherefore it's commented.
+#-w /var/log/ -p w -k access_log
+
+# Use of privileged commands (unsuccessful and successful)
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_su
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295 -k software_privileged_sudo
+
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_mount
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295 -k software_umount
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ping
+-a always,exit -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=4294967295 -k software_rpm
+-a always,exit -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=4294967295 -k software_yum
+-a always,exit -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=4294967295 -k software_ssh
+(reverse-i-search)`scp': p^Cp -h $HDFS_HOSTS -r /usr/local/greenplum-loaders-4.3.5.3-build-2 /usr/local/greenplum-loaders-4.3.5.3-build-2
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs02p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do scp /etc/audit/audit.rules ${var1}:/etc/audit/audit.rules ; done                                                                                                       audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+audit.rules                                                                                                                                                                                                                                100% 1468     1.4KB/s   00:00
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs0{1,2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do ssh -t ${var1} "( hostname ; service auditd restart )" ; done                                                                                                      root@ds-hadoop-cs01p's password:
+ds-hadoop-cs01p.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-cs01p closed.
+ds-hadoop-cs02p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+Stopping auditd:                                           [FAILED]
+Starting auditd:                                           [FAILED]
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+Stopping auditd:                                           [  OK  ]
+Starting auditd:                                           [  OK  ]
+Connection to ds-hadoop-wk20p closed.
+[root@ds-hadoop-cs01p ~]#
+
+
+[root@ds-hadoop-cs01p ~]# ssh ds-hadoop-wk01p
+Last login: Thu Nov 12 18:09:53 2015 from ds-hadoop-cs01p.tcsbank.ru
+[root@ds-hadoop-wk01p ~]# auditctl -l
+No rules
+[root@ds-hadoop-wk01p ~]# auditctl -s
+AUDIT_STATUS: enabled=0 flag=1 pid=0 rate_limit=0 backlog_limit=64 lost=0 backlog=0
+[root@ds-hadoop-wk01p ~]# service auditd status
+auditd is stopped
+[root@ds-hadoop-wk01p ~]# service auditd restart
+Stopping auditd:                                           [FAILED]
+Starting auditd:                                           [FAILED]
+[root@ds-hadoop-wk01p ~]# service auditd start
+Starting auditd:                                           [FAILED]
+[root@ds-hadoop-wk01p ~]#
+
+[root@ds-hadoop-wk01p ~]# less /var/log/messages
+...
+Nov 12 18:09:11 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+    Nov 12 18:09:54 ds-hadoop-wk01p auditd: /var/log/audit/audit.log permissions should be 0600 or 0640
+Nov 12 18:09:54 ds-hadoop-wk01p auditd: The audit daemon is exiting.
+Nov 12 18:10:11 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:10:41 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:10:56 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:11:11 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:11:11 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:11:11 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:11:11 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:11:11 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+Nov 12 18:11:27 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Closing, but controller still active
+    Nov 12 18:11:29 ds-hadoop-wk01p auditd: /var/log/audit/audit.log permissions should be 0600 or 0640
+Nov 12 18:11:29 ds-hadoop-wk01p auditd: The audit daemon is exiting.
+Nov 12 18:11:41 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+    Nov 12 18:11:46 ds-hadoop-wk01p auditd: /var/log/audit/audit.log permissions should be 0600 or 0640
+Nov 12 18:11:46 ds-hadoop-wk01p auditd: The audit daemon is exiting.
+Nov 12 18:12:12 ds-hadoop-wk01p kernel: hpilo 0000:01:00.2: Open could not dequeue a packet
+...
+
+
+[root@ds-hadoop-wk01p ~]# ls -Alhd /var/log/audit/
+drwxr-x---. 2 root root 4.0K Aug 10  2014 /var/log/audit/
+[root@ds-hadoop-wk01p ~]# ls -Alh /var/log/audit/
+total 26M
+-rwxrwxrwx 1 root root 1.4M May 28  2014 audit.log
+-rwxrwxrwx 1 root root 6.1M May 22  2014 audit.log.1
+-rwxrwxrwx 1 root root 6.1M Apr 19  2014 audit.log.2
+-rwxrwxrwx 1 root root 6.1M Mar 18  2014 audit.log.3
+-rwxrwxrwx 1 root root 6.1M Feb 17  2014 audit.log.4
+[root@ds-hadoop-wk01p ~]#
+
+#   How it should be.
+[root@ds-hadoop-cs01p ~]# ssh ds-hadoop-wk02p
+Last login: Thu Nov 12 18:09:54 2015 from ds-hadoop-cs01p.tcsbank.ru
+[root@ds-hadoop-wk02p ~]# ls -Alh /var/log/audit/
+total 28M
+-rw------- 1 root root 3.6M Nov 12 18:15 audit.log
+-r-------- 1 root root 6.1M Nov 12 17:41 audit.log.1
+-r-------- 1 root root 6.1M Nov 12 16:42 audit.log.2
+-r-------- 1 root root 6.1M Nov 12 15:43 audit.log.3
+-r-------- 1 root root 6.1M Nov 12 14:45 audit.log.4
+[root@ds-hadoop-wk02p ~]# ls -Alhd /var/log/audit/
+drwxr-x---. 2 root root 4.0K Nov 12 17:41 /var/log/audit/
+[root@ds-hadoop-wk02p ~]#
+
+[root@ds-hadoop-wk01p ~]# chmod u=r /var/log/audit/audit.log.*
+[root@ds-hadoop-wk01p ~]# ls -Alh /var/log/audit/
+total 26M
+-rwxrwxrwx 1 root root 1.4M May 28  2014 audit.log
+-r--rwxrwx 1 root root 6.1M May 22  2014 audit.log.1
+-r--rwxrwx 1 root root 6.1M Apr 19  2014 audit.log.2
+-r--rwxrwx 1 root root 6.1M Mar 18  2014 audit.log.3
+-r--rwxrwx 1 root root 6.1M Feb 17  2014 audit.log.4
+[root@ds-hadoop-wk01p ~]# chmod u=r,g=,o= /var/log/audit/audit.log.*
+[root@ds-hadoop-wk01p ~]# ls -Alh /var/log/audit/
+total 26M
+-rwxrwxrwx 1 root root 1.4M May 28  2014 audit.log
+-r-------- 1 root root 6.1M May 22  2014 audit.log.1
+-r-------- 1 root root 6.1M Apr 19  2014 audit.log.2
+-r-------- 1 root root 6.1M Mar 18  2014 audit.log.3
+-r-------- 1 root root 6.1M Feb 17  2014 audit.log.4
+[root@ds-hadoop-wk01p ~]# chmod u=rw,g=,o= /var/log/audit/audit.log
+[root@ds-hadoop-wk01p ~]# ls -Alh /var/log/audit/
+total 26M
+-rw------- 1 root root 1.4M May 28  2014 audit.log
+-r-------- 1 root root 6.1M May 22  2014 audit.log.1
+-r-------- 1 root root 6.1M Apr 19  2014 audit.log.2
+-r-------- 1 root root 6.1M Mar 18  2014 audit.log.3
+-r-------- 1 root root 6.1M Feb 17  2014 audit.log.4
+[root@ds-hadoop-wk01p ~]#
+
+
+[root@ds-hadoop-wk01p ~]# service auditd start
+Starting auditd:                                           [  OK  ]
+[root@ds-hadoop-wk01p ~]# auditctl -l
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+[root@ds-hadoop-wk01p ~]# chkconfig --list auditd
+auditd          0:off   1:off   2:on    3:off   4:on    5:on    6:off
+[root@ds-hadoop-wk01p ~]# chkconfig auditd on
+[root@ds-hadoop-wk01p ~]# chkconfig --list auditd
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@ds-hadoop-wk01p ~]#
+
+
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs0{1,2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do ssh -t ${var1} "( hostname ; auditctl -l )" ; done
+root@ds-hadoop-cs01p's password:
+ds-hadoop-cs01p.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-cs01p closed.
+ds-hadoop-cs02p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+-w /etc/ -p wa -k access_etc
+-w /var/spool/cron/ -p wa -k access_cron
+-w /var/spool/at/ -p wa -k access_at
+-a always,exit -S all -F path=/bin/su -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_su
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=-1 -F key=software_privileged_sudo
+-a always,exit -S all -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_mount
+-a always,exit -S all -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=-1 -F key=software_umount
+-a always,exit -S all -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ping
+-a always,exit -S all -F path=/bin/rpm -F perm=x -F auid>=500 -F auid!=-1 -F key=software_rpm
+-a always,exit -S all -F path=/usr/bin/yum -F perm=x -F auid>=500 -F auid!=-1 -F key=software_yum
+-a always,exit -S all -F path=/usr/bin/ssh -F perm=x -F auid>=500 -F auid!=-1 -F key=software_ssh
+Connection to ds-hadoop-wk20p closed.
+[root@ds-hadoop-cs01p ~]#
+
+
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs0{1,2}p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do ssh -t ${var1} "( hostname ; chkconfig --list auditd )" ; done
+root@ds-hadoop-cs01p's password:
+ds-hadoop-cs01p.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-cs01p closed.
+ds-hadoop-cs02p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+auditd          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+Connection to ds-hadoop-wk20p closed.
+[root@ds-hadoop-cs01p ~]#
+
+
+

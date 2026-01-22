@@ -1,0 +1,462 @@
+
+
+................................................................................
+................................................................................
+
+
+Тема
+
+altkraft
+Номер
+
+45462
+Описание
+Коллеги, добрый день.
+Просьба добавить в мониторинг Nagios для сервера vm-akf-app01 сервис проверки живых процессов.
+
+Необходимо вызывать URL http://vm-akf-app01:8805/, если всё штатно работает, возвращается OK, в противном случае результат необходимо присылать на esb-admins@tinkoff.ru
+
+
+Спасибо!
+
+Mikhail Lipin
+Дата регистрации
+
+10.10.2016
+
+16:57
+Инициатор
+Липин Михаил Юрьевич
+Тип запроса
+
+Запрос на обслуживание
+Подразделение
+Отдел сопровождения интеграционных решений
+Критичность
+
+Низкая
+E-mail
+
+m.lipin@tinkoff.ru
+Состояние
+
+Уточнение у инициатора
+Внутр. телефон
+
+2210
+Группа
+
+Не заполнено
+Соглашение
+Каталог сервисов
+Ответственный
+
+Не заполнено
+Сервис
+00. Внутренние сервисы - Поддержка ИТ-инфраструктуры
+
+
+................................................................................
+................................................................................
+
+[root@vm-vol-nag4-tst objects]# host vm-akf-app01
+vm-akf-app01.tcsbank.ru has address 10.216.98.16
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# find . -name vm-akf-app01*
+./external/vm-akf-app01.cfg
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# grep -ire "80" servers/ | grep http
+...
+servers/vmware/vm-cache-app01.cfg:    check_command            check_http!-p 8080
+servers/vmware/vm-cache-app04.cfg:    service_description      http 8080
+servers/vmware/vm-cache-app04.cfg:    check_command            check_http!-p 8080
+servers/vmware/agent-scheduler/vm-agent-sched01p.cfg:        check_command                   check_http!-p 8080
+servers/vmware/agent-scheduler/vm-agent-sched01t.cfg:#        check_command                   check_http!-p 8080
+servers/vmware/vm-vp-app02.cfg:        check_command               check_http! -H 10.216.80.102 -p 8080 -e "200 OK" -u "http://10.216.80.102:8080/Tinkoff_POM/Start"
+servers/vmware/vm-vp-app01.cfg:        check_command               check_http! -H 10.216.80.101 -p 8080 -e "200 OK" -u "http://10.216.80.101:8080/Tinkoff_POM/Start"
+servers/vmware/fssp/vm-fssp-exch01p.cfg:       check_command            check_http!-p 8080
+servers/vmware/fssp/vm-fssp-exch01t.cfg:       check_command            check_http!-p 8080
+servers/vmware/vm-cache-app02.cfg:    service_description      http 8080
+servers/vmware/vm-cache-app02.cfg:    check_command            check_http!-p 8080
+servers/dc-var-linux/vm-dmz-app16.cfg:        check_command                   check_http!-p 80
+servers/vm-crr-app02.cfg:        check_command               check_http_request!"http://10.216.40.37:8080/credit_registry"!'name="login"'
+servers/vm-crr-app02.cfg:#        check_command               check_http_request!"http://192.168.1.216:8080/SMSInboundModuleWeb/sca/SmsServiceInterfaceWSExport"!'Hello'
+servers/dc-m1/linux/db06/m1-db06-stb.cfg:    notes_url                https://cmdb.tcsbank.ru/?do=view&sn=GB80354WPF&type=x86
+servers/vm-crr-app04.cfg:        check_command               check_http_request!"http://10.216.40.205:8080/credit_registry"!'name="login"'
+...
+
+define service{
+        use                         generic-service
+        host_name                   vm-vp-app02
+        service_description         Tinkoff POM WebPage
+        check_command               check_http! -H 10.216.80.102 -p 8080 -e "200 OK" -u "http://10.216.80.102:8080/Tinkoff_POM/Start"
+        contacts                    k.kovrigin_email_sms, d.churikov_email_sms
+        contact_groups              empty-group
+}
+
+
+define service{
+       use                      generic-service
+       host_name                vm-fssp-exch01p
+       service_description      FSSP Exchange
+       max_check_attempts       2
+       check_command            check_http!-p 8080
+}
+
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805
+CRITICAL - Socket timeout after 10 seconds
+[root@vm-vol-nag4-tst objects]# curl 10.216.98.16:8805
+^C
+[root@vm-vol-nag4-tst objects]# curl http://vm-akf-app01:8805
+^C
+[root@vm-vol-nag4-tst objects]# curl http://vm-akf-app01.tcsbank.ru:8805
+^C
+[root@vm-vol-nag4-tst objects]# curl http://vm-akf-app01.tcsbank.ru:8805/
+^C
+[root@vm-vol-nag4-tst objects]#
+
+
+bsv@vm-akf-app01:~$ curl http://vm-akf-app01.tcsbank.ru:8805/
+OKbsv@vm-akf-app01:~$
+
+bsv@vm-akf-app01:~$ sudo -i
+[sudo] password for bsv:
+bsv is not in the sudoers file.  This incident will be reported.
+bsv@vm-akf-app01:~$
+
+................................................................................
+................................................................................
+
+
+From: SecureChange [mailto:tufin_sc@tinkoff.ru]
+Sent: Tuesday, October 11, 2016 4:59 PM
+To: Belogrud Sergey Vladimirovich
+Subject: nagios #1 (#339) - Запрос создан
+
+Subject: nagios #1
+Ticket ID: 339
+Requester: Белогруд Сергей Владимирович
+Priority: Normal
+
+Details: The request has been opened.
+
+................................................................................
+................................................................................
+
+#
+#   20161019
+#
+[root@vm-vol-nag4-tst objects]# vim $(find . -name vm-akf-app01*)
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805
+HTTP OK: HTTP/1.1 200 OK - 137 bytes in 0.006 second response time |time=0.005771s;;;0.000000 size=137B;;;0
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805 -e "OK"
+HTTP OK: Status line output matched "OK" - 137 bytes in 0.006 second response time |time=0.006180s;;;0.000000 size=137B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+
+        [root@vm-vol-nag4-tst objects]# check_http --help
+        check_http v1.4.16 (nagios-plugins 1.4.16)
+        Copyright (c) 1999 Ethan Galstad <nagios@nagios.org>
+        Copyright (c) 1999-2011 Nagios Plugin Development Team
+                <nagiosplug-devel@lists.sourceforge.net>
+
+        This plugin tests the HTTP service on the specified host. It can test
+        normal (http) and secure (https) servers, follow redirects, search for
+        strings and regular expressions, check connection times, and report on
+        certificate expiration times.
+
+
+        Usage:
+         check_http -H <vhost> | -I <IP-address> [-u <uri>] [-p <port>]
+               [-w <warn time>] [-c <critical time>] [-t <timeout>] [-L] [-a auth]
+               [-b proxy_auth] [-f <ok|warning|critcal|follow|sticky|stickyport>]
+               [-e <expect>] [-s string] [-l] [-r <regex> | -R <case-insensitive regex>]
+               [-P string] [-m <min_pg_size>:<max_pg_size>] [-4|-6] [-N] [-M <age>]
+               [-A string] [-k string] [-S <version>] [--sni] [-C <warn_age>[,<crit_age>]]
+               [-T <content-type>] [-j method]
+        NOTE: One or both of -H and -I must be specified
+
+        Options:
+         -h, --help
+            Print detailed help screen
+         -V, --version
+            Print version information
+         --extra-opts=[section][@file]
+            Read options from an ini file. See http://nagiosplugins.org/extra-opts
+            for usage and examples.
+         -H, --hostname=ADDRESS
+            Host name argument for servers using host headers (virtual host)
+            Append a port to include it in the header (eg: example.com:5000)
+         -I, --IP-address=ADDRESS
+            IP address or name (use numeric address if possible to bypass DNS lookup).
+         -p, --port=INTEGER
+            Port number (default: 80)
+         -4, --use-ipv4
+            Use IPv4 connection
+         -6, --use-ipv6
+            Use IPv6 connection
+         -S, --ssl=VERSION
+            Connect via SSL. Port defaults to 443. VERSION is optional, and prevents
+            auto-negotiation (1 = TLSv1, 2 = SSLv2, 3 = SSLv3).
+         --sni
+            Enable SSL/TLS hostname extension support (SNI)
+         -C, --certificate=INTEGER
+            Minimum number of days a certificate has to be valid. Port defaults to 443
+            (when this option is used the URL is not checked.)
+
+         -e, --expect=STRING
+            Comma-delimited list of strings, at least one of them is expected in
+            the first (status) line of the server response (default: HTTP/1.)
+            If specified skips all other status line logic (ex: 3xx, 4xx, 5xx processing)
+#!       -s, --string=STRING
+            String to expect in the content
+         -u, --url=PATH
+            URL to GET or POST (default: /)
+         -P, --post=STRING
+            URL encoded http POST data
+         -j, --method=STRING  (for example: HEAD, OPTIONS, TRACE, PUT, DELETE)
+            Set HTTP method.
+         -N, --no-body
+            Don't wait for document body: stop reading after headers.
+            (Note that this still does an HTTP GET or POST, not a HEAD.)
+         -M, --max-age=SECONDS
+            Warn if document is more than SECONDS old. the number can also be of
+            the form "10m" for minutes, "10h" for hours, or "10d" for days.
+         -T, --content-type=STRING
+            specify Content-Type header media type when POSTing
+
+         -l, --linespan
+            Allow regex to span newlines (must precede -r or -R)
+#!       -r, --regex, --ereg=STRING
+            Search page for regex STRING
+         -R, --eregi=STRING
+            Search page for case-insensitive regex STRING
+         --invert-regex
+            Return CRITICAL if found, OK if not
+
+         -a, --authorization=AUTH_PAIR
+            Username:password on sites with basic authentication
+         -b, --proxy-authorization=AUTH_PAIR
+            Username:password on proxy-servers with basic authentication
+         -A, --useragent=STRING
+            String to be sent in http header as "User Agent"
+         -k, --header=STRING
+            Any other tags to be sent in http header. Use multiple times for additional headers
+         -L, --link
+            Wrap output in HTML link (obsoleted by urlize)
+         -f, --onredirect=<ok|warning|critical|follow|sticky|stickyport>
+            How to handle redirected pages. sticky is like follow but stick to the
+            specified IP address. stickyport also ensures port stays the same.
+         -m, --pagesize=INTEGER<:INTEGER>
+            Minimum page size required (bytes) : Maximum page size required (bytes)
+         -w, --warning=DOUBLE
+            Response time to result in warning status (seconds)
+         -c, --critical=DOUBLE
+            Response time to result in critical status (seconds)
+         -t, --timeout=INTEGER
+            Seconds before connection times out (default: 10)
+         -v, --verbose
+            Show details for command-line debugging (Nagios may truncate output)
+
+        Notes:
+         This plugin will attempt to open an HTTP connection with the host.
+         Successful connects return STATE_OK, refusals and timeouts return STATE_CRITICAL
+         other errors return STATE_UNKNOWN.  Successful connects, but incorrect reponse
+         messages from the host result in STATE_WARNING return values.  If you are
+         checking a virtual server that uses 'host headers' you must supply the FQDN
+         (fully qualified domain name) as the [host_name] argument.
+
+         This plugin can also check whether an SSL enabled web server is able to
+         serve content (optionally within a specified time) or whether the X509
+         certificate is still valid for the specified number of days.
+
+         Please note that this plugin does not check if the presented server
+         certificate matches the hostname of the server, or if the certificate
+         has a valid chain of trust to one of the locally installed CAs.
+
+        Examples:
+         CHECK CONTENT: check_http -w 5 -c 10 --ssl -H www.verisign.com
+
+         When the 'www.verisign.com' server returns its content within 5 seconds,
+         a STATE_OK will be returned. When the server returns its content but exceeds
+         the 5-second threshold, a STATE_WARNING will be returned. When an error occurs,
+         a STATE_CRITICAL will be returned.
+
+         CHECK CERTIFICATE: check_http -H www.verisign.com -C 14
+
+         When the certificate of 'www.verisign.com' is valid for more than 14 days,
+         a STATE_OK is returned. When the certificate is still valid, but for less than
+         14 days, a STATE_WARNING is returned. A STATE_CRITICAL will be returned when
+         the certificate is expired.
+         CHECK CERTIFICATE: check_http -H www.verisign.com -C 30,14
+
+         When the certificate of 'www.verisign.com' is valid for more than 30 days,
+         a STATE_OK is returned. When the certificate is still valid, but for less than
+         30 days, but more than 14 days, a STATE_WARNING is returned.
+         A STATE_CRITICAL will be returned when certificate expires in less than 14 days
+
+        Send email to nagios-users@lists.sourceforge.net if you have questions
+        regarding use of this software. To submit patches or suggest improvements,
+        send email to nagiosplug-devel@lists.sourceforge.net
+
+        [root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805 -s "OK"
+HTTP OK: HTTP/1.1 200 OK - 137 bytes in 0.007 second response time |time=0.006607s;;;0.000000 size=137B;;;0
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805 -s "NO"
+HTTP CRITICAL: HTTP/1.1 200 OK - string 'NO' not found on 'http://10.216.98.16:8805/' - 137 bytes in 0.006 second response time |time=0.005729s;;;0.000000 size=137B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# vim $(find . -name vm-akf-app01*)
+...
+define service{
+        use                         generic-service
+        host_name                   vm-akf-app01
+        service_description         http vm-akf-app01.tcsbank.ru 8805
+        check_command               check_http!-p 8805 -s "OK"
+        contact_groups              +esb-admins
+}
+
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#45462. Improved one check. Now it tests existence of word in server's answer." external/vm-akf-app01.cfg
+Running configuration check...
+ OK.
+[master 699a948] SDN#45462. Improved one check. Now it tests existence of word in server's answer.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 9, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (5/5), 493 bytes, done.
+Total 5 (delta 4), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   24bc27f..699a948  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+[root@vm-vol-nag4-tst objects]# git --no-pager log -n 1 -p 699a948
+commit 699a94821b9e5535d9ef06de908dd3580851676a
+Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+Date:   Wed Oct 19 15:14:46 2016 +0300
+
+    SDN#45462. Improved one check. Now it tests existence of word in server's answer.
+
+diff --git a/objects/external/vm-akf-app01.cfg b/objects/external/vm-akf-app01.cfg
+index 047f70d..929d9fc 100644
+--- a/objects/external/vm-akf-app01.cfg
++++ b/objects/external/vm-akf-app01.cfg
+@@ -59,6 +59,6 @@ define service{
+         use                         generic-service
+         host_name                   vm-akf-app01
+         service_description         http vm-akf-app01.tcsbank.ru 8805
+-        check_command               check_http!-p 8805
++        check_command               check_http!-p 8805 -s "OK"
+         contact_groups              +esb-admins
+ }
+[root@vm-vol-nag4-tst objects]#
+................................................................................
+................................................................................
+
+#
+#   20161021
+#
+
+
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805 -s "OK"
+HTTP OK: HTTP/1.1 200 OK - 137 bytes in 0.006 second response time |time=0.005611s;;;0.000000 size=137B;;;0
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805 -s "OK" -v
+GET / HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: 10.216.98.16:8805
+
+
+http://10.216.98.16:8805/ is 137 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Content-Type: text/plain; charset=utf-8
+Date: Fri, 21 Oct 2016 08:48:49 GMT
+Content-Length: 2
+Connection: close
+**** CONTENT ****
+OK
+HTTP OK: HTTP/1.1 200 OK - 137 bytes in 0.005 second response time |time=0.004707s;;;0.000000 size=137B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+
+[root@vm-vol-nag4-tst objects]# git status
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   external/vm-akf-app01.cfg
+#       modified:   servers/dc-ds/windows/ds-sccm.cfg
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       servers/vmware/vm-ats-dev-app01.cfg
+#       servers/vmware/vm-bicms01t.cfg
+#       servers/vmware/vm-sasodbc01d.cfg
+no changes added to commit (use "git add" and/or "git commit -a")
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SDN#45462. Improved one check. Now this test return all debug informagion." external/vm-akf-app01.cfg
+Running configuration check...
+ OK.
+[master 44f2fc2] SDN#45462. Improved one check. Now this test return all debug informagion.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 9, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (5/5), 487 bytes, done.
+Total 5 (delta 4), reused 0 (delta 0)
+To git@gitlab.tcsbank.ru:~/repositories/nagios-core/nag4-base.git
+   9f11f42..44f2fc2  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+#
+#   Here is an example, how looks output after Mikhail Lipin turned on test for this check.
+#
+[root@vm-vol-nag4-tst objects]# check_http -H 10.216.98.16 -p 8805 -s "OK" -v                                                                                                                        GET / HTTP/1.1
+User-Agent: check_http/v1.4.16 (nagios-plugins 1.4.16)
+Connection: close
+Host: 10.216.98.16:8805
+
+
+http://10.216.98.16:8805/ is 196 characters
+STATUS: HTTP/1.1 200 OK
+**** HEADER ****
+Content-Type: text/plain; charset=utf-8
+Date: Fri, 21 Oct 2016 09:14:13 GMT
+Content-Length: 60
+Connection: close
+**** CONTENT ****
+Error: Not found pid file: /opt/ak/pids/tariffcontroller.pid
+HTTP CRITICAL: HTTP/1.1 200 OK - string 'OK' not found on 'http://10.216.98.16:8805/' - 196 bytes in 0.006 second response time |time=0.005858s;;;0.000000 size=196B;;;0
+[root@vm-vol-nag4-tst objects]#
+
+................................................................................
+
+

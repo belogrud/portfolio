@@ -1,0 +1,95 @@
+
+v6250-m1-nfs:/vol/avaya_sata_test       /mnt/avaya_sata_test    nfs rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+~
+~
+~
+~
+~
+~
+~
+~
+"/etc/fstab" 16L, 1044C записано
+root@hq-gpu02:~# mount -v /mnt/avaya_sata_test
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.64.8'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.64.8 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.64.8 prog 100005 vers 3 prot TCP port 4046
+root@hq-gpu02:~# df -hT !$
+df -hT /mnt/avaya_sata_test
+Filesystem                        Type  Size  Used Avail Use% Mounted on
+v6250-m1-nfs:/vol/avaya_sata_test nfs   238G   86G  152G  37% /mnt/avaya_sata_test
+root@hq-gpu02:~#
+
+................................................................................
+
+root@m1-gpu01:~# mount -v /mnt/avaya_sata_test
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.64.8'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: portmap query failed: RPC: Timed out
+mount.nfs: backgrounding "v6250-m1-nfs:/vol/avaya_sata_test"
+mount.nfs: mount options: "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard"
+root@m1-gpu01:~# df -hT !$
+df -hT /mnt/avaya_sata_test
+Filesystem                     Type  Size  Used Avail Use% Mounted on
+/dev/mapper/m1--gpu01--vg-root ext4  1.1T 1007G     0 100% /
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# umount /mnt/avaya_sata_test
+umount: /mnt/avaya_sata_test: not mounted
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# mount -v /mnt/avaya_sata_test
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: portmap query failed: RPC: Timed out
+mount.nfs: backgrounding "v6250-m1:/vol/avaya_sata_test"
+mount.nfs: mount options: "rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard"
+root@m1-gpu01:~#
+
+................................................................................
+
+root@m1-gpu01:~# host v6250-m1-nfs
+v6250-m1-nfs.tcsbank.ru has address 10.217.64.8
+root@m1-gpu01:~# host v6250-m1
+v6250-m1.tcsbank.ru has address 10.217.67.8
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ip -f inet addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+9: bond0.1871@bond0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.218.71.10/24 brd 10.218.71.255 scope global bond0.1871
+       valid_lft forever preferred_lft forever
+10: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
+    inet 172.17.0.1/16 scope global docker0
+       valid_lft forever preferred_lft forever
+197: bond0.1765@bond0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.217.65.50/24 brd 10.217.65.255 scope global bond0.1765
+       valid_lft forever preferred_lft forever
+root@m1-gpu01:~# ip route
+default via 10.218.71.254 dev bond0.1871 onlink
+10.217.65.0/24 dev bond0.1765  proto kernel  scope link  src 10.217.65.50
+10.218.71.0/24 dev bond0.1871  proto kernel  scope link  src 10.218.71.10
+172.17.0.0/16 dev docker0  proto kernel  scope link  src 172.17.0.1
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.218.71.10/24 brd 10.218.71.255 scope global bond0.1871
+    inet 172.17.0.1/16 scope global docker0
+    inet 10.217.65.50/24 brd 10.217.65.255 scope global bond0.1765
+root@m1-gpu01:~#
+
+root@m1-gpu01:~# mount -t nfs
+v6250-ds-nfs2:/vol/wof_dmz_dmp on /mnt/wof_dmz_dmp type nfs (rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.65.9,mountvers=3,mountport=4046,mountproto=tcp,local_lock=none,addr=10.217.65.9)
+v6250-m1-nfs2:/vol/asterisk_sata on /mnt/asterisk_sata type nfs (ro,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.65.8,mountvers=3,mountport=4046,mountproto=tcp,local_lock=none,addr=10.217.65.8)
+ds-hadoop-cs01p:/ on /mnt/hdfs_prod type nfs (rw,relatime,vers=3,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.218.64.10,mountvers=3,mountport=4242,mountproto=tcp,local_lock=none,addr=10.218.64.10)
+v6250-m1-nfs2:/vol/integration_fs/integration3/s2t_int on /mnt/s2t_int type nfs (rw,relatime,vers=3,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.217.65.8,mountvers=3,mountport=4046,mountproto=tcp,local_lock=none,addr=10.217.65.8)
+root@m1-gpu01:~#
+
+................................................................................
+
+
+

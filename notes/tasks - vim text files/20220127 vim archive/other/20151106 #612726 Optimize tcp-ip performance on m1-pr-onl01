@@ -1,0 +1,832 @@
+
+
+Параметры запроса
+[редактировать критичность]
+Номер   612726
+Название    №612726
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  05.11.2015 10:38
+Дата регистрации    05.11.2015 10:38
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 2 - Средняя
+Срочность   Низкая
+Описание запроса
+Коллеги, добрый день!
+
+Прошу подсказать по tcp/ip настройкам linux. Нам нужна их настройка для <высоконагруженных систем>.
+На текущий момент видим глобальные задержки при взаимодействии между ACQAPI и ONLINE. Начались они после значительного роста данных по этому каналу.
+Реквесты из одной системы доходят до другой с задержками (максимально, 30с). Торможение процессов исключено, проверяли с обеих сторон с вендорами.
+
+Взаимодействие происходит по порту TCSAPILP0 10330/tcp # TCS ONLINE API LOOP 0
+
+[online@m1-pr-onl01 ~]$ netstat -ap | grep TCSAPILP0
+(Not all processes could be identified, non-owned process info
+will not be shown, you would have to be root to see it all.)
+tcp 0 0 *:TCSAPILP0 *:* LISTEN 446/linkdhi.system
+tcp 0 0 m1-pr-onl-ha:TCSAPILP0 vm-pr-onlapi05p.tcsba:53295 ESTABLISHED 928/linkdhi.system
+tcp 0 0 m1-pr-onl-ha:TCSAPILP0 vm-pr-onlapi03p.tcsba:54072 ESTABLISHED 929/linkdhi.system
+tcp 0 0 m1-pr-onl-ha:TCSAPILP0 vm-pr-onlapi02p.tcsba:65286 ESTABLISHED 930/linkdhi.system
+tcp 0 0 m1-pr-onl-ha:TCSAPILP0 vm-pr-onlapi04p.tcsba:54814 ESTABLISHED 927/linkdhi.system
+tcp 0 0 m1-pr-onl-ha:TCSAPILP0 vm-pr-onlapi01p.tcsba:53872 ESTABLISHED 931/linkdhi.system
+
+Настройки ONLINE:
+[online@m1-pr-onl01 ~]$ /sbin/sysctl -a | grep tcp
+net.ipv4.netfilter.ip_conntrack_tcp_max_retrans = 3
+net.ipv4.netfilter.ip_conntrack_tcp_be_liberal = 0
+net.ipv4.netfilter.ip_conntrack_tcp_loose = 1
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_max_retrans = 300
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_close = 10
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait = 120
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_last_ack = 30
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_close_wait = 60
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_fin_wait = 120
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_established = 432000
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_recv = 60
+net.ipv4.netfilter.ip_conntrack_tcp_timeout_syn_sent = 120
+net.ipv4.tcp_slow_start_after_idle = 1
+net.ipv4.tcp_dma_copybreak = 4096
+net.ipv4.tcp_workaround_signed_windows = 0
+net.ipv4.tcp_base_mss = 512
+net.ipv4.tcp_mtu_probing = 0
+net.ipv4.tcp_abc = 0
+net.ipv4.tcp_congestion_control = bic
+net.ipv4.tcp_tso_win_divisor = 3
+net.ipv4.tcp_moderate_rcvbuf = 1
+net.ipv4.tcp_no_metrics_save = 0
+net.ipv4.tcp_low_latency = 0
+net.ipv4.tcp_frto = 0
+net.ipv4.tcp_tw_reuse = 0
+net.ipv4.tcp_adv_win_scale = 2
+net.ipv4.tcp_app_win = 31
+net.ipv4.tcp_rmem = 4096 87380 4194304
+net.ipv4.tcp_wmem = 4096 16384 4194304
+net.ipv4.tcp_mem = 98304 131072 196608
+net.ipv4.tcp_dsack = 1
+net.ipv4.tcp_ecn = 0
+net.ipv4.tcp_reordering = 3
+net.ipv4.tcp_fack = 1
+net.ipv4.tcp_orphan_retries = 0
+net.ipv4.tcp_max_syn_backlog = 1024
+net.ipv4.tcp_rfc1337 = 0
+net.ipv4.tcp_stdurg = 0
+net.ipv4.tcp_abort_on_overflow = 0
+net.ipv4.tcp_tw_recycle = 0
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_fin_timeout = 60
+net.ipv4.tcp_retries2 = 15
+net.ipv4.tcp_retries1 = 3
+net.ipv4.tcp_keepalive_intvl = 15
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_keepalive_time = 120
+net.ipv4.tcp_max_tw_buckets = 180000
+net.ipv4.tcp_max_orphans = 32768
+net.ipv4.tcp_synack_retries = 5
+net.ipv4.tcp_syn_retries = 5
+net.ipv4.tcp_retrans_collapse = 1
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_timestamps = 1
+error: permission denied on key 'kernel.cad_pid'
+error: permission denied on key 'kernel.cap-bound'
+
+[online@m1-pr-onl01 ~]$ /sbin/sysctl -a | grep core
+net.core.netdev_budget = 300
+net.core.somaxconn = 128
+net.core.xfrm_larval_drop = 0
+net.core.xfrm_acq_expires = 30
+net.core.xfrm_aevent_rseqth = 2
+net.core.xfrm_aevent_etime = 10
+net.core.optmem_max = 10240
+net.core.message_burst = 10
+net.core.message_cost = 5
+net.core.netdev_max_backlog = 1000
+net.core.dev_weight = 64
+net.core.rmem_default = 262144
+net.core.wmem_default = 262144
+net.core.rmem_max = 4194304
+net.core.wmem_max = 1048576
+error: permission denied on key 'kernel.cad_pid'
+error: permission denied on key 'kernel.cap-bound'
+kernel.core_pattern = core
+kernel.core_uses_pid = 1
+
+Настройки ACQAPI:
+PARAM_NAME
+
+PARAM_VALUE
+
+onlineloop.common.read.byte.buffer.capacity
+
+4096
+
+onlineloop.common.response.parser.buffer.size
+
+4096
+
+onlineloop.common.temp.byte.buffer.capacity
+
+4096
+
+onlineloop.common.write.byte.buffer.capacity
+
+4096
+
+onlineloop.common.read.select.timeout
+
+500
+
+onlineloop.common.tcp.so.linger.timeout
+
+500
+
+onlineloop.common.tcp.so.timeout
+
+500
+
+onlineloop.common.write.select.timeout
+
+500
+
+onlineloop.common.tcp.receiver.buffer.size
+
+65536
+
+onlineloop.common.tcp.send.buffer.size
+
+65536
+
+
+Заявку на SD завёл, прошу рассмотреть с максимальным приоритетом.
+
+Задачу прошу назначить на unix-admins.
+
+С уважением,
+
+Дмитрий Макеев
+Руководитель отдела Поддержки Управления Процессинга и Технологий
+
+................................................................................
+................................................................................
+
+
+
+From: Aleksandrov Aleksey Valerievich
+Sent: Friday, November 06, 2015 11:00 AM
+To: Terentev Aleksey
+Cc: unix-admins
+Subject: RE: ACQAPI - ONLINE
+
+Wireshark’ом в данный момент мы ничего не найдём, так как проблемы у них наблюдались только в момент нагрузочного тестирования.
+Сейчас обсуждаем вопрос с Дмитрием на тему повторить нагрузку на тесте.
+
+С уважением,
+
+Алексей Александров
+Старший администратор
+
+
+
+Ленинградское шоссе, дом 39А, стр. 1
+Москва, 125212, Россия
+Тел.: +7 (495) 648 1000 (вн. 2138)
+Моб.: +7 (965) 300 6334
+Факс: +7 (495) 645 5909
+E-mail: a.v.aleksandrov@tinkoff.ru
+www.tinkoff.ru
+
+Это электронное письмо строго конфиденциально (включая все вложения). Данная информация предназначена только для получателя(ей). Если Вы не являетесь получателем, Вы не вправе каким бы то ни было образом читать, копировать, использовать или хранить данное сообщение. Просьба немедленно его удалить. Если Вы получили его по ошибке, пожалуйста, свяжитесь с Тинькофф Банком по т. +7 495 648 1000.
+
+From: Terentev Aleksey
+Sent: Friday, November 06, 2015 10:39 AM
+To: Belogrud Sergey Vladimirovich; Aleksandrov Aleksey Valerievich
+Cc: unix-admins
+Subject: RE: ACQAPI - ONLINE
+
+Алексей, а wireshark подтверждает "Реквесты из одной системы доходят до другой с задержками (максимально, 30с)." ?
+Хотя бы попробовать локализовать, вдруг все 30 секунд на сети...
+
+а всякие trace-ы и прочая линкусовая диагностика ?
+
+________________________________________
+От: Belogrud Sergey Vladimirovich
+Отправлено: 5 ноября 2015 г. 16:04
+Кому: Aleksandrov Aleksey Valerievich
+Копия: unix-admins
+Тема: RE: ACQAPI - ONLINE
+
+Может, можно какой-то положительный опыт (sysctl, лимиты, ещё что-то) из использования DB серверов применить?
+
+From: Aleksandrov Aleksey Valerievich
+Sent: Thursday, November 05, 2015 3:56 PM
+To: unix-admins
+Subject: RE: ACQAPI - ONLINE
+
+Парни, есть у кого какие идеи на этот счёт? Может кто дать ответ Дмитрию?
+
+
+С уважением,
+
+Алексей Александров
+Старший администратор
+
+
+................................................................................
+................................................................................
+
+[root@vm-pr-onlapp02t ~]# dmidecode -t system
+# dmidecode 2.10
+SMBIOS 2.4 present.
+
+Handle 0x0001, DMI type 1, 27 bytes
+System Information
+        Manufacturer: VMware, Inc.
+        Product Name: VMware Virtual Platform
+        Version: None
+        Serial Number: VMware-42 13 2d 8a 5d 2e d3 86-7e 09 d1 ce ae c3 27 6a
+        UUID: 42132D8A-5D2E-D386-7E09-D1CEAEC3276A
+        Wake-up Type: Power Switch
+        SKU Number: Not Specified
+        Family: Not Specified
+
+Handle 0x00E1, DMI type 15, 29 bytes
+System Event Log
+        Area Length: 16 bytes
+        Header Start Offset: 0x0000
+        Header Length: 16 bytes
+        Data Start Offset: 0x0010
+        Access Method: General-purpose non-volatile data functions
+        Access Address: 0x0000
+        Status: Invalid, Full
+        Change Token: 0x00000036
+        Header Format: Type 1
+        Supported Log Type Descriptors: 3
+        Descriptor 1: POST error
+        Data Format 1: POST results bitmap
+        Descriptor 2: Single-bit ECC memory error
+        Data Format 2: Multiple-event
+        Descriptor 3: Multi-bit ECC memory error
+        Data Format 3: Multiple-event
+
+Handle 0x0165, DMI type 23, 13 bytes
+System Reset
+        Status: Enabled
+        Watchdog Timer: Present
+        Boot Option: Do Not Reboot
+        Boot Option On Limit: Do Not Reboot
+        Reset Count: Unknown
+        Reset Limit: Unknown
+        Timer Interval: Unknown
+        Timeout: Unknown
+
+Handle 0x0168, DMI type 32, 20 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@vm-pr-onlapp02t ~]#
+
+#   Holy shit! So old distributives!
+[root@vm-pr-onlapp02t ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 5.5 (Tikanga)
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# uname -a
+Linux vm-pr-onlapp02t 2.6.18-194.el5 #1 SMP Tue Mar 16 21:52:39 EDT 2010 x86_64 x86_64 x86_64 GNU/Linux
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# yum repolist
+Loaded plugins: rhnplugin, security
+This system is not registered with RHN.
+RHN support will be disabled.
+http://repo-linux.tcsbank.ru/rhel/5/5/x86_64/iso/repodata/repomd.xml: [Errno 14] HTTP Error 404: Not Found
+Trying other mirror.
+repo id                                                                                                      repo name                                                                                                                                        status
+tcs-epel-5-x86_64                                                                                            Extra Packages for Enterprise Linux 5 - x86_64                                                                                                   enabled: 11,520
+tcs-rhel-5.5-x86_64-iso                                                                                      Red Hat Enterprise Linux 5.5 rhel-server-5.5-x86_64-dvd.iso                                                                                      enabled:  3,116
+repolist: 14,636
+[root@vm-pr-onlapp02t ~]# ifconfig
+eth0      Link encap:Ethernet  HWaddr 00:50:56:93:73:8B
+          inet addr:10.217.13.27  Bcast:10.217.13.255  Mask:255.255.255.0
+          inet6 addr: fe80::250:56ff:fe93:738b/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:48606049 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:55944849 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:9360743192 (8.7 GiB)  TX bytes:9948783119 (9.2 GiB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:30895 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:30895 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:4459700 (4.2 MiB)  TX bytes:4459700 (4.2 MiB)
+
+[root@vm-pr-onlapp02t ~]# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+                       13G  8.7G  3.2G  74% /
+/dev/sda2             2.0G  882M 1000M  47% /var
+/dev/sda1              99M   13M   82M  14% /boot
+tmpfs                 7.9G     0  7.9G   0% /dev/shm
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# yum install net-snmp
+Loaded plugins: rhnplugin, security
+This system is not registered with RHN.
+RHN support will be disabled.
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package net-snmp.x86_64 1:5.3.2.2-9.el5 set to be updated
+--> Processing Dependency: libsensors.so.3()(64bit) for package: net-snmp
+--> Running transaction check
+---> Package lm_sensors.x86_64 0:2.10.7-9.el5 set to be updated
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=============================================================================================================================================================================================================================================================================
+ Package                                                      Arch                                                     Version                                                              Repository                                                                  Size
+=============================================================================================================================================================================================================================================================================
+Installing:
+ net-snmp                                                     x86_64                                                   1:5.3.2.2-9.el5                                                      tcs-rhel-x86_64-server-6                                                   702 k
+Installing for dependencies:
+ lm_sensors                                                   x86_64                                                   2.10.7-9.el5                                                         tcs-rhel-x86_64-server-6                                                   525 k
+
+Transaction Summary
+=============================================================================================================================================================================================================================================================================
+Install       2 Package(s)
+Upgrade       0 Package(s)
+
+Total download size: 1.2 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/2): lm_sensors-2.10.7-9.el5.x86_64.rpm                                                                                                                                                                                                             | 525 kB     00:00
+(2/2): net-snmp-5.3.2.2-9.el5.x86_64.rpm                                                                                                                                                                                                              | 702 kB     00:00
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                                                                                        8.4 MB/s | 1.2 MB     00:00
+Running rpm_check_debug
+Running Transaction Test
+Finished Transaction Test
+Transaction Test Succeeded
+Running Transaction
+  Installing     : lm_sensors                                                                                                                                                                                                                                            1/2
+  Installing     : net-snmp                                                                                                                                                                                                                                              2/2
+
+Installed:
+  net-snmp.x86_64 1:5.3.2.2-9.el5
+
+Dependency Installed:
+  lm_sensors.x86_64 0:2.10.7-9.el5
+
+Complete!
+[root@vm-pr-onlapp02t ~]# ls -Alh /etc/yum.repos.d/
+total 16K
+-rw-r--r-- 1 root root 161 Nov  6 12:08 tcs-epel.repo
+-rw-r--r-- 1 root root 240 Nov  6 12:08 tcs-puppetlabs-deps.repo
+-rw-r--r-- 1 root root 236 Nov  6 12:08 tcs-puppetlabs-products.repo
+-rw-r--r-- 1 root root 168 Nov  6 12:13 tcs-rhel-x86_64-server-5.repo
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# cat /etc/snmp/snmpd.conf | grep -v -e "^#" -e "^$"
+rocommunity tcspub 127.0.0.1
+rwcommunity  no localhost
+rocommunity tcspub 172.16.1.11
+rocommunity tcspub 172.16.1.19
+rocommunity public 172.16.1.19
+rocommunity tcspub 10.217.50.167
+trapcommunity tcspub
+trapsink localhost tcpub
+trapsink 172.16.1.11 tcspub
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+sysServices 76
+com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  systemview none none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+pass .1.3.6.1.4.1.4413.4.1 /usr/bin/ucd5820stat
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# service snmpd restart
+Stopping snmpd:                                            [FAILED]
+Starting snmpd:                                            [  OK  ]
+[root@vm-pr-onlapp02t ~]# chkconfig --list snmpd
+snmpd           0:off   1:off   2:off   3:off   4:off   5:off   6:off
+[root@vm-pr-onlapp02t ~]# chkconfig snmpd on
+[root@vm-pr-onlapp02t ~]# chkconfig --list snmpd
+snmpd           0:off   1:off   2:on    3:on    4:on    5:on    6:off
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+2    ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0           icmp type 255
+3    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED
+4    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:22 /* SSH service */
+5    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10304 /* linkdhi.system */
+6    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:867 /* rpc.statd */
+7    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:7753 /* linkdhi.system */
+8    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:7754 /* linkdhi.system */
+9    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10309 /* linkdhi.system */
+10   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10310 /* linkdhi.system */
+11   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10311 /* linkdhi.system */
+12   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10320 /* linkdhi.system */
+13   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10321 /* linkdhi.system */
+14   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10360 /* linkdhi.system */
+15   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10330 /* linkdhi.system */
+16   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10331 /* linkdhi.system */
+17   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:111 /* portmap */
+18   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:5533 /* HSMISERVER */
+19   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10302 /* linkdhi.system */
+20   ACCEPT     tcp  --  172.16.8.183         0.0.0.0/0           state NEW,RELATED tcp dpt:10350 /* linkdhi.system */
+21   REJECT     all  --  0.0.0.0/0            0.0.0.0/0           reject-with icmp-host-prohibited
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# iptables -A INPUT -s 10.217.50.167/32 -p udp -m udp --dport 161 -m comment --comment "SNMP access from vm-dbamon02.tcsbank.ru" -j ACCEPT
+[root@vm-pr-onlapp02t ~]#
+
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@vm-dbamon02
+Last login: Tue Oct 20 14:15:15 2015 from tcs4500.tcsbank.ru
+[bsv@vm-dbamon02 ~]$ snmpwalk -v2c -c tcspub vm-pr-onlapp02t | head
+Timeout: No Response from vm-pr-onlapp02t
+[bsv@vm-dbamon02 ~]$ ping -c 3 vm-pr-onlapp02t
+PING vm-pr-onlapp02t.tcsbank.ru (10.217.13.27) 56(84) bytes of data.
+64 bytes from vm-pr-onlapp02t.tcsbank.ru (10.217.13.27): icmp_seq=1 ttl=61 time=4.45 ms
+64 bytes from vm-pr-onlapp02t.tcsbank.ru (10.217.13.27): icmp_seq=2 ttl=61 time=2.77 ms
+64 bytes from vm-pr-onlapp02t.tcsbank.ru (10.217.13.27): icmp_seq=3 ttl=61 time=2.51 ms
+
+--- vm-pr-onlapp02t.tcsbank.ru ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 2.516/3.249/4.456/0.862 ms
+[bsv@vm-dbamon02 ~]$
+
+[root@vm-pr-onlapp02t ~]# yum install net-snmp-utils
+
+[root@vm-pr-onlapp02t ~]# snmpwalk -v2c -c tcspub 127.0.0.1 | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux vm-pr-onlapp02t 2.6.18-194.el5 #1 SMP Tue Mar 16 21:52:39 EDT 2010 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (38958) 0:06:29.58
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: vm-pr-onlapp02t
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysServices.0 = INTEGER: 76
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (0) 0:00:00.00
+SNMPv2-MIB::sysORID.1 = OID: SNMPv2-MIB::snmpMIB
+SNMPv2-MIB::sysORID.2 = OID: TCP-MIB::tcpMIB
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# snmpwalk -v2c -c tcspub vm-pr-onlapp02t | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux vm-pr-onlapp02t 2.6.18-194.el5 #1 SMP Tue Mar 16 21:52:39 EDT 2010 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (50599) 0:08:25.99
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: vm-pr-onlapp02t
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysServices.0 = INTEGER: 76
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (0) 0:00:00.00
+SNMPv2-MIB::sysORID.1 = OID: SNMPv2-MIB::snmpMIB
+SNMPv2-MIB::sysORID.2 = OID: TCP-MIB::tcpMIB
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# service iptables stop
+Flushing firewall rules:                                   [  OK  ]
+Setting chains to policy ACCEPT: filter                    [  OK  ]
+Unloading iptables modules:                                [  OK  ]
+[root@vm-pr-onlapp02t ~]#
+
+
+[bsv@vm-dbamon02 ~]$ snmpwalk -v2c -c tcspub vm-pr-onlapp02t | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux vm-pr-onlapp02t 2.6.18-194.el5 #1 SMP Tue Mar 16 21:52:39 EDT 2010 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (59864) 0:09:58.64
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: vm-pr-onlapp02t
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysServices.0 = INTEGER: 76
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (0) 0:00:00.00
+SNMPv2-MIB::sysORID.1 = OID: SNMPv2-MIB::snmpMIB
+SNMPv2-MIB::sysORID.2 = OID: TCP-MIB::tcpMIB
+[bsv@vm-dbamon02 ~]$
+
+
+[root@vm-pr-onlapp02t ~]# service iptables start
+Applying iptables firewall rules:                          [  OK  ]
+Loading additional iptables modules: ip_conntrack_netbios_n[  OK  ]
+[root@vm-pr-onlapp02t ~]#
+
+[bsv@vm-dbamon02 ~]$ snmpwalk -v2c -c tcspub vm-pr-onlapp02t | head
+Timeout: No Response from vm-pr-onlapp02t
+[bsv@vm-dbamon02 ~]$
+
+[root@vm-pr-onlapp02t ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+1    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+2    ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0           icmp type 255
+3    ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0           state RELATED,ESTABLISHED
+4    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:22 /* SSH service */
+5    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10304 /* linkdhi.system */
+6    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:867 /* rpc.statd */
+7    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:7753 /* linkdhi.system */
+8    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:7754 /* linkdhi.system */
+9    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10309 /* linkdhi.system */
+10   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10310 /* linkdhi.system */
+11   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10311 /* linkdhi.system */
+12   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10320 /* linkdhi.system */
+13   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10321 /* linkdhi.system */
+14   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10360 /* linkdhi.system */
+15   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10330 /* linkdhi.system */
+16   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10331 /* linkdhi.system */
+17   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:111 /* portmap */
+18   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:5533 /* HSMISERVER */
+19   ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           state NEW tcp dpt:10302 /* linkdhi.system */
+20   ACCEPT     tcp  --  172.16.8.183         0.0.0.0/0           state NEW,RELATED tcp dpt:10350 /* linkdhi.system */
+21   REJECT     all  --  0.0.0.0/0            0.0.0.0/0           reject-with icmp-host-prohibited
+22   ACCEPT     udp  --  10.217.50.167        0.0.0.0/0           udp dpt:161 /* SNMP access from vm-dbamon02.tcsbank.ru */
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@vm-pr-onlapp02t ~]#
+
+#   The problem was in sequence of these two lines. REJECT must be last line.
+-A INPUT -s 10.217.50.167 -p udp -m udp --dport 161 -m comment --comment "SNMP access from vm-dbamon02.tcsbank.ru" -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+# Completed on Fri Nov  6 12:40:08 2015
+~
+~
+~
+"/etc/sysconfig/iptables" 29L, 2328C written
+[root@vm-pr-onlapp02t ~]# service iptables restart
+Flushing firewall rules:                                   [  OK  ]
+Setting chains to policy ACCEPT: filter                    [  OK  ]
+Unloading iptables modules:                                [  OK  ]
+Applying iptables firewall rules:                          [  OK  ]
+Loading additional iptables modules: ip_conntrack_netbios_n[  OK  ]
+[root@vm-pr-onlapp02t ~]#
+
+#   Now everything works well!
+[bsv@vm-dbamon02 ~]$ snmpwalk -v2c -c tcspub vm-pr-onlapp02t | head
+SNMPv2-MIB::sysDescr.0 = STRING: Linux vm-pr-onlapp02t 2.6.18-194.el5 #1 SMP Tue Mar 16 21:52:39 EDT 2010 x86_64
+SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (101043) 0:16:50.43
+SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+SNMPv2-MIB::sysName.0 = STRING: vm-pr-onlapp02t
+SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+SNMPv2-MIB::sysServices.0 = INTEGER: 76
+SNMPv2-MIB::sysORLastChange.0 = Timeticks: (0) 0:00:00.00
+SNMPv2-MIB::sysORID.1 = OID: SNMPv2-MIB::snmpMIB
+SNMPv2-MIB::sysORID.2 = OID: TCP-MIB::tcpMIB
+[bsv@vm-dbamon02 ~]$
+
+................................................................................
+................................................................................
+
+
+[root@m1-pr-onl01 ~]# dmidecode -t system
+# dmidecode 2.10
+SMBIOS 2.7 present.
+# SMBIOS implementations newer than version 2.6 are not
+# fully supported by this version of dmidecode.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL360 G7
+        Version: Not Specified
+        Serial Number: GB8108F15K
+        UUID: 32393735-3733-4247-3831-30384631354B
+        Wake-up Type: Power Switch
+        SKU Number: 579237-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-pr-onl01 ~]#
+
+
+[root@m1-pr-onl01 ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 5.5 (Tikanga)
+[root@m1-pr-onl01 ~]#
+
+
+[root@m1-pr-onl01 ~]# uname -a
+Linux m1-pr-onl01.tcsbank.ru 2.6.18-371.1.2.el5PAE #1 SMP Mon Oct 7 16:41:57 EDT 2013 i686 i686 i386 GNU/Linux
+[root@m1-pr-onl01 ~]#
+
+
+[root@m1-pr-onl01 ~]# service iptables status
+Table: nat
+Chain PREROUTING (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Table: mangle
+Chain PREROUTING (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain POSTROUTING (policy ACCEPT)
+num  target     prot opt source               destination
+
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@m1-pr-onl01 ~]#
+
+................................................................................
+................................................................................
+
+[root@m1-pr-onl02 ~]# cat /etc/snmp/snmpd.conf | grep -v -e "^#" -e "^$"
+dlmod cmaX /usr/lib64/libcmaX64.so
+rwcommunity cnhdGsfT4243(0Cg 127.0.0.1
+rocommunity tcspub 127.0.0.1
+rwcommunity  no localhost
+rocommunity tcspub 172.16.1.11
+rocommunity tcspub 172.16.1.19
+rocommunity public 172.16.1.19
+rocommunity tcspub 10.217.50.167
+trapcommunity tcspub
+trapsink localhost tcpub
+trapsink 172.16.1.11 tcspub
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+sysServices 76
+com2sec notConfigUser  default       public
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+view    systemview    included   .1.3.6.1.2.1.1
+view    systemview    included   .1.3.6.1.2.1.25.1.1
+access  notConfigGroup ""      any       noauth    exact  systemview none none
+syslocation Unknown (edit /etc/snmp/snmpd.conf)
+syscontact Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+pass .1.3.6.1.4.1.4413.4.1 /usr/bin/ucd5820stat
+[root@m1-pr-onl02 ~]#
+
+[root@m1-pr-onl02 ~]# service iptables status
+Table: filter
+Chain INPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain FORWARD (policy ACCEPT)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination
+
+[root@m1-pr-onl02 ~]#
+
+
+................................................................................
+................................................................................
+
+
+[root@vm-pr-onlapp02t ~]# at 15:24 today <<< 'timeout 5m tcpdump -i eth0 host 172.16.28.74 -C 1024 -W 5 -z gzip -w /var/tmp/$(date +%Y%m%d-%H%M).tcpdump.pcap.'
+job 1 at 2015-11-06 15:24
+[root@vm-pr-onlapp02t ~]# atq
+1       2015-11-06 15:24 a root
+[root@vm-pr-onlapp02t ~]# date
+Fri Nov  6 15:23:25 MSK 2015
+[root@vm-pr-onlapp02t ~]#
+
+#   command "timeout" is absent.
+#   parameter -z gzip is unavailable in this old version of tcpdump.
+
+[root@vm-pr-onlapp02t ~]# tcpdump -i eth0 host 172.16.28.74 -C 1024 -W 5 -w /var/tmp/$(date +%Y%m%d-%H%M).tcpdump.pcap
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), capture size 96 bytes
+9 packets captured
+44 packets received by filter
+0 packets dropped by kernel
+[root@vm-pr-onlapp02t ~]#
+
+
+[root@vm-pr-onlapp02t ~]# ls -Alh /var/tmp/
+total 4.0K
+-rw------- 1 pcap pcap 904 Nov  6 15:32 20151106-1532.tcpdump.pcap0
+[root@vm-pr-onlapp02t ~]#
+
+................................................................................
+
+[root@vm-pr-onlapp02t ~]# tcpdump -i eth0 host 10.217.13.39 or host 10.217.13.38 -C 1024 -W 5 -w /var/tmp/$(date +%Y%m%d-%H%M).tcpdump.pcap
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), capture size 96 bytes
+86076 packets captured
+86078 packets received by filter
+0 packets dropped by kernel
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# ls -Alh /var/tmp/
+total 8.4M
+-rw------- 1 pcap pcap  904 Nov  6 15:32 20151106-1532.tcpdump.pcap0
+-rw------- 1 pcap pcap   24 Nov  6 15:41 20151106-1539.tcpdump.pcap0
+-rw------- 1 pcap pcap 8.4M Nov  6 16:32 20151106-1541.tcpdump.pcap0
+[root@vm-pr-onlapp02t ~]#
+
+[root@vm-pr-onlapp02t ~]# cp /var/tmp/20151106-1541.tcpdump.pcap0 /tmp/
+[root@vm-pr-onlapp02t ~]# chown bsv:bsv /tmp/20151106-1541.tcpdump.pcap0
+[root@vm-pr-onlapp02t ~]#
+
+[support@centos00 en]$ mkdir /media/sf_share/20151106-1635.vm-pr-onlapp02t
+[support@centos00 en]$ sshpass -e scp bsv@vm-pr-onlapp02t:/tmp/20151106-1541.tcpdump.pcap0 /media/sf_share/20151106-1635.vm-pr-onlapp02t
+
+................................................................................
+................................................................................
+
+
+Дата
+Комментарий Автор
+06.11.2015 18:56    Первичке.
+
+Перевести заявку на автора для осмысления полученных данных, проведения соответствующих своих работ, и предложения к дальнейшим действиям.  Белогруд Сергей В
+06.11.2015 18:55    Ваши предложения?
+
+P.S.
+Возможно имеет смысл начать с улучшения работы Вашего прикладного ПО с учётом полученных замечаний (письменных и устных в процессе общения с Александровым Алексеем).
+Белогруд Сергей В
+06.11.2015 18:50    От себя могу добавить следующее.
+
+На сервере vm-pr-onlapp02t (10.217.13.27) при нагрузке довольно быстро растет количество данных в буфере сокета (утилита netstat, параметр Recv-Q), при "errors:0 dropped:0 overruns:0" на интерфейсе. Это может означать, что данные от удаленной системы получены, но еще не обработаны приложением.
+
+Из man netstat
+
+Recv-Q
+The count of bytes not copied by the user program connected to this socket.
+
+И еще, с помощью strace, заметили что приложение читает из буфера сокета данные объемом равным в 1 байт за раз(по одному символу), когда другие, тоже нагруженные приложения, читают за раз по 2Кб данных. Это пока все, чсто удалось найти.
+
+Александров Алексей В
+
+06.11.2015 18:38    From: Bukovnya Sergey Nikolaevich
+Sent: Friday, November 06, 2015 6:21 PM
+To: Belogrud Sergey Vladimirovich; Pankevich Mikhail Igorevich; Makeev Dmitriy Alekseevich
+Cc: unix-admins; Morozkin Stanislav; Belyakov Sergey; Veselov Vitaliy Viktorovich; Belokopytov Andrey Dmitrievich; card_product
+Subject: RE: ACQAPI - ONLINE
+
+Ничего необычного в дампе не вижу. Единственное – периодически появляются TCP retransmission от сервера 10.217.13.27 к серверу 10.217.13.39.
+2485 2015-11-06 15:43:48.475494 10.217.13.27 10.217.13.39 TCP 350 10330 > 53931 [PSH, ACK] Seq=795945 Ack=898013 Win=435968 Len=296[Packet size limited during capture]
+2486 2015-11-06 15:43:48.718409 10.217.13.27 10.217.13.39 TCP 350 [TCP Retransmission] 10330 > 53931 [PSH, ACK] Seq=795945 Ack=898013 Win=435968 Len=296[Packet size limited during capture]
+То есть сервер 10.217.13.39 сразу не ответил ACK-ом на сообщение и 10.217.13.27 через 0.25с. ожидания повторил отправку сегмента. Но таких случаев довольно мало.
+
+В целом по дампу скорость передачи между серверами составила в среднем 1 Мбит/с, от 10.217.13.27 к 10.217.13.39 было передано 30 Мбайт, 10.217.13.39 к серверу 10.217.13.27 – 33 Мбайт.
+
+Поскольку трафик собирался не весь, предлагаю собрать командой tcpdump -i eth0 -C 1024 -W 5 -w /var/tmp/$(date +%Y%m%d-%H%M).tcpdump.pcap
+
+
+Сергей Буковня
+Сетевой инженер
+Белогруд Сергей В
+
+
+................................................................................
+................................................................................
+
+

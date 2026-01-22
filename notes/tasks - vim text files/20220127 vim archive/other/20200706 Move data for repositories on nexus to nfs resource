@@ -1,0 +1,379 @@
+
+................................................................................
+
+
+[root@m1-nexus01p nexus-3.24.0-02]# vim /etc/fstab
+
+[root@m1-nexus01p nexus-3.24.0-02]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Thu Jan 17 13:00:38 2019
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/vg_root-lvol0 /                       xfs     defaults        0 0
+UUID=2bfb3acb-d501-497d-a027-c831f9ee12db /boot                   xfs     defaults        0 0
+/swap                   swap                    swap    defaults        0 0
+
+# SD#4178180
+fs-nfsdata3:/linux_repository_nexus     /mnt/nexus      nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+[root@m1-nexus01p nexus-3.24.0-02]# mkdir -p /mnt/nexus
+[root@m1-nexus01p nexus-3.24.0-02]# chown nexus:nexus /mnt/nexus
+[root@m1-nexus01p nexus-3.24.0-02]# chmod g+w /mnt/nexus
+[root@m1-nexus01p nexus-3.24.0-02]# ls -Alhd /mnt/nexus
+drwxrwxr-x 2 nexus nexus 6 Jul  6 17:35 /mnt/nexus
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+
+[root@m1-nexus01p nexus-3.24.0-02]# mount /mnt/nexus/
+[root@m1-nexus01p nexus-3.24.0-02]# df -hT /mnt/nexus
+Filesystem                          Type  Size  Used Avail Use% Mounted on
+fs-nfsdata3:/linux_repository_nexus nfs   1.0T  704K  1.0T   1% /mnt/nexus
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+[root@m1-nexus01p nexus-3.24.0-02]# mkdir /mnt/nexus/nexus-data
+[root@m1-nexus01p nexus-3.24.0-02]# chown nexus:nexus /mnt/nexus/nexus-data
+[root@m1-nexus01p nexus-3.24.0-02]# chmod g+w /mnt/nexus/nexus-data
+
+[root@m1-nexus01p ~]# mkdir /mnt/nexus/nexus-data/blobs
+[root@m1-nexus01p ~]# chown nexus:nexus /mnt/nexus/nexus-data/blobs
+[root@m1-nexus01p ~]# ls -Alhd /mnt/nexus/nexus-data/blobs
+drwxr-xr-x 2 nexus nexus 4.0K Jul  6 19:15 /mnt/nexus/nexus-data/blobs
+[root@m1-nexus01p ~]#
+
+[root@m1-nexus01p ~]# rsync -a /opt/nexus/nexus-data/blobs/ /mnt/nexus/nexus-data/blobs/
+[root@m1-nexus01p ~]# du -sh /mnt/nexus/nexus-data/blobs/
+20G     /mnt/nexus/nexus-data/blobs/
+[root@m1-nexus01p ~]#
+
+................................................................................
+
+[root@m1-nexus01p ~]# mkdir -p /mnt/nexus/backup/nexus-data
+[root@m1-nexus01p ~]# rsync -a /opt/nexus/nexus-data/ /mnt/nexus/backup/nexus-data/
+
+[root@m1-nexus01p ~]# systemctl stop nexus
+[root@m1-nexus01p ~]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: inactive (dead) since Mon 2020-07-06 19:48:10 MSK; 6s ago
+  Process: 7616 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+ Main PID: 6082 (code=exited, status=0/SUCCESS)
+
+Jul 06 19:03:47 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 19:03:48 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+Jul 06 19:48:06 m1-nexus01p.tcsbank.ru systemd[1]: Stopping nexus service...
+Jul 06 19:48:06 m1-nexus01p.tcsbank.ru nexus[7616]: Shutting down nexus
+Jul 06 19:48:10 m1-nexus01p.tcsbank.ru nexus[7616]: Stopped.
+Jul 06 19:48:10 m1-nexus01p.tcsbank.ru systemd[1]: Stopped nexus service.
+[root@m1-nexus01p ~]#
+
+#
+#	It's to be sure, that without any changes this servis stop and starts correctly.
+#
+
+[root@m1-nexus01p ~]# systemctl start nexus
+[root@m1-nexus01p ~]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2020-07-06 19:49:09 MSK; 9s ago
+  Process: 7616 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 7827 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 8001 (java)
+   CGroup: /system.slice/nexus.service
+           └─8001 /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre/bin/java -server -Dinstall4j.jvmDir=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/...
+
+Jul 06 19:49:09 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 19:49:09 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+[root@m1-nexus01p ~]#
+
+
+[root@m1-nexus01p ~]# systemctl stop nexus
+[root@m1-nexus01p ~]# rsync -a /opt/nexus/nexus-data/ /mnt/nexus/backup/nexus-data/
+[root@m1-nexus01p ~]# rsync -a /opt/nexus/nexus-data/blobs/ /mnt/nexus/nexus-data/blobs/
+
+................................................................................
+
+#	To test connection to OrientDB Console.
+#
+[root@m1-nexus01p nexus-3.24.0-02]# cd /opt/nexus/nexus-3.24.0-02/
+[root@m1-nexus01p nexus-3.24.0-02]# java -jar ./lib/support/nexus-orient-console.jar
+
+OrientDB console v.2.2.36 (build d3beb772c02098ceaea89779a7afd4b7305d3788, branch 2.2.x) https://www.orientdb.com
+Type 'help' to display all the supported commands.
+orientdb> exit
+
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+................................................................................
+
+
+#	connect plocal:../sonatype-work/nexus3/db/config admin admin
+#	update repository_blobstore set attributes.file.path='/new/blobstore/location/sample' where name='sample'
+#	disconnect
+#	exit
+
+
+#	/sonatype-work/nexus3/blobs/sample => /opt/nexus/nexus-data/blobs/default
+#	/new/blobstore/location/ => /mnt/nexus/nexus-data/blobs/
+
+
+#	# rsync -a /opt/nexus/nexus-data/ /mnt/nexus/nexus-data/
+
+cd /opt/nexus/nexus-3.24.0-02/
+java -jar ./lib/support/nexus-orient-console.jar
+
+connect plocal:../opt/nexus/nexus-data/db/config admin admin
+update repository_blobstore set attributes.file.path='/mnt/nexus/nexus-data/blobs/default' where name='default'
+disconnect
+exit
+
+................................................................................
+
+connect plocal:../nexus-data/db/config admin admin
+
+
+[root@m1-nexus01p nexus-3.24.0-02]# java -jar ./lib/support/nexus-orient-console.jar
+
+OrientDB console v.2.2.36 (build d3beb772c02098ceaea89779a7afd4b7305d3788, branch 2.2.x) https://www.orientdb.com
+Type 'help' to display all the supported commands.
+orientdb> connect plocal:../nexus-data/db/config admin admin
+
+Connecting to database [plocal:../nexus-data/db/config] with user 'admin'...OK
+orientdb {db=config}> update repository_blobstore set attributes.file.path='/mnt/nexus/nexus-data/blobs/default' where name='default'
+
+Updated record(s) '1' in 0.026000 sec(s).
+
+orientdb {db=config}> disconnect
+
+Disconnecting from the database [config]...OK
+orientdb> exit
+
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+[root@m1-nexus01p nexus-3.24.0-02]# systemctl start nexus
+[root@m1-nexus01p nexus-3.24.0-02]# systemctl status  nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2020-07-06 20:03:12 MSK; 8s ago
+  Process: 8289 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 8653 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 8827 (java)
+   CGroup: /system.slice/nexus.service
+           └─8827 /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre/bin/java -server -Dinstall4j.jvmDir=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/...
+
+Jul 06 20:03:12 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 20:03:12 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+................................................................................
+
+[root@m1-nexus01p nexus-3.24.0-02]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: failed (Result: exit-code) since Mon 2020-07-06 20:03:47 MSK; 46s ago
+  Process: 8931 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 8653 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 8827 (code=exited, status=255)
+
+Jul 06 20:03:12 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 20:03:12 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+Jul 06 20:03:47 m1-nexus01p.tcsbank.ru systemd[1]: nexus.service: main process exited, code=exited, status=255/n/a
+Jul 06 20:03:47 m1-nexus01p.tcsbank.ru nexus[8931]: Shutting down nexus
+Jul 06 20:03:47 m1-nexus01p.tcsbank.ru nexus[8931]: nexus is not running.
+Jul 06 20:03:47 m1-nexus01p.tcsbank.ru systemd[1]: Unit nexus.service entered failed state.
+Jul 06 20:03:47 m1-nexus01p.tcsbank.ru systemd[1]: nexus.service failed.
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+................................................................................
+
+[root@m1-nexus01p nexus-3.24.0-02]# rm -rf /mnt/nexus/nexus-data/blobs/default/
+[root@m1-nexus01p nexus-3.24.0-02]# rsync -a /opt/nexus/nexus-data/blobs/ /mnt/nexus/nexus-data/blobs/
+[root@m1-nexus01p nexus-3.24.0-02]# ls -Alhd /opt/nexus/nexus-data/blobs/default/ /mnt/nexus/nexus-data/blobs/default/
+drwxr-xr-x  3 nexus nexus 4.0K Jul  6 19:50 /mnt/nexus/nexus-data/blobs/default/
+drwxr-xr-x. 3 nexus nexus  187 Jul  6 19:50 /opt/nexus/nexus-data/blobs/default/
+[root@m1-nexus01p nexus-3.24.0-02]# ls -Alhd /opt/nexus/nexus-data/blobs/ /mnt/nexus/nexus-data/blobs/
+drwxr-xr-x  3 nexus nexus 4.0K Jan 31 18:48 /mnt/nexus/nexus-data/blobs/
+drwxr-xr-x. 3 nexus nexus   21 Jan 31 18:48 /opt/nexus/nexus-data/blobs/
+[root@m1-nexus01p nexus-3.24.0-02]# ls -Alhd /opt/nexus/nexus-data/ /mnt/nexus/nexus-data/
+drwxrwxr-x   3 nexus nexus 4.0K Jul  6 19:15 /mnt/nexus/nexus-data/
+drwxrwxr-x. 16 nexus nexus  264 Jul  6 20:03 /opt/nexus/nexus-data/
+[root@m1-nexus01p nexus-3.24.0-02]# ls -Alhd /opt/nexus/ /mnt/nexus/
+drwxr-xr-x  4 root  root  4.0K Jul  6 19:35 /mnt/nexus/
+drwxr-xr-x. 7 nexus nexus  114 Jul  3 11:43 /opt/nexus/
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+[root@m1-nexus01p nexus-3.24.0-02]# systemctl start nexus
+[root@m1-nexus01p nexus-3.24.0-02]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2020-07-06 20:18:21 MSK; 4s ago
+  Process: 8931 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 9437 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 9611 (java)
+   CGroup: /system.slice/nexus.service
+           └─9611 /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre/bin/java -server -Dinstall4j.jvmDir=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/...
+
+Jul 06 20:18:21 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 20:18:21 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+[root@m1-nexus01p nexus-3.24.0-02]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: failed (Result: exit-code) since Mon 2020-07-06 20:19:05 MSK; 5s ago
+  Process: 9723 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 9437 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 9611 (code=exited, status=255)
+
+Jul 06 20:18:21 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 20:18:21 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+Jul 06 20:19:05 m1-nexus01p.tcsbank.ru systemd[1]: nexus.service: main process exited, code=exited, status=255/n/a
+Jul 06 20:19:05 m1-nexus01p.tcsbank.ru nexus[9723]: Shutting down nexus
+Jul 06 20:19:05 m1-nexus01p.tcsbank.ru nexus[9723]: nexus is not running.
+Jul 06 20:19:05 m1-nexus01p.tcsbank.ru systemd[1]: Unit nexus.service entered failed state.
+Jul 06 20:19:05 m1-nexus01p.tcsbank.ru systemd[1]: nexus.service failed.
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+................................................................................
+
+#	update repository_blobstore set attributes.file.path='/opt/nexus/nexus-data/blobs/default' where name='default'
+
+[root@m1-nexus01p nexus-3.24.0-02]# java -jar ./lib/support/nexus-orient-console.jar
+
+OrientDB console v.2.2.36 (build d3beb772c02098ceaea89779a7afd4b7305d3788, branch 2.2.x) https://www.orientdb.com
+Type 'help' to display all the supported commands.
+orientdb> connect plocal:../nexus-data/db/config admin admin
+
+Connecting to database [plocal:../nexus-data/db/config] with user 'admin'...OK
+orientdb {db=config}> update repository_blobstore set attributes.file.path='/opt/nexus/nexus-data/blobs/default' where name='default'
+
+Updated record(s) '1' in 0.045000 sec(s).
+
+orientdb {db=config}> disconnect
+
+Disconnecting from the database [config]...OK
+orientdb> exit
+
+[root@m1-nexus01p nexus-3.24.0-02]#
+
+................................................................................
+
+[root@m1-nexus01p nexus]# mv nexus-data.modified.20200706-2027 /mnt/nexus/backup/
+[root@m1-nexus01p nexus]# ll
+total 0
+drwxr-xr-x. 9 nexus nexus 163 Jan 31 18:10 nexus-3.20.1-01
+drwxr-xr-x  9 root  root  163 Mar 27 16:06 nexus-3.21.2-03
+drwxr-xr-x  9 root  root  188 Jul  6 20:22 nexus-3.24.0-02
+drwxr-xr-x. 3 nexus nexus  20 Jan 31 18:10 sonatype-work
+[root@m1-nexus01p nexus]#
+
+[root@m1-nexus01p nexus]# cp -r /mnt/nexus/backup/nexus-data ./
+
+[root@m1-nexus01p nexus]# ll
+total 0
+drwxr-xr-x.  9 nexus nexus 163 Jan 31 18:10 nexus-3.20.1-01
+drwxr-xr-x   9 root  root  163 Mar 27 16:06 nexus-3.21.2-03
+drwxr-xr-x   9 root  root  188 Jul  6 20:22 nexus-3.24.0-02
+drwxr-xr-x  16 root  root  264 Jul  6 20:53 nexus-data
+drwxr-xr-x.  3 nexus nexus  20 Jan 31 18:10 sonatype-work
+[root@m1-nexus01p nexus]# chown -R nexus:nexus nexus-data
+[root@m1-nexus01p nexus]# chmod g+w nexus-data/
+[root@m1-nexus01p nexus]# ls -Alh
+total 0
+drwxr-xr-x.  9 nexus nexus 163 Jan 31 18:10 nexus-3.20.1-01
+drwxr-xr-x   9 root  root  163 Mar 27 16:06 nexus-3.21.2-03
+drwxr-xr-x   9 root  root  188 Jul  6 20:22 nexus-3.24.0-02
+drwxrwxr-x  16 nexus nexus 264 Jul  6 20:53 nexus-data
+drwxr-xr-x.  3 nexus nexus  20 Jan 31 18:10 sonatype-work
+[root@m1-nexus01p nexus]#
+
+
+[root@m1-nexus01p nexus]# systemctl start nexus
+[root@m1-nexus01p nexus]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2020-07-06 20:57:58 MSK; 5s ago
+  Process: 10272 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 11469 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 11643 (java)
+   CGroup: /system.slice/nexus.service
+           └─11643 /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre/bin/java -server -Dinstall4j.jvmDir=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64...
+
+Jul 06 20:57:58 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 20:57:58 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+[root@m1-nexus01p nexus]# 
+
+#
+#	At this moment is work continuously.
+#
+
+................................................................................
+
+[root@m1-nexus01p nexus]# rm -rf /mnt/nexus/nexus-data/blobs/
+
+[root@m1-nexus01p nexus]# systemctl stop nexus
+[root@m1-nexus01p nexus]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: inactive (dead) since Mon 2020-07-06 21:10:57 MSK; 12s ago
+  Process: 12196 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 11469 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 11643 (code=exited, status=0/SUCCESS)
+
+Jul 06 20:57:58 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 20:57:58 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+Jul 06 21:10:54 m1-nexus01p.tcsbank.ru systemd[1]: Stopping nexus service...
+Jul 06 21:10:54 m1-nexus01p.tcsbank.ru nexus[12196]: Shutting down nexus
+Jul 06 21:10:57 m1-nexus01p.tcsbank.ru nexus[12196]: Stopped.
+Jul 06 21:10:57 m1-nexus01p.tcsbank.ru systemd[1]: Stopped nexus service.
+[root@m1-nexus01p nexus]#
+
+[root@m1-nexus01p nexus]# rsync -a /opt/nexus/nexus-data/ /mnt/nexus/nexus-data/
+
+[root@m1-nexus01p nexus]# vim nexus-3.24.0-02/bin/nexus.vmoptions
+[root@m1-nexus01p nexus]# grep -e "-Dkaraf.data=" /opt/nexus/nexus-3.24.0-02/bin/nexus.vmoptions
+-Dkaraf.data=/mnt/nexus/nexus-data
+[root@m1-nexus01p nexus]#
+
+[root@m1-nexus01p nexus]# mv nexus-data/ nexus-data.old
+
+[root@m1-nexus01p nexus]# systemctl start nexus
+[root@m1-nexus01p nexus]# systemctl status nexus
+● nexus.service - nexus service
+   Loaded: loaded (/etc/systemd/system/nexus.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2020-07-06 21:20:27 MSK; 8s ago
+  Process: 12196 ExecStop=/opt/nexus/nexus-3.24.0-02/bin/nexus stop (code=exited, status=0/SUCCESS)
+  Process: 12558 ExecStart=/opt/nexus/nexus-3.24.0-02/bin/nexus start (code=exited, status=0/SUCCESS)
+ Main PID: 12732 (java)
+   CGroup: /system.slice/nexus.service
+           └─12732 /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre/bin/java -server -Dinstall4j.jvmDir=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64...
+
+Jul 06 21:20:27 m1-nexus01p.tcsbank.ru systemd[1]: Starting nexus service...
+Jul 06 21:20:27 m1-nexus01p.tcsbank.ru systemd[1]: Started nexus service.
+[root@m1-nexus01p nexus]#
+
+#
+#	I'm happy!
+#	It's working!
+#
+
+................................................................................
+
+[root@m1-nexus01p nexus]# rm -rf nexus-data.old
+
+[root@m1-nexus01p nexus]# ls -Alh /mnt/nexus/backup/
+total 8.0K
+drwxrwxr-x 16 nexus nexus 4.0K Jul  6 19:49 nexus-data
+drwxrwxr-x 16 nexus nexus 4.0K Jul  6 20:22 nexus-data.modified.20200706-2027
+[root@m1-nexus01p nexus]# rm -rf /mnt/nexus/backup/nexus-data.modified.20200706-2027
+[root@m1-nexus01p nexus]# ls -Alh /mnt/nexus/backup/
+total 4.0K
+drwxrwxr-x 16 nexus nexus 4.0K Jul  6 19:49 nexus-data
+[root@m1-nexus01p nexus]#
+
+................................................................................
+

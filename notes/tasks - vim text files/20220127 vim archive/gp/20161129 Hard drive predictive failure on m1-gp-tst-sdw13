@@ -1,0 +1,149 @@
+
+
+................................................................................
+................................................................................
+
+
+[root@m1-gp-tst-sdw13 ~]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 6.6 (Santiago)
+[root@m1-gp-tst-sdw13 ~]# dmidecode -t system
+# dmidecode 2.12
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ3236VT8H
+        UUID: 39333835-3431-5A43-3332-333656543848
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: Firmware-detected hardware failure
+
+[root@m1-gp-tst-sdw13 ~]#
+
+
+
+[root@m1-gp-tst-sdw13 ~]# hpssacli controller slot=1 show config
+
+Smart Array P410 in Slot 1                (sn: PACCRID122508Q1)
+
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (3.8 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, Predictive Failure)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, SAS, 600 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, SAS, 600 GB, OK)
+      physicaldrive 2I:1:7 (port 2I:box 1:bay 7, SAS, 600 GB, OK)
+      physicaldrive 2I:1:8 (port 2I:box 1:bay 8, SAS, 600 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 5001438021BC46BF)
+
+[root@m1-gp-tst-sdw13 ~]#
+
+[root@m1-gp-tst-sdw13 ~]# hpssacli controller slot=1 physicaldrive 1I:1:3 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 1I:1:3
+         Port: 1I
+         Box: 1
+         Bay: 3
+         Status: Predictive Failure
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10000
+         Firmware Revision: HPD8
+         Serial Number: 6XR34XG90000B252BAFH
+         Model: HP      EG0600FBLSH
+         Current Temperature (C): 26
+         Maximum Temperature (C): 37
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw13 ~]#
+
+
+[root@m1-gp-tst-sdw13 ~]# at 11:45 tomorrow <<< 'hpssacli controller slot=1 array A physicaldrive 1I:1:3 modify led=on duration=3600'
+job 1 at 2016-11-30 11:45
+[root@m1-gp-tst-sdw13 ~]#
+
+
+
+
+................................................................................
+................................................................................
+
+#
+#   20161201
+#
+[root@m1-gp-tst-sdw13 ~]# hpssacli controller slot=1 physicaldrive 1I:1:3 show detail
+
+Smart Array P410 in Slot 1
+
+   array A
+
+      physicaldrive 1I:1:3
+         Port: 1I
+         Box: 1
+         Bay: 3
+         Status: OK
+         Drive Type: Data Drive
+         Interface Type: SAS
+         Size: 600 GB
+         Drive exposed to OS: False
+         Native Block Size: 512
+         Rotational Speed: 10500
+         Firmware Revision: HPD9
+         Serial Number: S0M7GPNS0000M648CZT3
+         Model: HP      EG0600FCVBK
+         Current Temperature (C): 26
+         Maximum Temperature (C): 34
+         PHY Count: 2
+         PHY Transfer Rate: 6.0Gbps, Unknown
+         Sanitize Erase Supported: False
+
+
+[root@m1-gp-tst-sdw13 ~]#
+
+
+[root@m1-gp-tst-sdw13 ~]# hpssacli controller all diag file=/tmp/$(date +%Y%m%d-%H%M).hpssacli.diag.$(hostname).zip
+
+   Generating diagnostic report...done
+
+[root@m1-gp-tst-sdw13 ~]#
+[root@m1-gp-tst-sdw13 ~]# ls /tmp/20161201-1223.hpssacli.diag.m1-gp-tst-sdw13.tcsbank.ru.zip
+/tmp/20161201-1223.hpssacli.diag.m1-gp-tst-sdw13.tcsbank.ru.zip
+[root@m1-gp-tst-sdw13 ~]#
+
+[support@centos00 ~]$ mkdir ~/mnt/share/greenplum/m1-gp-tst/20161201-1226.m1-gp-tst-sdw13
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e scp -oStrictHostKeyChecking=no -oPubkeyAuthentication=no bsv@m1-gp-tst-sdw13:/tmp/20161201-1223.hpssacli.diag.m1-gp-tst-sdw13.tcsbank.ru.zip ~/mnt/share/greenplum/m1-gp-tst/20161201-1226.m1-gp-tst-sdw13/
+Warning: Permanently added 'm1-gp-tst-sdw13,10.216.0.13' (RSA) to the list of known hosts.
+[support@centos00 ~]$
+
+
+................................................................................
+................................................................................
+
+

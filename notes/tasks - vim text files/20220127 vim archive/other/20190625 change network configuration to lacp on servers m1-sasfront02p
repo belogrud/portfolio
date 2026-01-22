@@ -1,0 +1,650 @@
+
+................................................................................
+
+[root@m1-sasfront02p ~]# dmidecode -t system
+# dmidecode 2.11
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL580 G7
+        Version: Not Specified
+        Serial Number: CZ3237VVXT
+        UUID: 30333436-3638-5A43-3332-333756565854
+        Wake-up Type: Power Switch
+        SKU Number: 643086-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-sasfront02p ~]# ip -f inet addr | grep inet
+    inet 127.0.0.1/8 scope host lo
+    inet 10.216.5.51/24 brd 10.216.5.255 scope global eth5
+    inet 10.216.4.51/24 brd 10.216.4.255 scope global eth7
+    inet 10.216.26.8/24 brd 10.216.26.255 scope global bond0
+    inet 10.217.65.62/24 brd 10.217.65.255 scope global bond1
+[root@m1-sasfront02p ~]#
+[root@m1-sasfront02p ~]# ip route
+10.216.5.0/24 dev eth5  proto kernel  scope link  src 10.216.5.51
+10.216.4.0/24 dev eth7  proto kernel  scope link  src 10.216.4.51
+10.217.65.0/24 dev bond1  proto kernel  scope link  src 10.217.65.62
+10.216.26.0/24 dev bond0  proto kernel  scope link  src 10.216.26.8
+10.217.100.0/24 via 10.216.4.254 dev eth7
+10.217.101.0/24 via 10.216.4.254 dev eth7
+default via 10.216.26.254 dev bond0
+[root@m1-sasfront02p ~]#
+[root@m1-sasfront02p ~]# ifconfig | grep Link
+bond0     Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:40
+          inet6 addr: fe80::2e27:d7ff:fe53:b040/64 Scope:Link
+bond1     Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:40
+          inet6 addr: fe80::2e27:d7ff:fe53:b040/64 Scope:Link
+eth4      Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:40
+          inet6 addr: fe80::2e27:d7ff:fe53:b040/64 Scope:Link
+eth4.1626 Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:40
+eth4.1765 Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:40
+          inet6 addr: fe80::2e27:d7ff:fe53:b040/64 Scope:Link
+eth5      Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:44
+          inet6 addr: fe80::2e27:d7ff:fe53:b044/64 Scope:Link
+eth6      Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:88
+          inet6 addr: fe80::2e27:d7ff:fe53:b088/64 Scope:Link
+eth6.1626 Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:40
+eth6.1765 Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:40
+          inet6 addr: fe80::2e27:d7ff:fe53:b040/64 Scope:Link
+eth7      Link encap:Ethernet  HWaddr 2C:27:D7:53:B0:8C
+          inet6 addr: fe80::2e27:d7ff:fe53:b08c/64 Scope:Link
+lo        Link encap:Local Loopback
+[root@m1-sasfront02p ~]#
+[root@m1-sasfront02p ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+TYPE=Ethernet
+BOOTPROTO=none
+IPADDR=10.216.26.8
+NETMASK=255.255.255.0
+GATEWAY=10.216.26.254
+ONBOOT=yes
+BONDING_OPTS="mode=1 miimon=100"
+MTU=1500
+NOZEROCONF=yes
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+TYPE=Ethernet
+BOOTPROTO=none
+IPADDR=10.217.65.62
+NETMASK=255.255.255.0
+ONBOOT=yes
+BONDING_OPTS="mode=1 miimon=100"
+NOZEROCONF=yes
+MTU=9000
+NM_CONTROLLED=no
+USERCTL=no
+
+/etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE=eth0
+BOOTPROTO=none
+ONBOOT=no
+TYPE=Ethernet
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth4
+DEVICE=eth4
+ONBOOT=yes
+MTU=9000
+TYPE=Ethernet
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth4.1626
+DEVICE=eth4.1626
+TYPE=Ethernet
+BOOTPROTO=none
+VLAN="yes"
+ONBOOT=yes
+MTU=1500
+SLAVE=yes
+MASTER="bond0"
+NOZEROCONF="yes"
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-eth4.1765
+DEVICE=eth4.1765
+BOOTPROTO=static
+TYPE=Ethernet
+VLAN=yes
+ONBOOT=yes
+MTU=9000
+SLAVE=yes
+MASTER="bond1"
+NOZEROCONF=yes
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-eth5
+DEVICE=eth5
+TYPE=Ethernet
+BOOTPROTO=none
+IPADDR=10.216.5.51
+NETMASK=255.255.255.0
+ONBOOT=yes
+MTU=1500
+NOZEROCONF=yes
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-eth6
+DEVICE=eth6
+ONBOOT=yes
+MTU=9000
+TYPE=Ethernet
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth6.1626
+DEVICE=eth6.1626
+TYPE=Ethernet
+BOOTPROTO=none
+VLAN="yes"
+ONBOOT=yes
+MTU=1500
+SLAVE=yes
+MASTER="bond0"
+NOZEROCONF="yes"
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-eth6.1765
+DEVICE=eth6.1765
+BOOTPROTO=static
+TYPE=Ethernet
+VLAN="yes"
+ONBOOT=yes
+MTU=9000
+SLAVE=yes
+MASTER="bond1"
+NOZEROCONF="yes"
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-eth7
+DEVICE=eth7
+TYPE=Ethernet
+BOOTPROTO=none
+IPADDR=10.216.4.51
+NETMASK=255.255.255.0
+ONBOOT=yes
+MTU=1500
+NOZEROCONF=yes
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+[root@m1-sasfront02p ~]#
+[root@m1-sasfront02p ~]#
+
+
+[root@m1-sasfront02p ~]# findmnt -t nfs -o SOURCE,TARGET
+SOURCE                                                                    TARGET
+v6250-m1:/vol/integration_fs/integration3                                 /mnt/integration3
+v6250-m1-nfs2:/vol/integration_fs/CytoAML                                 /mnt/integration3/cytoaml
+v6250-m1-metro2:/vol/integration_fs/integration3/luxoft/OPS               /mnt/luxoft/OPS
+v6250-ds-metro2:/vol/sas_distr_sata                                       /mnt/sas_distr
+v6250-m1-metro2:/vol/sas/projects                                         /mnt/projects_new
+v6250-m1-nfs2:/vol/inspase                                                /mnt/EMP/Inspase
+v6250-m1-nfs2:/vol/cityads                                                /mnt/EMP/CityAds
+10.217.65.54:/mnt/projects_fcoe                                           /mnt/projects_fcoe
+v6250-ds-metro2:/vol/common/all_docs/CallManagers/Call-центр/ООП/Schedule /mnt/callmanagers
+fs-unixfiles:/sas_tf_sch2_release                                         /mnt/projects_sch2
+fs-nfsdata:/afs_data_prod                                                 /mnt/afs_data_prod
+fs-qa2:/afs_data_test                                                     /mnt/afs_data_test
+fs-nfsmb2:/sas_ma_code                                                    /mnt/sas_ma_code
+fs-nfsmb2:/cre_sas_exchange                                               /mnt/cre_sas_exchange
+fs-nfsmb2:/sas_reports                                                    /mnt/user_reports
+v6250-m1-nfs2:/vol/dwh_integration_fs                                     /mnt/dwh_integration_old
+fs-nfsmb2.tcsbank.ru:/dwh_integration                                     /mnt/dwh_integration
+ha-drbd01p-metro.tcsbank.ru:/drbd1/drbd_analyst_data                      /mnt/drbd_analyst_data
+ha-drbd01p-metro.tcsbank.ru:/drbd0                                        /mnt/data2ma_drdb_new
+[root@m1-sasfront02p ~]#
+[root@m1-sasfront02p ~]# w
+ 14:59:26 up 570 days,  2:15,  6 users,  load average: 5.20, 4.24, 5.28
+USER     TTY      FROM              LOGIN@   IDLE   JCPU   PCPU WHAT
+masys    pts/0    tcs5476.tcsbank. 17Jun19  8days  0.07s  0.07s -bash
+masys    pts/1    tcs8117.tcsbank. 20May19 15:42m  7.66s  6.14s bash
+masys    pts/3    tcs7602.tcsbank. 17Jun19  5days  0.12s  0.12s -bash
+bsv      pts/4    tcs4357.tcsbank. Tue12    0.00s  0.25s  0.05s sshd: bsv [priv]
+sas-admi pts/6    tcs5897.tcsbank. 11:03   14:23   0.34s  0.03s sshd: sas-admin [priv]
+sas-admi pts/7    tcs14826.tcsbank 11:06    3:48m  0.21s  0.03s sshd: sas-admin [priv]
+[root@m1-sasfront02p ~]#
+
+
+................................................................................
+
+Белогруд Сергей [12:01 PM]
+Для серверов m1-sasfront02p, m1-datagrid01p - тоже нужно будет переделывать сеть аналогично уже перемещённым sasetl серверам?
+Делать lacp, bonding с ip-адресом из 10.216.2.0/25?
+Брать ip-адрес, например 10.216.2.51, 10.216.2.52?
+
+
+Буковня Сергей [12:02 PM]
+да, верно
+
+................................................................................
+
+#
+#	Here is an example.
+#
+		[root@m1-sasetl01p ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+		
+		/etc/sysconfig/network-scripts/ifcfg-bond0
+		DEVICE=bond0
+		NAME=bond0
+		BOOTPROTO=none
+		IPADDR=10.216.2.50
+		PREFIX=25
+		DEFROUTE=no
+		IPV4_FAILURE_FATAL=no
+		IPV6INIT=no
+		ONBOOT=yes
+		BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+		
+		/etc/sysconfig/network-scripts/ifcfg-bond1
+		DEVICE=bond1
+		NAME=bond1
+		BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+		TYPE=Bond
+		BOOTPROTO=none
+		NAME=bond1
+		ONBOOT=yes
+		MTU=9000
+		
+		/etc/sysconfig/network-scripts/ifcfg-bond1.1626
+		VLAN=yes
+		TYPE=Vlan
+		DEVICE=bond1.1626
+		PHYSDEV=bond1
+		VLAN_ID=1626
+		DOMAIN=tcsbank.ru
+		DEFROUTE=yes
+		NAME=bond1.1626
+		ONBOOT=yes
+		IPADDR=10.216.26.5
+		GATEWAY=10.216.26.254
+		PREFIX=24
+		MTU=1500
+		
+		/etc/sysconfig/network-scripts/ifcfg-bond1.1765
+		VLAN=yes
+		TYPE=Vlan
+		DEVICE=bond1.1765
+		PHYSDEV=bond1
+		VLAN_ID=1765
+		NAME=bond1.1765
+		ONBOOT=yes
+		IPADDR=10.217.65.54
+		PREFIX=24
+		LAN=yes
+		REORDER_HDR=0
+		BOOTPROTO=none
+		IPV4_FAILURE_FATAL=no
+		IPV6INIT=no
+		ONBOOT=yes
+		MTU=9000
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth0
+		DEVICE="eth0"
+		HWADDR="1C:C1:DE:75:92:48"
+		NM_CONTROLLED="yes"
+		ONBOOT="no"
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth1
+		DEVICE="eth1"
+		HWADDR="1C:C1:DE:75:92:49"
+		NM_CONTROLLED="yes"
+		ONBOOT="no"
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth2
+		DEVICE="eth2"
+		HWADDR="1C:C1:DE:75:92:4A"
+		NM_CONTROLLED="yes"
+		ONBOOT="no"
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth3
+		DEVICE="eth3"
+		HWADDR="1C:C1:DE:75:92:4B"
+		NM_CONTROLLED="yes"
+		ONBOOT="no"
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth4
+		DEVICE="eth4"
+		NAME="eth4"
+		HWADDR="2C:27:D7:53:CE:50"
+		NM_CONTROLLED="no"
+		ONBOOT="yes"
+		MTU=9000
+		MASTER=bond1
+		SLAVE=yes
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth5
+		DEVICE="eth5"
+		HWADDR="2C:27:D7:53:CE:54"
+		NM_CONTROLLED="yes"
+		ONBOOT="no"
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth6
+		DEVICE="eth6"
+		NAME="eth6"
+		HWADDR="2C:27:D7:54:09:28"
+		NM_CONTROLLED="no"
+		ONBOOT="yes"
+		MTU=9000
+		MASTER=bond1
+		SLAVE=yes
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth7
+		DEVICE="eth7"
+		HWADDR="2C:27:D7:54:09:2C"
+		ONBOOT="no"
+		NOZEROCONF="yes"
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth8
+		DEVICE="eth8"
+		NAME="eth8"
+		TYPE="Ethernet"
+		BOOTPROTO="static"
+		HWADDR="D8:9D:67:F2:D1:14"
+		USERCTL="no"
+		ONBOOT="yes"
+		NOZEROCONF="yes"
+		ONBOOT="yes"
+		SLAVE="yes"
+		MASTER="bond0"
+		
+		/etc/sysconfig/network-scripts/ifcfg-eth9
+		DEVICE="eth9"
+		NAME="eth9"
+		TYPE="Ethernet"
+		BOOTPROTO="static"
+		HWADDR="D8:9D:67:F2:D1:10"
+		USERCTL="no"
+		ONBOOT="yes"
+		NOZEROCONF="yes"
+		ONBOOT=yes
+		SLAVE=yes
+		MASTER=bond0
+		
+		/etc/sysconfig/network-scripts/ifcfg-lo
+		DEVICE=lo
+		IPADDR=127.0.0.1
+		NETMASK=255.0.0.0
+		NETWORK=127.0.0.0
+		# If you're having problems with gated making 127.0.0.0/8 a martian,
+		# you can change this to something else (255.255.255.255, for example)
+		BROADCAST=127.255.255.255
+		ONBOOT=yes
+		NAME=loopback
+		
+		/etc/sysconfig/network-scripts/route-bond0
+		10.217.100.0/23 via 10.216.2.126
+		10.216.0.0/21 via 10.216.2.126
+		[root@m1-sasetl01p ~]#
+................................................................................
+
+[root@m1-sasfront02p 20190626-1537]# for var1 in $(find . -maxdepth 1 \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+./ifcfg-bond0
+DEVICE=bond0
+NAME=bond0
+BOOTPROTO=none
+IPADDR=10.216.2.51
+PREFIX=25
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+
+./ifcfg-bond1
+DEVICE=bond1
+NAME=bond1
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+TYPE=Bond
+BOOTPROTO=none
+NAME=bond1
+ONBOOT=yes
+MTU=9000
+
+./ifcfg-bond1.1626
+VLAN=yes
+TYPE=Vlan
+DEVICE=bond1.1626
+PHYSDEV=bond1
+VLAN_ID=1626
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+NAME=bond1.1626
+ONBOOT=yes
+IPADDR=10.216.26.8
+GATEWAY=10.216.26.254
+PREFIX=24
+MTU=1500
+
+./ifcfg-bond1.1765
+VLAN=yes
+TYPE=Vlan
+DEVICE=bond1.1765
+PHYSDEV=bond1
+VLAN_ID=1765
+NAME=bond1.1765
+ONBOOT=yes
+IPADDR=10.217.65.62
+PREFIX=24
+LAN=yes
+REORDER_HDR=0
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+MTU=9000
+
+./ifcfg-eth4
+DEVICE="eth4"
+NAME="eth4"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+MTU=9000
+MASTER=bond1
+SLAVE=yes
+
+./ifcfg-eth5
+DEVICE="eth5"
+NAME="eth5"
+TYPE="Ethernet"
+BOOTPROTO="static"
+USERCTL="no"
+ONBOOT="yes"
+NOZEROCONF="yes"
+ONBOOT="yes"
+SLAVE="yes"
+MASTER="bond0"
+
+./ifcfg-eth6
+DEVICE="eth6"
+NAME="eth6"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+MTU=9000
+MASTER=bond1
+SLAVE=yes
+
+./ifcfg-eth7
+DEVICE="eth7"
+NAME="eth7"
+TYPE="Ethernet"
+BOOTPROTO="static"
+USERCTL="no"
+ONBOOT="yes"
+NOZEROCONF="yes"
+ONBOOT="yes"
+SLAVE="yes"
+MASTER="bond0"
+
+./route-bond0
+10.217.100.0/23 via 10.216.2.126
+10.216.0.0/21 via 10.216.2.126
+[root@m1-sasfront02p 20190626-1537]#
+
+................................................................................
+
+[root@m1-sasfront02p ~]# for var1 in $(find /etc/sysconfig/network-scripts/ \( -name ifcfg-\* -o -name route\* \) | sort) ; do echo ; echo $var1 ; cat $var1 ; done
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+NAME=bond0
+BOOTPROTO=none
+IPADDR=10.216.2.51
+PREFIX=25
+DEFROUTE=no
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+
+/etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+NAME=bond1
+BONDING_OPTS="mode=802.3ad miimon=100 lacp_rate=fast xmit_hash_policy=layer2+3"
+TYPE=Bond
+BOOTPROTO=none
+NAME=bond1
+ONBOOT=yes
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1626
+VLAN=yes
+TYPE=Vlan
+DEVICE=bond1.1626
+PHYSDEV=bond1
+VLAN_ID=1626
+DOMAIN=tcsbank.ru
+DEFROUTE=yes
+NAME=bond1.1626
+ONBOOT=yes
+IPADDR=10.216.26.8
+GATEWAY=10.216.26.254
+PREFIX=24
+MTU=1500
+
+/etc/sysconfig/network-scripts/ifcfg-bond1.1765
+VLAN=yes
+TYPE=Vlan
+DEVICE=bond1.1765
+PHYSDEV=bond1
+VLAN_ID=1765
+NAME=bond1.1765
+ONBOOT=yes
+IPADDR=10.217.65.62
+PREFIX=24
+LAN=yes
+REORDER_HDR=0
+BOOTPROTO=none
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+MTU=9000
+
+/etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE=eth0
+BOOTPROTO=none
+ONBOOT=no
+TYPE=Ethernet
+IPV6INIT=no
+USERCTL=no
+NM_CONTROLLED=no
+NOZEROCONF=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth4
+DEVICE="eth4"
+NAME="eth4"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+MTU=9000
+MASTER=bond1
+SLAVE=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth5
+DEVICE="eth5"
+NAME="eth5"
+TYPE="Ethernet"
+BOOTPROTO="static"
+USERCTL="no"
+ONBOOT="yes"
+NOZEROCONF="yes"
+ONBOOT="yes"
+SLAVE="yes"
+MASTER="bond0"
+
+/etc/sysconfig/network-scripts/ifcfg-eth6
+DEVICE="eth6"
+NAME="eth6"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+MTU=9000
+MASTER=bond1
+SLAVE=yes
+
+/etc/sysconfig/network-scripts/ifcfg-eth7
+DEVICE="eth7"
+NAME="eth7"
+TYPE="Ethernet"
+BOOTPROTO="static"
+USERCTL="no"
+ONBOOT="yes"
+NOZEROCONF="yes"
+ONBOOT="yes"
+SLAVE="yes"
+MASTER="bond0"
+
+/etc/sysconfig/network-scripts/ifcfg-lo
+DEVICE=lo
+IPADDR=127.0.0.1
+NETMASK=255.0.0.0
+NETWORK=127.0.0.0
+# If you're having problems with gated making 127.0.0.0/8 a martian,
+# you can change this to something else (255.255.255.255, for example)
+BROADCAST=127.255.255.255
+ONBOOT=yes
+NAME=loopback
+
+/etc/sysconfig/network-scripts/route-bond0
+10.217.100.0/23 via 10.216.2.126
+10.216.0.0/21 via 10.216.2.126
+[root@m1-sasfront02p ~]#
+
+................................................................................
+
+
+
+
+

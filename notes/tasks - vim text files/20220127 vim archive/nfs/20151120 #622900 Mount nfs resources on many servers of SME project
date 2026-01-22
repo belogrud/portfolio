@@ -1,0 +1,1053 @@
+
+................................................................................
+
+Параметры запроса
+[редактировать критичность]
+Номер   622900
+Название    №622900
+Приоритет   Средний
+Класс обслуживания  9x5
+Дата и время обращения  13.11.2015 17:25
+Дата регистрации    13.11.2015 17:25
+Тип запроса Запрос на обслуживание
+Категория
+Критичность 1 - Низкая
+Срочность   Низкая
+Описание запроса
+Надо завести 2 дисковых пространства для проекта SME: на проде и на тесте.
+
+Туда будут складываться файлы с документами клиентов.
+
+Заливать файлы будет API.
+Работать с ним будут мэнеджеры по продажам и отдел ввода.
+
+Объемы:
+Тест - 10ГБ
+
+Прод
+До конца года надо около 40 ГБ
+Далее по планам + 40ГБ в месяц.
+
+................................................................................
+
+Дата
+Комментарий Автор
+19.11.2015 10:17    Права на шары прописаны, надо монтировать на серверах (см. коммент Нечаева В.).
+Ходить в папки с серверов либо под root, либо teamcity (по инфо Махнева Н.)
+Сотников Сергей А
+19.11.2015 09:24    Права прописал. Опять ошибки при редактировании ntfs-permissions, но access list сформирован.
+
+Остался вопрос об УЗ ibul   Сотников Сергей А
+18.11.2015 18:14    Присваивай нужные права Жук Дмитрий А
+18.11.2015 18:10    Создал \\v6250-ds\business_files_test$ и \\v6250-ds\business_files_prod$ полный доступ Domain Admins
+
+NFS
+
+v6250-ds-nfs:/vol/business_files_prod
+v6250-ds:/vol/business_files_test   Жук Дмитрий А
+18.11.2015 15:20    итого:
+коллеги, делаем 2 папки/шары
+business_files_prod
+и
+business_files_test
+
+Где именно - вам видней (с учетом требований по объемам, см. текст запроса)
+
+Потом запрос вернуть нам    Сотников Сергей А
+18.11.2015 14:25    На вопросы ответили Лейченко Вера
+17.11.2015 18:23    Назвать ресурс можно business_files Нечаев Василий
+17.11.2015 18:19    Сервера - на проде m1-bsn-prod-app01, ds-bsn-prod-app01, m1-sme-prod-app01, ds-sme-prod-app01
+на тесте - vm-prt-dev-ibul01, vm-prt-dev-ibul02, vm-prt-dev-ibul03, vm-prt-dev-ibul04, vm-prt-dev-ibul05, vm-prt-dev-ibul06,
+vm-prt-qa-ibul01, vm-prt-qa-ibul02  Нечаев Василий
+17.11.2015 18:17    Пользователь для API - ibul, доступ на чтение и запись  Нечаев Василий
+17.11.2015 15:43    Доступы сотрудникам чтение и редактирование: sme_sales, sme_docs, v.leychenko, e.ladan  Лейченко Вера
+13.11.2015 18:41    Менеджеры по продажам какой-то группой объединены? Если нет, нужен список ФИО/логинов.
+
++ уровень доступа туда для сотрудников
++ имена файловых ресурсов
++ с каких серверов под какими unix-УЗ будут заливаться данные (нужны имена и uid'ы) ?   Сотников Сергей А
+
+................................................................................
+
+m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01
+
+vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; mount -t nfs ' )" ; done
+Warning: Permanently added 'm1-bsn-prod-app01,10.218.2.38' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+m1-bsn-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme on /mnt/sme type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Connection to m1-bsn-prod-app01 closed.
+Warning: Permanently added 'ds-bsn-prod-app01,10.218.7.38' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+ds-bsn-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme on /mnt/sme type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Connection to ds-bsn-prod-app01 closed.
+Warning: Permanently added 'm1-sme-prod-app01,10.218.2.39' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+m1-sme-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme on /mnt/sme type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+v6250-ds:/vol/scan_agents/scan_agents_mobile on /mnt/scan_agents_mobile_nfs type nfs (rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES on /mnt/ibul_email_files type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES_PROD on /mnt/ibul_email_files_prod type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+Connection to m1-sme-prod-app01 closed.
+Warning: Permanently added 'ds-sme-prod-app01,10.218.7.39' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+ds-sme-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme on /mnt/sme type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+v6250-ds:/vol/scan_agents/scan_agents_mobile on /mnt/scan_agents_mobile_nfs type nfs (rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES on /mnt/ibul_email_files type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES_PROD on /mnt/ibul_email_files_prod type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; hostname ; mount -t nfs ' )" ; done
+[sudo] password for bsv:
+vm-prt-dev-ibul01.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES on /mnt/ibul_email_files type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT on /mnt/jasper type nfs (rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+vm-prt-dev-ibul02.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES on /mnt/ibul_email_files type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT on /mnt/jasper type nfs (rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+Connection to vm-prt-dev-ibul02 closed.
+Warning: Permanently added 'vm-prt-dev-ibul03,10.218.13.147' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+vm-prt-dev-ibul03.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Connection to vm-prt-dev-ibul03 closed.
+Warning: Permanently added 'vm-prt-dev-ibul04,10.218.13.148' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+vm-prt-dev-ibul04.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Connection to vm-prt-dev-ibul04 closed.
+Warning: Permanently added 'vm-prt-dev-ibul05,10.218.13.149' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+vm-prt-dev-ibul05.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Connection to vm-prt-dev-ibul05 closed.
+Warning: Permanently added 'vm-prt-dev-ibul06,10.218.13.150' (RSA) to the list of known hosts.
+[sudo] password for bsv:
+vm-prt-dev-ibul06.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+vm-prt-qa-ibul01.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES on /mnt/ibul_email_files type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT on /mnt/jasper type nfs (rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+vm-prt-qa-ibul02.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper on /mnt/scan_agents_mobile_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES on /mnt/ibul_email_files type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.8)
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT on /mnt/jasper type nfs (rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3,addr=10.217.67.9)
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; showmount -e v6250-ds-nfs | grep \"/vol/business_files_prod\" ; showmount -e v6250-ds | grep \"/vol/business_files_test\" ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+clnt_create: RPC: Port mapper failure - Timed out
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+clnt_create: RPC: Port mapper failure - Timed out
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+clnt_create: RPC: Port mapper failure - Timed out
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+clnt_create: RPC: Port mapper failure - Timed out
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; timeout 15s showmount -e v6250-ds-nfs | grep \"/vol/business_files_prod\" ; timeout 15s showmount -e v6250-ds | grep \"/vol/business_files_test\" ' )" ; done
+[sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+^C^C/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+^C^C/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+j/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+/vol/business_files_test                        vm-prt-qa-ibul02,vm-prt-qa-ibul01,vm-prt-dev-ibul06,vm-prt-dev-ibul05,vm-prt-dev-ibul04,vm-prt-dev-ibul03,vm-prt-dev-ibul02,vm-prt-dev-ibul01
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$
+
+
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; mkdir /mnt/business_files_prod /mnt/business_files_test ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; grep nfs /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-ds:/vol/scan_agents/scan_agents_mobile /mnt/scan_agents_mobile_nfs nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES /mnt/ibul_email_files     nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES_PROD /mnt/ibul_email_files_prod   nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+v6250-ds:/vol/scan_agents/scan_agents_mobile /mnt/scan_agents_mobile_nfs nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES   /mnt/ibul_email_files   nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES_PROD /mnt/ibul_email_files_prod   nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; echo >> /etc/fstab ; echo \"# SD#622900\" >> /etc/fstab ; echo \"v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0\" >> /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; mount /mnt/business_files_test ; df -h /mnt/business_files_test ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+mount.nfs: access denied by server while mounting v6250-ds:/vol/business_files_test
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  5.1G  6.7G  44% /
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+mount.nfs: access denied by server while mounting v6250-ds:/vol/business_files_test
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  5.1G  6.7G  44% /
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+mount.nfs: access denied by server while mounting v6250-ds:/vol/business_files_test
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  5.2G  6.6G  45% /
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+mount.nfs: access denied by server while mounting v6250-ds:/vol/business_files_test
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  5.2G  6.6G  45% /
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; grep nfs /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-ds:/vol/scan_agents/scan_agents_mobile /mnt/scan_agents_mobile_nfs nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES /mnt/ibul_email_files     nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES_PROD /mnt/ibul_email_files_prod   nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+v6250-ds:/vol/sme       /mnt/sme                nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#emc1dm2.tcsbank.ru:/integration_fs/integration2/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp            0       0
+#emc1dm2.tcsbank.ru:/cards_images_fs/cards_images /mnt/cards_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0     0
+#emc1dm2.tcsbank.ru:/all_docs_share_fs/tcs_pfm_images /mnt/pfm_images           nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp        0   0
+#emc-ds.tcsbank.ru:/root_vdm_1/pdf_root_fs /mnt/all_pdf           nfs     ro,rsize=32768,wsize=32768,timeo=14,intr,tcp        0    0
+v6250-ds:/vol/scan_agents/scan_agents_mobile /mnt/scan_agents_mobile_nfs nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES   /mnt/ibul_email_files   nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+#v6250-m1.tcsbank.ru:/vol/integration_fs/integration3/insurance /mnt/insurance     nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-m1.tcsbank.ru:/vol/cards_images/cards_images             /mnt/cards_images  nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+#v6250-ds.tcsbank.ru:/vol/common/tcs_pfm_images                 /mnt/pfm_images    nfs     rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3  0 0
+v6250-m1:/vol/integration_fs/IBUL_EMAIL_FILES_PROD /mnt/ibul_email_files_prod   nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0       0
+v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; ls /mnt/business_files_prod /mnt/business_files_test ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+/mnt/business_files_prod:
+
+/mnt/business_files_test:
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+/mnt/business_files_prod:
+
+/mnt/business_files_test:
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+/mnt/business_files_prod:
+
+/mnt/business_files_test:
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+/mnt/business_files_prod:
+
+/mnt/business_files_test:
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+................................................................................
+................................................................................
+
+
+[support@centos00 ~]$ for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do host ${var1} ; done
+m1-bsn-prod-app01.tcsbank.ru has address 10.218.2.38
+ds-bsn-prod-app01.tcsbank.ru has address 10.218.7.38
+m1-sme-prod-app01.tcsbank.ru has address 10.218.2.39
+ds-sme-prod-app01.tcsbank.ru has address 10.218.7.39
+[support@centos00 ~]$ for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do host ${var1} ; done
+vm-prt-dev-ibul01.tcsbank.ru has address 10.218.13.82
+vm-prt-dev-ibul02.tcsbank.ru has address 10.218.13.83
+vm-prt-dev-ibul03.tcsbank.ru has address 10.218.13.147
+vm-prt-dev-ibul04.tcsbank.ru has address 10.218.13.148
+vm-prt-dev-ibul05.tcsbank.ru has address 10.218.13.149
+vm-prt-dev-ibul06.tcsbank.ru has address 10.218.13.150
+vm-prt-qa-ibul01.tcsbank.ru has address 10.218.13.47
+vm-prt-qa-ibul02.tcsbank.ru has address 10.218.13.84
+[support@centos00 ~]$
+
+................................................................................
+
+Администраторам ЛВС.
+
+Прошу проверить и в случае отсутствия предоставить доступ с серверов:
+m1-bsn-prod-app01.tcsbank.ru has address 10.218.2.38
+ds-bsn-prod-app01.tcsbank.ru has address 10.218.7.38
+m1-sme-prod-app01.tcsbank.ru has address 10.218.2.39
+ds-sme-prod-app01.tcsbank.ru has address 10.218.7.39
+
+к nfs-ресурсу
+v6250-ds-nfs:/vol/business_files_prod
+
+Для правильной работы NFS на сетевом оборудовании должны быть открыты следующие порты:
+tcp,udp 4045 nlockmgr
+tcp,udp 4046 mountd
+tcp,udp 2049 nfs
+tcp,udp 111 rpcbind
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; echo >> /etc/fstab ; echo \"# SD#622900\" >>  echo \"v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0\" >> /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; mount /mnt/business_files_test ; df -h /mnt/business_files_test ' )" ; done                                                                                                                   [sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  6.0G  5.8G  52% /
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  6.1G  5.7G  52% /
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  5.2G  6.6G  45% /
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  3.9G  7.9G  33% /
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  3.9G  7.9G  33% /
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  3.9G  7.9G  33% /
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  6.2G  5.6G  53% /
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+mount: can't find /mnt/business_files_test in /etc/fstab or /etc/mtab
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/vg_rhel6264-LogVol00
+                       13G  7.1G  4.8G  60% /
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; tail -n 3 /etc/fstab ' )" ; done                                                                                                                                                              [sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+
+
+# SD#622900 v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$
+
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; sed -e \"/^# SD#622900.*/d\" /etc/fstab | tail -n 3 ' )" ; done                                                                                                                               [sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT     /mnt/jasper     nfs rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3 0 0
+
+
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+
+
+
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+
+
+
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT        /mnt/jasper     nfs rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3 0 0
+
+
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$
+[support@centos00 ~]$
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; sed -i -e \"/^# SD#622900.*/d\" /etc/fstab ; tail -n 3 /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT     /mnt/jasper     nfs rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3 0 0
+
+
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+
+
+
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+# SD#574449
+v6250-ds:/vol/scan_agents/scan_agents_mobile_test/jasper        /mnt/scan_agents_mobile_test    nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+
+
+
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+v6250-ds.tcsbank.ru:/vol/common/all_docs/XML_JASPER_CONVERT        /mnt/jasper     nfs rw,rsize=32768,wsize=32768,timeo=14,intr,tcp,vers=3 0 0
+
+
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; echo \"# SD#622900\" >> /etc/fstab ;  echo \"v6250-ds:/vol/business_files_test /mnt/business_files_test    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0\" >> /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; mount /mnt/business_files_test ' )" ; done                                                                                                                                                    [sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in vm-prt-dev-ibul01 vm-prt-dev-ibul02 vm-prt-dev-ibul03 vm-prt-dev-ibul04 vm-prt-dev-ibul05 vm-prt-dev-ibul06 vm-prt-qa-ibul01 vm-prt-qa-ibul02 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; mount -t nfs | grep business_files_test ; df -h /mnt/business_files_test ' )" ; done
+[sudo] password for bsv:
+
+vm-prt-dev-ibul01.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-dev-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul02.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-dev-ibul02 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul03.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-dev-ibul03 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul04.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-dev-ibul04 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul05.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-dev-ibul05 closed.
+[sudo] password for bsv:
+
+vm-prt-dev-ibul06.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-dev-ibul06 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul01.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-qa-ibul01 closed.
+[sudo] password for bsv:
+
+vm-prt-qa-ibul02.tcsbank.ru
+v6250-ds:/vol/business_files_test on /mnt/business_files_test type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.67.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds:/vol/business_files_test
+                       11G  256K   11G   1% /mnt/business_files_test
+Connection to vm-prt-qa-ibul02 closed.
+[support@centos00 ~]$
+
+
+
+
+................................................................................
+................................................................................
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ;   hostname ; rmdir /mnt/business_files_test ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; sed -e \"/^v6250-ds:\/vol\/business_files_test \/mnt\/business_files_test.*/d\" /etc/fstab | grep business_files_test ' )" ; done                                                                                                                                   [sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ; hostname ; sed -i -e \"/^v6250-ds:\/vol\/business_files_test \/mnt\/business_files_test.*/d\" /etc/fstab ; tail -n 3 /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+/dev/fd7 /var/opt/cprocsp/mnt/7 auto noauto,user 0 0
+
+# SD#622900
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+/dev/fd7 /var/opt/cprocsp/mnt/7 auto noauto,user 0 0
+
+# SD#622900
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+/dev/fd7 /var/opt/cprocsp/mnt/7 auto noauto,user 0 0
+
+# SD#622900
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+/dev/fd7 /var/opt/cprocsp/mnt/7 auto noauto,user 0 0
+
+# SD#622900
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ;   hostname ; echo \"v6250-ds-nfs:/vol/business_files_prod    /mnt/business_files_prod    nfs    rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard    0 0\" >> /etc/fstab ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ;   hostname ; mount /mnt/business_files_prod ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" ; for var1 in m1-bsn-prod-app01 ds-bsn-prod-app01 m1-sme-prod-app01 ds-sme-prod-app01 ; do sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@${var1} "( echo '$(pass common/linux)' | sudo -S -i sh -c ' echo ; echo ;   hostname ; mount -t nfs | grep business_files_prod ; df -h /mnt/business_files_prod ' )" ; done
+[sudo] password for bsv:
+
+m1-bsn-prod-app01.tcsbank.ru
+v6250-ds-nfs:/vol/business_files_prod on /mnt/business_files_prod type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.64.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds-nfs:/vol/business_files_prod
+                       40G  256K   40G   1% /mnt/business_files_prod
+Connection to m1-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-bsn-prod-app01.tcsbank.ru
+v6250-ds-nfs:/vol/business_files_prod on /mnt/business_files_prod type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.64.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds-nfs:/vol/business_files_prod
+                       40G  256K   40G   1% /mnt/business_files_prod
+Connection to ds-bsn-prod-app01 closed.
+[sudo] password for bsv:
+
+m1-sme-prod-app01.tcsbank.ru
+v6250-ds-nfs:/vol/business_files_prod on /mnt/business_files_prod type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.64.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds-nfs:/vol/business_files_prod
+                       40G  256K   40G   1% /mnt/business_files_prod
+Connection to m1-sme-prod-app01 closed.
+[sudo] password for bsv:
+
+ds-sme-prod-app01.tcsbank.ru
+v6250-ds-nfs:/vol/business_files_prod on /mnt/business_files_prod type nfs (rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.64.9)
+Filesystem            Size  Used Avail Use% Mounted on
+v6250-ds-nfs:/vol/business_files_prod
+                       40G  256K   40G   1% /mnt/business_files_prod
+Connection to ds-sme-prod-app01 closed.
+[support@centos00 ~]$
+
+
+
+
+

@@ -1,0 +1,814 @@
+
+
+................................................................................
+
+
+[root@m1-dwhmon01p ~]# dmidecode -t system
+# dmidecode 2.12-dmifs
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ3236VSSY
+        UUID: 39333835-3431-5A43-3332-333656535359
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@m1-dwhmon01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME   TYPE MOUNTPOINT FSTYPE   SIZE
+sda    disk                     1.7T
+├─sda1 part /boot      ext2     500M
+├─sda2 part /data      ext4     1.3T
+├─sda3 part /          ext4     200G
+├─sda4 part                       1K
+└─sda5 part /opt       ext4     200G
+sdb    disk                   372.6G
+└─sdb1 part /var       ext4   372.6G
+[root@m1-dwhmon01p ~]#
+
+[root@m1-dwhmon01p ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 500143802254AAB0)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (1.6 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+
+   array B (Solid State SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 2 (372.6 GB, RAID 1, OK)
+
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, Solid State SAS, 400 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, Solid State SAS, 400 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 500143802254AABF)
+
+[root@m1-dwhmon01p ~]#
+
+[root@m1-dwhmon01p ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+/swapfile                               file    2097148 0       -1
+[root@m1-dwhmon01p ~]# free -h
+              total        used        free      shared  buff/cache   available
+Mem:           125G        1.3G        113G         42M         10G        123G
+Swap:          2.0G          0B        2.0G
+[root@m1-dwhmon01p ~]#
+
+[root@m1-dwhmon01p ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:         128763        1347      113479          50       13936      126949
+Swap:          2047           0        2047
+[root@m1-dwhmon01p ~]# free -h
+              total        used        free      shared  buff/cache   available
+Mem:           125G        1.3G        110G         50M         13G        123G
+Swap:          2.0G          0B        2.0G
+[root@m1-dwhmon01p ~]#
+
+[root@m1-dwhmon01p ~]# hpssacli controller all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+   Bus Interface: PCI
+   Slot: 0
+   Serial Number: 500143802254AAB0
+   Cache Serial Number: PBCDH0CRH2T0YD
+   Controller Status: OK
+   Hardware Revision: C
+   Firmware Version: 6.40
+   Rebuild Priority: Medium
+   Expand Priority: Medium
+   Surface Scan Delay: 15 secs
+   Surface Scan Mode: Idle
+   Parallel Surface Scan Supported: No
+   Queue Depth: Automatic
+   Monitor and Performance Delay: 60  min
+   Elevator Sort: Enabled
+   Degraded Performance Optimization: Disabled
+   Inconsistency Repair Policy: Disabled
+   Wait for Cache Room: Disabled
+   Surface Analysis Inconsistency Notification: Disabled
+   Post Prompt Timeout: 0 secs
+   Cache Board Present: True
+   Cache Status: OK
+   Cache Ratio: 0% Read / 100% Write
+   Drive Write Cache: Enabled
+   Total Cache Size: 512 MB
+   Total Cache Memory Available: 400 MB
+   No-Battery Write Cache: Disabled
+   Cache Backup Power Source: Capacitors
+   Battery/Capacitor Count: 1
+   Battery/Capacitor Status: OK
+   SATA NCQ Supported: True
+   Number of Ports: 2 Internal only
+   Driver Name: hpsa
+   Driver Version: 3.4.10
+   Driver Supports HPE SSD Smart Path: True
+   PCI Address (Domain:Bus:Device.Function): 0000:05:00.0
+   Host Serial Number: CZ3236VSSY
+   Sanitize Erase Supported: False
+   Primary Boot Volume: None
+   Secondary Boot Volume: None
+
+[root@m1-dwhmon01p ~]#
+
+[root@ds-dwhmon01p ~]# smartctl -a /dev/sda
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.10.0-327.el7.x86_64] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               HP
+Product:              LOGICAL VOLUME
+Revision:             6.64
+User Capacity:        1,800,280,694,784 bytes [1.80 TB]
+Logical block size:   512 bytes
+Rotation Rate:        15000 rpm
+Logical Unit id:      0x600508b1001cff6ccd3d34b5269ea78e
+Serial number:        5001438023095510
+Device type:          disk
+Local Time is:        Thu Nov 16 11:08:33 2017 MSK
+SMART support is:     Unavailable - device lacks SMART capability.
+
+=== START OF READ SMART DATA SECTION ===
+
+Error Counter logging not supported
+
+Device does not support Self Test logging
+[root@ds-dwhmon01p ~]# smartctl -a /dev/sdb
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.10.0-327.el7.x86_64] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               HP
+Product:              LOGICAL VOLUME
+Revision:             6.64
+User Capacity:        400,054,902,784 bytes [400 GB]
+Logical block size:   512 bytes
+Rotation Rate:        15000 rpm
+Logical Unit id:      0x600508b1001c47a88356985ee05ae1cf
+Serial number:        5001438023095510
+Device type:          disk
+Local Time is:        Thu Nov 16 11:09:26 2017 MSK
+SMART support is:     Unavailable - device lacks SMART capability.
+
+=== START OF READ SMART DATA SECTION ===
+
+Error Counter logging not supported
+
+Device does not support Self Test logging
+[root@ds-dwhmon01p ~]#
+
+
+[root@ds-dwhmon01p ~]# ioping -R /dev/sdb1
+
+--- /dev/sdb1 (block device 372.6 GiB) ioping statistics ---
+15.1 k requests completed in 2.95 s, 59.0 MiB read, 5.12 k iops, 20.0 MiB/s
+generated 15.1 k requests in 3.00 s, 59.0 MiB, 5.03 k iops, 19.7 MiB/s
+min/avg/max/mdev = 81.3 us / 195.5 us / 15.7 ms / 188.7 us
+[root@ds-dwhmon01p ~]# ioping -R /dev/sda1
+
+--- /dev/sda1 (block device 500 MiB) ioping statistics ---
+952 requests completed in 2.99 s, 3.72 MiB read, 318 iops, 1.24 MiB/s
+generated 953 requests in 3.00 s, 3.72 MiB, 317 iops, 1.24 MiB/s
+min/avg/max/mdev = 173.6 us / 3.14 ms / 22.8 ms / 2.44 ms
+[root@ds-dwhmon01p ~]#
+
+[root@ds-dwhmon01p ~]# iostat
+Linux 3.10.0-327.el7.x86_64 (ds-dwhmon01p.tcsbank.ru)   11/16/2017      _x86_64_        (24 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0.07    0.00    0.09    0.26    0.00   99.58
+
+Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+sda              61.66         0.22       333.73     392109  600286435
+sdb              17.02         0.07        89.65     126233  161256144
+
+[root@ds-dwhmon01p ~]#
+
+
+
+
+[root@ds-dwhmon01p ~]# hpssacli ctrl slot=0 modify cacheratio=25/75
+[root@ds-dwhmon01p ~]# hpssacli controller all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+   Bus Interface: PCI
+   Slot: 0
+   Serial Number: 5001438023095510
+   Cache Serial Number: PBCDH0CRH2S0GW
+   Controller Status: OK
+   Hardware Revision: C
+   Firmware Version: 6.64
+   Rebuild Priority: Medium
+   Expand Priority: Medium
+   Surface Scan Delay: 15 secs
+   Surface Scan Mode: Idle
+   Parallel Surface Scan Supported: No
+   Queue Depth: Automatic
+   Monitor and Performance Delay: 60  min
+   Elevator Sort: Enabled
+   Degraded Performance Optimization: Disabled
+   Inconsistency Repair Policy: Disabled
+   Wait for Cache Room: Disabled
+   Surface Analysis Inconsistency Notification: Disabled
+   Post Prompt Timeout: 0 secs
+   Cache Board Present: True
+   Cache Status: OK
+   Cache Ratio: 25% Read / 75% Write
+   Drive Write Cache: Enabled
+   Total Cache Size: 512 MB
+   Total Cache Memory Available: 400 MB
+   No-Battery Write Cache: Disabled
+   Cache Backup Power Source: Capacitors
+   Battery/Capacitor Count: 1
+   Battery/Capacitor Status: OK
+   SATA NCQ Supported: True
+   Number of Ports: 2 Internal only
+   Driver Name: hpsa
+   Driver Version: 3.4.10
+   Driver Supports HPE SSD Smart Path: True
+   PCI Address (Domain:Bus:Device.Function): 0000:05:00.0
+   Host Serial Number: CZ3236VSSS
+   Sanitize Erase Supported: False
+   Primary Boot Volume: None
+   Secondary Boot Volume: None
+
+[root@ds-dwhmon01p ~]#
+
+
+[root@ds-dwhmon01p ~]# ioping -R /dev/sda1
+
+--- /dev/sda1 (block device 500 MiB) ioping statistics ---
+912 requests completed in 2.99 s, 3.56 MiB read, 304 iops, 1.19 MiB/s
+generated 913 requests in 3.00 s, 3.57 MiB, 304 iops, 1.19 MiB/s
+min/avg/max/mdev = 213.3 us / 3.28 ms / 19.5 ms / 2.23 ms
+[root@ds-dwhmon01p ~]# ioping -R /dev/sdb1
+
+--- /dev/sdb1 (block device 372.6 GiB) ioping statistics ---
+14.6 k requests completed in 2.92 s, 56.9 MiB read, 4.99 k iops, 19.5 MiB/s
+generated 14.6 k requests in 3.00 s, 56.9 MiB, 4.86 k iops, 19.0 MiB/s
+min/avg/max/mdev = 133.5 us / 200.2 us / 751.7 us / 33.1 us
+[root@ds-dwhmon01p ~]#
+
+
+[root@ds-dwhmon01p ~]# ioping /dev/sda3
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=1 time=5.50 ms (warmup)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=2 time=4.21 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=3 time=7.66 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=4 time=7.91 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=5 time=4.16 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=6 time=3.92 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=7 time=6.73 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=8 time=6.55 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=9 time=8.20 ms (slow)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=10 time=6.16 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=11 time=35.4 ms (slow)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=12 time=4.13 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=13 time=7.89 ms
+
+--- /dev/sda3 (block device 200 GiB) ioping statistics ---
+12 requests completed in 102.9 ms, 48 KiB read, 116 iops, 466.5 KiB/s
+generated 13 requests in 12.6 s, 52 KiB, 1 iops, 4.12 KiB/s
+min/avg/max/mdev = 3.92 ms / 8.57 ms / 35.4 ms / 8.23 ms
+[root@ds-dwhmon01p ~]#
+
+
+
+
+
+................................................................................
+
+
+[root@ds-dwhmon01p ~]# dmidecode -t system
+# dmidecode 2.12-dmifs
+SMBIOS 2.7 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: HP
+        Product Name: ProLiant DL380 G7
+        Version: Not Specified
+        Serial Number: CZ3236VSSS
+        UUID: 39333835-3431-5A43-3332-333656535353
+        Wake-up Type: Power Switch
+        SKU Number: 583914-B21
+        Family: ProLiant
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-dwhmon01p ~]# lsblk -o NAME,TYPE,MOUNTPOINT,FSTYPE,SIZE
+NAME   TYPE MOUNTPOINT FSTYPE   SIZE
+sda    disk                     1.7T
+├─sda1 part /boot      ext2     500M
+├─sda2 part /data      ext4     1.3T
+├─sda3 part /          ext4     200G
+├─sda4 part                       1K
+└─sda5 part /opt       ext4     200G
+sdb    disk                   372.6G
+└─sdb1 part /var       ext4   372.6G
+[root@ds-dwhmon01p ~]#
+
+[root@ds-dwhmon01p ~]# hpssacli controller all show config
+
+Smart Array P410i in Slot 0 (Embedded)    (sn: 5001438023095510)
+
+
+   Port Name: 1I
+
+   Port Name: 2I
+
+   Internal Drive Cage at Port 1I, Box 1, OK
+
+   Internal Drive Cage at Port 2I, Box 1, OK
+   array A (SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 1 (1.6 TB, RAID 5, OK)
+
+      physicaldrive 1I:1:1 (port 1I:box 1:bay 1, SAS, 600 GB, OK)
+      physicaldrive 1I:1:2 (port 1I:box 1:bay 2, SAS, 600 GB, OK)
+      physicaldrive 1I:1:3 (port 1I:box 1:bay 3, SAS, 600 GB, OK)
+      physicaldrive 1I:1:4 (port 1I:box 1:bay 4, SAS, 600 GB, OK)
+
+   array B (Solid State SAS, Unused Space: 0  MB)
+
+
+      logicaldrive 2 (372.6 GB, RAID 1, OK)
+
+      physicaldrive 2I:1:5 (port 2I:box 1:bay 5, Solid State SAS, 400 GB, OK)
+      physicaldrive 2I:1:6 (port 2I:box 1:bay 6, Solid State SAS, 400 GB, OK)
+
+   SEP (Vendor ID PMCSIERA, Model  SRC 8x6G) 250  (WWID: 500143802309551F)
+
+[root@ds-dwhmon01p ~]#
+
+[root@ds-dwhmon01p ~]# swapon -s
+Filename                                Type            Size    Used    Priority
+/swapfile                               file    2097148 0       -1
+[root@ds-dwhmon01p ~]# free -h
+              total        used        free      shared  buff/cache   available
+Mem:           125G        1.0G        115G         41M        9.3G        124G
+Swap:          2.0G          0B        2.0G
+[root@ds-dwhmon01p ~]#
+
+
+[root@ds-dwhmon01p ~]# free -m
+              total        used        free      shared  buff/cache   available
+Mem:         128763        1014      118189          41        9558      127296
+Swap:          2047           0        2047
+[root@ds-dwhmon01p ~]# free -h
+              total        used        free      shared  buff/cache   available
+Mem:           125G        1.0G        115G         41M        9.3G        124G
+Swap:          2.0G          0B        2.0G
+[root@ds-dwhmon01p ~]#
+
+[root@ds-dwhmon01p ~]# hpssacli controller all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+   Bus Interface: PCI
+   Slot: 0
+   Serial Number: 5001438023095510
+   Cache Serial Number: PBCDH0CRH2S0GW
+   Controller Status: OK
+   Hardware Revision: C
+   Firmware Version: 6.64
+   Rebuild Priority: Medium
+   Expand Priority: Medium
+   Surface Scan Delay: 15 secs
+   Surface Scan Mode: Idle
+   Parallel Surface Scan Supported: No
+   Queue Depth: Automatic
+   Monitor and Performance Delay: 60  min
+   Elevator Sort: Enabled
+   Degraded Performance Optimization: Disabled
+   Inconsistency Repair Policy: Disabled
+   Wait for Cache Room: Disabled
+   Surface Analysis Inconsistency Notification: Disabled
+   Post Prompt Timeout: 0 secs
+   Cache Board Present: True
+   Cache Status: OK
+   Cache Ratio: 0% Read / 100% Write
+   Drive Write Cache: Enabled
+   Total Cache Size: 512 MB
+   Total Cache Memory Available: 400 MB
+   No-Battery Write Cache: Disabled
+   Cache Backup Power Source: Capacitors
+   Battery/Capacitor Count: 1
+   Battery/Capacitor Status: OK
+   SATA NCQ Supported: True
+   Number of Ports: 2 Internal only
+   Driver Name: hpsa
+   Driver Version: 3.4.10
+   Driver Supports HPE SSD Smart Path: True
+   PCI Address (Domain:Bus:Device.Function): 0000:05:00.0
+   Host Serial Number: CZ3236VSSS
+   Sanitize Erase Supported: False
+   Primary Boot Volume: None
+   Secondary Boot Volume: None
+
+[root@ds-dwhmon01p ~]#
+
+[root@m1-dwhmon01p ~]# smartctl -a /dev/sda
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.10.0-327.el7.x86_64] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               HP
+Product:              LOGICAL VOLUME
+Revision:             6.40
+User Capacity:        1,800,280,694,784 bytes [1.80 TB]
+Logical block size:   512 bytes
+Rotation Rate:        15000 rpm
+Logical Unit id:      0x600508b1001cbeba987fe46e3db3ebb4
+Serial number:        500143802254AAB0
+Device type:          disk
+Local Time is:        Thu Nov 16 11:10:41 2017 MSK
+SMART support is:     Unavailable - device lacks SMART capability.
+
+=== START OF READ SMART DATA SECTION ===
+
+Error Counter logging not supported
+
+Device does not support Self Test logging
+[root@m1-dwhmon01p ~]# smartctl -a /dev/sdb
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.10.0-327.el7.x86_64] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               HP
+Product:              LOGICAL VOLUME
+Revision:             6.40
+User Capacity:        400,054,902,784 bytes [400 GB]
+Logical block size:   512 bytes
+Rotation Rate:        15000 rpm
+Logical Unit id:      0x600508b1001c21e40c09a41e241c90fe
+Serial number:        500143802254AAB0
+Device type:          disk
+Local Time is:        Thu Nov 16 11:10:48 2017 MSK
+SMART support is:     Unavailable - device lacks SMART capability.
+
+=== START OF READ SMART DATA SECTION ===
+
+Error Counter logging not supported
+
+Device does not support Self Test logging
+[root@m1-dwhmon01p ~]#
+
+
+[root@m1-dwhmon01p ~]# ioping -R /dev/sdb1
+
+--- /dev/sdb1 (block device 372.6 GiB) ioping statistics ---
+7.36 k requests completed in 3.74 s, 28.8 MiB read, 1.97 k iops, 7.69 MiB/s
+generated 7.37 k requests in 4.09 s, 28.8 MiB, 1.80 k iops, 7.04 MiB/s
+min/avg/max/mdev = 123.9 us / 507.7 us / 1.37 s / 16.5 ms
+[root@m1-dwhmon01p ~]# ioping -R /dev/sda1
+
+--- /dev/sda1 (block device 500 MiB) ioping statistics ---
+2 requests completed in 2.65 s, 8 KiB read, 0 iops, 3.01 KiB/s
+generated 3 requests in 4.23 s, 12 KiB, 0 iops, 2.84 KiB/s
+min/avg/max/mdev = 1.30 s / 1.33 s / 1.36 s / 29.5 ms
+[root@m1-dwhmon01p ~]#
+
+[root@m1-dwhmon01p ~]# iostat
+Linux 3.10.0-327.el7.x86_64 (m1-dwhmon01p.tcsbank.ru)   11/16/2017      _x86_64_        (24 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0.14    0.00    0.12    0.23    0.00   99.51
+
+Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+sda              59.22         0.17       339.12     310833  609939802
+sdb              97.83         0.05       530.38      95705  953940852
+
+[root@m1-dwhmon01p ~]#
+
+
+
+[root@m1-dwhmon01p ~]# hpssacli controller all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+   Bus Interface: PCI
+   Slot: 0
+   Serial Number: 500143802254AAB0
+   Cache Serial Number: PBCDH0CRH2T0YD
+   Controller Status: OK
+   Hardware Revision: C
+   Firmware Version: 6.40
+   Rebuild Priority: Medium
+   Expand Priority: Medium
+   Surface Scan Delay: 15 secs
+   Surface Scan Mode: Idle
+   Parallel Surface Scan Supported: No
+   Queue Depth: Automatic
+   Monitor and Performance Delay: 60  min
+   Elevator Sort: Enabled
+   Degraded Performance Optimization: Disabled
+   Inconsistency Repair Policy: Disabled
+   Wait for Cache Room: Disabled
+   Surface Analysis Inconsistency Notification: Disabled
+   Post Prompt Timeout: 0 secs
+   Cache Board Present: True
+   Cache Status: OK
+   Cache Ratio: 0% Read / 100% Write
+   Drive Write Cache: Enabled
+   Total Cache Size: 512 MB
+   Total Cache Memory Available: 400 MB
+   No-Battery Write Cache: Disabled
+   Cache Backup Power Source: Capacitors
+   Battery/Capacitor Count: 1
+   Battery/Capacitor Status: OK
+   SATA NCQ Supported: True
+   Number of Ports: 2 Internal only
+   Driver Name: hpsa
+   Driver Version: 3.4.10
+   Driver Supports HPE SSD Smart Path: True
+   PCI Address (Domain:Bus:Device.Function): 0000:05:00.0
+   Host Serial Number: CZ3236VSSY
+   Sanitize Erase Supported: False
+   Primary Boot Volume: None
+   Secondary Boot Volume: None
+
+[root@m1-dwhmon01p ~]# hpssacli ctrl slot=0 modify cacheratio=25/75
+[root@m1-dwhmon01p ~]# hpssacli controller all show detail
+
+Smart Array P410i in Slot 0 (Embedded)
+   Bus Interface: PCI
+   Slot: 0
+   Serial Number: 500143802254AAB0
+   Cache Serial Number: PBCDH0CRH2T0YD
+   Controller Status: OK
+   Hardware Revision: C
+   Firmware Version: 6.40
+   Rebuild Priority: Medium
+   Expand Priority: Medium
+   Surface Scan Delay: 15 secs
+   Surface Scan Mode: Idle
+   Parallel Surface Scan Supported: No
+   Queue Depth: Automatic
+   Monitor and Performance Delay: 60  min
+   Elevator Sort: Enabled
+   Degraded Performance Optimization: Disabled
+   Inconsistency Repair Policy: Disabled
+   Wait for Cache Room: Disabled
+   Surface Analysis Inconsistency Notification: Disabled
+   Post Prompt Timeout: 0 secs
+   Cache Board Present: True
+   Cache Status: OK
+   Cache Ratio: 25% Read / 75% Write
+   Drive Write Cache: Enabled
+   Total Cache Size: 512 MB
+   Total Cache Memory Available: 400 MB
+   No-Battery Write Cache: Disabled
+   Cache Backup Power Source: Capacitors
+   Battery/Capacitor Count: 1
+   Battery/Capacitor Status: OK
+   SATA NCQ Supported: True
+   Number of Ports: 2 Internal only
+   Driver Name: hpsa
+   Driver Version: 3.4.10
+   Driver Supports HPE SSD Smart Path: True
+   PCI Address (Domain:Bus:Device.Function): 0000:05:00.0
+   Host Serial Number: CZ3236VSSY
+   Sanitize Erase Supported: False
+   Primary Boot Volume: None
+   Secondary Boot Volume: None
+
+[root@m1-dwhmon01p ~]#
+
+#
+#	Exactly after cache percentage was changed 25%/75%
+#
+[root@m1-dwhmon01p ~]# iostat
+Linux 3.10.0-327.el7.x86_64 (m1-dwhmon01p.tcsbank.ru)   11/16/2017      _x86_64_        (24 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0.14    0.00    0.12    0.23    0.00   99.50
+
+Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+sda              59.51         0.17       340.76     310839  613226846
+sdb              98.20         0.05       532.44      95705  958168644
+
+[root@m1-dwhmon01p ~]#
+[root@m1-dwhmon01p ~]# ioping -R /dev/sda1
+
+--- /dev/sda1 (block device 500 MiB) ioping statistics ---
+2 requests completed in 771.8 ms, 8 KiB read, 2 iops, 10.4 KiB/s
+generated 3 requests in 3.01 s, 12 KiB, 0 iops, 3.99 KiB/s
+min/avg/max/mdev = 106.4 ms / 385.9 ms / 665.4 ms / 279.5 ms
+[root@m1-dwhmon01p ~]# ioping -R /dev/sdb1
+
+--- /dev/sdb1 (block device 372.6 GiB) ioping statistics ---
+85 requests completed in 7.22 s, 340 KiB read, 11 iops, 47.1 KiB/s
+generated 86 requests in 7.26 s, 344 KiB, 11 iops, 47.4 KiB/s
+min/avg/max/mdev = 17.1 ms / 85.0 ms / 4.47 s / 483.3 ms
+[root@m1-dwhmon01p ~]#
+
+
+[root@m1-dwhmon01p ~]# ioping /dev/sds3
+ioping: stat "/dev/sds3" failed: No such file or directory
+[root@m1-dwhmon01p ~]# ioping /dev/sda3
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=1 time=862.0 ms (warmup)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=2 time=958.1 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=3 time=842.9 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=4 time=615.4 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=5 time=1.00 s
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=6 time=1.14 s
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=7 time=151.0 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=8 time=236.4 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=9 time=1.20 s (slow)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=10 time=33.6 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=11 time=766.4 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=12 time=20.5 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=13 time=99.0 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=14 time=16.2 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=15 time=44.9 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=16 time=9.44 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=17 time=57.0 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=18 time=179.1 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=19 time=10.5 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=20 time=439.9 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=21 time=257.6 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=22 time=151.8 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=23 time=75.9 ms
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=24 time=11.2 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=25 time=58.0 ms (fast)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=26 time=1.20 s (slow)
+4 KiB <<< /dev/sda3 (block device 200 GiB): request=27 time=1.20 s (slow)
+
+--- /dev/sda3 (block device 200 GiB) ioping statistics ---
+26 requests completed in 10.8 s, 104 KiB read, 2 iops, 9.65 KiB/s
+generated 27 requests in 27.7 s, 108 KiB, 0 iops, 3.89 KiB/s
+min/avg/max/mdev = 9.44 ms / 414.5 ms / 1.20 s / 446.0 ms
+[root@m1-dwhmon01p ~]#
+
+
+
+................................................................................
+
+
+#
+#	It's about changed HDD on one of these servers.
+#
+
+...
+Nov 14 12:55:02 ds-dwhmon01p systemd: Stopping user-995.slice.
+Nov 14 12:57:15 ds-dwhmon01p cmaeventd[30092]: Hot-plug drive removed: Port 1I Box 1 Bay 1 of Embedded Array Controll
+er.
+Nov 14 12:57:45 ds-dwhmon01p cmaeventd[30092]: Hot-plug drive inserted: Port 1I Box 1 Bay 1 of Embedded Array Control
+ler.
+Nov 14 12:57:49 ds-dwhmon01p cmaidad[30175]: Physical Drive Status Change: Slot 0 Port 1I Box 1 Bay 1.Status is now O
+K.
+Nov 14 12:57:49 ds-dwhmon01p cmaidad[30175]: Logical Drive Status Change: Slot 0, Drive: 1.Status is now Rebuilding.
+Nov 14 12:57:56 ds-dwhmon01p cmaeventd[30092]: Logical drive 1 of Embedded Array Controller, has changed from status
+Interim Recovery to Ready For Rebuild
+Nov 14 12:57:56 ds-dwhmon01p cmaeventd[30092]: Logical drive 1 of Embedded Array Controller, has changed from status
+Ready For Rebuild to Rebuilding
+Nov 14 12:58:01 ds-dwhmon01p systemd: Created slice user-995.slice.
+...
+
+................................................................................
+
+
+[root@m1-dwhmon01p ~]# less /var/log/messages
+...
+Nov 15 12:25:01 m1-dwhmon01p systemd: Created slice user-995.slice.
+Nov 15 12:25:01 m1-dwhmon01p systemd: Starting user-995.slice.
+Nov 15 12:25:01 m1-dwhmon01p systemd: Started Session 5331 of user pcp.
+Nov 15 12:25:01 m1-dwhmon01p systemd: Starting Session 5331 of user pcp.
+Nov 15 12:25:01 m1-dwhmon01p systemd: Removed slice user-995.slice.
+Nov 15 12:25:01 m1-dwhmon01p systemd: Stopping user-995.slice.
+Nov 15 12:28:01 m1-dwhmon01p systemd: Created slice user-995.slice.
+Nov 15 12:28:01 m1-dwhmon01p systemd: Starting user-995.slice.
+Nov 15 12:28:01 m1-dwhmon01p systemd: Started Session 5332 of user pcp.
+Nov 15 12:28:01 m1-dwhmon01p systemd: Starting Session 5332 of user pcp.
+Nov 15 12:28:02 m1-dwhmon01p systemd: Removed slice user-995.slice.
+Nov 15 12:28:02 m1-dwhmon01p systemd: Stopping user-995.slice.
+Nov 15 12:30:01 m1-dwhmon01p systemd: Started Session 5333 of user root.
+Nov 15 12:30:01 m1-dwhmon01p systemd: Starting Session 5333 of user root.
+...
+
+................................................................................
+
+
+#
+#	https://wiki.debian.org/SSDOptimization
+#
+
+[root@ds-dwhmon01p ~]# systemctl status tmp.mount
+● tmp.mount - Temporary Directory
+   Loaded: loaded (/usr/lib/systemd/system/tmp.mount; disabled; vendor preset: disabled)
+   Active: inactive (dead)
+    Where: /tmp
+     What: tmpfs
+     Docs: man:hier(7)
+           http://www.freedesktop.org/wiki/Software/systemd/APIFileSystems
+[root@ds-dwhmon01p ~]#
+
+[root@ds-dwhmon01p ~]# man hier 7
+
+
+[root@ds-dwhmon01p ~]# for f in /sys/block/sd?/queue/rotational; do printf "$f is "; cat $f; done
+/sys/block/sda/queue/rotational is 1
+/sys/block/sdb/queue/rotational is 1
+[root@ds-dwhmon01p ~]# for f in /sys/block/sd?/queue/scheduler; do printf "$f is "; cat $f; done
+/sys/block/sda/queue/scheduler is noop [deadline] cfq
+/sys/block/sdb/queue/scheduler is noop [deadline] cfq
+[root@ds-dwhmon01p ~]# grep . /sys/block/sd?/queue/scheduler
+/sys/block/sda/queue/scheduler:noop [deadline] cfq
+/sys/block/sdb/queue/scheduler:noop [deadline] cfq
+[root@ds-dwhmon01p ~]#
+
+
+
+[root@ds-dwhmon01p ~]# yum install ioping
+Loaded plugins: etckeeper, langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+tcs-epel                                                                                      | 4.3 kB  00:00:00
+tcs-hp                                                                                        | 2.9 kB  00:00:00
+tcs-puppet-deps                                                                               | 2.5 kB  00:00:00
+tcs-puppet-dev                                                                                | 2.5 kB  00:00:00
+tcs-puppet-products                                                                           | 2.5 kB  00:00:00
+tcs-rhel-base                                                                                 | 3.0 kB  00:00:00
+tcs-rhel-extras                                                                               | 2.9 kB  00:00:00
+tcs-rhel-optional                                                                             | 3.0 kB  00:00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package ioping.x86_64 0:1.0-1.el7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================================================
+ Package                   Arch                      Version                       Repository                   Size
+=====================================================================================================================
+Installing:
+ ioping                    x86_64                    1.0-1.el7                     tcs-epel                     34 k
+
+Transaction Summary
+=====================================================================================================================
+Install  1 Package
+
+Total download size: 34 k
+Installed size: 78 k
+Is this ok [y/d/N]: y
+Downloading packages:
+ioping-1.0-1.el7.x86_64.rpm                                                                   |  34 kB  00:00:00
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+etckeeper: pre transaction commit
+  Installing : ioping-1.0-1.el7.x86_64                                                                           1/1
+etckeeper: post transaction commit
+  Verifying  : ioping-1.0-1.el7.x86_64                                                                           1/1
+
+Installed:
+  ioping.x86_64 0:1.0-1.el7
+
+Complete!
+[root@ds-dwhmon01p ~]#
+
+
+................................................................................
+................................................................................
+
+
+[root@m1-gp-tst-sdw1 ~]# iostat -hmt
+Linux 2.6.32-696.el6.x86_64 (m1-gp-tst-sdw1)    11/16/2017      _x86_64_        (24 CPU)
+
+11/16/2017 03:36:51 PM
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           2.36   13.32    2.27    8.01    0.00   74.05
+
+Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+sda             305.04         9.77        18.57   34664497   65887932
+sdb             291.92         9.04        18.09   32093021   64205261
+
+[root@m1-gp-tst-sdw1 ~]#
+
+
+................................................................................
+................................................................................
+

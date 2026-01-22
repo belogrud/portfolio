@@ -1,0 +1,199 @@
+
+................................................................................
+
+#
+
+[root@ds-asterisk07 ~]# dmidecode -t system
+# dmidecode 3.1
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+        Manufacturer: Dell Inc.
+        Product Name: PowerEdge R630
+        Version: Not Specified
+        Serial Number: 550K8D2
+        UUID: 4c4c4544-0035-3010-804b-b5c04f384432
+        Wake-up Type: Power Switch
+        SKU Number: SKU=NotProvided;ModelName=PowerEdge R630
+        Family: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+        Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+        Option 2: PWRD_EN: Close to enable password
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+        Status: No errors detected
+
+[root@ds-asterisk07 ~]# 
+
+[s.belogrud@TCS4357]# host 550k8d2.mgmt.tcsbank.ru
+550k8d2.mgmt.tcsbank.ru has address 10.219.11.10
+[s.belogrud@TCS4357]#
+
+#	Too long without reboot.
+[root@ds-asterisk07 ~]# uptime
+ 11:13:09 up 432 days, 16:00,  2 users,  load average: 5.77, 6.47, 6.93
+[root@ds-asterisk07 ~]#
+
+#	Nagios cannot collect data about hardware heath.
+[root@vm-vol-nag4-tst objects]# /usr/local/nagios/libexec/check_openmanage_heavy -H 10.216.97.79 -C tcspub -P 2c -p -t 120
+ERROR: (SNMP) OpenManage is not installed or is not working correctly
+[root@vm-vol-nag4-tst objects]#
+
+#	No responce from dell utilities.
+[root@ds-asterisk07 ~]# racadm getniccfg | grep -e "^IP Address.*" | awk "{print \$4}"
+ERROR: Unable to perform requested operation
+[root@ds-asterisk07 ~]#
+
+#	iDRAC via ssh unaccessable.
+[s.belogrud@TCS4357]# ssh tcsbank.ru\\s.belogrud@550k8d2.mgmt.tcsbank.ru racadm getsysinfo
+ssh: connect to host 550k8d2.mgmt.tcsbank.ru port 22: Connection timed out
+[s.belogrud@TCS4357]#
+
+
+
+
+................................................................................
+
+#
+#	Here are examples from normally working similar server.
+#
+[root@ds-asterisk06 ~]# uptime
+ 11:13:22 up 222 days, 19:06,  1 user,  load average: 1.77, 1.84, 1.67
+[root@ds-asterisk06 ~]# racadm getniccfg | grep -e "^IP Address.*" | awk "{print \$4}"
+10.219.11.239
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+[root@ds-asterisk06 ~]#
+
+[s.belogrud@TCS4357]# ssh tcsbank.ru\\s.belogrud@10.219.11.239 racadm getsysinfo
+Warning: Permanently added '10.219.11.239' (RSA) to the list of known hosts.
+tcsbank.ru\s.belogrud@10.219.11.239's password:
+
+
+RAC Information:
+RAC Date/Time           = Tue Jun 30 12:15:45 2020
+
+Firmware Version        = 2.52.52.52
+Firmware Build          = 12
+Last Firmware Update    = 06/27/2018 12:53:06
+Hardware Version        = 0.01
+MAC Address             = F4:8E:38:CC:02:16
+
+Common settings:
+Register DNS RAC Name   = 0
+DNS RAC Name            = idrac-42NK8D2
+Current DNS Domain      =
+Domain Name from DHCP   = Disabled
+
+IPv4 settings:
+Enabled                 = 1
+Current IP Address      = 10.219.11.239
+Current IP Gateway      = 10.219.11.254
+Current IP Netmask      = 255.255.255.0
+DHCP Enabled            = 0
+Current DNS Server 1    = 10.219.50.4
+Current DNS Server 2    = 10.219.50.5
+DNS Servers from DHCP   = Disabled
+
+IPv6 settings:
+Enabled                 = 0
+Current IP Address 1    = ::
+Current IP Gateway      = ::
+Autoconfig              = 1
+Link Local IP Address   = ::
+Current IP Address 2    = ::
+Current IP Address 3    = ::
+Current IP Address 4    = ::
+Current IP Address 5    = ::
+Current IP Address 6    = ::
+Current IP Address 7    = ::
+Current IP Address 8    = ::
+Current IP Address 9    = ::
+Current IP Address 10   = ::
+Current IP Address 11   = ::
+Current IP Address 12   = ::
+Current IP Address 13   = ::
+Current IP Address 14   = ::
+Current IP Address 15   = ::
+DNS Servers from DHCPv6 = Disabled
+Current DNS Server 1    = ::
+Current DNS Server 2    = ::
+
+System Information:
+System Model            = PowerEdge R630
+System Revision         = I
+System BIOS Version     = 2.7.1
+Service Tag             = 42NK8D2
+Express Svc Code        = 8867636822
+Host Name               = ds-asterisk06.tcsbank.ru
+OS Name                 = CentOS Linux
+OS Version              = release 7.7.1908 (Core) Kernel 3.10.0-1062.4.3.el7.x86_64 (x86
+Power Status            = ON
+Fresh Air Capable       = Yes
+
+Watchdog Information:
+Recovery Action         = None
+Present countdown value = 474 seconds
+Initial countdown value = 480 seconds
+
+System Thermal Information:
+EstimatedSystemAirflow  =  17 CFM
+EstimatedExhaustTemperature =  39 Degrees Centigrade
+
+Embedded NIC MAC Addresses:
+NIC.Integrated.1-1-1    Ethernet                = 18:66:DA:54:F2:FF
+                        iSCSI                   = 18:66:DA:54:F3:00
+                        FIP                     = 18:66:DA:54:F3:00
+                        WWN                     = 20:00:18:66:DA:54:F3:00
+                        WWPN                    = 20:01:18:66:DA:54:F3:00
+NIC.Integrated.1-2-1    Ethernet                = 18:66:DA:54:F3:01
+                        iSCSI                   = 18:66:DA:54:F3:02
+                        FIP                     = 18:66:DA:54:F3:02
+                        WWN                     = 20:00:18:66:DA:54:F3:02
+                        WWPN                    = 20:01:18:66:DA:54:F3:02
+NIC.Integrated.1-3-1    Ethernet                = 18:66:DA:54:F3:03
+                        iSCSI                   = 18:66:DA:54:F3:04
+                        FIP                     = 18:66:DA:54:F3:04
+                        WWN                     = 20:00:18:66:DA:54:F3:04
+                        WWPN                    = 20:01:18:66:DA:54:F3:04
+NIC.Integrated.1-4-1    Ethernet                = 18:66:DA:54:F3:05
+                        iSCSI                   = 18:66:DA:54:F3:06
+                        FIP                     = 18:66:DA:54:F3:06
+                        WWN                     = 20:00:18:66:DA:54:F3:06
+                        WWPN                    = 20:01:18:66:DA:54:F3:06
+
+[s.belogrud@TCS4357]#
+
+................................................................................
+
+По на сервере работает как-то не совсем так, как должно.
+Сервер  не перезагружался уже 432 дней.
+Не удалось применить настройки (факты) puppet 5 (до этого стоял puppet 3). Процесс висит без прогресса выполнения. Похоже не ротируются журналы событий.
+Не работает утилита rackadm - получающая информацию об настройке iDRAC.
+Не работает сбор данных о состоянии сервера средствами OpenManage.
+Не удаётся подключиться к iDRAC сервера (ip из NetBox 10.219.11.10).
+Я полагаю, что часть системного ПО, стандартно нормально работающее на сервере, перестало в какой-то момент корректно функционировать, предполагаю по причине нехватки ресурсов (памяти, загрузки по CPU) - прикладное ПО и Java всё пожрали. И теперь наблюдаются странные глюки.
+
+
+................................................................................
+
+
+

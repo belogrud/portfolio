@@ -1,0 +1,174 @@
+
+...........................................................................
+
+[root@m1-postgresql83p ~]# puppet agent -t 
+
+[root@m1-postgresql83p ~]# id ima                          
+uid=816(ima) gid=816(ima) groups=816(ima),0(root),10(wheel)
+[root@m1-postgresql83p ~]#                                 
+
+
+[root@m1-postgresql83p ~]# scp bsv@ds-postgresql01p:/etc/yum.repos.d/pgdg-96-redhat.repo /etc/yum.repos
+.d/                                                                                                    
+bsv@ds-postgresql01p's password:                                                                       
+pgdg-96-redhat.repo                                                  100%  215    63.1KB/s   00:00     
+[root@m1-postgresql83p ~]#                                                                             
+
+[root@m1-postgresql83p ~]# yum repolist
+
+[root@m1-postgresql83p ~]# sysctl -p /etc/sysctl.d/98-postgres.conf
+vm.nr_hugepages = 2129                                             
+kernel.shmall = 2097152                                            
+kernel.shmmax = 8589934592                                         
+vm.hugetlb_shm_group = 26                                          
+vm.swappiness = 1                                                  
+vm.overcommit_memory = 2                                           
+kernel.numa_balancing = 0                                          
+net.core.somaxconn = 1024                                          
+net.core.netdev_max_backlog = 1000                                 
+[root@m1-postgresql83p ~]#                                         
+
+#
+#	Simpana exists.
+#
+[root@m1-postgresql83p ~]# cat $(puppet agent --configprint classfile)
+settings                                                              
+__node_regexp__m1ds-postgresql6-90-9pt.tcsbank.ru                     
+role::postgres                                                        
+profile::base                                                         
+profile::base::repos_el                                               
+tcs_repos::epel                                                       
+tcs_repos::puppet5                                                    
+tcs_repos::centos                                                     
+profile::base::selinux                                                
+selinux::params                                                       
+selinux                                                               
+selinux::package                                                      
+selinux::config                                                       
+profile::base::ntp                                                    
+ntp                                                                   
+ntp::install                                                          
+ntp::config                                                           
+ntp::service                                                          
+profile::base::packages                                               
+profile::base::sysstat_config                                         
+profile::base::firewall                                               
+firewalld                                                             
+profile::accounts::admins                                             
+profile::accounts::nessus                                             
+profile::base::nrpe                                                   
+tcs_nrpe::params                                                      
+tcs_nrpe                                                              
+tcs_nrpe::install                                                     
+tcs_nrpe::config                                                      
+tcs_nrpe::service          
+profile::base::puppet_agent
+profile::base::sysctl      
+sysctl::params             
+sysctl::base               
+profile::postgres          
+customfact::dmimem         
+profile::postgres::limits  
+limits                     
+profile::postgres::repo    
+tcs_repos::pgdb_rpm        
+profile::postgres::thp     
+profile::postgres::postfix 
+profile::postgres::sudo    
+sudo::params               
+sudo                       
+sudo::package              
+sudo::configs              
+profile::accounts::params  
+profile::accounts::ima     
+profile::accounts::oradba  
+profile::simpana::install  
+[root@m1-postgresql83p ~]# 
+
+[root@m1-postgresql83p ~]# mkdir -p /data/apitravel/ /pgsys/apitravel/ /arch/apitravel/
+
+[root@ds-postgresql83p ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Thu Sep 15 11:33:57 2016
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+/dev/mapper/vg_root-lvol0 /                       xfs     defaults        0 0
+/swap                     swap                    swap    sw              0 0
+UUID=f558dac6-0cbf-4049-b349-be4aa894c26b /boot                   xfs     defaults        0 0
+
+#SD#1745217
+a700-pgsql-prod-nfs:/PGSQL_apitravel_ds         /data/apitravel         nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+a700-pgsql-prod-nfs:/PGSQL_apitravel_pgsys_ds   /pgsys/apitravel        nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+a700-pgsql-prod-nfs:/PGSQL_apitravel_arch_ds    /arch/apitravel         nfs     rw,bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard 0 0
+[root@ds-postgresql83p ~]#
+
+[root@ds-postgresql83p ~]# for var1 in /data/apitravel/ /pgsys/apitravel/ /arch/apitravel/ ; do mount -v ${var1} ; done
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.164.253'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.164.253 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.164.253 prog 100005 vers 3 prot TCP port 635
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.164.253'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.164.253 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.164.253 prog 100005 vers 3 prot TCP port 635
+mount.nfs: trying text-based options 'bg,vers=3,tcp,timeo=600,rsize=65536,wsize=65536,hard,addr=10.217.164.253'
+mount.nfs: prog 100003, trying vers=3, prot=6
+mount.nfs: trying 10.217.164.253 prog 100003 vers 3 prot TCP port 2049
+mount.nfs: prog 100005, trying vers=3, prot=6
+mount.nfs: trying 10.217.164.253 prog 100005 vers 3 prot TCP port 635
+[root@ds-postgresql83p ~]#
+
+[root@ds-postgresql83p ~]# df -hT /data/apitravel/ /pgsys/apitravel/ /arch/apitravel/
+Filesystem                                    Type  Size  Used Avail Use% Mounted on
+a700-pgsql-prod-nfs:/PGSQL_apitravel_ds       nfs   1.3T  384K  1.2T   1% /data/apitravel
+a700-pgsql-prod-nfs:/PGSQL_apitravel_pgsys_ds nfs    50G  320K   50G   1% /pgsys/apitravel
+a700-pgsql-prod-nfs:/PGSQL_apitravel_arch_ds  nfs   200G  320K  200G   1% /arch/apitravel
+[root@ds-postgresql83p ~]#
+
+
+
+
+
+...........................................................................
+
+[root@vm-vol-nag4-tst objects]# vim -o servers/vmware/postgresql/{ds-postgresql01p,ds-postgresql83p}.cfg
+2 files to edit
+[root@vm-vol-nag4-tst objects]# vim -o servers/vmware/postgresql/{ds-postgresql01p,m1-postgresql83p}.cfg
+2 files to edit
+[root@vm-vol-nag4-tst objects]# service nagios checkconfig && service nagios reload
+Running configuration check...
+ OK.
+Running configuration check...
+Reloading nagios configuration...
+done
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git add servers/vmware/postgresql/ds-postgresql83p.cfg servers/vmware/postgresql/m1-postgresql83p.cfg
+[root@vm-vol-nag4-tst objects]# git commit --author='Sergey Belogrud <s.belogrud@tinkoff.ru>' -m "SD#1745217. Were created two new host for monitoring." servers/vmware/postgresql/ds-postgresql83p.cfg servers/vmware/postgresql/m1-postgresql83p.cfg
+[master 428320c] SD#1745217. Were created two new host for monitoring.
+ Author: Sergey Belogrud <s.belogrud@tinkoff.ru>
+ 2 files changed, 48 insertions(+), 0 deletions(-)
+ create mode 100644 objects/servers/vmware/postgresql/ds-postgresql83p.cfg
+ create mode 100644 objects/servers/vmware/postgresql/m1-postgresql83p.cfg
+[root@vm-vol-nag4-tst objects]#
+
+[root@vm-vol-nag4-tst objects]# git pull && git push
+Already up-to-date.
+Counting objects: 13, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 924 bytes, done.
+Total 8 (delta 6), reused 0 (delta 0)
+To git@vm-gitlab01.tcsbank.ru:nagios-core/nag4-base.git
+   30ae311..428320c  master -> master
+[root@vm-vol-nag4-tst objects]#
+
+
+
+

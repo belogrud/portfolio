@@ -1,0 +1,192 @@
+
+
+................................................................................
+
+
+[root@ds-mvno-staredge01p ~]# awk 'BEGIN {FS=":"; OFS=" ==> ";} $3>=1000 {print $3,$1}' /etc/passwd | sort -n
+1090 ==> a.glaz
+[root@ds-mvno-staredge01p ~]# 
+
+
+[root@ds-mvno-staredge01p ~]# sort -n -t ":" -k 3 /etc/group | tail -n 5
+polkitd:x:996:
+systemd-bus-proxy:x:997:
+input:x:998:
+ssh_keys:x:999:
+a.glaz:x:1090:
+[root@ds-mvno-staredge01p ~]#
+
+
+................................................................................
+
+
+[root@ds-mvno-staredge01p ~]# groupadd -g 1010 sftpusers_t2se
+
+[root@ds-mvno-staredge01p ~]# mkdir -p /home/sftp/t2se/{upload,download}
+[root@ds-mvno-staredge01p ~]# chown root:sftpusers_t2se /home/sftp/t2se/{upload,download}
+[root@ds-mvno-staredge01p ~]# chmod g=rwx /home/sftp/t2se/{upload,download}
+
+................................................................................
+
+[root@centos ~]# pwgen -c -n -s -C 10 1 ; doveadm pw -s SHA512-CRYPT
+G6OWlOgHYx 
+Enter new password: 
+Retype new password: 
+{SHA512-CRYPT}$6$x/Ra2Ujf/BMCCmHt$O67eXRxGIRIMzG5iSW/PL2JjAzG4qEeslciAVzerKB8shxfVa1YRh3.3aKQPiFCsqKryZPQLdW6l/Wtr7Y6MR.
+[root@centos ~]#
+
+................................................................................
+
+
+[root@ds-mvno-staredge01p ~]# useradd -g sftpusers_t2se -u 4148 -r -s /sbin/nologin -p '$6$x/Ra2Ujf/BMCCmHt$O67eXRxGIRIMzG5iSW/PL2JjAzG4qEeslciAVzerKB8shxfVa1YRh3.3aKQPiFCsqKryZPQLdW6l/Wtr7Y6MR.' t2se
+[root@ds-mvno-staredge01p ~]# id t2se
+uid=4148(t2se) gid=1010(sftpusers_t2se) groups=1010(sftpusers_t2se)
+[root@ds-mvno-staredge01p ~]# usermod -d /home/sftp/t2se t2se
+
+
+[root@ds-mvno-staredge01p ~]# vim /etc/ssh/sshd_config
+[root@ds-mvno-staredge01p ~]# tail -n 7 /etc/ssh/sshd_config
+Match Group sftpusers_t2se
+    ChrootDirectory /home/sftp/t2se
+    ForceCommand internal-sftp -u 0002
+    AllowTcpForwarding no
+    X11Forwarding no
+    AllowAgentForwarding no
+
+[root@ds-mvno-staredge01p ~]#
+
+[root@ds-mvno-staredge01p ~]# cat /etc/system-release
+Red Hat Enterprise Linux Server release 7.3 (Maipo)
+[root@ds-mvno-staredge01p ~]# systemctl restart sshd
+[root@ds-mvno-staredge01p ~]# 
+
+................................................................................
+
+[root@ds-mvno-staredge01p ~]# ssh t2se@localhost
+The authenticity of host 'localhost (127.0.0.1)' can't be established.
+ECDSA key fingerprint is 4d:39:78:df:3d:bc:70:d3:f7:a0:af:54:e3:f1:bc:e0.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'localhost' (ECDSA) to the list of known hosts.
+t2se@localhost's password:
+Permission denied, please try again.
+t2se@localhost's password:
+
+[root@ds-mvno-staredge01p ~]# sftp t2se@localhost
+t2se@localhost's password:
+Permission denied, please try again.
+t2se@localhost's password:
+[root@ds-mvno-staredge01p ~]#
+
+................................................................................
+
+[root@ds-mvno-staredge01p ~]# getenforce
+Permissive
+[root@ds-mvno-staredge01p ~]# systemctl status firewalld
+● firewalld.service - firewalld - dynamic firewall daemon
+   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; disabled; vendor preset: enabled)
+   Active: inactive (dead)
+     Docs: man:firewalld(1)
+[root@ds-mvno-staredge01p ~]#
+
+
+[root@ds-mvno-staredge01p ~]# grep t2se /etc/passwd
+t2se:x:4148:1010::/home/sftp/t2se:/sbin/nologin
+[root@ds-mvno-staredge01p ~]#
+
+................................................................................
+
+
+[root@ds-mvno-staredge01p ~]# less /var/log/audit/audit.log
+...
+type=USER_AUTH msg=audit(1510307486.848:861981): pid=14430 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_
+r:sshd_t:s0-s0:c0.c1023 msg='op=PAM:authentication grantors=? acct="t2se" exe="/usr/sbin/sshd" hostname=localhost add
+r=127.0.0.1 terminal=ssh res=failed'
+type=USER_AUTH msg=audit(1510307489.149:861982): pid=14430 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_
+r:sshd_t:s0-s0:c0.c1023 msg='op=password acct="t2se" exe="/usr/sbin/sshd" hostname=? addr=127.0.0.1 terminal=ssh res=
+failed'
+...
+
+
+[s.belogrud@TCS4357]# sftp t2se@ds-mvno-staredge01p
+t2se@ds-mvno-staredge01p's password:
+t2se@ds-mvno-staredge01p's password:
+t2se@ds-mvno-staredge01p's password:
+[s.belogrud@TCS4357]#
+
+
+...
+type=USER_AUTH msg=audit(1510318280.068:863282): pid=18100 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=password acct="t2se" exe="/usr/sbin/sshd" hostname=? addr=172.16.28.74 terminal=ssh res=failed'
+type=CRYPTO_KEY_USER msg=audit(1510318280.068:863283): pid=18100 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=server fp=ff:37:da:06:33:00:c2:3d:01:c5:83:4b:0d:17:97:00 direction=? spid=18101 suid=74  exe="/usr/sbin/sshd" hostname=? addr=172.16.28.74 terminal=? res=success'
+type=CRYPTO_KEY_USER msg=audit(1510318280.068:863284): pid=18100 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=session fp=? direction=both spid=18101 suid=74 rport=61341 laddr=10.250.107.3 lport=22  exe="/usr/sbin/sshd" hostname=? addr=172.16.28.74 terminal=? res=success'
+type=CRYPTO_KEY_USER msg=audit(1510318280.069:863285): pid=18100 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=server fp=7a:9f:09:4b:ad:ec:9e:15:2b:a1:60:05:ac:28:24:75 direction=? spid=18100 suid=0  exe="/usr/sbin/sshd" hostname=? addr=172.16.28.74 terminal=? res=success'
+type=CRYPTO_KEY_USER msg=audit(1510318280.069:863286): pid=18100 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=server fp=4d:39:78:df:3d:bc:70:d3:f7:a0:af:54:e3:f1:bc:e0 direction=? spid=18100 suid=0  exe="/usr/sbin/sshd" hostname=? addr=172.16.28.74 terminal=? res=success'
+type=CRYPTO_KEY_USER msg=audit(1510318280.069:863287): pid=18100 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=server fp=ff:37:da:06:33:00:c2:3d:01:c5:83:4b:0d:17:97:00 direction=? spid=18100 suid=0  exe="/usr/sbin/sshd" hostname=? addr=172.16.28.74 terminal=? res=success'
+type=USER_LOGIN msg=audit(1510318280.069:863288): pid=18100 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=login acct="t2se" exe="/usr/sbin/sshd" hostname=? addr=172.16.28.74 terminal=ssh res=failed'
+...
+
+
+
+#
+#	It was not correct hash during I made user.
+#
+
+[root@ds-mvno-staredge01p ~]# passwd t2se
+Changing password for user t2se.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[root@ds-mvno-staredge01p ~]#
+
+
+[s.belogrud@TCS4357]# sftp t2se@ds-mvno-staredge01p
+t2se@ds-mvno-staredge01p's password:
+Connected to ds-mvno-staredge01p.
+sftp> ls
+download  upload
+sftp> quit
+[s.belogrud@TCS4357]#
+
+
+................................................................................
+................................................................................
+
+
+[root@m1-mvno-staredge01p ~]# groupadd -g 1010 sftpusers_t2se
+[root@m1-mvno-staredge01p ~]# mkdir -p /home/sftp/t2se/{upload,download}
+[root@m1-mvno-staredge01p ~]# chown root:sftpusers_t2se /home/sftp/t2se/{upload,download}
+[root@m1-mvno-staredge01p ~]# chmod g=rwx /home/sftp/t2se/{upload,download}
+[root@m1-mvno-staredge01p ~]# useradd -g sftpusers_t2se -u 4148 -r -s /sbin/nologin -p '$6$evUG7nw2$t5bE3p3PEWpJjauGylbtat77OQHI69i7cReIHMboFLJ4H.nfy4e6dpXCegoBbhMHe8hT4fxVJonqBvQrJcOQH.' t2se
+[root@m1-mvno-staredge01p ~]# usermod -d /home/sftp/t2se t2se
+[root@m1-mvno-staredge01p ~]# vim /etc/ssh/sshd_config
+
+[root@m1-mvno-staredge01p ~]# tail -n 8 /etc/ssh/sshd_config
+
+Match Group sftpusers_t2se
+    ChrootDirectory /home/sftp/t2se
+    ForceCommand internal-sftp -u 0002
+    AllowTcpForwarding no
+    X11Forwarding no
+    AllowAgentForwarding no
+
+[root@m1-mvno-staredge01p ~]#
+
+[root@m1-mvno-staredge01p ~]# systemctl restart sshd
+
+
+[s.belogrud@TCS4357]# sftp t2se@m1-mvno-staredge01p 
+t2se@m1-mvno-staredge01p's password:                
+Connected to m1-mvno-staredge01p.                   
+sftp> ls                                            
+download  upload                                    
+sftp> quit                                          
+[s.belogrud@TCS4357]#                               
+
+................................................................................
+................................................................................
+
+
+
+
+
+
+

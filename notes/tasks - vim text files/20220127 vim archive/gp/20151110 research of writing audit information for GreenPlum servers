@@ -1,0 +1,2824 @@
+
+
+
+................................................................................
+
+
+     -p pri   Enter the message with the specified priority.  The priority may be specified numerically or as a ‘‘facility.level’’ pair.  For example, ‘‘-p local3.info’’ logs the message(s) as informational level in the local3 facility.  The
+              default is ‘‘user.notice.’’
+...
+     The logger utility exits 0 on success, and >0 if an error occurs.
+
+     Valid facility names are: auth, authpriv (for security information of a sensitive nature), cron, daemon, ftp, kern, lpr, mail, news, security (deprecated synonym for auth), syslog, user, uucp, and local0 to local7, inclusive.
+
+     Valid level names are): alert, crit, debug, emerg, err, error (deprecated synonym for err), info, notice, panic (deprecated synonym for emerg), warning, warn (deprecated synonym for warning).  For the priority order and intended purposes
+     of these levels, see syslog(3).
+
+EXAMPLES
+           logger System rebooted
+
+           logger -p local0.notice -t HOSTIDM -f /dev/idmc
+
+
+................................................................................
+
+
+[root@vm-ossec01t ~]# logger -t user_cmd "test message $(date +%Y%m%d-%H%M)"
+[root@vm-ossec01t ~]# logger -p local0.notice -t user_cmd "test message $(date +%Y%m%d-%H%M)"
+
+[root@vm-ossec01t ~]# tail /var/log/messages
+Nov  9 04:37:15 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.192, stratum 3
+Nov  9 04:38:55 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.197, stratum 3
+Nov  9 05:11:49 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.192, stratum 3
+Nov  9 09:12:09 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.194, stratum 3
+Nov  9 19:51:10 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.192, stratum 3
+Nov  9 21:43:36 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.193, stratum 3
+Nov 10 00:32:39 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.192, stratum 3
+Nov 10 04:14:39 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.194, stratum 3
+Nov 10 16:58:20 vm-ossec01t user_cmd: test message 20151110-1658
+Nov 10 16:59:24 vm-ossec01t user_cmd: test message 20151110-1659
+[root@vm-ossec01t ~]#
+
+
+[root@vm-ossec01t ~]# vim /etc/rsyslog.conf
+...
+# Include all config files in /etc/rsyslog.d/
+$IncludeConfig /etc/rsyslog.d/*.conf
+...
+# Save boot messages also to boot.log
+local7.*                                                /var/log/boot.log
+...
+
+
+[root@vm-ossec01t ~]# vim /etc/rsyslog.d/local1.conf
+# Save commands, executed by local users.
+local1.*        /var/log/commands.log
+
+
+[root@vm-ossec01t ~]# service rsyslog reload
+[root@vm-ossec01t ~]#
+
+[root@vm-ossec01t ~]# logger -p local1.notice -t user_cmd "test message $(date +%Y%m%d-%H%M)"
+[root@vm-ossec01t ~]#
+
+[root@vm-ossec01t ~]# service rsyslog restart
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+[root@vm-ossec01t ~]#
+
+[root@vm-ossec01t ~]# logger -p local1.notice -t user_cmd "test message $(date +%Y%m%d-%H%M)"
+[root@vm-ossec01t ~]# tail /var/log/messages
+Nov 10 00:32:39 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.192, stratum 3
+Nov 10 04:14:39 vm-ossec01t ntpd[16424]: synchronized to 172.20.16.194, stratum 3
+Nov 10 16:58:20 vm-ossec01t user_cmd: test message 20151110-1658
+Nov 10 16:59:24 vm-ossec01t user_cmd: test message 20151110-1659
+Nov 10 17:21:18 vm-ossec01t user_cmd: test message 20151110-1721
+Nov 10 17:23:01 vm-ossec01t kernel: Kernel logging (proc) stopped.
+Nov 10 17:23:01 vm-ossec01t rsyslogd: [origin software="rsyslogd" swVersion="5.8.10" x-pid="1307" x-info="http://www.rsyslog.com"] exiting on signal 15.
+Nov 10 17:23:01 vm-ossec01t kernel: imklog 5.8.10, log source = /proc/kmsg started.
+Nov 10 17:23:01 vm-ossec01t rsyslogd: [origin software="rsyslogd" swVersion="5.8.10" x-pid="13236" x-info="http://www.rsyslog.com"] start
+Nov 10 17:23:58 vm-ossec01t user_cmd: test message 20151110-1723
+[root@vm-ossec01t ~]# ls -Alh /var/log/c
+commands.log   cron           cron-20151018  cron-20151025  cron-20151101  cron-20151108  cups/
+[root@vm-ossec01t ~]# ls -Alh /var/log/c
+commands.log   cron           cron-20151018  cron-20151025  cron-20151101  cron-20151108  cups/
+[root@vm-ossec01t ~]# ls -Alh /var/log/commands.log
+-rw------- 1 root root 65 Nov 10 17:23 /var/log/commands.log
+[root@vm-ossec01t ~]# tail /var/log/commands.log
+Nov 10 17:23:58 vm-ossec01t user_cmd: test message 20151110-1723
+[root@vm-ossec01t ~]#
+
+# Log anything (except mail) of level info or higher.
+# Don't log private authentication messages!
+*.info;mail.none;authpriv.none;cron.none                /var/log/messages
+
+
+[root@vm-ossec01t ~]# logger -p local1.debug -t user_cmd "test message $(date +%Y%m%d-%H%M)"
+[root@vm-ossec01t ~]# tail -n 3 /var/log/messages
+Nov 10 17:23:01 vm-ossec01t kernel: imklog 5.8.10, log source = /proc/kmsg started.
+Nov 10 17:23:01 vm-ossec01t rsyslogd: [origin software="rsyslogd" swVersion="5.8.10" x-pid="13236" x-info="http://www.rsyslog.com"] start
+Nov 10 17:23:58 vm-ossec01t user_cmd: test message 20151110-1723
+[root@vm-ossec01t ~]# tail -n 3 /var/log/commands.log
+Nov 10 17:23:58 vm-ossec01t user_cmd: test message 20151110-1723
+Nov 10 17:32:11 vm-ossec01t user_cmd: test message 20151110-1732
+[root@vm-ossec01t ~]#
+
+
+................................................................................
+................................................................................
+
+[root@vm-ossec01t ~]# cat /etc/rsyslog.d/local1.conf
+# Save commands, executed by local users.
+local1.debug    /var/log/commands
+
+[root@vm-ossec01t ~]#
+
+[root@vm-ossec01t ~]# service rsyslog restart
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+[root@vm-ossec01t ~]#
+
+[root@vm-ossec01t ~]# tail /var/log/commands
+[root@vm-ossec01t ~]# logger -p local1.debug -t user_cmd "test message $(date +%Y%m%d-%H%M)"
+[root@vm-ossec01t ~]# tail /var/log/commands
+Nov 10 17:36:18 vm-ossec01t user_cmd: test message 20151110-1736
+[root@vm-ossec01t ~]# tail -n 5 /var/log/messages
+Nov 10 17:23:58 vm-ossec01t user_cmd: test message 20151110-1723
+Nov 10 17:35:36 vm-ossec01t kernel: Kernel logging (proc) stopped.
+Nov 10 17:35:36 vm-ossec01t rsyslogd: [origin software="rsyslogd" swVersion="5.8.10" x-pid="13236" x-info="http://www.rsyslog.com"] exiting on signal 15.
+Nov 10 17:35:37 vm-ossec01t kernel: imklog 5.8.10, log source = /proc/kmsg started.
+Nov 10 17:35:37 vm-ossec01t rsyslogd: [origin software="rsyslogd" swVersion="5.8.10" x-pid="13480" x-info="http://www.rsyslog.com"] start
+[root@vm-ossec01t ~]#
+
+[root@vm-ossec01t ~]# ls -Alh /var/log/commands
+-rw------- 1 root root 65 Nov 10 17:36 /var/log/commands
+[root@vm-ossec01t ~]#
+
+
+[root@vm-ossec01t ~]# cat /etc/logrotate.d/commands
+/var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+}
+[root@vm-ossec01t ~]#
+
+[root@vm-ossec01t ~]# logrotate -vf /etc/logrotate.d/commands
+reading config file /etc/logrotate.d/commands
+reading config info for /var/log/commands
+
+Handling 1 logs
+
+rotating pattern: /var/log/commands  forced from command line (31 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/commands
+  log does not need rotating
+[root@vm-ossec01t ~]# ls -Alh /var/log/commands*
+-rw------- 1 root root  0 Nov 10 17:51 /var/log/commands
+-rw------- 1 root root 65 Nov 10 17:36 /var/log/commands.1
+[root@vm-ossec01t ~]#
+
+
+[root@vm-ossec01t ~]# vim /etc/bashrc
+...
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+
+
+#   I was logged in with other ssh session.
+#   Then I start run different commands.
+#   After few seconds (about 30 or even less) I have started see records of my commands.
+#   One remark. Row of command writing to the file /var/log/commands, as I understand, only after command complete its execution.
+#   Here is one thought - if command hangs up server or never ends (become a zombee) - it will not be records to this file...
+#   Second thought is follow: the time "18:11" is time then I was logged in via ssh - I have seen it in /var/log/secure file.
+[root@vm-ossec01t ~]# tail -f /var/log/commands
+Nov 10 18:14:20 vm-ossec01t user_cmd: test message 20151110-1814
+Nov 10 18:14:27 vm-ossec01t user_cmd: 2015-11-10 18:12:52 tail /var/log/commands by root from [bsv  pts/1  2015-11-10  18:11  (tcs4500.tcsbank.ru)]
+Nov 10 18:15:32 vm-ossec01t user_cmd: 2015-11-10 18:15:32 ls -Alh /var/log/ by root from [bsv  pts/1  2015-11-10  18:11  (tcs4500.tcsbank.ru)]
+Nov 10 18:15:57 vm-ossec01t user_cmd: 2015-11-10 18:15:57 tail /var/log/commands by root from [bsv  pts/1  2015-11-10  18:11  (tcs4500.tcsbank.ru)]
+Nov 10 18:18:00 vm-ossec01t user_cmd: 2015-11-10 18:17:35 pstree -achplu | less by root from [bsv  pts/1  2015-11-10  18:11  (tcs4500.tcsbank.ru)]
+Nov 10 18:18:59 vm-ossec01t user_cmd: 2015-11-10 18:18:49 less /var/log/secure by root from [bsv  pts/1  2015-11-10  18:11  (tcs4500.tcsbank.ru)]
+...
+
+................................................................................
+................................................................................
+
+#   Follow output is just for examples of logrotate configuration.
+#
+[root@vm-ossec01t ~]# find /etc/logrotate.d/ -type f -exec echo \; -exec echo {} \; -exec cat {} \;
+
+/etc/logrotate.d/syslog
+/var/log/cron
+/var/log/maillog
+/var/log/messages
+/var/log/secure
+/var/log/spooler
+{
+    sharedscripts
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
+
+/etc/logrotate.d/httpd
+/var/log/httpd/*log {
+    missingok
+    notifempty
+    sharedscripts
+    delaycompress
+    postrotate
+        /sbin/service httpd reload > /dev/null 2>/dev/null || true
+    endscript
+}
+
+/etc/logrotate.d/puppet
+/var/log/puppet/*log {
+  missingok
+  notifempty
+  create 0644 puppet puppet
+  sharedscripts
+  postrotate
+    pkill -USR2 -u puppet -f 'puppet master' || true
+    [ -e /etc/init.d/puppet ] && /etc/init.d/puppet reload > /dev/null 2>&1 || true
+  endscript
+}
+
+/etc/logrotate.d/mysqld
+# This logname can be set in /etc/my.cnf
+# by setting the variable "err-log"
+# in the [safe_mysqld] section as follows:
+#
+# [safe_mysqld]
+# err-log=/var/log/mysqld.log
+#
+# If the root user has a password you have to create a
+# /root/.my.cnf configuration file with the following
+# content:
+#
+# [mysqladmin]
+# password = <secret>
+# user= root
+#
+# where "<secret>" is the password.
+#
+# ATTENTION: This /root/.my.cnf should be readable ONLY
+# for root !
+
+# Then, un-comment the following lines to enable rotation of mysql's log file:
+
+#/var/log/mysqld.log {
+#        create 640 mysql mysql
+#        notifempty
+#       daily
+#        rotate 3
+#        missingok
+#        compress
+#    postrotate
+#       # just if mysqld is really running
+#       if test -x /usr/bin/mysqladmin && \
+#          /usr/bin/mysqladmin ping &>/dev/null
+#       then
+#          /usr/bin/mysqladmin flush-logs
+#       fi
+#    endscript
+#}
+
+/etc/logrotate.d/cups
+/var/log/cups/*_log {
+    missingok
+    notifempty
+    sharedscripts
+}
+
+/etc/logrotate.d/ossec-hids
+/var/ossec/logs/active-responses.log {
+    missingok
+    notifempty
+}
+
+/var/ossec/logs/ossec.log {
+    create 0664 ossec ossec
+    missingok
+    notifempty
+}
+
+
+/etc/logrotate.d/dracut
+/var/log/dracut.log {
+    missingok
+    notifempty
+    size 30k
+    yearly
+    create 0600 root root
+}
+
+/etc/logrotate.d/psacct
+# Logrotate file for psacct RPM
+
+/var/account/pacct {
+#prerotate loses accounting records, let's no
+#   prerotate
+#       /usr/sbin/accton
+#   endscript
+    compress
+    delaycompress
+    notifempty
+    daily
+    rotate 31
+    create 0600 root root
+    postrotate
+       /usr/sbin/accton /var/account/pacct
+    endscript
+}
+
+/etc/logrotate.d/yum
+/var/log/yum.log {
+    missingok
+    notifempty
+    size 30k
+    yearly
+    create 0600 root root
+}
+
+/etc/logrotate.d/sssd
+/var/log/sssd/*.log {
+    weekly
+    missingok
+    notifempty
+    sharedscripts
+    rotate 2
+    compress
+    postrotate
+        /bin/kill -HUP `cat /var/run/sssd.pid  2>/dev/null`  2> /dev/null || true
+    endscript
+}
+
+/etc/logrotate.d/zabbix-agent
+/var/log/zabbix/zabbix_agentd.log {
+        missingok
+        monthly
+        notifempty
+        compress
+        create 0664 zabbix zabbix
+}
+[root@vm-ossec01t ~]#
+
+................................................................................
+................................................................................
+
+#   Here is testing implementation of commands logging that run by local user.
+
+[root@m1-gp-tst-smdw ~]# cat > /etc/rsyslog.d/local1.conf
+# Save commands, executed by local users.
+local1.debug    /var/log/commands
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# service rsyslog restart
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@m1-gp-tst-smdw ~]# tail -n 5 /var/log/messages
+Nov 10 18:42:40 m1-gp-tst-smdw puppet-agent[27414]: Finished catalog run in 23.37 seconds
+Nov 10 18:56:27 m1-gp-tst-smdw kernel: Kernel logging (proc) stopped.
+Nov 10 18:56:27 m1-gp-tst-smdw rsyslogd: [origin software="rsyslogd" swVersion="5.8.10" x-pid="2299" x-info="http://www.rsyslog.com"] exiting on signal 15.
+Nov 10 18:56:27 m1-gp-tst-smdw kernel: imklog 5.8.10, log source = /proc/kmsg started.
+Nov 10 18:56:27 m1-gp-tst-smdw rsyslogd: [origin software="rsyslogd" swVersion="5.8.10" x-pid="10469" x-info="http://www.rsyslog.com"] start
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@m1-gp-tst-smdw ~]# logger -p local1.debug -t user_cmd "test message $(date +%Y%m%d-%H%M)"
+[root@m1-gp-tst-smdw ~]# tail /var/log/commands
+Nov 10 18:57:33 m1-gp-tst-smdw user_cmd: test message 20151110-1857
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@m1-gp-tst-smdw ~]# cat > /etc/logrotate.d/commands
+var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+}
+[root@m1-gp-tst-smdw ~]#
+
+
+[root@m1-gp-tst-smdw ~]# vim /etc/bashrc
+...
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+...
+
+[root@m1-gp-tst-smdw ~]# tail -f /var/log/commands
+Nov 10 19:01:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:01  (mdw)]
+Nov 10 19:01:03 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:01  (mdw)]
+Nov 10 19:01:03 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:01  (mdw)]
+Nov 10 19:01:44 m1-gp-tst-smdw user_cmd: vim /etc/bashrc by root from [bsv  pts/0  2015-11-09  12:15  (tcs4500.tcsbank.ru)]
+Nov 10 19:01:54 m1-gp-tst-smdw user_cmd: tail /var/log/commands by root from [bsv  pts/0  2015-11-09  12:15  (tcs4500.tcsbank.ru)]
+Nov 10 19:02:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:02  (mdw)]
+Nov 10 19:02:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:02  (mdw)]
+Nov 10 19:02:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:02  (mdw)]
+Nov 10 19:02:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:02  (mdw)]
+Nov 10 19:02:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:02  (mdw)]
+Nov 10 19:03:01 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:03  (mdw)]
+Nov 10 19:03:01 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:03  (mdw)]
+Nov 10 19:03:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:03  (mdw)]
+Nov 10 19:03:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:03  (mdw)]
+Nov 10 19:03:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:03  (mdw)]
+Nov 10 19:04:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:04  (mdw)]
+Nov 10 19:04:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:04  (mdw)]
+Nov 10 19:04:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:04  (mdw)]
+Nov 10 19:04:02 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:04  (mdw)]
+Nov 10 19:04:03 m1-gp-tst-smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-10  19:04  (mdw)]
+^C
+[root@m1-gp-tst-smdw ~]#
+
+................................................................................
+................................................................................
+
+#   Wed Nov 11 14:39:20 MSK 2015
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw sdw{1..16} ; do scp /etc/rsyslog.d/local1.conf  ${var1}:/etc/rsyslog.d/ ; done
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+[root@m1-gp-tst-smdw ~]#
+
+#   Or manually for the first.
+[root@m1-gp-tst-smdw ~]# cat > /etc/rsyslog.d/local1.conf
+# Save commands, executed by local users.
+local1.debug    /var/log/commands
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; service rsyslog restart )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to mdw closed.
+m1-gp-tst-sdw1.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw1 closed.
+m1-gp-tst-sdw2.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw2 closed.
+m1-gp-tst-sdw3.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw3 closed.
+m1-gp-tst-sdw4.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw4 closed.
+m1-gp-tst-sdw5.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw5 closed.
+m1-gp-tst-sdw6.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw6 closed.
+m1-gp-tst-sdw7.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw7 closed.
+m1-gp-tst-sdw8.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw8 closed.
+m1-gp-tst-sdw9.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw9 closed.
+m1-gp-tst-sdw10.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw10 closed.
+m1-gp-tst-sdw11.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw11 closed.
+m1-gp-tst-sdw12.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw12 closed.
+m1-gp-tst-sdw13.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw13 closed.
+m1-gp-tst-sdw14.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw14 closed.
+m1-gp-tst-sdw15.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw15 closed.
+m1-gp-tst-sdw16.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw16 closed.
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; logger -p local1.debug -t user_cmd \"test message $(date +%Y%m%d-%H%M)\" ; tail -n 3 /var/log/commands )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+Nov 11 15:02:53 m1-gp-tst-mdw user_cmd: test message 20151111-1502
+Connection to mdw closed.
+m1-gp-tst-sdw1.tcsbank.ru
+Nov 11 15:02:53 m1-gp-tst-sdw1 user_cmd: test message 20151111-1502
+Connection to sdw1 closed.
+m1-gp-tst-sdw2.tcsbank.ru
+Nov 11 15:02:53 m1-gp-tst-sdw2 user_cmd: test message 20151111-1502
+Connection to sdw2 closed.
+m1-gp-tst-sdw3.tcsbank.ru
+Nov 11 15:02:53 m1-gp-tst-sdw3 user_cmd: test message 20151111-1502
+Connection to sdw3 closed.
+m1-gp-tst-sdw4.tcsbank.ru
+Nov 11 15:02:53 m1-gp-tst-sdw4 user_cmd: test message 20151111-1502
+Connection to sdw4 closed.
+m1-gp-tst-sdw5.tcsbank.ru
+Nov 11 15:02:53 m1-gp-tst-sdw5 user_cmd: test message 20151111-1502
+Connection to sdw5 closed.
+m1-gp-tst-sdw6.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw6 user_cmd: test message 20151111-1502
+Connection to sdw6 closed.
+m1-gp-tst-sdw7.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw7 user_cmd: test message 20151111-1502
+Connection to sdw7 closed.
+m1-gp-tst-sdw8.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw8 user_cmd: test message 20151111-1502
+Connection to sdw8 closed.
+m1-gp-tst-sdw9.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw9 user_cmd: test message 20151111-1502
+Connection to sdw9 closed.
+m1-gp-tst-sdw10.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw10 user_cmd: test message 20151111-1502
+Connection to sdw10 closed.
+m1-gp-tst-sdw11.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw11 user_cmd: test message 20151111-1502
+Connection to sdw11 closed.
+m1-gp-tst-sdw12.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw12 user_cmd: test message 20151111-1502
+Connection to sdw12 closed.
+m1-gp-tst-sdw13.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw13 user_cmd: test message 20151111-1502
+Connection to sdw13 closed.
+m1-gp-tst-sdw14.tcsbank.ru
+Nov 11 15:02:54 m1-gp-tst-sdw14 user_cmd: test message 20151111-1502
+Connection to sdw14 closed.
+m1-gp-tst-sdw15.tcsbank.ru
+Nov 11 15:02:55 m1-gp-tst-sdw15 user_cmd: test message 20151111-1502
+Connection to sdw15 closed.
+m1-gp-tst-sdw16.tcsbank.ru
+Nov 11 15:02:55 m1-gp-tst-sdw16 user_cmd: test message 20151111-1502
+Connection to sdw16 closed.
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw sdw{1..16} ; do scp /etc/logrotate.d/commands  ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+[root@m1-gp-tst-smdw ~]#
+
+#   Or manually for the first.
+[root@m1-gp-tst-smdw ~]# cat > /etc/logrotate.d/commands
+var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+}
+[root@m1-gp-tst-smdw ~]#
+
+    [root@m1-gp-tst-smdw ~]# string='export PROMPT_COMMAND=\\'msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"\\'' ; echo ${string} | for var1 in mdw ; do ssh -t ${var1} "( tee >> /tmp/test.tmp ; cat /tmp/test.tmp )" ; done
+    Pseudo-terminal will not be allocated because stdin is not a terminal.
+    string
+    string
+    export PROMPT_COMMAND=\\msg=string='export PROMPT_COMMAND=\'msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"\'' ; echo ${string} | for var1 in mdw ; do ssh -t ${var1} "( tee >> /tmp/test.tmp ; cat /tmp/test.tmp )" ; done
+    [root@m1-gp-tst-smdw ~]#
+
+#   Here is a method to pass line with lot of special characters to ssh session to add it into a file!
+#
+[root@m1-gp-tst-smdw ~]# cat | for var1 in mdw ; do ssh ${var1} "( tee > /tmp/test.tmp ; cat /tmp/test.tmp )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@m1-gp-tst-smdw ~]#
+#   But it doesn't work for several hosts...
+[root@m1-gp-tst-smdw ~]# cat | for var1 in mdw sdw{1..2} ; do ssh ${var1} "( tee > /tmp/test.tmp ; cat /tmp/test.tmp )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@m1-gp-tst-smdw ~]# ssh sdw1
+Last login: Wed Nov 11 15:02:53 2015 from smdw
+[root@m1-gp-tst-sdw1 ~]# cat /tmp/test.tmp
+[root@m1-gp-tst-sdw1 ~]# logout
+Connection to sdw1 closed.
+[root@m1-gp-tst-smdw ~]#
+
+#   But this method works! Tada!!! :-)
+#   One note - this method works only with one line. It's because read command works with one line - symbols CR/LF ends read process.
+[root@m1-gp-tst-smdw ~]# read string ; for var1 in mdw sdw{1..2} ; do echo ${string} | ssh ${var1} "( tee > /tmp/test.tmp ; cat /tmp/test.tmp )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@m1-gp-tst-smdw ~]#
+
+#   Here are lines ready to use.
+[root@m1-gp-tst-smdw ~]# read string ; for var1 in mdw ; do echo ${string} | ssh ${var1} "( tee >> /etc/bashrc ; tail -n 3 /etc/bashrc )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+fi
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# read string ; for var1 in sdw{1..16} ; do echo ${string} | ssh ${var1} "( tee >> /etc/bashrc ; tail -n 2 /etc/bashrc )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@m1-gp-tst-smdw ~]#
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; tail -n 3 /var/log/commands )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-mdw user_cmd: exit by gpadmin from [gpadmin  pts/20  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-mdw user_cmd: exit by gpadmin from [gpadmin  pts/20  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-mdw user_cmd: exit by gpadmin from [gpadmin  pts/20  2015-11-11  16:19  (mdw)]
+Connection to mdw closed.
+m1-gp-tst-sdw1.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw1 closed.
+m1-gp-tst-sdw2.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw2 closed.
+m1-gp-tst-sdw3.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw3 closed.
+m1-gp-tst-sdw4.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw4 closed.
+m1-gp-tst-sdw5.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw5 closed.
+m1-gp-tst-sdw6.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw6 closed.
+m1-gp-tst-sdw7.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw7 closed.
+m1-gp-tst-sdw8.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw8 closed.
+m1-gp-tst-sdw9.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw9 closed.
+m1-gp-tst-sdw10.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw10 closed.
+m1-gp-tst-sdw11.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw11 closed.
+m1-gp-tst-sdw12.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw12 closed.
+m1-gp-tst-sdw13.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw13 closed.
+m1-gp-tst-sdw14.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw14 closed.
+m1-gp-tst-sdw15.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw15 closed.
+m1-gp-tst-sdw16.tcsbank.ru
+Nov 11 16:19:02 m1-gp-tst-sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Nov 11 16:19:02 m1-gp-tst-sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  16:19  (mdw)]
+Connection to sdw16 closed.
+[root@m1-gp-tst-smdw ~]#
+
+
+................................................................................
+................................................................................
+
+
+[root@m1-gp-prd-smdw ~]# cat > /etc/rsyslog.d/local1.conf
+# Save commands, executed by local users.
+local1.debug    /var/log/commands
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw sdw{1..24} ; do scp /etc/rsyslog.d/local1.conf  ${var1}:/etc/rsyslog.d/ ; done
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; service rsyslog restart )" ; done
+m1-gp-prd-mdw
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to mdw closed.
+m1-gp-prd-smdw
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to smdw closed.
+m1-gp-prd-sdw1
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]#
+
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; logger -p local1.debug -t user_cmd \"test message $(date +%Y%m%d-%H%M)\" ; tail -n 2 /var/log/commands )" ; done
+m1-gp-prd-mdw
+Nov 11 17:21:25 mdw user_cmd: test message 20151111-1721
+Connection to mdw closed.
+m1-gp-prd-smdw
+Nov 11 17:21:26 smdw user_cmd: test message 20151111-1721
+Connection to smdw closed.
+m1-gp-prd-sdw1
+Nov 11 17:21:26 sdw1 user_cmd: test message 20151111-1721
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+Nov 11 17:21:26 sdw2 user_cmd: test message 20151111-1721
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+Nov 11 17:21:26 sdw3 user_cmd: test message 20151111-1721
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+Nov 11 17:21:26 sdw4 user_cmd: test message 20151111-1721
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+Nov 11 17:21:26 sdw5 user_cmd: test message 20151111-1721
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+Nov 11 17:21:26 sdw6 user_cmd: test message 20151111-1721
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+Nov 11 17:21:26 sdw7 user_cmd: test message 20151111-1721
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+Nov 11 17:21:27 sdw8 user_cmd: test message 20151111-1721
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+Nov 11 17:21:27 sdw9 user_cmd: test message 20151111-1721
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+Nov 11 17:21:27 sdw10 user_cmd: test message 20151111-1721
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+Nov 11 17:21:27 sdw11 user_cmd: test message 20151111-1721
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+Nov 11 17:21:27 sdw12 user_cmd: test message 20151111-1721
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+Nov 11 17:21:27 sdw13 user_cmd: test message 20151111-1721
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+Nov 11 17:21:28 sdw14 user_cmd: test message 20151111-1721
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+Nov 11 17:21:28 sdw15 user_cmd: test message 20151111-1721
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+Nov 11 17:21:28 sdw16 user_cmd: test message 20151111-1721
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+Nov 11 17:21:28 sdw17 user_cmd: test message 20151111-1721
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+Nov 11 17:21:28 sdw18 user_cmd: test message 20151111-1721
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+Nov 11 17:21:28 sdw19 user_cmd: test message 20151111-1721
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+Nov 11 17:21:28 sdw20 user_cmd: test message 20151111-1721
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+Nov 11 17:21:28 sdw21 user_cmd: test message 20151111-1721
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+Nov 11 17:21:29 sdw22 user_cmd: test message 20151111-1721
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+Nov 11 17:21:29 sdw23 user_cmd: test message 20151111-1721
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+Nov 11 17:21:29 sdw24 user_cmd: test message 20151111-1721
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# cat > /etc/logrotate.d/commands
+var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+}
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw sdw{1..24} ; do scp /etc/logrotate.d/commands  ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# string="$(cat)" ; for var1 in mdw smdw sdw{1..24} ; do echo ${string} | ssh ${var1} "( tee >> /etc/bashrc ; hostname ; tail -n 2 /etc/bashrc )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-mdw
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-smdw
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw1
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw2
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw3
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw4
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw5
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw6
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw7
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw8
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw9
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw10
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw11
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw12
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw13
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw14
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw15
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw16
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw17
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw18
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw19
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw20
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw21
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw22
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw23
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+m1-gp-prd-sdw24
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; tail -n 3 /var/log/commands )" ; done
+m1-gp-prd-mdw
+Nov 11 17:30:03 mdw user_cmd: exit by gpadmin from [gpadmin  pts/82  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:03 mdw user_cmd: exit by gpadmin from [gpadmin  pts/81  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:03 mdw user_cmd: exit by gpadmin from [gpadmin  pts/82  2015-11-11  17:30  (mdw)]
+Connection to mdw closed.
+m1-gp-prd-smdw
+Nov 11 17:30:03 smdw user_cmd: exit by gpadmin from [gpadmin  pts/2  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:03 smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:03 smdw user_cmd: exit by gpadmin from [gpadmin  pts/2  2015-11-11  17:30  (mdw)]
+Connection to smdw closed.
+m1-gp-prd-sdw1
+Nov 11 17:30:50 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+Nov 11 17:30:50 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+Nov 11 17:30:50 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+Nov 11 17:30:50 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+Nov 11 17:30:50 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+Nov 11 17:30:50 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+Nov 11 17:30:50 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+Nov 11 17:30:50 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+Nov 11 17:30:50 sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+Nov 11 17:30:50 sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+Nov 11 17:30:50 sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+Nov 11 17:30:50 sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+Nov 11 17:30:50 sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+Nov 11 17:30:50 sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+Nov 11 17:30:50 sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+Nov 11 17:30:50 sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+Nov 11 17:30:50 sdw17 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw17 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw17 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+Nov 11 17:30:50 sdw18 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw18 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw18 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+Nov 11 17:30:50 sdw19 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw19 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw19 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+Nov 11 17:30:50 sdw20 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw20 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw20 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+Nov 11 17:30:50 sdw21 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw21 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw21 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+Nov 11 17:30:50 sdw22 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw22 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw22 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+Nov 11 17:30:50 sdw23 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw23 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw23 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+Nov 11 17:30:50 sdw24 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw24 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Nov 11 17:30:50 sdw24 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:30  (mdw)]
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+#   Here is how it was configured on ds-gp-dev contour.
+[root@ds-gp-dev-mdw ~]# cat > /etc/rsyslog.d/local1.conf
+# Save commands, executed by local users.
+local1.debug    /var/log/commands
+[root@ds-gp-dev-mdw ~]# for var1 in mdw sdw{1..8} ; do scp /etc/rsyslog.d/local1.conf  ${var1}:/etc/rsyslog.d/ ; done
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+[root@ds-gp-dev-mdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; service rsyslog restart )" ; done
+ds-gp-dev-mdw
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to mdw closed.
+ds-gp-dev-smdw
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to smdw closed.
+ds-gp-dev-sdw1
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw1 closed.
+ds-gp-dev-sdw2
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw2 closed.
+ds-gp-dev-sdw3
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw3 closed.
+ds-gp-dev-sdw4
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw4 closed.
+ds-gp-dev-sdw5
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw5 closed.
+ds-gp-dev-sdw6
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw6 closed.
+ds-gp-dev-sdw7
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw7 closed.
+ds-gp-dev-sdw8
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw8 closed.
+[root@ds-gp-dev-mdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; logger -p local1.debug -t user_cmd \"test message $(date +%Y%m%d-%H%M)\" ; tail -n 2 /var/log/commands )" ; done
+ds-gp-dev-mdw
+Nov 11 17:38:25 mdw user_cmd: test message 20151111-1738
+Connection to mdw closed.
+ds-gp-dev-smdw
+tail: cannot open `/var/log/commands' for reading: No such file or directory
+Connection to smdw closed.
+ds-gp-dev-sdw1
+Nov 11 17:38:26 sdw1 user_cmd: test message 20151111-1738
+Connection to sdw1 closed.
+ds-gp-dev-sdw2
+Nov 11 17:38:26 sdw2 user_cmd: test message 20151111-1738
+Connection to sdw2 closed.
+ds-gp-dev-sdw3
+Nov 11 17:38:26 sdw3 user_cmd: test message 20151111-1738
+Connection to sdw3 closed.
+ds-gp-dev-sdw4
+Nov 11 17:38:26 sdw4 user_cmd: test message 20151111-1738
+Connection to sdw4 closed.
+ds-gp-dev-sdw5
+Nov 11 17:38:27 sdw5 user_cmd: test message 20151111-1738
+Connection to sdw5 closed.
+ds-gp-dev-sdw6
+Nov 11 17:38:27 sdw6 user_cmd: test message 20151111-1738
+Connection to sdw6 closed.
+ds-gp-dev-sdw7
+Nov 11 17:38:27 sdw7 user_cmd: test message 20151111-1738
+Connection to sdw7 closed.
+ds-gp-dev-sdw8
+Nov 11 17:38:27 sdw8 user_cmd: test message 20151111-1738
+Connection to sdw8 closed.
+[root@ds-gp-dev-mdw ~]# ls -Alh /var/log/commands ; cat /var/log/commands
+-rw------- 1 root root 57 Nov 11 17:38 /var/log/commands
+Nov 11 17:38:25 mdw user_cmd: test message 20151111-1738
+[root@ds-gp-dev-mdw ~]# for var1 in smdw ; do scp /etc/rsyslog.d/local1.conf  ${var1}:/etc/rsyslog.d/ ; done
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+[root@ds-gp-dev-mdw ~]# logout
+Connection to mdw closed.
+[root@ds-gp-dev-smdw ~]# logger -p local1.debug -t user_cmd \"test message $(date +%Y%m%d-%H%M)\" ; tail -n 2 /var/log/commands
+tail: cannot open `/var/log/commands' for reading: No such file or directory
+[root@ds-gp-dev-smdw ~]# service rsyslog restart
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+[root@ds-gp-dev-smdw ~]# logger -p local1.debug -t user_cmd \"test message $(date +%Y%m%d-%H%M)\" ; tail -n 2 /var/log/commands
+Nov 11 17:41:40 smdw user_cmd: "test message 20151111-1741"
+[root@ds-gp-dev-smdw ~]#
+[root@ds-gp-dev-smdw ~]# cat > /etc/logrotate.d/commands
+var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+}
+[root@ds-gp-dev-smdw ~]# for var1 in mdw sdw{1..8} ; do scp /etc/logrotate.d/commands  ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+[root@ds-gp-dev-smdw ~]# string="$(cat)" ; for var1 in mdw smdw sdw{1..8} ; do echo ${string} | ssh ${var1} "( tee >> /etc/bashrc ; hostname ; tail -n 2 /etc/bashrc )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-mdw
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-smdw
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw1
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw2
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw3
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw4
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw5
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw6
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw7
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-dev-sdw8
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@ds-gp-dev-smdw ~]#
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; tail -n 3 /var/log/commands )" ; done
+ds-gp-dev-mdw
+Nov 11 17:47:02 mdw user_cmd: exit by gpadmin from [gpadmin  pts/15  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 mdw user_cmd: exit by gpadmin from [gpadmin  pts/15  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 mdw user_cmd: exit by gpadmin from [gpadmin  pts/15  2015-11-11  17:47  (mdw)]
+Connection to mdw closed.
+ds-gp-dev-smdw
+Nov 11 17:47:02 smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 smdw user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:47  (mdw)]
+Connection to smdw closed.
+ds-gp-dev-sdw1
+Nov 11 17:47:03 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:03 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:03 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/1  2015-11-11  17:47  (mdw)]
+Connection to sdw1 closed.
+ds-gp-dev-sdw2
+Nov 11 17:47:03 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:03 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:03 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Connection to sdw2 closed.
+ds-gp-dev-sdw3
+Nov 11 17:47:02 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Connection to sdw3 closed.
+ds-gp-dev-sdw4
+Nov 11 17:47:02 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Connection to sdw4 closed.
+ds-gp-dev-sdw5
+Nov 11 17:47:04 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:04 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:04 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Connection to sdw5 closed.
+ds-gp-dev-sdw6
+Nov 11 17:47:04 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:04 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:04 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Connection to sdw6 closed.
+ds-gp-dev-sdw7
+Nov 11 17:47:02 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:02 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Connection to sdw7 closed.
+ds-gp-dev-sdw8
+Nov 11 17:47:03 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:03 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Nov 11 17:47:03 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:47  (mdw)]
+Connection to sdw8 closed.
+[root@ds-gp-dev-smdw ~]#
+
+
+................................................................................
+................................................................................
+................................................................................
+
+#   Here is how it was configured on ds-gp-prd contour.
+[root@ds-gp-prd-smdw ~]# cat > /etc/rsyslog.d/local1.conf
+# Save commands, executed by local users.
+local1.debug    /var/log/commands
+[root@ds-gp-prd-smdw ~]# for var1 in mdw sdw{1..24} ; do scp /etc/rsyslog.d/local1.conf  ${var1}:/etc/rsyslog.d/ ; done
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+local1.conf                                                                                                                                                                                                                                100%   76     0.1KB/s   00:00
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; service rsyslog restart )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to mdw closed.
+ds-gp-prd-smdw.tcsbank.ru
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to smdw closed.
+ds-gp-prd-sdw1
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; logger -p local1.debug -t user_cmd \"test message $(date +%Y%m%d-%H%M)\" ; tail -n 2 /var/log/commands )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+Nov 11 17:54:51 ds-gp-prd-mdw user_cmd: test message 20151111-1754
+Connection to mdw closed.
+ds-gp-prd-smdw.tcsbank.ru
+Nov 11 17:54:51 ds-gp-prd-smdw user_cmd: test message 20151111-1754
+Connection to smdw closed.
+ds-gp-prd-sdw1
+Nov 11 17:54:51 sdw1 user_cmd: test message 20151111-1754
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+Nov 11 17:54:51 sdw2 user_cmd: test message 20151111-1754
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+Nov 11 17:54:51 sdw3 user_cmd: test message 20151111-1754
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+Nov 11 17:54:51 sdw4 user_cmd: test message 20151111-1754
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+Nov 11 17:54:51 sdw5 user_cmd: test message 20151111-1754
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+Nov 11 17:54:52 sdw6 user_cmd: test message 20151111-1754
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+Nov 11 17:54:52 sdw7 user_cmd: test message 20151111-1754
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+Nov 11 17:54:52 sdw8 user_cmd: test message 20151111-1754
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+Nov 11 17:54:52 sdw9 user_cmd: test message 20151111-1754
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+Nov 11 17:54:52 sdw10 user_cmd: test message 20151111-1754
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+Nov 11 17:54:52 sdw11 user_cmd: test message 20151111-1754
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+Nov 11 17:54:52 sdw12 user_cmd: test message 20151111-1754
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+Nov 11 17:54:52 sdw13 user_cmd: test message 20151111-1754
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+Nov 11 17:54:52 sdw14 user_cmd: test message 20151111-1754
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+Nov 11 17:54:52 sdw15 user_cmd: test message 20151111-1754
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+Nov 11 17:54:53 sdw16 user_cmd: test message 20151111-1754
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+Nov 11 17:54:53 sdw17 user_cmd: test message 20151111-1754
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+Nov 11 17:54:53 sdw18 user_cmd: test message 20151111-1754
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+Nov 11 17:54:53 sdw19 user_cmd: test message 20151111-1754
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+Nov 11 17:54:53 sdw20 user_cmd: test message 20151111-1754
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+Nov 11 17:54:53 sdw21 user_cmd: test message 20151111-1754
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+Nov 11 17:54:53 sdw22 user_cmd: test message 20151111-1754
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+Nov 11 17:54:53 sdw23 user_cmd: test message 20151111-1754
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+Nov 11 17:54:53 sdw24 user_cmd: test message 20151111-1754
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]# cat > /etc/logrotate.d/commands
+var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+}
+[root@ds-gp-prd-smdw ~]# for var1 in mdw sdw{1..24} ; do scp /etc/logrotate.d/commands  ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+commands                                                                                                                                                                                                                                   100%  167     0.2KB/s   00:00
+[root@ds-gp-prd-smdw ~]# string="$(cat)" ; for var1 in mdw smdw sdw{1..24} ; do echo ${string} | ssh ${var1} "( tee >> /etc/bashrc ; hostname ; tail -n 2 /etc/bashrc )" ; done
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-mdw.tcsbank.ru
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-smdw.tcsbank.ru
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw1
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw2
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw3
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw4
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw5
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw6
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw7
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw8
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw9
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw10
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw11
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw12
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw13
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw14
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw15
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw16
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw17
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw18
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw19
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw20
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw21
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw22
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw23
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+ds-gp-prd-sdw24
+# vim:ts=4:sw=4
+export PROMPT_COMMAND='msg=$(history 1 | { read x y; echo $y; });user=$(whoami);loginuser=$( who -m | column -t ); logger -p local1.debug -t user_cmd "${msg} by ${user} from [$loginuser]"'
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; tail -n 3 /var/log/commands )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+Nov 11 17:54:51 ds-gp-prd-mdw user_cmd: test message 20151111-1754
+Connection to mdw closed.
+ds-gp-prd-smdw.tcsbank.ru
+Nov 11 17:54:51 ds-gp-prd-smdw user_cmd: test message 20151111-1754
+Connection to smdw closed.
+ds-gp-prd-sdw1
+Nov 11 17:56:33 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw1 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+Nov 11 17:56:33 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (10.216.2.111)]
+Nov 11 17:56:33 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (10.216.2.111)]
+Nov 11 17:56:33 sdw2 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (10.216.2.111)]
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+Nov 11 17:56:33 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw3 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+Nov 11 17:56:33 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw4 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+Nov 11 17:56:33 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw5 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+Nov 11 17:56:33 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw6 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+Nov 11 17:56:33 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw7 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+Nov 11 17:56:33 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw8 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+Nov 11 17:56:33 sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw9 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+Nov 11 17:56:33 sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw10 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+Nov 11 17:56:33 sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw11 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+Nov 11 17:56:33 sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw12 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+Nov 11 17:56:33 sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw13 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+Nov 11 17:56:33 sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw14 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+Nov 11 17:56:33 sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw15 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+Nov 11 17:56:33 sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw16 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+Nov 11 17:56:33 sdw17 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw17 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw17 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+Nov 11 17:56:33 sdw18 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw18 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw18 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+Nov 11 17:56:33 sdw19 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw19 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw19 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+Nov 11 17:56:33 sdw20 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw20 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw20 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+Nov 11 17:56:33 sdw21 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw21 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw21 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+Nov 11 17:56:33 sdw22 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw22 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw22 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+Nov 11 17:56:33 sdw23 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw23 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw23 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+Nov 11 17:56:33 sdw24 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw24 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Nov 11 17:56:33 sdw24 user_cmd: exit by gpadmin from [gpadmin  pts/0  2015-11-11  17:56  (mdw)]
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+................................................................................
+................................................................................
+
+#   Thu Jan 14 17:42:49 MSK 2016
+#   Found troubles - log files are growing and not rotating...
+#   That's because it's busy by some process...
+#   I think it should be use option "copytruncate" in their configuragion files.
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; ls -Alh /var/log/commands* )" ; done
+ds-gp-prd-mdw.tcsbank.ru
+-rw------- 1 root root 26M Jan 14 17:45 /var/log/commands
+Connection to mdw closed.
+ds-gp-prd-smdw.tcsbank.ru
+-rw------- 1 root root 26M Jan 14 17:45 /var/log/commands
+Connection to smdw closed.
+ds-gp-prd-sdw1
+-rw------- 1 root root 132K Jan 14 17:45 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:38 /var/log/commands.1
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+-rw------- 1 root root    0 Jan 14 03:39 /var/log/commands
+-rw------- 1 root root 904M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+-rw------- 1 root root    0 Jan 14 03:13 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+-rw------- 1 root root    0 Jan 14 03:32 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+-rw------- 1 root root    0 Jan 14 03:26 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+-rw------- 1 root root    0 Jan 14 03:17 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+-rw------- 1 root root    0 Jan 14 03:21 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+-rw------- 1 root root    0 Jan 14 03:33 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+-rw------- 1 root root    0 Jan 14 03:11 /var/log/commands
+-rw------- 1 root root 838M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+-rw------- 1 root root    0 Jan 14 03:20 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+-rw------- 1 root root    0 Jan 14 03:28 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+-rw------- 1 root root    0 Jan 14 03:42 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+-rw------- 1 root root    0 Jan 14 03:07 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+-rw------- 1 root root    0 Jan 14 03:34 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+-rw------- 1 root root    0 Jan 14 03:37 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+-rw------- 1 root root    0 Jan 14 03:33 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+-rw------- 1 root root    0 Jan 14 03:14 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+-rw------- 1 root root    0 Jan 14 03:36 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+-rw------- 1 root root    0 Jan 14 03:46 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+-rw------- 1 root root    0 Jan 14 03:46 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+-rw------- 1 root root    0 Jan 14 03:46 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+-rw------- 1 root root    0 Jan 14 03:07 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+-rw------- 1 root root    0 Jan 14 03:22 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+-rw------- 1 root root    0 Jan 14 03:27 /var/log/commands
+-rw------- 1 root root 845M Jan 14 17:45 /var/log/commands-20160114
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]#
+
+#   To release old files and start use new one it shoud be restarted rsyslog service.
+
+[root@ds-gp-prd-smdw ~]# for var1 in sdw{1..24} ; do ssh -t ${var1} "( hostname ; service rsyslog restart )" ; done
+ds-gp-prd-sdw1
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw1 closed.
+ds-gp-prd-sdw2
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw2 closed.
+ds-gp-prd-sdw3
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw3 closed.
+ds-gp-prd-sdw4
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw4 closed.
+ds-gp-prd-sdw5
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw5 closed.
+ds-gp-prd-sdw6
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw6 closed.
+ds-gp-prd-sdw7
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw7 closed.
+ds-gp-prd-sdw8
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw8 closed.
+ds-gp-prd-sdw9
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw9 closed.
+ds-gp-prd-sdw10
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw10 closed.
+ds-gp-prd-sdw11
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw11 closed.
+ds-gp-prd-sdw12
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw12 closed.
+ds-gp-prd-sdw13
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw13 closed.
+ds-gp-prd-sdw14
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw14 closed.
+ds-gp-prd-sdw15
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw15 closed.
+ds-gp-prd-sdw16
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw16 closed.
+ds-gp-prd-sdw17
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw17 closed.
+ds-gp-prd-sdw18
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw18 closed.
+ds-gp-prd-sdw19
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw19 closed.
+ds-gp-prd-sdw20
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw20 closed.
+ds-gp-prd-sdw21
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw21 closed.
+ds-gp-prd-sdw22
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw22 closed.
+ds-gp-prd-sdw23
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw23 closed.
+ds-gp-prd-sdw24
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw24 closed.
+[root@ds-gp-prd-smdw ~]#
+
+
+#   Option "copytruncate" was added.
+[root@ds-gp-prd-smdw ~]# cat /etc/logrotate.d/commands
+/var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+        copytruncate
+}
+[root@ds-gp-prd-smdw ~]#
+
+
+[root@ds-gp-prd-smdw ~]# for var1 in mdw sdw{1..24} ; do scp /etc/logrotate.d/commands ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+[root@ds-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@ds-gp-dev-smdw ~]# for var1 in mdw smdw sdw{1..8} ; do ssh -t ${var1} "( hostname ; ls -Alh /var/log/commands* )" ; done
+ds-gp-dev-mdw
+-rw------- 1 root root 53M Jan 14 17:54 /var/log/commands
+Connection to mdw closed.
+ds-gp-dev-smdw
+-rw------- 1 root root 53M Jan 14 17:54 /var/log/commands
+Connection to smdw closed.
+ds-gp-dev-sdw1
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw1 closed.
+ds-gp-dev-sdw2
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw2 closed.
+ds-gp-dev-sdw3
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw3 closed.
+ds-gp-dev-sdw4
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw4 closed.
+ds-gp-dev-sdw5
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw5 closed.
+ds-gp-dev-sdw6
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw6 closed.
+ds-gp-dev-sdw7
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw7 closed.
+ds-gp-dev-sdw8
+-rw------- 1 root root 54M Jan 14 17:54 /var/log/commands
+Connection to sdw8 closed.
+[root@ds-gp-dev-smdw ~]#
+
+[root@ds-gp-dev-smdw ~]# logrotate -v /etc/logrotate.d/commands
+reading config file /etc/logrotate.d/commands
+reading config info for /var/log/commands
+
+Handling 1 logs
+
+rotating pattern: /var/log/commands  104857600 bytes (31 rotations)
+empty log files are not rotated, old logs are removed
+considering log /var/log/commands
+  log does not need rotating
+[root@ds-gp-dev-smdw ~]# for var1 in mdw sdw{1..8} ; do scp /etc/logrotate.d/commands ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+[root@ds-gp-dev-smdw ~]#
+
+................................................................................
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; ls -Alh /var/log/commands* )" ; done
+m1-gp-prd-mdw
+-rw------- 1 root root 24M Jan 14 18:00 /var/log/commands
+Connection to mdw closed.
+m1-gp-prd-smdw
+-rw------- 1 root root 24M Jan 14 18:00 /var/log/commands
+Connection to smdw closed.
+m1-gp-prd-sdw1
+-rw------- 1 root root    0 Jan 14 03:49 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+-rw------- 1 root root    0 Jan 14 03:48 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+-rw------- 1 root root    0 Jan 14 03:20 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+-rw------- 1 root root    0 Jan 14 03:16 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+-rw------- 1 root root    0 Jan 14 03:47 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+-rw------- 1 root root    0 Jan 14 03:12 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+-rw------- 1 root root    0 Jan 14 03:20 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+-rw------- 1 root root    0 Jan 14 03:07 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+-rw------- 1 root root    0 Jan 14 03:35 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+-rw------- 1 root root    0 Jan 14 03:47 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+-rw------- 1 root root    0 Jan 14 03:33 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+-rw------- 1 root root    0 Jan 14 03:31 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+-rw------- 1 root root    0 Jan 14 03:30 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+-rw------- 1 root root    0 Jan 14 03:15 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+-rw------- 1 root root    0 Jan 14 03:12 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+-rw------- 1 root root    0 Jan 14 03:08 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+-rw------- 1 root root    0 Jan 14 03:40 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+-rw------- 1 root root    0 Jan 14 03:50 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+-rw------- 1 root root    0 Jan 14 03:42 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+-rw------- 1 root root    0 Jan 14 03:35 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+-rw------- 1 root root    0 Jan 14 03:48 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+-rw------- 1 root root    0 Jan 14 03:25 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+-rw------- 1 root root    0 Jan 14 03:47 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+-rw------- 1 root root    0 Jan 14 03:40 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]#
+
+
+[root@m1-gp-prd-smdw ~]# for var1 in sdw{1..24} ; do ssh -t ${var1} "( hostname ; service rsyslog restart )" ; done
+m1-gp-prd-sdw1
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+Shutting down system logger:                               [  OK  ]
+Starting system logger:                                    [  OK  ]
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]#
+
+[root@m1-gp-prd-smdw ~]# for var1 in mdw sdw{1..24} ; do scp /etc/logrotate.d/commands ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+[root@m1-gp-prd-smdw ~]# for var1 in mdw smdw sdw{1..24} ; do ssh -t ${var1} "( hostname ; ls -Alh /var/log/commands* )" ; done
+m1-gp-prd-mdw
+-rw------- 1 root root 24M Jan 14 18:02 /var/log/commands
+Connection to mdw closed.
+m1-gp-prd-smdw
+-rw------- 1 root root 24M Jan 14 18:02 /var/log/commands
+Connection to smdw closed.
+m1-gp-prd-sdw1
+-rw------- 1 root root 9.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:00 /var/log/commands-20160114
+Connection to sdw1 closed.
+m1-gp-prd-sdw2
+-rw------- 1 root root 9.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw2 closed.
+m1-gp-prd-sdw3
+-rw------- 1 root root 9.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw3 closed.
+m1-gp-prd-sdw4
+-rw------- 1 root root 9.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw4 closed.
+m1-gp-prd-sdw5
+-rw------- 1 root root 9.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw5 closed.
+m1-gp-prd-sdw6
+-rw------- 1 root root 9.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw6 closed.
+m1-gp-prd-sdw7
+-rw------- 1 root root 8.8K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw7 closed.
+m1-gp-prd-sdw8
+-rw------- 1 root root 8.6K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw8 closed.
+m1-gp-prd-sdw9
+-rw------- 1 root root 8.5K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 816M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw9 closed.
+m1-gp-prd-sdw10
+-rw------- 1 root root 8.4K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw10 closed.
+m1-gp-prd-sdw11
+-rw------- 1 root root 8.3K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw11 closed.
+m1-gp-prd-sdw12
+-rw------- 1 root root 8.1K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw12 closed.
+m1-gp-prd-sdw13
+-rw------- 1 root root 8.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw13 closed.
+m1-gp-prd-sdw14
+-rw------- 1 root root 7.9K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw14 closed.
+m1-gp-prd-sdw15
+-rw------- 1 root root 7.8K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw15 closed.
+m1-gp-prd-sdw16
+-rw------- 1 root root 7.5K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw16 closed.
+m1-gp-prd-sdw17
+-rw------- 1 root root 7.4K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw17 closed.
+m1-gp-prd-sdw18
+-rw------- 1 root root 7.2K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw18 closed.
+m1-gp-prd-sdw19
+-rw------- 1 root root 7.0K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw19 closed.
+m1-gp-prd-sdw20
+-rw------- 1 root root 6.8K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw20 closed.
+m1-gp-prd-sdw21
+-rw------- 1 root root 6.6K Jan 14 18:02 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw21 closed.
+m1-gp-prd-sdw22
+-rw------- 1 root root 6.6K Jan 14 18:03 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw22 closed.
+m1-gp-prd-sdw23
+-rw------- 1 root root 6.5K Jan 14 18:03 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw23 closed.
+m1-gp-prd-sdw24
+-rw------- 1 root root 6.5K Jan 14 18:03 /var/log/commands
+-rw------- 1 root root 823M Jan 14 18:01 /var/log/commands-20160114
+Connection to sdw24 closed.
+[root@m1-gp-prd-smdw ~]#
+
+................................................................................
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw smdw sdw{1..16} ; do ssh -t ${var1} "( hostname ; ls -Alh /var/log/commands* )" ; done
+m1-gp-tst-mdw.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to mdw closed.
+m1-gp-tst-smdw.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to smdw closed.
+m1-gp-tst-sdw1.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw1 closed.
+m1-gp-tst-sdw2.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw2 closed.
+m1-gp-tst-sdw3.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw3 closed.
+m1-gp-tst-sdw4.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw4 closed.
+m1-gp-tst-sdw5.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw5 closed.
+m1-gp-tst-sdw6.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw6 closed.
+m1-gp-tst-sdw7.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw7 closed.
+m1-gp-tst-sdw8.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw8 closed.
+m1-gp-tst-sdw9.tcsbank.ru
+-rw------- 1 root root 58M Jan 14 18:04 /var/log/commands
+Connection to sdw9 closed.
+m1-gp-tst-sdw10.tcsbank.ru
+-rw------- 1 root root 59M Jan 14 18:04 /var/log/commands
+Connection to sdw10 closed.
+m1-gp-tst-sdw11.tcsbank.ru
+-rw------- 1 root root 59M Jan 14 18:04 /var/log/commands
+Connection to sdw11 closed.
+m1-gp-tst-sdw12.tcsbank.ru
+-rw------- 1 root root 59M Jan 14 18:04 /var/log/commands
+Connection to sdw12 closed.
+m1-gp-tst-sdw13.tcsbank.ru
+-rw------- 1 root root 59M Jan 14 18:04 /var/log/commands
+Connection to sdw13 closed.
+m1-gp-tst-sdw14.tcsbank.ru
+-rw------- 1 root root 59M Jan 14 18:04 /var/log/commands
+Connection to sdw14 closed.
+m1-gp-tst-sdw15.tcsbank.ru
+-rw------- 1 root root 59M Jan 14 18:04 /var/log/commands
+Connection to sdw15 closed.
+m1-gp-tst-sdw16.tcsbank.ru
+-rw------- 1 root root 59M Jan 14 18:04 /var/log/commands
+Connection to sdw16 closed.
+[root@m1-gp-tst-smdw ~]# vim /etc/logrotate.d/commands
+
+/var/log/commands {
+        compress
+        delaycompress
+        notifempty
+        rotate 31
+        create 0600 root root
+        size 100M
+        sharedscripts
+        copytruncate
+}
+
+
+[root@m1-gp-tst-smdw ~]# for var1 in mdw sdw{1..16} ; do scp /etc/logrotate.d/commands ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+[root@m1-gp-tst-smdw ~]#
+
+................................................................................
+
+[root@m1-hadoop-cs01t ~]# for var1 in m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do scp /etc/logrotate.d/commands  ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+[root@m1-hadoop-cs01t ~]#
+
+[root@m1-hadoop-cs01t ~]# for var1 in m1-hadoop-wk0{1..9}t m1-hadoop-wk10t ; do ssh -t ${var1} "( hostname ; ls -Alh /var/log/command* )" ; done
+m1-hadoop-wk01t.tcsbank.ru
+-rw------- 1 root root 309K Jan 11 19:52 /var/log/commands
+Connection to m1-hadoop-wk01t closed.
+m1-hadoop-wk02t.tcsbank.ru
+-rw------- 1 root root 20K Dec  4 14:50 /var/log/commands
+Connection to m1-hadoop-wk02t closed.
+m1-hadoop-wk03t.tcsbank.ru
+-rw------- 1 root root 26K Dec  4 15:11 /var/log/commands
+Connection to m1-hadoop-wk03t closed.
+m1-hadoop-wk04t.tcsbank.ru
+-rw------- 1 root root 13K Dec  4 15:17 /var/log/commands
+Connection to m1-hadoop-wk04t closed.
+m1-hadoop-wk05t
+-rw------- 1 root root 12K Dec 25 12:43 /var/log/commands
+Connection to m1-hadoop-wk05t closed.
+m1-hadoop-wk06t
+-rw------- 1 root root 18K Dec  4 15:30 /var/log/commands
+Connection to m1-hadoop-wk06t closed.
+m1-hadoop-wk07t.tcsbank.ru
+-rw------- 1 root root 7.0K Dec  4 16:00 /var/log/commands
+Connection to m1-hadoop-wk07t closed.
+m1-hadoop-wk08t.tcsbank.ru
+-rw------- 1 root root 5.6K Dec  4 15:37 /var/log/commands
+Connection to m1-hadoop-wk08t closed.
+m1-hadoop-wk09t.tcsbank.ru
+-rw------- 1 root root 5.9K Jan 13 12:52 /var/log/commands
+Connection to m1-hadoop-wk09t closed.
+m1-hadoop-wk10t.tcsbank.ru
+-rw------- 1 root root 8.8K Dec  4 15:40 /var/log/commands
+Connection to m1-hadoop-wk10t closed.
+[root@m1-hadoop-cs01t ~]#
+
+................................................................................
+
+
+[support@centos00 ~]$ SSHPASS="$(pass common/linux)" sshpass -e ssh -t -oStrictHostKeyChecking=no bsv@ds-hadoop-cs01p
+
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs02p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do scp /etc/logrotate.d/commands  ${var1}:/etc/logrotate.d/ ; done
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+commands                                                                                                                                                                 100%  182     0.2KB/s   00:00
+[root@ds-hadoop-cs01p ~]#
+
+[root@ds-hadoop-cs01p ~]# for var1 in ds-hadoop-cs02p ds-hadoop-wk0{1..9}p ds-hadoop-wk{10..20}p ; do ssh -t ${var1} "( hostname ; ls -Alh /var/log/command* )" ; done
+ds-hadoop-cs02p
+-rw------- 1 root root 6.7K Dec 30 11:48 /var/log/commands
+Connection to ds-hadoop-cs02p closed.
+ds-hadoop-wk01p.tcsbank.ru
+-rw------- 1 root root 14K Dec 15 10:50 /var/log/commands
+Connection to ds-hadoop-wk01p closed.
+ds-hadoop-wk02p.tcsbank.ru
+-rw------- 1 root root 12K Dec 18 18:25 /var/log/commands
+Connection to ds-hadoop-wk02p closed.
+ds-hadoop-wk03p.tcsbank.ru
+-rw------- 1 root root 5.8K Dec 10 12:03 /var/log/commands
+Connection to ds-hadoop-wk03p closed.
+ds-hadoop-wk04p.tcsbank.ru
+-rw------- 1 root root 392 Dec  2 11:40 /var/log/commands
+Connection to ds-hadoop-wk04p closed.
+ds-hadoop-wk05p
+-rw------- 1 root root 985 Dec 10 13:03 /var/log/commands
+Connection to ds-hadoop-wk05p closed.
+ds-hadoop-wk06p
+-rw------- 1 root root 1.4K Nov 26 15:20 /var/log/commands
+Connection to ds-hadoop-wk06p closed.
+ds-hadoop-wk07p
+-rw------- 1 root root 20K Dec 15 10:32 /var/log/commands
+Connection to ds-hadoop-wk07p closed.
+ds-hadoop-wk08p.tcsbank.ru
+-rw------- 1 root root 2.5K Dec 10 16:34 /var/log/commands
+Connection to ds-hadoop-wk08p closed.
+ds-hadoop-wk09p
+-rw------- 1 root root 547 Nov 14 17:35 /var/log/commands
+Connection to ds-hadoop-wk09p closed.
+ds-hadoop-wk10p
+-rw------- 1 root root 561 Jan 13 12:56 /var/log/commands
+Connection to ds-hadoop-wk10p closed.
+ds-hadoop-wk11p
+-rw------- 1 root root 17K Dec  8 16:41 /var/log/commands
+Connection to ds-hadoop-wk11p closed.
+ds-hadoop-wk12p
+-rw------- 1 root root 4.1K Dec 15 17:15 /var/log/commands
+Connection to ds-hadoop-wk12p closed.
+ds-hadoop-wk13p
+-rw------- 1 root root 11K Dec 10 12:18 /var/log/commands
+Connection to ds-hadoop-wk13p closed.
+ds-hadoop-wk14p
+-rw------- 1 root root 981 Dec 10 12:18 /var/log/commands
+Connection to ds-hadoop-wk14p closed.
+ds-hadoop-wk15p
+-rw------- 1 root root 513 Dec 10 13:03 /var/log/commands
+Connection to ds-hadoop-wk15p closed.
+ds-hadoop-wk16p
+-rw------- 1 root root 3.9K Dec 10 13:03 /var/log/commands
+Connection to ds-hadoop-wk16p closed.
+ds-hadoop-wk17p
+-rw------- 1 root root 986 Dec 10 12:18 /var/log/commands
+Connection to ds-hadoop-wk17p closed.
+ds-hadoop-wk18p
+-rw------- 1 root root 37K Jan 14 17:33 /var/log/commands
+Connection to ds-hadoop-wk18p closed.
+ds-hadoop-wk19p
+-rw------- 1 root root 25K Dec 10 13:03 /var/log/commands
+Connection to ds-hadoop-wk19p closed.
+ds-hadoop-wk20p
+-rw------- 1 root root 968 Nov 16 14:07 /var/log/commands
+Connection to ds-hadoop-wk20p closed.
+[root@ds-hadoop-cs01p ~]#
+
+................................................................................
+................................................................................
+
+
