@@ -1,0 +1,34 @@
+---
+- name: Copy file apt.conf.patch from template
+  template:
+    src: ubuntu/etc/apt/apt.conf.patch.j2
+    dest: /etc/apt/apt.conf.patch
+    force: true
+
+- name: Copy file sources.list.patch for update from the Internet
+  template:
+    src: ubuntu/etc/apt/sources.list.patch.j2
+    dest: /etc/apt/sources.list.patch
+    force: true
+
+- name: Clean apt cache
+  apt:
+    autoclean: yes
+- name: Update apt cache, but use apt.conf.patch
+  shell: apt -c /etc/apt/apt.conf.patch update
+  args:
+    warn: false
+
+- name: Update package
+  shell: apt install --only-upgrade --assume-yes -c /etc/apt/apt.conf.patch {{ packages_name }}
+  args:
+    warn: false
+
+- name: Remove unneeded files apt.conf.patch, sources.list.patch
+  file:
+    path: /etc/apt/{{ item }}
+    state: absent
+  with_items:
+    - apt.conf.patch
+    - sources.list.patch
+...

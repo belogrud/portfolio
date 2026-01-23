@@ -1,0 +1,70 @@
+---
+- name: Create a directory there to move default *.repo files.
+  file:
+    path: "/tmp/{{ filename_with_date }}-yum.repos.d/backup"
+    state: directory
+    mode: 0644
+  check_mode: no
+
+- name: Find default CentOS *.repos files
+  find:
+    paths: /etc/yum.repos.d/
+    patterns: CentOS-*.repo
+  register: default_centos_repository_files
+
+- name: Copy for backup default *.repo files.
+  copy:
+    src: "{{ item.path }}"
+    dest: "/tmp/{{ filename_with_date }}-yum.repos.d/backup"
+    remote_src: yes
+    mode: 0644
+  no_log: true
+  with_items: "{{ default_centos_repository_files.files }}"
+
+- name: Delete default *.repo files.
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  no_log: true
+  with_items: "{{ default_centos_repository_files.files }}"
+
+- name: Copy *.repo files from template (CentOS 6)
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    force: true
+    mode: 0644
+  when: ansible_distribution_major_version == "6"
+  with_items:
+    - {src: 'centos/6/etc/yum.repos.d/tcs-centos.repo.j2',dest: '/etc/yum.repos.d/tcs-centos.repo'}
+    - {src: 'epel/6,7/tcs-epel.repo.j2',dest: '/etc/yum.repos.d/tcs-epel.repo'}
+
+- name: Copy *.repo files from template (CentOS 7)
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    force: true
+    mode: 0644
+  when: ansible_distribution_major_version == "7"
+  with_items:
+    - {src: 'centos/7/etc/yum.repos.d/tcs-centos.repo.j2',dest: '/etc/yum.repos.d/tcs-centos.repo'}
+    - {src: 'epel/6,7/tcs-epel.repo.j2',dest: '/etc/yum.repos.d/tcs-epel.repo'}
+
+- name: Copy *.repo files from template (CentOS 8)
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    force: true
+    mode: 0644
+  when: ansible_distribution_major_version == "8"
+  with_items:
+    - {src: 'centos/8/etc/yum.repos.d/tcs-centos.repo.j2',dest: '/etc/yum.repos.d/tcs-centos.repo'}
+    - {src: 'epel/8/tcs-epel.repo.j2',dest: '/etc/yum.repos.d/tcs-epel.repo'}
+
+# - name: Clean repository and get repository list again for CentOS systems
+#   shell: yum clean all ; yum repolist
+#   args:
+#     warn: false
+#   register: yum_clean_and_repolist
+#
+...

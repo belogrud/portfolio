@@ -1,0 +1,63 @@
+---
+- name: Create a directory there to move default sources.list file.
+  file:
+    path: "/tmp/{{filename_with_date}}-apt/backup"
+    state: directory
+    mode: 0644
+  check_mode: no
+
+- name: Copy for backup default sources.list file.
+  copy:
+    src: "/etc/apt/sources.list"
+    dest: "/tmp/{{filename_with_date}}-apt/backup"
+    remote_src: yes
+    mode: 0644
+  no_log: true
+
+- name: Delete default sources.list file.
+  file:
+    path: "/etc/apt/sources.list"
+    state: absent
+  no_log: true
+
+- name: Copy sources.list file from template (Ubuntu 16.04 - xenial).
+  template:
+    src: ubuntu/16.04/etc/apt/sources.list.j2
+    dest: /etc/apt/sources.list
+    force: true
+    mode: 0644
+  when: ansible_distribution_release == "xenial"
+
+- name: Copy sources.list file from template (Ubuntu 18.04 - bionic).
+  template:
+    src: ubuntu/18.04/etc/apt/sources.list.j2
+    dest: /etc/apt/sources.list
+    force: true
+    mode: 0644
+  when: ansible_distribution_release == "bionic"
+
+- name: Copy sources.list file from template (Ubuntu 20.04 - focal).
+  template:
+    src: ubuntu/20.04/etc/apt/sources.list.j2
+    dest: /etc/apt/sources.list
+    force: true
+    mode: 0644
+  when: ansible_distribution_release == "focal"
+
+- name: Clean apt cache.
+  apt:
+    autoclean: yes
+
+# - name: Update apt cache.
+#   shell: apt update
+#   args:
+#     warn: false
+
+- name: Copy meta-release file from template. This task is optional.
+  template:
+    src: ubuntu/common/etc/update-manager/meta-release.j2
+    dest: /etc/update-manager/meta-release
+    force: true
+    mode: 0644
+
+...
